@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   ArrowRight,
-  Check,
   Eye,
   EyeOff,
   FileText,
@@ -14,7 +13,6 @@ import {
   LockKeyhole,
   Mail,
   Phone,
-  ShoppingBag,
   Store,
   UserRound,
 } from "lucide-react";
@@ -134,65 +132,75 @@ export default function CadastroPage() {
     setMensagem("Conta criada. Confirme o e-mail que enviamos para liberar seu acesso à Flua.");
   }
 
-  const campos = "h-12 rounded-2xl border-[#D9C6B2] bg-[#FFFDF9] text-[#3F2422] shadow-sm placeholder:text-[#74745B]/55 focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/20";
+  const campos = "h-12 rounded-xl border-[#D9C6B2]/80 bg-white text-[#3F2422] shadow-[0_2px_8px_rgba(112,61,58,0.05)] placeholder:text-[#74745B]/50 focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/15";
 
   return (
     <main className="relative min-h-dvh overflow-x-hidden bg-[#F7F1E8] text-[#2C2421]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_30%,rgba(169,79,69,0.12),transparent_35%),radial-gradient(circle_at_88%_70%,rgba(116,116,91,0.11),transparent_31%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_28%,rgba(169,79,69,0.07),transparent_34%),radial-gradient(circle_at_88%_72%,rgba(116,116,91,0.06),transparent_30%)]" />
 
-      <div className="relative mx-auto grid min-h-dvh w-full max-w-[1540px] items-center gap-8 px-5 py-7 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:gap-12 lg:px-12 xl:px-16">
-        <section className="hidden lg:block">
-          <Link href="/" className="inline-flex" aria-label="Voltar ao site da Flua">
-            <Image src="/flua-logo.webp" alt="Flua Gestão" width={220} height={95} priority className="h-auto w-[178px] object-contain" />
+      <div className="relative mx-auto grid min-h-dvh w-full max-w-[1460px] items-center gap-10 px-5 py-8 sm:px-8 lg:grid-cols-[.92fr_1.08fr] lg:px-12 xl:gap-16 xl:px-16">
+        <section className="hidden lg:flex lg:min-h-[620px] lg:flex-col lg:justify-center">
+          <Link href="/" className="inline-flex w-fit" aria-label="Voltar ao site da Flua">
+            <Image
+              src="/flua-logo.webp"
+              alt="Flua Gestão"
+              width={220}
+              height={95}
+              priority
+              className="h-auto w-[158px] object-contain"
+            />
           </Link>
 
-          <div className="mt-10 max-w-[650px]">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[#D9C6B2] bg-white/76 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#703D3A] shadow-sm">
-              <span className="h-2 w-2 rounded-full bg-[#A94F45]" />
+          <div className="mt-12 max-w-[560px]">
+            <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#A94F45]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#A94F45]" />
               7 dias para conhecer a Flua
             </span>
 
-            <h1 className="mt-6 text-[clamp(3rem,4.8vw,5.35rem)] font-semibold leading-[.97] tracking-[-0.055em] text-[#2C2421]">
+            <h1 className="mt-5 text-[clamp(2.8rem,4.2vw,4.6rem)] font-semibold leading-[.98] tracking-[-0.055em] text-[#2C2421]">
               Comece sua operação com <span className="text-[#A94F45]">tudo organizado.</span>
             </h1>
 
-            <p className="mt-6 max-w-[610px] text-lg leading-8 text-[#703D3A]/76">
-              Pedidos, clientes, produtos, entregas e financeiro em um único ambiente, com informação centralizada desde o primeiro dia.
+            <p className="mt-5 max-w-[520px] text-base leading-7 text-[#703D3A]/68">
+              Pedidos, clientes, produtos, entregas e financeiro em um só lugar, desde o primeiro dia.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 rounded-2xl border border-white/80 bg-white/65 px-5 py-4 text-sm font-medium text-[#703D3A]/74 shadow-sm">
-              {['Sem cartão', 'Cadastro rápido', 'Acesso imediato'].map((item) => (
-                <span key={item} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-[#A94F45]" />
+            <div className="mt-8 grid max-w-[520px] grid-cols-2 gap-x-8 gap-y-4 border-t border-[#D9C6B2]/70 pt-6 text-sm text-[#703D3A]/78">
+              {[
+                "Pedidos centralizados",
+                "Entregas organizadas",
+                "Estoque controlado",
+                "Operação integrada",
+              ].map((item) => (
+                <span key={item} className="flex items-center gap-2.5">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A94F45]" />
                   {item}
                 </span>
               ))}
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <article className="rounded-[22px] border border-[#D9C6B2]/70 bg-white/72 p-5 shadow-[0_16px_45px_rgba(112,61,58,0.07)]">
-                <ShoppingBag className="h-5 w-5 text-[#A94F45]" />
-                <h2 className="mt-3 text-sm font-semibold text-[#3F2422]">Pedidos centralizados</h2>
-                <p className="mt-1 text-xs leading-5 text-[#703D3A]/65">Todos os pedidos organizados para você acompanhar a operação com clareza.</p>
-              </article>
-              <article className="rounded-[22px] border border-[#D9C6B2]/70 bg-white/72 p-5 shadow-[0_16px_45px_rgba(112,61,58,0.07)]">
-                <Check className="h-5 w-5 text-[#74745B]" />
-                <h2 className="mt-3 text-sm font-semibold text-[#3F2422]">Teste gratuito</h2>
-                <p className="mt-1 text-xs leading-5 text-[#703D3A]/65">Conheça a plataforma na prática antes de decidir o próximo passo.</p>
-              </article>
-            </div>
+            <p className="mt-8 text-xs font-medium text-[#74745B]">
+              Sem cartão · Cadastro rápido · Acesso imediato
+            </p>
           </div>
         </section>
 
-        <section className="mx-auto w-full max-w-[620px] rounded-[32px] border border-white/85 bg-white/90 p-6 shadow-[0_34px_100px_rgba(112,61,58,0.17)] backdrop-blur-xl sm:p-8 lg:p-9">
+        <section className="mx-auto w-full max-w-[620px] rounded-[28px] border border-white/90 bg-white/92 p-6 shadow-[0_28px_80px_rgba(112,61,58,0.13)] backdrop-blur-xl sm:p-8 lg:p-9">
           <div className="lg:hidden">
-            <Image src="/flua-logo.webp" alt="Flua Gestão" width={180} height={78} priority className="h-auto w-[145px] object-contain" />
+            <Image
+              src="/flua-logo.webp"
+              alt="Flua Gestão"
+              width={180}
+              height={78}
+              priority
+              className="h-auto w-[138px] object-contain"
+            />
           </div>
 
           <div className="mt-4 lg:mt-0">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#A94F45]">Criar conta</span>
-            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-[#2C2421] sm:text-[2.15rem]">Comece seu teste grátis</h2>
-            <p className="mt-2 text-sm leading-6 text-[#703D3A]/65">Cadastre sua loja e crie o acesso principal à Flua Gestão.</p>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#A94F45]">Criar conta</span>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-0.045em] text-[#2C2421] sm:text-[2.05rem]">Comece seu teste grátis</h2>
+            <p className="mt-2 text-sm leading-6 text-[#703D3A]/60">Cadastre sua loja e crie o acesso principal à Flua Gestão.</p>
           </div>
 
           <form onSubmit={cadastrar} className="mt-6 space-y-4">
@@ -262,11 +270,11 @@ export default function CadastroPage() {
             {erro && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-sm font-medium text-red-700">{erro}</p>}
             {mensagem && <p role="status" className="rounded-xl border border-[#74745B]/25 bg-[#74745B]/10 px-3.5 py-3 text-sm font-medium text-[#55553F]">{mensagem}</p>}
 
-            <Button type="submit" disabled={carregando} className="h-12 w-full rounded-2xl bg-[#A94F45] text-sm font-semibold text-white shadow-[0_14px_34px_rgba(169,79,69,0.24)] hover:bg-[#703D3A]">
+            <Button type="submit" disabled={carregando} className="h-12 w-full rounded-xl bg-[#A94F45] text-sm font-semibold text-white shadow-[0_12px_28px_rgba(169,79,69,0.2)] hover:bg-[#703D3A]">
               {carregando ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Criando conta...</> : <>Criar minha conta <ArrowRight className="ml-2 h-4 w-4" /></>}
             </Button>
 
-            <p className="text-center text-xs text-[#703D3A]/65">
+            <p className="text-center text-xs text-[#703D3A]/60">
               Já possui uma conta? <Link href="/login" className="font-semibold text-[#A94F45] hover:text-[#703D3A]">Entrar</Link>
             </p>
           </form>
