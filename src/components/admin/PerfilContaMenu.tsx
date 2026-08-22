@@ -53,7 +53,6 @@ export function PerfilContaMenu({
     .charAt(0)
     .toUpperCase();
 
-  // A logo do perfil sempre vem do cadastro da empresa.
   useEffect(() => {
     let ativo = true;
 
@@ -118,7 +117,6 @@ export function PerfilContaMenu({
   const plano = rotuloPlano(assinatura?.plan);
   const status = rotuloStatus(assinatura?.status);
 
-  // Navegação de conta em páginas dedicadas — sem modal sobre o dashboard.
   const itens = [
     { label: "Dados da empresa", icon: Building2, href: "/admin/conta/empresa" },
     { label: "Plano e assinatura", icon: CreditCard, href: "/admin/conta/plano" },
@@ -130,19 +128,23 @@ export function PerfilContaMenu({
     const dimensao = tamanho === "pequena" ? "h-9 w-9" : "h-11 w-11";
     const texto = tamanho === "pequena" ? "text-sm" : "text-base";
 
+    if (logoUrl) {
+      return (
+        <span className={`grid ${dimensao} shrink-0 place-items-center`}>
+          <img
+            src={logoUrl}
+            alt={`Logo ${companyName}`}
+            className="h-full w-full object-contain"
+          />
+        </span>
+      );
+    }
+
     return (
       <span
         className={`grid ${dimensao} shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--cream)] ${texto} font-bold text-[var(--wine)] ring-1 ring-[var(--admin-border)]`}
       >
-        {logoUrl ? (
-          <img
-            src={logoUrl}
-            alt={`Logo ${companyName}`}
-            className="h-full w-full object-contain p-1"
-          />
-        ) : (
-          inicial
-        )}
+        {inicial}
       </span>
     );
   };
