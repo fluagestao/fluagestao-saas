@@ -1,0 +1,69 @@
+/* Mantém o painel Flua com a mesma largura e escala em todas as páginas internas. */
+html {
+  scrollbar-gutter: stable;
+}
+
+@media (min-width: 1024px) {
+  /* Cabeçalho padrão: mesma altura, largura máxima e respiro em qualquer rota interna. */
+  body .app-top-header > div:first-child,
+  body div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
+    width: 100% !important;
+    max-width: 1680px !important;
+    height: 64px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+
+  /* Conteúdo central: nunca cresce nem encolhe ao trocar de página. */
+  body div[class~="bg-[var(--admin-bg)]"] > main,
+  html body .conta-viewport > div[class*="min-h-dvh"] > main {
+    width: 100% !important;
+    max-width: 1680px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Conta usa exatamente o mesmo cabeçalho e a mesma área útil do painel principal. */
+  html body .conta-viewport > .app-top-header > div:first-child {
+    width: 100% !important;
+    max-width: 1680px !important;
+    height: 64px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 32px !important;
+    padding-right: 32px !important;
+  }
+
+  html body .conta-viewport > div[class*="min-h-dvh"] {
+    height: calc(100dvh - 64px) !important;
+    min-height: 0 !important;
+  }
+
+  html body .conta-viewport > div[class*="min-h-dvh"] > main {
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+
+  /* Remove a ampliação/redução exclusiva da tela Início que fazia o painel mudar de tamanho. */
+  body div[class~="bg-[var(--admin-bg)]"] > main:has(> section button[aria-label="Mudar meu nome"]) > section {
+    transform: none !important;
+    transform-origin: initial !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 1279px) and (min-width: 1024px) {
+  body .app-top-header > div:first-child,
+  body div[class~="bg-[var(--admin-bg)]"] > header > div:first-child,
+  body div[class~="bg-[var(--admin-bg)]"] > main,
+  html body .conta-viewport > .app-top-header > div:first-child,
+  html body .conta-viewport > div[class*="min-h-dvh"] > main {
+    padding-left: 24px !important;
+    padding-right: 24px !important;
+  }
+}
