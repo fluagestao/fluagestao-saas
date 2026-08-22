@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { GripVertical, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -262,8 +263,10 @@ export function ProdutosPanel({
           </p>
         </div>
 
-        <Button onClick={onNovo}>
-          <Plus className="mr-1.5 h-4 w-4" /> Novo produto
+        <Button asChild>
+          <Link href="/admin/cadastros/produtos/novo">
+            <Plus className="mr-1.5 h-4 w-4" /> Novo produto
+          </Link>
         </Button>
       </div>
 
