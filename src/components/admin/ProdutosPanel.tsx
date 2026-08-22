@@ -1,6 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, GripVertical, ImageIcon, Layers, Loader2, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronRight, GripVertical, Layers, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -17,17 +16,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { removerProduto, reordenarProdutos, salvarProduto } from "@/lib/admin";
+import { removerProduto, reordenarProdutos } from "@/lib/admin";
 import { formatPreco } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { type CatalogoRow, type CategoriaRow, type ProdutoRow } from "./tipos";
-import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
+import { useConfirmar } from "./shell";
 
 const CHAVE_FECHADAS = "flua-admin-produtos-fechadas";
 
-// ---------- lista de produtos (arrastÃ¡vel, por coleÃ§Ã£o e categoria) ----------
 function LinhaProduto({
   produto,
   onEditar,
@@ -74,8 +71,11 @@ function LinhaProduto({
           {produto.preco != null
             ? formatPreco(produto.preco)
             : produto.preco_label || "sob consulta"}
-          {!produto.ativo && " Â· oculto"}
-          {produto.badge && ` Â· ðŸ·ï¸ ${produto.badge}`}
+          {!produto.ativo && " · oculto"}
+          {produto.badge && ` · ${produto.badge}`}
+        </p>
+        <p className="mt-0.5 truncate text-[10px] text-muted-foreground/80">
+          Código: {produto.slug || produto.id}
         </p>
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -105,27 +105,44 @@ export function ProdutosPanel({
   onEditar: (p: ProdutoRow) => void;
   onChange: () => void;
 }) {
-  // Ordem local editÃ¡vel: arraste Ã  vontade e salve tudo de uma vez no fim.
   const [itens, setItens] = useState<ProdutoRow[]>(produtos);
   const confirmar = useConfirmar();
   const [alterado, setAlterado] = useState(false);
   const [salvandoOrdem, setSalvandoOrdem] = useState(false);
-  // SÃ³ sincroniza do servidor quando NÃƒO hÃ¡ reordenaÃ§Ã£o pendente (nÃ£o perde o arrasto).
+  const [busca, setBusca] = useState("");
+  const [filtroColecao, setFiltroColecao] = useState("todas");
+
   useEffect(() => {
     if (!alterado) setItens(produtos);
   }, [produtos, alterado]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
-  /**
-   * ColeÃ§Ã£o â†’ categoria â†’ produtos.
-   *
-   * O nome da categoria se repete entre coleÃ§Ãµes ("CafÃ© da ManhÃ£" existe no
-   * Geral e no Dia dos Pais), entÃ£o sem a coleÃ§Ã£o por fora nÃ£o dÃ¡ pra saber
-   * qual lista Ã© qual.
-   */
+  const itensFiltrados = useMemo(() => {
+    const termo = busca.trim().toLocaleLowerCase("pt-BR");
+
+    return itens.filter((produto) => {
+      const categoria = categorias.find((item) => item.id === produto.categoria_id);
+      const catalogoId = categoria?.catalogo_id ?? null;
+
+      const passaColecao =
+        filtroColecao === "todas" ||
+        (filtroColecao === "sem" ? !catalogoId : catalogoId === filtroColecao);
+
+      if (!passaColecao) return false;
+      if (!termo) return true;
+
+      const nome = produto.nome.toLocaleLowerCase("pt-BR");
+      const slug = (produto.slug ?? "").toLocaleLowerCase("pt-BR");
+      const id = produto.id.toLocaleLowerCase("pt-BR");
+
+      return nome.includes(termo) || slug.includes(termo) || id.includes(termo);
+    });
+  }, [itens, categorias, busca, filtroColecao]);
+
   const colecoes = useMemo(() => {
-    const byCat = (id: string | null) => itens.filter((p) => (p.categoria_id ?? null) === id);
+    const byCat = (id: string | null) =>
+      itensFiltrados.filter((p) => (p.categoria_id ?? null) === id);
     const cats = categorias.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
     const cols = catalogos.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
 
@@ -142,8 +159,6 @@ export function ProdutosPanel({
       }))
       .filter((g) => g.categorias.length > 0);
 
-    // Categoria Ã³rfÃ£ e produto sem categoria caem num grupo final, pra nada
-    // sumir da tela por causa de cadastro incompleto.
     const orfas = montar(
       cats.filter((c) => !c.catalogo_id || !cols.some((col) => col.id === c.catalogo_id)),
     );
@@ -151,22 +166,21 @@ export function ProdutosPanel({
     if (semCategoria.length) {
       orfas.push({ id: null, nome: "Sem categoria", produtos: semCategoria });
     }
-    if (orfas.length) grupos.push({ id: null, nome: "Sem coleÃ§Ã£o", categorias: orfas });
+    if (orfas.length) grupos.push({ id: null, nome: "Sem coleção", categorias: orfas });
 
     return grupos;
-  }, [itens, categorias, catalogos]);
+  }, [itensFiltrados, categorias, catalogos]);
 
-  // Quais categorias estÃ£o recolhidas. Guardado no navegador: reabrir tudo a
-  // cada refresh anula o sentido de poder fechar.
   const [fechadas, setFechadas] = useState<Set<string>>(new Set());
   useEffect(() => {
     try {
       const salvo = localStorage.getItem(CHAVE_FECHADAS);
       if (salvo) setFechadas(new Set(JSON.parse(salvo) as string[]));
     } catch {
-      // modo privado: sÃ³ nÃ£o lembra
+      // modo privado: só não lembra
     }
   }, []);
+
   function alternar(catId: string) {
     setFechadas((prev) => {
       const proximo = new Set(prev);
@@ -175,7 +189,7 @@ export function ProdutosPanel({
       try {
         localStorage.setItem(CHAVE_FECHADAS, JSON.stringify([...proximo]));
       } catch {
-        // idem
+        // modo privado: só não lembra
       }
       return proximo;
     });
@@ -184,7 +198,7 @@ export function ProdutosPanel({
   async function excluir(p: ProdutoRow) {
     const ok = await confirmar({
       titulo: `Excluir "${p.nome}"?`,
-      descricao: "O produto e as fotos dele somem. Isso nÃ£o tem volta.",
+      descricao: "O produto e as fotos dele somem. Isso não tem volta.",
       confirmar: "Excluir",
       destrutivo: true,
     });
@@ -194,7 +208,6 @@ export function ProdutosPanel({
     onChange();
   }
 
-  // Arrastar sÃ³ atualiza a ordem local (nÃ£o salva ainda) â€” salva tudo no botÃ£o.
   function onDragEnd(catId: string | null, e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -225,32 +238,96 @@ export function ProdutosPanel({
     setAlterado(false);
   }
 
+  const filtrosAtivos = busca.trim() !== "" || filtroColecao !== "todas";
+
   return (
     <section>
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">
-          Produtos ({itens.length})
-        </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
+          </h2>
+          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+            Todos os produtos cadastrados. Arraste pelo <GripVertical className="inline h-3.5 w-3.5" /> para reordenar dentro da categoria.
+          </p>
+        </div>
         <Button onClick={onNovo}>
           <Plus className="mr-1.5 h-4 w-4" /> Novo produto
         </Button>
       </div>
-      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-        Arraste pelo <GripVertical className="inline h-3.5 w-3.5" /> para reordenar dentro da
-        categoria.
-      </p>
 
-      {colecoes.length === 0 ? (
+      <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 md:grid-cols-[minmax(0,1fr)_280px_auto]">
+        <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 focus-within:border-[var(--terracotta)]">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome ou código do produto"
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+          />
+          {busca && (
+            <button
+              type="button"
+              onClick={() => setBusca("")}
+              className="grid h-7 w-7 place-items-center rounded-lg text-muted-foreground hover:bg-[var(--cream-soft)] hover:text-foreground"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </label>
+
+        <select
+          value={filtroColecao}
+          onChange={(e) => setFiltroColecao(e.target.value)}
+          className="h-11 w-full rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+          aria-label="Filtrar por coleção"
+        >
+          <option value="todas">Todas as coleções</option>
+          {catalogos
+            .slice()
+            .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+            .map((catalogo) => (
+              <option key={catalogo.id} value={catalogo.id}>
+                {catalogo.nome}
+              </option>
+            ))}
+          <option value="sem">Sem coleção</option>
+        </select>
+
+        {filtrosAtivos && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setBusca("");
+              setFiltroColecao("todas");
+            }}
+            className="h-11"
+          >
+            Limpar filtros
+          </Button>
+        )}
+      </div>
+
+      {itens.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-dashed border-[var(--cream-deep)] p-8 text-center text-sm text-muted-foreground">
-          Nenhum produto ainda. Clique em â€œNovo produtoâ€.
+          Nenhum produto ainda. Clique em “Novo produto”.
         </p>
+      ) : colecoes.length === 0 ? (
+        <div className="mt-5 rounded-2xl border border-dashed border-[var(--cream-deep)] p-10 text-center">
+          <p className="text-sm font-semibold text-foreground">Nenhum produto encontrado</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tente outro nome, código ou coleção.
+          </p>
+        </div>
       ) : (
-        <div className="mt-5 space-y-10">
+        <div className="mt-5 space-y-8">
           {colecoes.map((col) => {
             const total = col.categorias.reduce((t, c) => t + c.produtos.length, 0);
-            // Prefixo separado: id de coleÃ§Ã£o e de categoria vivem no mesmo Set.
             const chaveColecao = `col:${col.id ?? "sem"}`;
-            const colecaoFechada = fechadas.has(chaveColecao);
+            const colecaoFechada = filtrosAtivos ? false : fechadas.has(chaveColecao);
             return (
               <section key={col.id ?? "sem-colecao"}>
                 <button
@@ -275,7 +352,7 @@ export function ProdutosPanel({
                 <div className={cn("space-y-4 pl-2", colecaoFechada && "hidden")}>
                   {col.categorias.map((g) => {
                     const chave = g.id ?? `sem-categoria-${col.id ?? "orfas"}`;
-                    const fechada = fechadas.has(chave);
+                    const fechada = filtrosAtivos ? false : fechadas.has(chave);
                     return (
                       <div key={chave}>
                         <button
@@ -332,7 +409,7 @@ export function ProdutosPanel({
       {alterado && (
         <div className="sticky bottom-3 z-10 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--terracotta)]/40 bg-card p-3 shadow-[var(--shadow-lift)]">
           <span className="text-sm font-medium text-foreground">
-            VocÃª reorganizou os produtos â€” salve para aplicar.
+            Você reorganizou os produtos — salve para aplicar.
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={desfazer} disabled={salvandoOrdem}>
@@ -348,4 +425,3 @@ export function ProdutosPanel({
     </section>
   );
 }
-
