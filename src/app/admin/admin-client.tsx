@@ -29,6 +29,7 @@ import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
 import { FinanceiroPanel } from "@/components/admin/FinanceiroPanel";
 import { HorariosPanel } from "@/components/admin/HorariosPanel";
 import { InicioPanel } from "@/components/admin/InicioPanel";
+import { InsumosPanel } from "@/components/admin/InsumosPanel";
 import { PerfilContaMenu } from "@/components/admin/PerfilContaMenu";
 import { ProdutoDialog } from "@/components/admin/ProdutoDialog";
 import { ProdutosPanel } from "@/components/admin/ProdutosPanel";
@@ -58,6 +59,7 @@ export type AbaId =
   | "colecoes"
   | "categorias"
   | "etiquetas"
+  | "insumos"
   | "horarios";
 
 export type SubFinanceiro = "entradas" | "saidas";
@@ -91,6 +93,7 @@ const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "colecoes", label: "Coleções" },
   { id: "categorias", label: "Categorias" },
   { id: "etiquetas", label: "Etiquetas" },
+  { id: "insumos", label: "Insumos" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
   { id: "bairros", label: "Bairros" },
@@ -125,7 +128,7 @@ const MENU: ItemMenu[] = [
   { id: "bia", label: "BIA", icon: Bot, vistas: SUB_BIA },
 ];
 
-const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas", "horarios"];
+const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas", "insumos", "horarios"];
 
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
@@ -441,6 +444,8 @@ export default function AdminClient({
             <CategoriasPanel categorias={categorias} catalogos={catalogos} onChange={recarregar} />
           ) : aba === "etiquetas" ? (
             <EtiquetasPanel etiquetas={etiquetas} onChange={recarregar} />
+          ) : aba === "insumos" ? (
+            <InsumosPanel />
           ) : (
             <HorariosPanel />
           )}
