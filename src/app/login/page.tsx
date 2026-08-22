@@ -86,6 +86,7 @@ export default function LoginPage() {
     <AuthShell
       title="Acesse sua conta"
       subtitle="Entre com seus dados para acessar a gestão da sua empresa."
+      hideIntro
     >
       <form onSubmit={entrar} className="space-y-5" noValidate>
         <div className="space-y-2">
