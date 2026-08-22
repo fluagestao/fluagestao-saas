@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 const SECOES: ContaSecao[] = ["empresa", "plano", "usuarios", "configuracoes"];
 
+// Cada item do menu de conta possui uma rota própria dentro do painel.
 export default async function ContaPage({
   params,
 }: {
