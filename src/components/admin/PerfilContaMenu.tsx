@@ -45,16 +45,18 @@ export function PerfilContaMenu({
   const supabase = useMemo(() => createClient(), []);
   const [aberto, setAberto] = useState(false);
   const [assinatura, setAssinatura] = useState<AssinaturaConta | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null);
 
   const inicial = (companyName || displayName || email || "F")
     .trim()
     .charAt(0)
     .toUpperCase();
 
+  // A logo do perfil sempre vem do cadastro da empresa.
   useEffect(() => {
-    if (!aberto || assinatura) return;
-
     let ativo = true;
+
     void (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData.user?.id;
@@ -69,12 +71,32 @@ export function PerfilContaMenu({
         .limit(1)
         .maybeSingle();
 
-      if (!membro?.company_id) return;
+      if (!membro?.company_id || !ativo) return;
+      setCompanyId(membro.company_id);
 
+      const { data: empresa } = await supabase
+        .from("companies")
+        .select("logo_url")
+        .eq("id", membro.company_id)
+        .maybeSingle();
+
+      if (ativo) setLogoUrl(empresa?.logo_url ?? null);
+    })();
+
+    return () => {
+      ativo = false;
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    if (!aberto || assinatura || !companyId) return;
+
+    let ativo = true;
+    void (async () => {
       const { data } = await supabase
         .from("subscriptions")
         .select("plan,status")
-        .eq("company_id", membro.company_id)
+        .eq("company_id", companyId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -85,7 +107,7 @@ export function PerfilContaMenu({
     return () => {
       ativo = false;
     };
-  }, [aberto, assinatura, supabase]);
+  }, [aberto, assinatura, companyId, supabase]);
 
   async function sair() {
     await supabase.auth.signOut();
@@ -104,6 +126,27 @@ export function PerfilContaMenu({
     { label: "Configurações", icon: Settings, href: "/admin/conta/configuracoes" },
   ];
 
+  const marcaEmpresa = (tamanho: "pequena" | "grande") => {
+    const dimensao = tamanho === "pequena" ? "h-9 w-9" : "h-11 w-11";
+    const texto = tamanho === "pequena" ? "text-sm" : "text-base";
+
+    return (
+      <span
+        className={`grid ${dimensao} shrink-0 place-items-center overflow-hidden rounded-xl bg-[var(--cream)] ${texto} font-bold text-[var(--wine)] ring-1 ring-[var(--admin-border)]`}
+      >
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt={`Logo ${companyName}`}
+            className="h-full w-full object-contain p-1"
+          />
+        ) : (
+          inicial
+        )}
+      </span>
+    );
+  };
+
   return (
     <div className="relative ml-1">
       <button
@@ -112,9 +155,7 @@ export function PerfilContaMenu({
         className="flex min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-[var(--cream-soft)]"
         aria-expanded={aberto}
       >
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--cream)] text-sm font-bold text-[var(--wine)] ring-1 ring-[var(--admin-border)]">
-          {inicial}
-        </span>
+        {marcaEmpresa("pequena")}
         <span className="hidden min-w-0 sm:block">
           <strong className="block max-w-32 truncate text-xs font-semibold text-[var(--admin-ink)]">
             {companyName}
@@ -131,9 +172,7 @@ export function PerfilContaMenu({
       {aberto && (
         <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-lift)]">
           <div className="flex items-start gap-3 border-b border-[var(--admin-border)] p-4">
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--cream)] text-base font-bold text-[var(--wine)] ring-1 ring-[var(--admin-border)]">
-              {inicial}
-            </span>
+            {marcaEmpresa("grande")}
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <strong className="truncate text-sm text-[var(--admin-ink)]">{companyName}</strong>
