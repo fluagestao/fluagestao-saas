@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { removerEtiqueta, salvarEtiqueta } from "@/lib/etiquetas";
@@ -10,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { CORES_DESTAQUE, type EtiquetaRow } from "./tipos";
 import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
+const COR_PADRAO = "#B8893B";
+
 export function EtiquetasPanel({
   etiquetas,
   onChange,
@@ -18,9 +20,18 @@ export function EtiquetasPanel({
   onChange: () => void;
 }) {
   const [nome, setNome] = useState("");
-  const [cor, setCor] = useState("#B8893B");
+  const [cor, setCor] = useState(COR_PADRAO);
+  const [busca, setBusca] = useState("");
   const [salvando, setSalvando] = useState(false);
   const confirmar = useConfirmar();
+
+  const etiquetasFiltradas = useMemo(() => {
+    const termo = busca.trim().toLocaleLowerCase("pt-BR");
+    return etiquetas
+      .slice()
+      .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+      .filter((etiqueta) => !termo || etiqueta.nome.toLocaleLowerCase("pt-BR").includes(termo));
+  }, [busca, etiquetas]);
 
   async function criar() {
     const nomeLimpo = nome.trim();
@@ -38,7 +49,7 @@ export function EtiquetasPanel({
       });
       toast.success(`Etiqueta "${nomeLimpo}" criada.`);
       setNome("");
-      setCor("#B8893B");
+      setCor(COR_PADRAO);
       onChange();
     } finally {
       setSalvando(false);
@@ -75,12 +86,17 @@ export function EtiquetasPanel({
   return (
     <section>
       <PageHeader
-        titulo="Etiquetas"
+        titulo={`Etiquetas (${etiquetas.length})`}
         descricao="Crie etiquetas para destacar produtos, como Mais vendido, Novidade ou Edição limitada."
       />
 
-      <div className="mb-5 rounded-2xl border border-[var(--cream-deep)] bg-card p-4">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+      <div className="mt-4 rounded-2xl border border-[var(--cream-deep)] bg-card p-4">
+        <div className="mb-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--terracotta)]">Novo cadastro</p>
+          <h3 className="mt-1 text-base font-semibold text-foreground">Nova etiqueta</h3>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(260px,1fr)_auto_auto] lg:items-center">
           <Input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -89,7 +105,7 @@ export function EtiquetasPanel({
             className="h-11"
           />
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2">
             {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
               <button
                 key={item.nome}
@@ -98,9 +114,9 @@ export function EtiquetasPanel({
                 title={item.nome}
                 aria-label={`Cor ${item.nome}`}
                 className={cn(
-                  "h-7 w-7 rounded-full border transition-transform hover:scale-110",
+                  "h-6 w-6 rounded-full border transition-transform hover:scale-110",
                   cor === item.valor
-                    ? "ring-2 ring-foreground ring-offset-2"
+                    ? "ring-2 ring-foreground ring-offset-1"
                     : "border-[var(--cream-deep)]",
                 )}
                 style={{ backgroundColor: item.valor }}
@@ -109,36 +125,51 @@ export function EtiquetasPanel({
           </div>
 
           <Button onClick={criar} disabled={salvando || !nome.trim()} className="h-11">
-            <Plus className="mr-1.5 h-4 w-4" /> Criar etiqueta
+            <Plus className="mr-1.5 h-4 w-4" /> Adicionar etiqueta
           </Button>
         </div>
       </div>
 
+      <label className="mt-4 flex h-11 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 focus-within:border-[var(--terracotta)]">
+        <Search className="h-4 w-4 text-muted-foreground" />
+        <input
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          placeholder="Buscar etiqueta"
+          className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+        />
+      </label>
+
       {etiquetas.length === 0 ? (
         <EstadoVazio
           titulo="Nenhuma etiqueta criada"
-          descricao="Crie a primeira etiqueta acima. Depois ela ficará disponível no cadastro e na edição dos produtos."
+          descricao="Crie a primeira etiqueta para disponibilizá-la no cadastro dos produtos."
         />
+      ) : etiquetasFiltradas.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-[var(--cream-deep)] p-10 text-center text-sm text-muted-foreground">
+          Nenhuma etiqueta encontrada.
+        </div>
       ) : (
-        <div className="space-y-2">
-          {etiquetas.map((etiqueta) => (
-            <div
+        <div className="mt-4 space-y-2">
+          {etiquetasFiltradas.map((etiqueta) => (
+            <article
               key={etiqueta.id}
-              className="flex flex-wrap items-center gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card px-4 py-3"
+              className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 lg:grid-cols-[minmax(260px,1fr)_auto_auto] lg:items-center"
             >
-              <span
-                className="h-3.5 w-3.5 shrink-0 rounded-full"
-                style={{ backgroundColor: etiqueta.cor || "#B8893B" }}
-              />
-
-              <Input
-                defaultValue={etiqueta.nome}
-                onBlur={(e) => {
-                  const valor = e.target.value.trim();
-                  if (valor && valor !== etiqueta.nome) atualizar(etiqueta, { nome: valor });
-                }}
-                className="h-9 min-w-[180px] max-w-sm border-transparent bg-transparent px-2 font-medium focus:border-[var(--cream-deep)]"
-              />
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className="h-3.5 w-3.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: etiqueta.cor || COR_PADRAO }}
+                />
+                <Input
+                  defaultValue={etiqueta.nome}
+                  onBlur={(e) => {
+                    const valor = e.target.value.trim();
+                    if (valor && valor !== etiqueta.nome) atualizar(etiqueta, { nome: valor });
+                  }}
+                  className="h-10 min-w-0 flex-1 font-medium"
+                />
+              </div>
 
               <div className="flex items-center gap-1.5">
                 {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
@@ -150,7 +181,7 @@ export function EtiquetasPanel({
                     aria-label={`Cor ${item.nome}`}
                     className={cn(
                       "h-6 w-6 rounded-full border transition-transform hover:scale-110",
-                      (etiqueta.cor || "#B8893B") === item.valor
+                      (etiqueta.cor || COR_PADRAO) === item.valor
                         ? "ring-2 ring-foreground ring-offset-1"
                         : "border-[var(--cream-deep)]",
                     )}
@@ -159,18 +190,20 @@ export function EtiquetasPanel({
                 ))}
               </div>
 
-              <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-                <Switch
-                  checked={etiqueta.ativo}
-                  onCheckedChange={(ativo) => atualizar(etiqueta, { ativo })}
-                />
-                {etiqueta.ativo ? "Disponível" : "Oculta"}
-              </label>
+              <div className="flex items-center justify-end gap-2">
+                <label className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs text-muted-foreground">
+                  <Switch
+                    checked={etiqueta.ativo}
+                    onCheckedChange={(ativo) => atualizar(etiqueta, { ativo })}
+                  />
+                  {etiqueta.ativo ? "Visível" : "Oculta"}
+                </label>
 
-              <Button variant="ghost" size="icon" onClick={() => excluir(etiqueta)}>
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
+                <Button variant="ghost" size="icon" onClick={() => excluir(etiqueta)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            </article>
           ))}
         </div>
       )}
