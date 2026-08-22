@@ -188,6 +188,7 @@ export function NovoProdutoClient({
     try {
       if (rascunho) await removerProduto({ data: { id: draft.id } });
       router.replace("/cadastros/produtos");
+      router.refresh();
     } catch (e) {
       setErro(mensagemDeErro(e, "cancelar cadastro"));
       setCancelando(false);
