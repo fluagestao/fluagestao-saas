@@ -24,9 +24,7 @@ export const metadata: Metadata = {
     "Organize pedidos, financeiro, clientes, produtos e a rotina do seu negócio em um só lugar com a Flua Gestão.",
   applicationName: "Flua Gestão",
   icons: {
-    icon: [
-      { url: "/flua-favicon.svg", type: "image/svg+xml" },
-    ],
+    icon: [{ url: "/flua-favicon.svg", type: "image/svg+xml" }],
     shortcut: "/flua-favicon.svg",
     apple: "/apple-touch-icon.png",
   },
@@ -55,7 +53,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden">
+        {children}
+      </body>
     </html>
   );
 }
