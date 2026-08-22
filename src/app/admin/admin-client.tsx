@@ -22,6 +22,7 @@ import { Toaster } from "sonner";
 
 import { BiaPanel } from "@/components/admin/BiaPanel";
 import { CadastrosPanel } from "@/components/admin/CadastrosPanel";
+import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
 import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
@@ -55,6 +56,7 @@ export type AbaId =
   | "bia"
   | "produtos"
   | "colecoes"
+  | "categorias"
   | "etiquetas"
   | "horarios";
 
@@ -87,6 +89,7 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
 const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "produtos", label: "Produtos" },
   { id: "colecoes", label: "Coleções" },
+  { id: "categorias", label: "Categorias" },
   { id: "etiquetas", label: "Etiquetas" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
@@ -122,7 +125,7 @@ const MENU: ItemMenu[] = [
   { id: "bia", label: "BIA", icon: Bot, vistas: SUB_BIA },
 ];
 
-const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "etiquetas", "horarios"];
+const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas", "horarios"];
 
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
@@ -434,6 +437,8 @@ export default function AdminClient({
             />
           ) : aba === "colecoes" ? (
             <ColecoesPanel catalogos={catalogos} categorias={categorias} onChange={recarregar} />
+          ) : aba === "categorias" ? (
+            <CategoriasPanel categorias={categorias} catalogos={catalogos} onChange={recarregar} />
           ) : aba === "etiquetas" ? (
             <EtiquetasPanel etiquetas={etiquetas} onChange={recarregar} />
           ) : (
