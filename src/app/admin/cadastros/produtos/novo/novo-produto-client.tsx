@@ -51,6 +51,7 @@ export function NovoProdutoClient({
   const router = useRouter();
   const [id, setId] = useState<string | undefined>();
   const [slug, setSlug] = useState("");
+  const [codigo, setCodigo] = useState("");
   const [nome, setNome] = useState("");
   const [categoriaId, setCategoriaId] = useState<string | "">("");
   const [categoriasAbertas, setCategoriasAbertas] = useState(false);
@@ -135,7 +136,12 @@ export function NovoProdutoClient({
       const primeiraVez = !id;
       setId(res.id);
       setSlug(res.slug || slugFromNome(nomeLimpo));
-      toast.success(primeiraVez ? "Produto cadastrado com sucesso." : "Produto atualizado com sucesso.");
+      setCodigo(res.sku);
+      toast.success(
+        primeiraVez
+          ? `Produto ${res.sku} cadastrado com sucesso.`
+          : `Produto ${res.sku} atualizado com sucesso.`,
+      );
     } catch (e) {
       setErro(mensagemDeErro(e, "salvar produto"));
     } finally {
@@ -230,7 +236,7 @@ export function NovoProdutoClient({
               Novo produto
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Preencha os dados do produto. Depois de salvar, você poderá adicionar as fotos.
+              Preencha os dados do produto. O código é sequencial e definitivo.
             </p>
           </div>
 
@@ -248,15 +254,36 @@ export function NovoProdutoClient({
         <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <section className="rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] sm:p-6">
             <div className="grid gap-5">
-              <Campo label="Nome" obrigatorio>
-                <Input
-                  required
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Nome do produto"
-                  className="h-11"
-                />
-              </Campo>
+              <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
+                <Campo label="Nome" obrigatorio>
+                  <Input
+                    required
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                    placeholder="Nome do produto"
+                    className="h-11"
+                  />
+                </Campo>
+
+                <Campo label="Código do produto">
+                  <div>
+                    <Input
+                      value={codigo || "Gerado ao salvar"}
+                      readOnly
+                      aria-readonly="true"
+                      className={cn(
+                        "h-11 bg-[var(--cream-soft)] font-semibold tabular-nums",
+                        codigo
+                          ? "text-[var(--terracotta)]"
+                          : "text-muted-foreground",
+                      )}
+                    />
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Sequencial e não pode ser alterado depois do cadastro.
+                    </p>
+                  </div>
+                </Campo>
+              </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Campo label="Categoria">
@@ -539,6 +566,17 @@ export function NovoProdutoClient({
             {!id && (
               <div className="mt-4 rounded-2xl bg-[var(--cream-soft)] px-4 py-3 text-xs text-muted-foreground">
                 Depois do primeiro salvamento, esta área será liberada sem sair da tela.
+              </div>
+            )}
+
+            {codigo && (
+              <div className="mt-4 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                  Código definitivo
+                </p>
+                <p className="mt-1 text-xl font-bold tabular-nums text-[var(--terracotta)]">
+                  {codigo}
+                </p>
               </div>
             )}
           </aside>
