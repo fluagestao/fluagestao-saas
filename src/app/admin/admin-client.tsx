@@ -245,8 +245,12 @@ export default function AdminClient({
                     <button
                       type="button"
                       onClick={() => {
+                        if (filhos) {
+                          setExpandida(aberta ? null : item.id);
+                          return;
+                        }
                         setAba(item.id);
-                        setExpandida(filhos ? (aberta ? null : item.id) : null);
+                        setExpandida(null);
                       }}
                       className={cn(
                         "inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold transition-all",
