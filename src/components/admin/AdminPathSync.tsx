@@ -4,57 +4,65 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 const ROTAS_DIRETAS: Record<string, string> = {
-  "Início": "/admin",
-  "Dashboard": "/dashboard",
-  "Tarefas": "/tarefas",
-  "Pedidos": "/pedidos",
-  "A receber": "/a-receber",
-  "Realizadas": "/realizadas",
-  "Entradas": "/entradas",
-  "Saídas": "/saidas",
-  "Produtos": "/produtos",
-  "Coleções": "/colecoes",
-  "Categorias": "/categorias",
-  "Etiquetas": "/etiquetas",
-  "Insumos": "/insumos",
-  "Clientes": "/clientes",
-  "Fornecedores": "/fornecedores",
-  "Bairros": "/bairros",
-  "Horários": "/horarios",
-  "Simulador": "/bia",
-  "Conversas": "/bia/conversas",
-  "Ajustes": "/bia/ajustes",
+  "Início": "/inicio",
+  Dashboard: "/dashboard",
+  Tarefas: "/tarefas",
+
+  Pedidos: "/vendas/pedidos",
+  "A receber": "/vendas/a-receber",
+  Realizadas: "/vendas/realizadas",
+
+  Entradas: "/financeiro/entradas",
+  Saídas: "/financeiro/saidas",
+
+  Produtos: "/cadastros/produtos",
+  Coleções: "/cadastros/colecoes",
+  Categorias: "/cadastros/categorias",
+  Etiquetas: "/cadastros/etiquetas",
+  Insumos: "/cadastros/insumos",
+  Clientes: "/cadastros/clientes",
+  Fornecedores: "/cadastros/fornecedores",
+  Bairros: "/cadastros/bairros",
+  Horários: "/cadastros/horarios",
+
+  Simulador: "/bia/simulador",
+  Conversas: "/bia/conversas",
+  Ajustes: "/bia/ajustes",
 };
 
-const ROTAS_PAINEL = new Set([
-  "/admin",
-  "/pedidos",
-  "/a-receber",
-  "/realizadas",
-  "/dashboard",
-  "/entradas",
-  "/saidas",
-  "/produtos",
-  "/colecoes",
-  "/categorias",
-  "/etiquetas",
-  "/insumos",
-  "/clientes",
-  "/fornecedores",
-  "/bairros",
-  "/horarios",
-  "/tarefas",
-  "/bia",
-  "/bia/conversas",
-  "/bia/ajustes",
-]);
-
 const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
+  "/inicio": { filho: "Início" },
   "/admin": { filho: "Início" },
+
+  "/vendas/pedidos": { pai: "Vendas", filho: "Pedidos" },
+  "/vendas/a-receber": { pai: "Vendas", filho: "A receber" },
+  "/vendas/realizadas": { pai: "Vendas", filho: "Realizadas" },
+
+  "/dashboard": { filho: "Dashboard" },
+
+  "/financeiro/entradas": { pai: "Financeiro", filho: "Entradas" },
+  "/financeiro/saidas": { pai: "Financeiro", filho: "Saídas" },
+
+  "/cadastros/produtos": { pai: "Cadastros", filho: "Produtos" },
+  "/cadastros/colecoes": { pai: "Cadastros", filho: "Coleções" },
+  "/cadastros/categorias": { pai: "Cadastros", filho: "Categorias" },
+  "/cadastros/etiquetas": { pai: "Cadastros", filho: "Etiquetas" },
+  "/cadastros/insumos": { pai: "Cadastros", filho: "Insumos" },
+  "/cadastros/clientes": { pai: "Cadastros", filho: "Clientes" },
+  "/cadastros/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
+  "/cadastros/bairros": { pai: "Cadastros", filho: "Bairros" },
+  "/cadastros/horarios": { pai: "Cadastros", filho: "Horários" },
+
+  "/tarefas": { filho: "Tarefas" },
+
+  "/bia/simulador": { pai: "BIA", filho: "Simulador" },
+  "/bia/conversas": { pai: "BIA", filho: "Conversas" },
+  "/bia/ajustes": { pai: "BIA", filho: "Ajustes" },
+
+  // Compatibilidade durante a transição das URLs antigas.
   "/pedidos": { pai: "Vendas", filho: "Pedidos" },
   "/a-receber": { pai: "Vendas", filho: "A receber" },
   "/realizadas": { pai: "Vendas", filho: "Realizadas" },
-  "/dashboard": { filho: "Dashboard" },
   "/entradas": { pai: "Financeiro", filho: "Entradas" },
   "/saidas": { pai: "Financeiro", filho: "Saídas" },
   "/produtos": { pai: "Cadastros", filho: "Produtos" },
@@ -66,11 +74,10 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
   "/bairros": { pai: "Cadastros", filho: "Bairros" },
   "/horarios": { pai: "Cadastros", filho: "Horários" },
-  "/tarefas": { filho: "Tarefas" },
   "/bia": { pai: "BIA", filho: "Simulador" },
-  "/bia/conversas": { pai: "BIA", filho: "Conversas" },
-  "/bia/ajustes": { pai: "BIA", filho: "Ajustes" },
 };
+
+const ROTAS_PAINEL = new Set(Object.keys(ESTADO_POR_ROTA));
 
 function textoElemento(elemento: Element) {
   return (elemento.textContent ?? "").replace(/\s+/g, " ").trim();
@@ -125,8 +132,8 @@ export function AdminPathSync() {
 
       const aria = clicavel.getAttribute("aria-label") ?? "";
       if (aria === "Ir para o início") {
-        if (window.location.pathname !== "/admin") {
-          window.history.pushState({}, "", "/admin");
+        if (window.location.pathname !== "/inicio") {
+          window.history.pushState({}, "", "/inicio");
         }
         return;
       }
@@ -145,10 +152,10 @@ export function AdminPathSync() {
       if (!destino) {
         const deveNavegarPai = window.innerWidth < 1024 || !dentroDoHeader;
         if (deveNavegarPai) {
-          if (texto === "Vendas") destino = "/pedidos";
-          else if (texto === "Financeiro") destino = "/entradas";
-          else if (texto === "Cadastros") destino = "/clientes";
-          else if (texto === "BIA") destino = "/bia";
+          if (texto === "Vendas") destino = "/vendas/pedidos";
+          else if (texto === "Financeiro") destino = "/financeiro/entradas";
+          else if (texto === "Cadastros") destino = "/cadastros/produtos";
+          else if (texto === "BIA") destino = "/bia/simulador";
         }
       }
 

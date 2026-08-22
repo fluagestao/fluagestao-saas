@@ -27,24 +27,61 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     return [
+      // Entradas antigas do painel passam a apontar para as rotas canônicas.
+      { source: "/admin", destination: "/inicio", permanent: false },
+
+      { source: "/pedidos", destination: "/vendas/pedidos", permanent: false },
+      { source: "/a-receber", destination: "/vendas/a-receber", permanent: false },
+      { source: "/realizadas", destination: "/vendas/realizadas", permanent: false },
+
+      { source: "/entradas", destination: "/financeiro/entradas", permanent: false },
+      { source: "/saidas", destination: "/financeiro/saidas", permanent: false },
+
+      { source: "/produtos", destination: "/cadastros/produtos", permanent: false },
+      { source: "/colecoes", destination: "/cadastros/colecoes", permanent: false },
+      { source: "/categorias", destination: "/cadastros/categorias", permanent: false },
+      { source: "/etiquetas", destination: "/cadastros/etiquetas", permanent: false },
+      { source: "/insumos", destination: "/cadastros/insumos", permanent: false },
+      { source: "/clientes", destination: "/cadastros/clientes", permanent: false },
+      { source: "/fornecedores", destination: "/cadastros/fornecedores", permanent: false },
+      { source: "/bairros", destination: "/cadastros/bairros", permanent: false },
+      { source: "/horarios", destination: "/cadastros/horarios", permanent: false },
+
+      { source: "/bia", destination: "/bia/simulador", permanent: false },
+
+      { source: "/produtos/novo", destination: "/cadastros/produtos/novo", permanent: false },
+      {
+        source: "/produtos/:id/editar",
+        destination: "/cadastros/produtos/:id/editar",
+        permanent: false,
+      },
       {
         source: "/admin/cadastros/produtos",
-        destination: "/produtos",
+        destination: "/cadastros/produtos",
         permanent: false,
       },
       {
         source: "/admin/cadastros/produtos/novo",
-        destination: "/produtos/novo",
+        destination: "/cadastros/produtos/novo",
         permanent: false,
       },
       {
         source: "/admin/cadastros/produtos/:id/editar",
-        destination: "/produtos/:id/editar",
+        destination: "/cadastros/produtos/:id/editar",
         permanent: false,
       },
       {
         source: "/admin/cadastros/insumos",
-        destination: "/insumos",
+        destination: "/cadastros/insumos",
+        permanent: false,
+      },
+
+      { source: "/admin/conta/empresa", destination: "/conta/empresa", permanent: false },
+      { source: "/admin/conta/plano", destination: "/conta/plano", permanent: false },
+      { source: "/admin/conta/usuarios", destination: "/conta/usuarios", permanent: false },
+      {
+        source: "/admin/conta/configuracoes",
+        destination: "/conta/configuracoes",
         permanent: false,
       },
     ];
@@ -52,30 +89,50 @@ const nextConfig: NextConfig = {
 
   async rewrites() {
     return [
-      { source: "/pedidos", destination: "/admin" },
-      { source: "/a-receber", destination: "/admin" },
-      { source: "/realizadas", destination: "/admin" },
+      // Rotas canônicas do painel. O navegador mantém a URL amigável,
+      // enquanto o conteúdo continua sendo servido pelo painel existente.
+      { source: "/inicio", destination: "/admin" },
+
+      { source: "/vendas/pedidos", destination: "/admin" },
+      { source: "/vendas/a-receber", destination: "/admin" },
+      { source: "/vendas/realizadas", destination: "/admin" },
+
       { source: "/dashboard", destination: "/admin" },
-      { source: "/entradas", destination: "/admin" },
-      { source: "/saidas", destination: "/admin" },
-      { source: "/colecoes", destination: "/admin" },
-      { source: "/categorias", destination: "/admin" },
-      { source: "/etiquetas", destination: "/admin" },
-      { source: "/clientes", destination: "/admin" },
-      { source: "/fornecedores", destination: "/admin" },
-      { source: "/bairros", destination: "/admin" },
-      { source: "/horarios", destination: "/admin" },
+
+      { source: "/financeiro/entradas", destination: "/admin" },
+      { source: "/financeiro/saidas", destination: "/admin" },
+
+      { source: "/cadastros/produtos", destination: "/admin" },
+      { source: "/cadastros/colecoes", destination: "/admin" },
+      { source: "/cadastros/categorias", destination: "/admin" },
+      { source: "/cadastros/etiquetas", destination: "/admin" },
+      { source: "/cadastros/insumos", destination: "/admin" },
+      { source: "/cadastros/clientes", destination: "/admin" },
+      { source: "/cadastros/fornecedores", destination: "/admin" },
+      { source: "/cadastros/bairros", destination: "/admin" },
+      { source: "/cadastros/horarios", destination: "/admin" },
+
       { source: "/tarefas", destination: "/admin" },
-      { source: "/bia", destination: "/admin" },
+
+      { source: "/bia/simulador", destination: "/admin" },
       { source: "/bia/conversas", destination: "/admin" },
       { source: "/bia/ajustes", destination: "/admin" },
+
       {
-        source: "/produtos/novo",
+        source: "/cadastros/produtos/novo",
         destination: "/admin/cadastros/produtos/novo",
       },
       {
-        source: "/produtos/:id/editar",
+        source: "/cadastros/produtos/:id/editar",
         destination: "/admin/cadastros/produtos/:id/editar",
+      },
+
+      { source: "/conta/empresa", destination: "/admin/conta/empresa" },
+      { source: "/conta/plano", destination: "/admin/conta/plano" },
+      { source: "/conta/usuarios", destination: "/admin/conta/usuarios" },
+      {
+        source: "/conta/configuracoes",
+        destination: "/admin/conta/configuracoes",
       },
     ];
   },
