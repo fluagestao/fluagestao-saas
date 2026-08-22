@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, GripVertical, Layers, Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { GripVertical, Loader2, Plus, Search, Trash2, X } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -18,12 +18,9 @@ import { CSS } from "@dnd-kit/utilities";
 
 import { removerProduto, reordenarProdutos } from "@/lib/admin";
 import { formatPreco } from "@/lib/catalog";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { type CatalogoRow, type CategoriaRow, type ProdutoRow } from "./tipos";
 import { useConfirmar } from "./shell";
-
-const CHAVE_FECHADAS = "flua-admin-produtos-fechadas";
 
 function LinhaProduto({
   produto,
@@ -43,7 +40,9 @@ function LinhaProduto({
     opacity: isDragging ? 0.6 : 1,
     zIndex: isDragging ? 20 : undefined,
   };
-  const capa = produto.produto_imagens?.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))[0];
+  const capa = produto.produto_imagens
+    ?.slice()
+    .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))[0];
 
   return (
     <div
@@ -60,11 +59,13 @@ function LinhaProduto({
       >
         <GripVertical className="h-5 w-5" />
       </button>
+
       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[var(--cream-deep)] sm:h-14 sm:w-14">
         {capa && (
           <img src={capa.url} alt="" className="h-full w-full object-cover" loading="lazy" />
         )}
       </div>
+
       <div className="min-w-0">
         <p className="truncate font-medium text-foreground">{produto.nome}</p>
         <p className="truncate text-xs text-muted-foreground">
@@ -78,6 +79,7 @@ function LinhaProduto({
           Código: {produto.slug || produto.id}
         </p>
       </div>
+
       <div className="ml-auto flex shrink-0 items-center gap-1">
         <Button variant="outline" size="sm" onClick={() => onEditar(produto)}>
           Editar
@@ -116,7 +118,9 @@ export function ProdutosPanel({
     if (!alterado) setItens(produtos);
   }, [produtos, alterado]);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+  );
 
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
@@ -140,61 +144,6 @@ export function ProdutosPanel({
     });
   }, [itens, categorias, busca, filtroColecao]);
 
-  const colecoes = useMemo(() => {
-    const byCat = (id: string | null) =>
-      itensFiltrados.filter((p) => (p.categoria_id ?? null) === id);
-    const cats = categorias.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-    const cols = catalogos.slice().sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-
-    const montar = (catsDaColecao: CategoriaRow[]) =>
-      catsDaColecao
-        .map((c) => ({ id: c.id as string | null, nome: c.nome, produtos: byCat(c.id) }))
-        .filter((x) => x.produtos.length > 0);
-
-    const grupos = cols
-      .map((col) => ({
-        id: col.id as string | null,
-        nome: col.nome,
-        categorias: montar(cats.filter((c) => c.catalogo_id === col.id)),
-      }))
-      .filter((g) => g.categorias.length > 0);
-
-    const orfas = montar(
-      cats.filter((c) => !c.catalogo_id || !cols.some((col) => col.id === c.catalogo_id)),
-    );
-    const semCategoria = byCat(null);
-    if (semCategoria.length) {
-      orfas.push({ id: null, nome: "Sem categoria", produtos: semCategoria });
-    }
-    if (orfas.length) grupos.push({ id: null, nome: "Sem coleção", categorias: orfas });
-
-    return grupos;
-  }, [itensFiltrados, categorias, catalogos]);
-
-  const [fechadas, setFechadas] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    try {
-      const salvo = localStorage.getItem(CHAVE_FECHADAS);
-      if (salvo) setFechadas(new Set(JSON.parse(salvo) as string[]));
-    } catch {
-      // modo privado: só não lembra
-    }
-  }, []);
-
-  function alternar(catId: string) {
-    setFechadas((prev) => {
-      const proximo = new Set(prev);
-      if (proximo.has(catId)) proximo.delete(catId);
-      else proximo.add(catId);
-      try {
-        localStorage.setItem(CHAVE_FECHADAS, JSON.stringify([...proximo]));
-      } catch {
-        // modo privado: só não lembra
-      }
-      return proximo;
-    });
-  }
-
   async function excluir(p: ProdutoRow) {
     const ok = await confirmar({
       titulo: `Excluir "${p.nome}"?`,
@@ -203,19 +152,30 @@ export function ProdutosPanel({
       destrutivo: true,
     });
     if (!ok) return;
+
     await removerProduto({ data: { id: p.id } });
     setItens((prev) => prev.filter((x) => x.id !== p.id));
     onChange();
   }
 
-  function onDragEnd(catId: string | null, e: DragEndEvent) {
+  function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
+
+    const ativo = itens.find((p) => p.id === String(active.id));
+    const destino = itens.find((p) => p.id === String(over.id));
+    if (!ativo || !destino) return;
+
+    // Mantém a regra original: reordenação somente entre produtos da mesma categoria.
+    if ((ativo.categoria_id ?? null) !== (destino.categoria_id ?? null)) return;
+
+    const catId = ativo.categoria_id ?? null;
     const grupo = itens.filter((p) => (p.categoria_id ?? null) === catId);
     const ids = grupo.map((p) => p.id);
     const oldIndex = ids.indexOf(String(active.id));
     const newIndex = ids.indexOf(String(over.id));
     if (oldIndex < 0 || newIndex < 0) return;
+
     const novoGrupo = arrayMove(grupo, oldIndex, newIndex);
     const doGrupo = new Set(novoGrupo.map((p) => p.id));
     let i = 0;
@@ -248,9 +208,10 @@ export function ProdutosPanel({
             Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
           </h2>
           <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            Todos os produtos cadastrados. Arraste pelo <GripVertical className="inline h-3.5 w-3.5" /> para reordenar dentro da categoria.
+            Todos os produtos cadastrados. Arraste pelo <GripVertical className="inline h-3.5 w-3.5" /> para reordenar produtos da mesma categoria.
           </p>
         </div>
+
         <Button onClick={onNovo}>
           <Plus className="mr-1.5 h-4 w-4" /> Novo produto
         </Button>
@@ -315,7 +276,7 @@ export function ProdutosPanel({
         <p className="mt-4 rounded-2xl border border-dashed border-[var(--cream-deep)] p-8 text-center text-sm text-muted-foreground">
           Nenhum produto ainda. Clique em “Novo produto”.
         </p>
-      ) : colecoes.length === 0 ? (
+      ) : itensFiltrados.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-[var(--cream-deep)] p-10 text-center">
           <p className="text-sm font-semibold text-foreground">Nenhum produto encontrado</p>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -323,87 +284,27 @@ export function ProdutosPanel({
           </p>
         </div>
       ) : (
-        <div className="mt-5 space-y-8">
-          {colecoes.map((col) => {
-            const total = col.categorias.reduce((t, c) => t + c.produtos.length, 0);
-            const chaveColecao = `col:${col.id ?? "sem"}`;
-            const colecaoFechada = filtrosAtivos ? false : fechadas.has(chaveColecao);
-            return (
-              <section key={col.id ?? "sem-colecao"}>
-                <button
-                  type="button"
-                  onClick={() => alternar(chaveColecao)}
-                  aria-expanded={!colecaoFechada}
-                  className="mb-3 flex w-full items-center gap-2 border-b border-[var(--cream-deep)] pb-2 text-left"
-                >
-                  <ChevronRight
-                    className={cn(
-                      "h-4 w-4 shrink-0 text-[var(--bronze)] transition-transform",
-                      !colecaoFechada && "rotate-90",
-                    )}
-                  />
-                  <Layers className="h-4 w-4 text-[var(--bronze)]" />
-                  <h3 className="text-xl font-semibold text-foreground">{col.nome}</h3>
-                  <span className="text-xs text-muted-foreground">
-                    {total} produto{total === 1 ? "" : "s"}
-                  </span>
-                </button>
-
-                <div className={cn("space-y-4 pl-2", colecaoFechada && "hidden")}>
-                  {col.categorias.map((g) => {
-                    const chave = g.id ?? `sem-categoria-${col.id ?? "orfas"}`;
-                    const fechada = filtrosAtivos ? false : fechadas.has(chave);
-                    return (
-                      <div key={chave}>
-                        <button
-                          type="button"
-                          onClick={() => alternar(chave)}
-                          className="mb-2.5 flex w-full items-center gap-2 text-left"
-                          aria-expanded={!fechada}
-                        >
-                          <ChevronRight
-                            className={cn(
-                              "h-4 w-4 shrink-0 text-[var(--bronze)] transition-transform",
-                              !fechada && "rotate-90",
-                            )}
-                          />
-                          <h4 className="text-lg font-semibold text-foreground">{g.nome}</h4>
-                          <span className="text-xs text-muted-foreground">
-                            ({g.produtos.length})
-                          </span>
-                        </button>
-
-                        {!fechada && (
-                          <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={(e) => onDragEnd(g.id, e)}
-                          >
-                            <SortableContext
-                              items={g.produtos.map((p) => p.id)}
-                              strategy={verticalListSortingStrategy}
-                            >
-                              <div className="space-y-2 pl-6">
-                                {g.produtos.map((p) => (
-                                  <LinhaProduto
-                                    key={p.id}
-                                    produto={p}
-                                    onEditar={onEditar}
-                                    onExcluir={excluir}
-                                  />
-                                ))}
-                              </div>
-                            </SortableContext>
-                          </DndContext>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={onDragEnd}
+        >
+          <SortableContext
+            items={itensFiltrados.map((p) => p.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="mt-5 space-y-2">
+              {itensFiltrados.map((p) => (
+                <LinhaProduto
+                  key={p.id}
+                  produto={p}
+                  onEditar={onEditar}
+                  onExcluir={excluir}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {alterado && (
