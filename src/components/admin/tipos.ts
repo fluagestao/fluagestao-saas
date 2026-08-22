@@ -25,6 +25,14 @@ export type CategoriaRow = {
   catalogo_id: string | null;
 };
 
+export type EtiquetaRow = {
+  id: string;
+  nome: string;
+  cor: string | null;
+  ativo: boolean;
+  ordem: number | null;
+};
+
 export type ImagemRow = { id: string; url: string; ordem: number | null };
 
 export type ProdutoRow = {
