@@ -14,6 +14,13 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   listarInsumos,
@@ -74,8 +81,6 @@ export function InsumosPanel() {
   }
 
   useEffect(() => {
-    // Insumos possui rota própria. Quando a aba for aberta a partir de outra
-    // tela do painel, sincronizamos a URL sem recarregar a aplicação.
     if (window.location.pathname !== "/insumos") {
       window.history.replaceState(window.history.state, "", "/insumos");
     }
@@ -239,17 +244,18 @@ export function InsumosPanel() {
             placeholder="Ex.: Vinho Campo Largo 900 ml"
             className="h-11"
           />
-          <select
-            value={unidade}
-            onChange={(e) => setUnidade(e.target.value as UnidadeInsumo)}
-            className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
-          >
-            {UNIDADES.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </select>
+          <Select value={unidade} onValueChange={(value) => setUnidade(value as UnidadeInsumo)}>
+            <SelectTrigger className="h-11 rounded-xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {UNIDADES.map((item) => (
+                <SelectItem key={item.value} value={item.value}>
+                  {item.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             value={quantidade}
             onChange={(e) => setQuantidade(e.target.value)}
@@ -436,19 +442,18 @@ export function InsumosPanel() {
 
               <label className="space-y-1.5 text-sm font-medium">
                 Tipo
-                <select
-                  value={editUnidade}
-                  onChange={(e) =>
-                    setEditUnidade(e.target.value as UnidadeInsumo)
-                  }
-                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
-                >
-                  {UNIDADES.map((item) => (
-                    <option key={item.value} value={item.value}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
+                <Select value={editUnidade} onValueChange={(value) => setEditUnidade(value as UnidadeInsumo)}>
+                  <SelectTrigger className="h-11 rounded-xl">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {UNIDADES.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </label>
 
               <label className="space-y-1.5 text-sm font-medium">
