@@ -1,6 +1,14 @@
 "use client";
 
-import { PackagePlus, Pencil, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  PackagePlus,
+  Pencil,
+  Search,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -16,6 +24,8 @@ import {
 } from "@/lib/insumos";
 import { mensagemDeErro } from "@/lib/erros";
 import { PageHeader, useConfirmar } from "./shell";
+
+const ITENS_POR_PAGINA = 7;
 
 const UNIDADES: { value: UnidadeInsumo; label: string }[] = [
   { value: "UN", label: "Unidade" },
@@ -37,6 +47,7 @@ function moeda(valor: number) {
 export function InsumosPanel() {
   const [insumos, setInsumos] = useState<InsumoRow[]>([]);
   const [busca, setBusca] = useState("");
+  const [pagina, setPagina] = useState(1);
   const [nome, setNome] = useState("");
   const [unidade, setUnidade] = useState<UnidadeInsumo>("UN");
   const [quantidade, setQuantidade] = useState("1");
@@ -63,6 +74,11 @@ export function InsumosPanel() {
   }
 
   useEffect(() => {
+    // Insumos possui rota própria. Quando a aba for aberta a partir de outra
+    // tela do painel, sincronizamos a URL sem recarregar a aplicação.
+    if (window.location.pathname !== "/insumos") {
+      window.history.replaceState(window.history.state, "", "/insumos");
+    }
     carregar();
   }, []);
 
@@ -73,6 +89,21 @@ export function InsumosPanel() {
       `${item.nome} ${item.unidade}`.toLocaleLowerCase("pt-BR").includes(termo),
     );
   }, [busca, insumos]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / ITENS_POR_PAGINA));
+
+  const itensPagina = useMemo(() => {
+    const inicio = (pagina - 1) * ITENS_POR_PAGINA;
+    return filtrados.slice(inicio, inicio + ITENS_POR_PAGINA);
+  }, [filtrados, pagina]);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [busca]);
+
+  useEffect(() => {
+    if (pagina > totalPaginas) setPagina(totalPaginas);
+  }, [pagina, totalPaginas]);
 
   async function adicionar() {
     const quantidadeNumero = Number(quantidade.replace(",", "."));
@@ -106,6 +137,7 @@ export function InsumosPanel() {
       setUnidade("UN");
       setQuantidade("1");
       setCusto("");
+      setPagina(1);
       toast.success("Insumo cadastrado.");
       await carregar();
     } catch (e) {
@@ -168,7 +200,8 @@ export function InsumosPanel() {
   async function excluir(item: InsumoRow) {
     const ok = await confirmar({
       titulo: `Excluir "${item.nome}"?`,
-      descricao: "Se ele estiver sendo usado na composição de um produto, a exclusão será bloqueada.",
+      descricao:
+        "Se ele estiver sendo usado na composição de um produto, a exclusão será bloqueada.",
       confirmar: "Excluir",
       destrutivo: true,
     });
@@ -183,8 +216,11 @@ export function InsumosPanel() {
     }
   }
 
+  const inicioExibido = filtrados.length === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
+  const fimExibido = Math.min(pagina * ITENS_POR_PAGINA, filtrados.length);
+
   return (
-    <section>
+    <section className="xl:h-[calc(100dvh-122px)] xl:overflow-hidden">
       <PageHeader
         titulo="Insumos"
         descricao="Cadastre tudo o que entra na montagem dos produtos. O custo de cada produto será calculado pela quantidade usada de cada insumo."
@@ -209,7 +245,9 @@ export function InsumosPanel() {
             className="h-11 rounded-xl border border-input bg-background px-3 text-sm"
           >
             {UNIDADES.map((item) => (
-              <option key={item.value} value={item.value}>{item.label}</option>
+              <option key={item.value} value={item.value}>
+                {item.label}
+              </option>
             ))}
           </select>
           <Input
@@ -247,34 +285,122 @@ export function InsumosPanel() {
 
       <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--cream-deep)] bg-card">
         <div className="grid grid-cols-[minmax(240px,1.6fr)_110px_140px_170px_120px_90px] gap-3 border-b border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-          <span>Insumo</span><span>Tipo</span><span>Qtd. base</span><span>Custo unitário</span><span>Status</span><span>Ações</span>
+          <span>Insumo</span>
+          <span>Tipo</span>
+          <span>Qtd. base</span>
+          <span>Custo unitário</span>
+          <span>Status</span>
+          <span>Ações</span>
         </div>
 
         {carregando ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando insumos...</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Carregando insumos...
+          </div>
         ) : filtrados.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Nenhum insumo cadastrado.</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Nenhum insumo cadastrado.
+          </div>
         ) : (
-          filtrados.map((item) => (
-            <div key={item.id} className="grid grid-cols-[minmax(240px,1.6fr)_110px_140px_170px_120px_90px] items-center gap-3 border-b border-[var(--cream-deep)] px-4 py-3 last:border-b-0">
-              <span className="truncate text-sm font-semibold text-foreground">{item.nome}</span>
-              <span className="text-sm text-[var(--admin-ink-soft)]">{item.unidade}</span>
-              <span className="text-sm tabular-nums text-[var(--admin-ink-soft)]">{String(item.quantidade_referencia).replace(".", ",")}</span>
-              <span className="text-sm font-bold text-[var(--wine)]">{moeda(item.custo_referencia)} / {item.unidade}</span>
+          itensPagina.map((item) => (
+            <div
+              key={item.id}
+              className="grid min-h-[54px] grid-cols-[minmax(240px,1.6fr)_110px_140px_170px_120px_90px] items-center gap-3 border-b border-[var(--cream-deep)] px-4 py-2.5 last:border-b-0"
+            >
+              <span className="truncate text-sm font-semibold text-foreground">
+                {item.nome}
+              </span>
+              <span className="text-sm text-[var(--admin-ink-soft)]">
+                {item.unidade}
+              </span>
+              <span className="text-sm tabular-nums text-[var(--admin-ink-soft)]">
+                {String(item.quantidade_referencia).replace(".", ",")}
+              </span>
+              <span className="text-sm font-bold text-[var(--wine)]">
+                {moeda(item.custo_referencia)} / {item.unidade}
+              </span>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--cream-soft)] px-2.5 py-1 text-xs font-medium text-[var(--admin-ink-soft)]">
-                <span className={`h-2 w-2 rounded-full ${item.ativo ? "bg-emerald-500" : "bg-zinc-400"}`} />
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    item.ativo ? "bg-emerald-500" : "bg-zinc-400"
+                  }`}
+                />
                 {item.ativo ? "Ativo" : "Inativo"}
               </span>
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" onClick={() => abrirEdicao(item)} aria-label={`Editar ${item.nome}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => abrirEdicao(item)}
+                  aria-label={`Editar ${item.nome}`}
+                >
                   <Pencil className="h-4 w-4 text-[var(--terracotta)]" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => excluir(item)} aria-label={`Excluir ${item.nome}`}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => excluir(item)}
+                  aria-label={`Excluir ${item.nome}`}
+                >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
             </div>
           ))
+        )}
+      </div>
+
+      <div className="mt-3 flex h-10 items-center justify-between gap-4">
+        <p className="text-xs text-muted-foreground">
+          {filtrados.length === 0
+            ? "Nenhum insumo"
+            : `Exibindo ${inicioExibido}–${fimExibido} de ${filtrados.length} insumos`}
+        </p>
+
+        {totalPaginas > 1 && (
+          <div className="flex items-center gap-1.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
+              disabled={pagina === 1}
+              className="h-8 px-2.5"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            {Array.from({ length: totalPaginas }, (_, index) => index + 1).map(
+              (numero) => (
+                <button
+                  key={numero}
+                  type="button"
+                  onClick={() => setPagina(numero)}
+                  className={`grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
+                    pagina === numero
+                      ? "bg-[var(--terracotta)] text-white"
+                      : "border border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)] hover:bg-[var(--cream)]"
+                  }`}
+                  aria-label={`Ir para página ${numero}`}
+                >
+                  {numero}
+                </button>
+              ),
+            )}
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                setPagina((atual) => Math.min(totalPaginas, atual + 1))
+              }
+              disabled={pagina === totalPaginas}
+              className="h-8 px-2.5"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         )}
       </div>
 
@@ -284,34 +410,65 @@ export function InsumosPanel() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold">Editar insumo</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Altere os dados e salve. A lista abaixo permanece bloqueada para edição direta.</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Altere os dados e salve. A listagem permanece bloqueada para edição direta.
+                </p>
               </div>
-              <button type="button" onClick={() => setEditando(null)} className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-[var(--cream-soft)]" aria-label="Fechar">
+              <button
+                type="button"
+                onClick={() => setEditando(null)}
+                className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-[var(--cream-soft)]"
+                aria-label="Fechar"
+              >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="sm:col-span-2 space-y-1.5 text-sm font-medium">
+              <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
                 Nome
-                <Input value={editNome} onChange={(e) => setEditNome(e.target.value)} className="h-11" />
+                <Input
+                  value={editNome}
+                  onChange={(e) => setEditNome(e.target.value)}
+                  className="h-11"
+                />
               </label>
 
               <label className="space-y-1.5 text-sm font-medium">
                 Tipo
-                <select value={editUnidade} onChange={(e) => setEditUnidade(e.target.value as UnidadeInsumo)} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm">
-                  {UNIDADES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+                <select
+                  value={editUnidade}
+                  onChange={(e) =>
+                    setEditUnidade(e.target.value as UnidadeInsumo)
+                  }
+                  className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm"
+                >
+                  {UNIDADES.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
                 </select>
               </label>
 
               <label className="space-y-1.5 text-sm font-medium">
                 Quantidade base
-                <Input value={editQuantidade} onChange={(e) => setEditQuantidade(e.target.value)} inputMode="decimal" className="h-11" />
+                <Input
+                  value={editQuantidade}
+                  onChange={(e) => setEditQuantidade(e.target.value)}
+                  inputMode="decimal"
+                  className="h-11"
+                />
               </label>
 
               <label className="space-y-1.5 text-sm font-medium">
                 Custo unitário (R$)
-                <Input value={editCusto} onChange={(e) => setEditCusto(e.target.value)} inputMode="decimal" className="h-11" />
+                <Input
+                  value={editCusto}
+                  onChange={(e) => setEditCusto(e.target.value)}
+                  inputMode="decimal"
+                  className="h-11"
+                />
               </label>
 
               <div className="flex items-end">
@@ -323,8 +480,16 @@ export function InsumosPanel() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditando(null)} disabled={salvando}>Cancelar</Button>
-              <Button onClick={salvarEdicao} disabled={salvando}>Salvar alterações</Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditando(null)}
+                disabled={salvando}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={salvarEdicao} disabled={salvando}>
+                Salvar alterações
+              </Button>
             </div>
           </div>
         </div>
