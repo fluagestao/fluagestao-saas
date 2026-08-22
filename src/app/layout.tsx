@@ -6,6 +6,7 @@ import "./admin-fill.css";
 import "./panel-shell.css";
 import "./flua-hero-visual.css";
 import "./flua-hero-background.css";
+import "./flua-hero-background-fix.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
 import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
