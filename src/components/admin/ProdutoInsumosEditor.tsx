@@ -7,15 +7,27 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   listarComposicaoProduto,
   salvarComposicaoProduto,
   type InsumoRow,
 } from "@/lib/insumos";
 import { mensagemDeErro } from "@/lib/erros";
 
-type ItemComposicao = {
+export type ItemComposicaoProduto = {
   insumoId: string;
   quantidade: number;
+};
+
+type ChangePayload = {
+  itens: ItemComposicaoProduto[];
+  custoTotal: number;
 };
 
 function moeda(valor: number) {
@@ -28,11 +40,15 @@ function moeda(valor: number) {
 export function ProdutoInsumosEditor({
   produtoId,
   insumos,
+  autoSave = true,
+  onChange,
 }: {
   produtoId: string;
   insumos: InsumoRow[];
+  autoSave?: boolean;
+  onChange?: (payload: ChangePayload) => void;
 }) {
-  const [itens, setItens] = useState<ItemComposicao[]>([]);
+  const [itens, setItens] = useState<ItemComposicaoProduto[]>([]);
   const [novoInsumoId, setNovoInsumoId] = useState("");
   const [salvando, setSalvando] = useState(false);
 
@@ -61,8 +77,14 @@ export function ProdutoInsumosEditor({
     [itens, insumos],
   );
 
-  async function persistir(proximos: ItemComposicao[]) {
+  useEffect(() => {
+    onChange?.({ itens, custoTotal });
+  }, [itens, custoTotal, onChange]);
+
+  async function aplicar(proximos: ItemComposicaoProduto[]) {
     setItens(proximos);
+    if (!autoSave) return;
+
     setSalvando(true);
     try {
       await salvarComposicaoProduto({
@@ -80,14 +102,14 @@ export function ProdutoInsumosEditor({
 
   function adicionar() {
     if (!novoInsumoId || itens.some((item) => item.insumoId === novoInsumoId)) return;
-    persistir([...itens, { insumoId: novoInsumoId, quantidade: 1 }]);
+    aplicar([...itens, { insumoId: novoInsumoId, quantidade: 1 }]);
     setNovoInsumoId("");
   }
 
   function alterarQuantidade(insumoId: string, valor: string) {
     const numero = Number(valor.replace(",", "."));
     if (!Number.isFinite(numero) || numero <= 0) return;
-    persistir(
+    aplicar(
       itens.map((item) =>
         item.insumoId === insumoId ? { ...item, quantidade: numero } : item,
       ),
@@ -95,45 +117,56 @@ export function ProdutoInsumosEditor({
   }
 
   function remover(insumoId: string) {
-    persistir(itens.filter((item) => item.insumoId !== insumoId));
+    aplicar(itens.filter((item) => item.insumoId !== insumoId));
   }
 
   return (
-    <div className="mt-5 border-t border-[var(--admin-border)] pt-4">
+    <div>
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Insumos do produto</h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">O custo é calculado pela quantidade usada × custo unitário.</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Informe os itens e a quantidade usada em cada produto.
+          </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Custo estimado</p>
-          <p className="text-base font-bold text-[var(--terracotta)]">{moeda(custoTotal)}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
+            Custo estimado
+          </p>
+          <p className="text-lg font-bold text-[var(--terracotta)]">{moeda(custoTotal)}</p>
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2">
-        <select
-          value={novoInsumoId}
-          onChange={(e) => setNovoInsumoId(e.target.value)}
-          className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-2.5 text-xs"
+      <div className="mt-4 flex gap-2">
+        <Select value={novoInsumoId} onValueChange={setNovoInsumoId}>
+          <SelectTrigger className="h-10 min-w-0 flex-1">
+            <SelectValue placeholder="Selecionar insumo" />
+          </SelectTrigger>
+          <SelectContent>
+            {ativos
+              .filter((insumo) => !itens.some((item) => item.insumoId === insumo.id))
+              .map((insumo) => (
+                <SelectItem key={insumo.id} value={insumo.id}>
+                  {insumo.nome} · {insumo.unidade}
+                </SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={adicionar}
+          disabled={!novoInsumoId || salvando}
+          className="h-10"
         >
-          <option value="">Selecionar insumo</option>
-          {ativos
-            .filter((insumo) => !itens.some((item) => item.insumoId === insumo.id))
-            .map((insumo) => (
-              <option key={insumo.id} value={insumo.id}>
-                {insumo.nome} · {insumo.unidade}
-              </option>
-            ))}
-        </select>
-        <Button type="button" size="sm" variant="outline" onClick={adicionar} disabled={!novoInsumoId || salvando}>
           <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar
         </Button>
       </div>
 
-      <div className="mt-3 max-h-[210px] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin]">
+      <div className="mt-4 max-h-[280px] space-y-2 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {itens.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--admin-border)] px-3 py-4 text-center text-xs text-muted-foreground">
+          <div className="rounded-2xl border border-dashed border-[var(--admin-border)] px-3 py-6 text-center text-xs text-muted-foreground">
             Nenhum insumo adicionado.
           </div>
         ) : (
@@ -142,7 +175,10 @@ export function ProdutoInsumosEditor({
             if (!insumo) return null;
             const custo = item.quantidade * insumo.custo_referencia;
             return (
-              <div key={item.insumoId} className="grid grid-cols-[minmax(0,1fr)_76px_76px_30px] items-center gap-2 rounded-xl bg-[var(--cream-soft)] px-2.5 py-2">
+              <div
+                key={item.insumoId}
+                className="grid grid-cols-[minmax(0,1fr)_92px_104px_34px] items-center gap-2 rounded-2xl bg-[var(--cream-soft)] px-3 py-2.5"
+              >
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">{insumo.nome}</p>
                   <p className="text-[10px] text-muted-foreground">
@@ -154,11 +190,18 @@ export function ProdutoInsumosEditor({
                   defaultValue={String(item.quantidade).replace(".", ",")}
                   onBlur={(e) => alterarQuantidade(item.insumoId, e.target.value)}
                   inputMode="decimal"
-                  className="h-8 px-2 text-xs"
+                  className="h-9 px-2 text-xs"
                   aria-label={`Quantidade de ${insumo.nome}`}
                 />
-                <span className="text-right text-xs font-semibold text-[var(--wine)]">{moeda(custo)}</span>
-                <button type="button" onClick={() => remover(item.insumoId)} className="grid h-7 w-7 place-items-center rounded-lg text-destructive hover:bg-red-50" aria-label={`Remover ${insumo.nome}`}>
+                <span className="text-right text-xs font-semibold text-[var(--wine)]">
+                  {moeda(custo)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => remover(item.insumoId)}
+                  className="grid h-8 w-8 place-items-center rounded-xl text-destructive hover:bg-red-50"
+                  aria-label={`Remover ${insumo.nome}`}
+                >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
