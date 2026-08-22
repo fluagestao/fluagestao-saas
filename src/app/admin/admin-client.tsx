@@ -138,10 +138,12 @@ export default function AdminClient({
   email,
   displayName,
   companyName,
+  initialAba = "inicio",
 }: {
   email: string;
   displayName: string;
   companyName: string;
+  initialAba?: AbaId;
 }) {
   const [catalogos, setCatalogos] = useState<CatalogoRow[]>([]);
   const [categorias, setCategorias] = useState<CategoriaRow[]>([]);
@@ -151,7 +153,7 @@ export default function AdminClient({
   const [erro, setErro] = useState<string | null>(null);
   const [editando, setEditando] = useState<ProdutoRow | "novo" | null>(null);
 
-  const [aba, setAba] = useState<AbaId>("inicio");
+  const [aba, setAba] = useState<AbaId>(initialAba);
   const [subVendas, setSubVendas] = useState<SubVendas>("pedidos");
   const [subBia, setSubBia] = useState<SubBia>("simulador");
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
