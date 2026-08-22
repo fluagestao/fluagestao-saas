@@ -1,0 +1,56 @@
+/* Ajuste final da tela Início em desktops altos.
+   Mantém o painel sem rolagem, mas usa melhor a altura disponível. */
+
+@media (min-width: 1024px) and (min-height: 821px) {
+  main > section:has(button[aria-label="Mudar meu nome"]) {
+    height: calc(100dvh - 84px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > * {
+    margin-top: 0 !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside {
+    min-height: 132px;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > article,
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child {
+    height: 100%;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) article:first-child > div:nth-of-type(2) {
+    height: clamp(170px, 22dvh, 255px) !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > div {
+    min-height: 54px !important;
+  }
+}
+
+/* Monitores muito altos ganham um pouco mais de presença visual sem criar scroll. */
+@media (min-width: 1280px) and (min-height: 950px) {
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside {
+    min-height: 145px;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article {
+    min-height: 78px !important;
+  }
+}
