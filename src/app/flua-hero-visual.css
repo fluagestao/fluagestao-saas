@@ -1,262 +1,349 @@
-/* Hero da landing: interface real em HTML/CSS, sem screenshot colado. */
-.flua2-site .flua2-hero {
-  min-height: auto !important;
-  padding-top: 88px !important;
+/* Hero da landing: composição real em HTML/CSS inspirada na referência visual. */
+.flua2-site .flua2-hero{
+  min-height:auto!important;
+  padding-top:90px!important;
   background:
-    radial-gradient(circle at 13% 13%, rgba(232, 182, 150, .16), transparent 28%),
-    radial-gradient(circle at 84% 22%, rgba(255, 239, 220, .07), transparent 25%),
-    linear-gradient(135deg, #5e2d2c 0%, #6f3432 40%, #7f3c37 72%, #8c463f 100%) !important;
+    radial-gradient(circle at 9% 10%,rgba(236,176,145,.18),transparent 25%),
+    radial-gradient(circle at 88% 18%,rgba(255,235,215,.08),transparent 23%),
+    linear-gradient(135deg,#5f2d2d 0%,#713532 39%,#813d38 72%,#91463f 100%)!important;
 }
 
-.flua2-site .flua2-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
+.flua2-site .flua2-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
   background:
-    linear-gradient(90deg, rgba(44, 17, 17, .18), transparent 35%, transparent 78%, rgba(44, 17, 17, .12)),
-    radial-gradient(ellipse at 55% 42%, rgba(255, 255, 255, .055), transparent 58%);
+    radial-gradient(ellipse at 51% 45%,rgba(255,255,255,.045),transparent 57%),
+    linear-gradient(90deg,rgba(38,13,13,.16),transparent 31%,transparent 76%,rgba(38,13,13,.11));
 }
 
-.flua2-site .flua2-hero::after {
-  content: "" !important;
-  position: absolute !important;
-  inset: auto -12% 150px !important;
-  z-index: 1 !important;
-  height: 230px !important;
-  pointer-events: none;
-  background: radial-gradient(ellipse at center, rgba(255,255,255,.075), transparent 68%) !important;
+.flua2-site .flua2-hero::after{
+  content:""!important;
+  position:absolute!important;
+  inset:auto -10% 175px!important;
+  z-index:1!important;
+  height:270px!important;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(255,255,255,.07),transparent 68%)!important;
 }
 
-/* Mantém apenas as fotos decorativas nas bordas. O produto central é todo código. */
-.flua2-site .flua2-product-preview {
-  display: block !important;
-  position: relative !important;
-  z-index: 18 !important;
-  width: 100% !important;
-  max-width: 890px !important;
-  margin-left: auto !important;
+/* Fotos somente como decoração lateral, com bordas dissolvidas no fundo. */
+.flua2-site .flua2-decor{
+  display:block!important;
+  z-index:4!important;
+  overflow:hidden!important;
+  pointer-events:none!important;
+  filter:saturate(.96) contrast(1.01) brightness(.92);
+}
+.flua2-site .flua2-decor img{object-fit:cover!important;}
+
+.flua2-site .flua2-decor-gift{
+  left:-84px!important;
+  bottom:42px!important;
+  width:445px!important;
+  height:405px!important;
+  opacity:.94!important;
+  transform:rotate(-1.5deg)!important;
+  -webkit-mask-image:radial-gradient(ellipse at 36% 72%,#000 47%,rgba(0,0,0,.95) 60%,transparent 91%)!important;
+  mask-image:radial-gradient(ellipse at 36% 72%,#000 47%,rgba(0,0,0,.95) 60%,transparent 91%)!important;
+}
+.flua2-site .flua2-decor-gift img{object-position:42% 63%!important;}
+
+.flua2-site .flua2-decor-box{
+  right:26px!important;
+  top:70px!important;
+  width:375px!important;
+  height:420px!important;
+  opacity:.9!important;
+  -webkit-mask-image:radial-gradient(ellipse at 61% 46%,#000 45%,rgba(0,0,0,.95) 61%,transparent 90%)!important;
+  mask-image:radial-gradient(ellipse at 61% 46%,#000 45%,rgba(0,0,0,.95) 61%,transparent 90%)!important;
+}
+.flua2-site .flua2-decor-box img{object-position:54% 48%!important;}
+
+.flua2-site .flua2-decor-board{
+  right:-72px!important;
+  bottom:8px!important;
+  width:465px!important;
+  height:400px!important;
+  opacity:.96!important;
+  -webkit-mask-image:radial-gradient(ellipse at 72% 67%,#000 48%,rgba(0,0,0,.96) 62%,transparent 91%)!important;
+  mask-image:radial-gradient(ellipse at 72% 67%,#000 48%,rgba(0,0,0,.96) 62%,transparent 91%)!important;
+}
+.flua2-site .flua2-decor-board img{object-position:62% 65%!important;}
+
+/* Estrutura: texto à esquerda e mockup amplo à direita. */
+.flua2-site .flua2-hero-layout{
+  position:relative!important;
+  z-index:10!important;
+  min-height:720px!important;
+  grid-template-columns:minmax(430px,520px) minmax(760px,1fr)!important;
+  gap:clamp(42px,4vw,70px)!important;
+  align-items:start!important;
+  padding:58px 0 78px!important;
 }
 
-.flua2-site .flua2-decor {
-  display: block !important;
-  z-index: 3 !important;
-  filter: saturate(.9) contrast(.96);
+.flua2-site .flua2-hero-copy{
+  position:relative!important;
+  z-index:24!important;
+  max-width:535px!important;
+  padding-top:34px!important;
+  padding-bottom:8px!important;
 }
 
-.flua2-site .flua2-decor-gift {
-  left: -52px !important;
-  bottom: 152px !important;
-  width: 245px !important;
-  height: 305px !important;
-  opacity: .48 !important;
+.flua2-site .flua2-eyebrow{
+  margin-bottom:18px!important;
+  color:#efc8aa!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  letter-spacing:.13em!important;
 }
 
-.flua2-site .flua2-decor-board {
-  right: -44px !important;
-  bottom: 145px !important;
-  width: 250px !important;
-  height: 330px !important;
-  opacity: .52 !important;
+.flua2-site .flua2-hero h1{
+  max-width:520px!important;
+  font-family:var(--font-flua-serif),Georgia,serif!important;
+  font-size:clamp(54px,4.1vw,70px)!important;
+  line-height:.95!important;
+  letter-spacing:-.032em!important;
+  font-weight:600!important;
+  color:#fff9f1!important;
+  text-wrap:balance;
+  text-shadow:0 2px 22px rgba(40,13,13,.14);
 }
 
-.flua2-site .flua2-decor-box {
-  right: 22px !important;
-  top: 88px !important;
-  width: 275px !important;
-  height: 235px !important;
-  opacity: .28 !important;
+.flua2-site .flua2-lead{
+  max-width:520px!important;
+  margin-top:24px!important;
+  color:#e7b58c!important;
+  font-family:var(--font-flua-serif),Georgia,serif!important;
+  font-size:clamp(22px,1.42vw,27px)!important;
+  line-height:1.28!important;
+  font-weight:500!important;
 }
 
-.flua2-site .flua2-hero-layout {
-  position: relative !important;
-  z-index: 10 !important;
-  min-height: 610px !important;
-  grid-template-columns: minmax(420px, .82fr) minmax(650px, 1.28fr) !important;
-  gap: clamp(34px, 3.5vw, 62px) !important;
-  align-items: center !important;
-  padding: 28px 0 48px !important;
+.flua2-site .flua2-supporting{
+  max-width:515px!important;
+  margin-top:18px!important;
+  color:rgba(255,255,255,.93)!important;
+  font-size:14px!important;
+  line-height:1.62!important;
+  font-weight:400!important;
 }
 
-.flua2-site .flua2-hero-copy {
-  max-width: 610px !important;
-  padding-bottom: 4px !important;
+.flua2-site .flua2-nav-links{font-weight:650!important;}
+.flua2-site .flua2-btn{font-weight:700!important;}
+.flua2-site .flua2-hero-actions{margin-top:28px!important;}
+.flua2-site .flua2-trust-row{margin-top:24px!important;gap:12px 22px!important;}
+
+/* Produto central: maior e mais próximo das proporções da referência. */
+.flua2-site .flua2-product-preview{
+  display:block!important;
+  position:relative!important;
+  z-index:18!important;
+  width:100%!important;
+  max-width:930px!important;
+  margin-left:auto!important;
+  margin-top:4px!important;
 }
 
-.flua2-site .flua2-eyebrow {
-  margin-bottom: 17px !important;
-  color: #efc6a8 !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  letter-spacing: .13em !important;
+.flua2-site .flua2-app-window{
+  min-height:410px!important;
+  grid-template-columns:130px 1fr!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.7)!important;
+  border-radius:19px!important;
+  background:#fffaf4!important;
+  box-shadow:0 34px 82px rgba(42,15,14,.29)!important;
+  transform:none!important;
+  backface-visibility:hidden;
 }
 
-.flua2-site .flua2-hero h1 {
-  max-width: 600px !important;
-  font-family: var(--font-flua-serif), Georgia, serif !important;
-  font-size: clamp(52px, 4.45vw, 73px) !important;
-  line-height: .96 !important;
-  letter-spacing: -.032em !important;
-  font-weight: 600 !important;
-  color: #fff9f1 !important;
-  text-wrap: balance;
-  text-shadow: 0 2px 22px rgba(40, 13, 13, .14);
+.flua2-site .flua2-app-sidebar{
+  padding:23px 16px!important;
+  background:linear-gradient(180deg,#65312f,#542725)!important;
+}
+.flua2-site .flua2-app-sidebar>strong{font-size:24px!important;margin-bottom:22px!important;}
+.flua2-site .flua2-app-sidebar nav{gap:6px!important;}
+.flua2-site .flua2-app-sidebar nav span{min-height:31px!important;font-size:10px!important;}
+
+.flua2-site .flua2-app-main{padding:24px 23px!important;}
+.flua2-site .flua2-app-topline h2{font-size:18px!important;font-weight:700!important;}
+.flua2-site .flua2-app-topline small{font-size:9px!important;}
+.flua2-site .flua2-app-topline>span{font-size:9px!important;}
+
+.flua2-site .flua2-kpi-grid{gap:9px!important;margin-top:17px!important;}
+.flua2-site .flua2-kpi-grid>div{padding:12px 11px!important;border-radius:10px!important;background:#fffdf9!important;}
+.flua2-site .flua2-kpi-grid small{font-size:8px!important;}
+.flua2-site .flua2-kpi-grid strong{font-size:16px!important;}
+.flua2-site .flua2-kpi-grid span{font-size:7px!important;}
+
+.flua2-site .flua2-orders-card{margin-top:15px!important;border-radius:11px!important;}
+.flua2-site .flua2-card-heading{min-height:41px!important;padding:0 14px!important;}
+.flua2-site .flua2-orders-list{padding:0 14px!important;}
+.flua2-site .flua2-orders-list p{
+  min-height:40px!important;
+  grid-template-columns:48px minmax(124px,1.2fr) minmax(92px,1fr) 76px 94px!important;
+  gap:8px!important;
+  font-size:8px!important;
 }
 
-.flua2-site .flua2-lead {
-  max-width: 570px !important;
-  margin-top: 21px !important;
-  color: #e8b78d !important;
-  font-family: var(--font-flua-serif), Georgia, serif !important;
-  font-size: clamp(22px, 1.42vw, 27px) !important;
-  line-height: 1.3 !important;
-  font-weight: 500 !important;
-  letter-spacing: -.008em !important;
+/* Três cards inferiores, mais largos e com a mesma leitura da arte de referência. */
+.flua2-site .flua2-mini-grid{
+  width:101.5%!important;
+  margin-top:15px!important;
+  margin-left:-1.5%!important;
+  transform:none!important;
+  grid-template-columns:1.02fr 1.08fr 1.02fr!important;
+  gap:13px!important;
 }
 
-.flua2-site .flua2-supporting {
-  max-width: 560px !important;
-  margin-top: 18px !important;
-  color: rgba(255,255,255,.92) !important;
-  font-size: 14px !important;
-  line-height: 1.62 !important;
-  font-weight: 400 !important;
+.flua2-site .flua2-mini-card{
+  min-height:205px!important;
+  padding:15px!important;
+  border-radius:15px!important;
+  border:1px solid rgba(255,255,255,.8)!important;
+  background:#fffaf4!important;
+  box-shadow:0 20px 48px rgba(43,16,15,.19)!important;
 }
+.flua2-site .flua2-mini-heading strong{font-size:10px!important;}
+.flua2-site .flua2-mini-heading>span{font-size:7px!important;}
+.flua2-site .flua2-mini-card>small{margin-top:10px!important;font-size:7px!important;}
+.flua2-site .flua2-timeline{margin-top:8px!important;}
+.flua2-site .flua2-timeline p{padding-top:7px!important;padding-bottom:7px!important;}
 
-.flua2-site .flua2-nav-links { font-weight: 650 !important; }
-.flua2-site .flua2-btn { font-weight: 700 !important; }
-
-/* Dashboard: sem perspectiva/scale para preservar nitidez do texto. */
-.flua2-site .flua2-app-window {
-  min-height: 382px !important;
-  grid-template-columns: 122px 1fr !important;
-  border: 1px solid rgba(255,255,255,.66) !important;
-  border-radius: 19px !important;
-  background: #fffaf4 !important;
-  box-shadow: 0 28px 70px rgba(45, 17, 16, .27) !important;
-  transform: none !important;
-  backface-visibility: hidden;
+/* Produção com miniaturas reais usando as fotos decorativas existentes. */
+.flua2-site .flua2-production-list{margin-top:12px!important;gap:10px!important;}
+.flua2-site .flua2-production-list p{
+  position:relative!important;
+  min-height:42px!important;
+  grid-template-columns:minmax(120px,1.25fr) .72fr 28px!important;
+  gap:8px!important;
+  padding-left:46px!important;
 }
-
-.flua2-site .flua2-app-sidebar {
-  background: linear-gradient(180deg, #663230, #542826) !important;
+.flua2-site .flua2-production-list p::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:50%;
+  width:38px;
+  height:38px;
+  border-radius:8px;
+  transform:translateY(-50%);
+  background-size:cover;
+  background-position:center;
+  box-shadow:0 5px 12px rgba(72,35,31,.16);
 }
+.flua2-site .flua2-production-list p:nth-child(1)::before{background-image:url("/flua-decor-gift.jpg");background-position:38% 58%;}
+.flua2-site .flua2-production-list p:nth-child(2)::before{background-image:url("/flua-decor-box.jpg");background-position:55% 48%;}
+.flua2-site .flua2-production-list p:nth-child(3)::before{background-image:url("/flua-decor-board.jpg");background-position:60% 64%;}
+.flua2-site .flua2-production-list p>span b{font-size:8px!important;}
+.flua2-site .flua2-production-list p>span small{font-size:6px!important;}
+.flua2-site .flua2-production-list p>i{height:4px!important;}
+.flua2-site .flua2-production-list p>em{font-size:7px!important;}
 
-.flua2-site .flua2-app-main { padding: 23px !important; }
-.flua2-site .flua2-app-topline h2 { font-size: 18px !important; font-weight: 700 !important; }
-.flua2-site .flua2-kpi-grid { gap: 9px !important; margin-top: 16px !important; }
-.flua2-site .flua2-kpi-grid > div { padding: 11px 10px !important; background: #fffdf9 !important; }
-.flua2-site .flua2-kpi-grid small { font-size: 8px !important; }
-.flua2-site .flua2-kpi-grid strong { font-size: 16px !important; }
-.flua2-site .flua2-orders-list p { min-height: 37px !important; font-size: 8px !important; }
+.flua2-site .flua2-finance-values{margin-top:11px!important;gap:7px!important;}
+.flua2-site .flua2-finance-values div{padding:9px!important;}
+.flua2-site .flua2-balance{margin-top:9px!important;padding:9px!important;}
+.flua2-site .flua2-balance svg{height:38px!important;margin-top:3px!important;}
 
-.flua2-site .flua2-mini-grid {
-  width: 100% !important;
-  margin-top: 12px !important;
-  transform: none !important;
-  grid-template-columns: 1.08fr 1fr 1.04fr !important;
-  gap: 11px !important;
+/* A faixa seguinte não encosta nem corta o hero. */
+.flua2-site .flua2-feature-ribbon{
+  position:relative!important;
+  left:auto!important;
+  right:auto!important;
+  bottom:auto!important;
+  z-index:25!important;
+  min-height:170px!important;
+  padding:26px 0 24px!important;
+  margin-top:0!important;
+  border-radius:36px 36px 0 0!important;
 }
-
-.flua2-site .flua2-mini-card {
-  min-height: 166px !important;
-  padding: 14px !important;
-  border-radius: 14px !important;
-  border-color: rgba(255,255,255,.78) !important;
-  background: #fffaf4 !important;
-  box-shadow: 0 18px 44px rgba(45,17,16,.18) !important;
+.flua2-site .flua2-feature-ribbon>.flua2-shell>p{
+  margin-bottom:20px!important;
+  font-family:var(--font-flua-serif),Georgia,serif!important;
+  font-size:18px!important;
+  font-weight:600!important;
 }
-
-.flua2-site .flua2-mini-heading strong { font-size: 10px !important; }
-.flua2-site .flua2-mini-card > small { margin-top: 9px !important; }
-.flua2-site .flua2-timeline p { padding-top: 5px !important; padding-bottom: 5px !important; }
-.flua2-site .flua2-production-list { margin-top: 11px !important; gap: 9px !important; }
-.flua2-site .flua2-balance svg { height: 29px !important; }
-
-/* A faixa de funcionalidades entra no fluxo normal: nunca cobre o dashboard. */
-.flua2-site .flua2-feature-ribbon {
-  position: relative !important;
-  left: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  z-index: 25 !important;
-  min-height: 158px !important;
-  padding: 24px 0 23px !important;
-  margin-top: 0 !important;
-  border-radius: 34px 34px 0 0 !important;
-}
-
-.flua2-site .flua2-feature-ribbon > .flua2-shell > p {
-  margin-bottom: 19px !important;
-  font-family: var(--font-flua-serif), Georgia, serif !important;
-  font-size: 18px !important;
-  font-weight: 600 !important;
-}
-
-.flua2-site .flua2-feature-strip { gap: 14px !important; }
-.flua2-site .flua2-feature-strip article { grid-template-columns: 36px 1fr !important; gap: 9px !important; }
-.flua2-site .flua2-feature-icon { width: 36px !important; height: 36px !important; }
+.flua2-site .flua2-feature-strip{gap:15px!important;}
+.flua2-site .flua2-feature-strip article{grid-template-columns:36px 1fr!important;gap:9px!important;}
+.flua2-site .flua2-feature-icon{width:36px!important;height:36px!important;}
 
 .flua2-site .flua2-section h2,
 .flua2-site .flua2-audience-cards span,
-.flua2-site .flua2-benefit-grid span {
-  font-family: var(--font-flua-serif), Georgia, serif !important;
+.flua2-site .flua2-benefit-grid span{
+  font-family:var(--font-flua-serif),Georgia,serif!important;
 }
 
-@media (max-width: 1320px) {
-  .flua2-site .flua2-hero-layout {
-    grid-template-columns: minmax(390px, .82fr) minmax(560px, 1.18fr) !important;
-    gap: 30px !important;
+@media(max-width:1500px){
+  .flua2-site .flua2-shell{width:min(1380px,calc(100% - 54px))!important;}
+  .flua2-site .flua2-hero-layout{
+    grid-template-columns:minmax(405px,500px) minmax(710px,1fr)!important;
+    gap:38px!important;
   }
-  .flua2-site .flua2-product-preview { max-width: 760px !important; }
-  .flua2-site .flua2-hero h1 { font-size: clamp(49px, 4.4vw, 64px) !important; }
+  .flua2-site .flua2-product-preview{max-width:875px!important;}
+  .flua2-site .flua2-decor-gift{width:390px!important;height:365px!important;left:-92px!important;}
+  .flua2-site .flua2-decor-board{width:405px!important;height:365px!important;right:-82px!important;}
+  .flua2-site .flua2-decor-box{width:330px!important;height:370px!important;right:5px!important;}
 }
 
-@media (max-width: 1080px) {
-  .flua2-site .flua2-hero-layout {
-    grid-template-columns: 1fr !important;
-    min-height: auto !important;
-    padding-top: 42px !important;
+@media(max-width:1320px){
+  .flua2-site .flua2-shell{width:min(1240px,calc(100% - 48px))!important;}
+  .flua2-site .flua2-hero-layout{
+    grid-template-columns:minmax(380px,.8fr) minmax(590px,1.2fr)!important;
+    gap:30px!important;
+    padding-top:46px!important;
   }
-  .flua2-site .flua2-hero-copy {
-    max-width: 760px !important;
-    margin: 0 auto !important;
-    text-align: center !important;
+  .flua2-site .flua2-product-preview{max-width:760px!important;}
+  .flua2-site .flua2-hero h1{font-size:clamp(49px,4.4vw,62px)!important;}
+  .flua2-site .flua2-decor-gift{opacity:.72!important;width:330px!important;height:320px!important;}
+  .flua2-site .flua2-decor-board{opacity:.76!important;width:350px!important;height:320px!important;}
+  .flua2-site .flua2-decor-box{opacity:.62!important;width:285px!important;height:320px!important;}
+}
+
+@media(max-width:1080px){
+  .flua2-site .flua2-hero-layout{
+    grid-template-columns:1fr!important;
+    min-height:auto!important;
+    padding:42px 0 55px!important;
   }
-  .flua2-site .flua2-product-preview {
-    max-width: 800px !important;
-    margin: 8px auto 0 !important;
+  .flua2-site .flua2-hero-copy{
+    max-width:760px!important;
+    margin:0 auto!important;
+    text-align:center!important;
+    padding-top:4px!important;
   }
-  .flua2-site .flua2-decor { display: none !important; }
+  .flua2-site .flua2-product-preview{
+    max-width:820px!important;
+    margin:12px auto 0!important;
+  }
+  .flua2-site .flua2-decor{opacity:.18!important;}
   .flua2-site .flua2-eyebrow,
   .flua2-site .flua2-hero-actions,
-  .flua2-site .flua2-trust-row { justify-content: center !important; }
+  .flua2-site .flua2-trust-row{justify-content:center!important;}
   .flua2-site .flua2-hero h1,
   .flua2-site .flua2-lead,
-  .flua2-site .flua2-supporting { margin-left: auto !important; margin-right: auto !important; }
+  .flua2-site .flua2-supporting{margin-left:auto!important;margin-right:auto!important;}
 }
 
-@media (max-width: 820px) {
-  .flua2-site .flua2-hero { padding-top: 78px !important; }
-  .flua2-site .flua2-hero-layout { padding: 25px 0 38px !important; }
-  .flua2-site .flua2-product-preview { max-width: 740px !important; }
-  .flua2-site .flua2-feature-ribbon { min-height: 250px !important; }
-  .flua2-site .flua2-feature-strip { grid-template-columns: repeat(2, 1fr) !important; }
+@media(max-width:820px){
+  .flua2-site .flua2-hero{padding-top:78px!important;}
+  .flua2-site .flua2-hero-layout{padding:24px 0 40px!important;}
+  .flua2-site .flua2-product-preview{max-width:740px!important;}
+  .flua2-site .flua2-decor{display:none!important;}
+  .flua2-site .flua2-feature-ribbon{min-height:250px!important;}
+  .flua2-site .flua2-feature-strip{grid-template-columns:repeat(2,1fr)!important;}
 }
 
-@media (max-width: 640px) {
-  .flua2-site .flua2-hero { padding-top: 68px !important; }
-  .flua2-site .flua2-hero-layout { padding: 18px 0 28px !important; }
-  .flua2-site .flua2-hero h1 {
-    font-size: clamp(41px, 11.8vw, 52px) !important;
-    line-height: .97 !important;
-  }
-  .flua2-site .flua2-lead { font-size: 20px !important; }
-  .flua2-site .flua2-supporting { font-size: 14px !important; }
-  .flua2-site .flua2-product-preview { margin-top: 3px !important; }
-  .flua2-site .flua2-mini-grid { grid-template-columns: 1fr !important; }
-  .flua2-site .flua2-mini-card { min-height: 120px !important; }
-  .flua2-site .flua2-feature-ribbon { min-height: 470px !important; border-radius: 28px 28px 0 0 !important; }
-  .flua2-site .flua2-feature-strip { grid-template-columns: 1fr !important; }
+@media(max-width:640px){
+  .flua2-site .flua2-hero{padding-top:68px!important;}
+  .flua2-site .flua2-hero-layout{padding:18px 0 30px!important;}
+  .flua2-site .flua2-hero h1{font-size:clamp(41px,11.8vw,52px)!important;line-height:.97!important;}
+  .flua2-site .flua2-lead{font-size:20px!important;}
+  .flua2-site .flua2-supporting{font-size:14px!important;}
+  .flua2-site .flua2-product-preview{margin-top:4px!important;}
+  .flua2-site .flua2-mini-grid{grid-template-columns:1fr!important;width:100%!important;margin-left:0!important;}
+  .flua2-site .flua2-mini-card{min-height:122px!important;}
+  .flua2-site .flua2-feature-ribbon{min-height:470px!important;border-radius:28px 28px 0 0!important;}
+  .flua2-site .flua2-feature-strip{grid-template-columns:1fr!important;}
 }
