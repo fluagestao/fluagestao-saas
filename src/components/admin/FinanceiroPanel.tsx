@@ -3,6 +3,7 @@ import { ArrowDownCircle, ArrowUpCircle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { mensagemDeErro } from "@/lib/erros";
@@ -12,7 +13,6 @@ import { porDia, resumoDoCaixa, type Movimento } from "@/lib/caixa";
 import { formatBRL } from "@/lib/vendas";
 import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
 
-/** "12,50", "12.50" e "R$ 12,50" — o teclado do celular varia. */
 function paraNumero(v: string): number {
   const n = Number(v.replace(/[^\d,.-]/g, "").replace(",", "."));
   return Number.isFinite(n) ? n : 0;
@@ -85,7 +85,6 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         }
       />
 
-      {/* saldo do período: os três números que interessam, sempre à vista */}
       <div className="mt-4 grid gap-2 sm:grid-cols-3">
         <Cartao rotulo="Entrou" valor={resumo.entradas} cor="var(--whatsapp)" />
         <Cartao rotulo="Saiu" valor={resumo.saidas} cor="var(--terracotta)" />
@@ -97,7 +96,6 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         />
       </div>
 
-      {/* período */}
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {atalhos.map((a) => (
           <button
@@ -117,18 +115,19 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
             {a.label}
           </button>
         ))}
-        <Input
-          type="date"
+
+        <DatePickerField
           value={de}
-          onChange={(e) => setDe(e.target.value)}
-          className="h-9 w-[9.5rem]"
+          onChange={setDe}
+          ariaLabel="Data inicial"
+          className="h-9 w-[10.5rem]"
         />
         <span className="text-sm text-muted-foreground">até</span>
-        <Input
-          type="date"
+        <DatePickerField
           value={ate}
-          onChange={(e) => setAte(e.target.value)}
-          className="h-9 w-[9.5rem]"
+          onChange={setAte}
+          ariaLabel="Data final"
+          className="h-9 w-[10.5rem]"
         />
       </div>
 
@@ -221,13 +220,6 @@ function Cartao({
   );
 }
 
-/**
- * Lançamento em uma linha só.
- *
- * Sem diálogo, sem categoria, sem plano de contas: data (já vem hoje), valor,
- * o que foi e de quem. Enter salva e o foco volta pro valor, para lançar a
- * nota inteira do mercado sem tirar a mão do teclado.
- */
 function NovoLancamento({
   tipo,
   fornecedores,
@@ -261,7 +253,6 @@ function NovoLancamento({
       toast.success(tipo === "entrada" ? "Entrada lançada." : "Saída lançada.");
       setValor("");
       setDescricao("");
-      // Fornecedor e data ficam: quem lança uma nota lança várias do mesmo dia.
       document.getElementById("campo-valor")?.focus();
       onSalvo();
     } catch (e) {
@@ -275,11 +266,11 @@ function NovoLancamento({
       <div className="flex flex-wrap items-end gap-2">
         <label className="block">
           <span className="mb-1 block text-xs font-medium text-muted-foreground">Dia</span>
-          <Input
-            type="date"
+          <DatePickerField
             value={data}
-            onChange={(e) => setData(e.target.value)}
-            className="h-10 w-[9.5rem]"
+            onChange={setData}
+            ariaLabel="Dia do lançamento"
+            className="h-10 w-[10.5rem]"
           />
         </label>
         <label className="block">
@@ -317,7 +308,6 @@ function NovoLancamento({
               list="fornecedores-usados"
               className="h-10 w-40"
             />
-            {/* Sugere quem já foi digitado, sem obrigar a cadastrar antes. */}
             <datalist id="fornecedores-usados">
               {fornecedores.map((f) => (
                 <option key={f} value={f} />
@@ -340,7 +330,6 @@ function mesPassado(): { de: string; ate: string } {
   const anoAnterior = mes === 1 ? ano - 1 : ano;
   const mesAnterior = mes === 1 ? 12 : mes - 1;
   const mm = String(mesAnterior).padStart(2, "0");
-  // Dia 0 do mês seguinte é o último dia do mês anterior.
   const ultimo = new Date(Date.UTC(anoAnterior, mesAnterior, 0)).getUTCDate();
   return { de: `${anoAnterior}-${mm}-01`, ate: `${anoAnterior}-${mm}-${ultimo}` };
 }

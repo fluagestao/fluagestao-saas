@@ -6,9 +6,18 @@ import { removerCategoria, salvarCategoria } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { CORES_DESTAQUE, type CatalogoRow, type CategoriaRow } from "./tipos";
 import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
+
+const SEM_COLECAO = "sem";
 
 export function CategoriasPanel({
   categorias,
@@ -20,7 +29,7 @@ export function CategoriasPanel({
   onChange: () => void;
 }) {
   const [nome, setNome] = useState("");
-  const [catalogoId, setCatalogoId] = useState("");
+  const [catalogoId, setCatalogoId] = useState(SEM_COLECAO);
   const [busca, setBusca] = useState("");
   const [salvando, setSalvando] = useState(false);
   const confirmar = useConfirmar();
@@ -69,11 +78,11 @@ export function CategoriasPanel({
           nome: nomeLimpo,
           ordem: categorias.length,
           ativa: true,
-          catalogo_id: catalogoId || null,
+          catalogo_id: catalogoId === SEM_COLECAO ? null : catalogoId,
         },
       });
       setNome("");
-      setCatalogoId("");
+      setCatalogoId(SEM_COLECAO);
       toast.success(`Categoria "${nomeLimpo}" criada.`);
       onChange();
     } finally {
@@ -103,6 +112,19 @@ export function CategoriasPanel({
     onChange();
   }
 
+  const opcoesColecao = (
+    <>
+      <SelectItem value={SEM_COLECAO} className="rounded-2xl px-4 py-3">
+        Sem coleção
+      </SelectItem>
+      {catalogosOrdenados.map((catalogo) => (
+        <SelectItem key={catalogo.id} value={catalogo.id} className="rounded-2xl px-4 py-3">
+          {catalogo.nome}
+        </SelectItem>
+      ))}
+    </>
+  );
+
   return (
     <section>
       <PageHeader
@@ -120,19 +142,18 @@ export function CategoriasPanel({
             className="h-11"
           />
 
-          <select
-            value={catalogoId}
-            onChange={(e) => setCatalogoId(e.target.value)}
-            className="h-11 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 text-sm outline-none focus:border-[var(--terracotta)]"
-            aria-label="Coleção da categoria"
-          >
-            <option value="">Sem coleção</option>
-            {catalogosOrdenados.map((catalogo) => (
-              <option key={catalogo.id} value={catalogo.id}>
-                {catalogo.nome}
-              </option>
-            ))}
-          </select>
+          <Select value={catalogoId} onValueChange={setCatalogoId}>
+            <SelectTrigger className="h-11 rounded-xl border-[var(--cream-deep)] px-4">
+              <SelectValue placeholder="Sem coleção" />
+            </SelectTrigger>
+            <SelectContent
+              align="end"
+              sideOffset={8}
+              className="min-w-[280px] rounded-3xl border border-[var(--cream-deep)] bg-white p-2 shadow-[0_22px_55px_rgba(84,52,48,0.18)]"
+            >
+              {opcoesColecao}
+            </SelectContent>
+          </Select>
 
           <Button onClick={criarCategoria} disabled={salvando || !nome.trim()} className="h-11">
             <Plus className="mr-1.5 h-4 w-4" /> Nova categoria
@@ -170,35 +191,35 @@ export function CategoriasPanel({
                 defaultValue={categoria.nome}
                 onBlur={(e) => {
                   const valor = e.target.value.trim();
-                  if (valor && valor !== categoria.nome) {
-                    atualizarCategoria(categoria, { nome: valor });
-                  }
+                  if (valor && valor !== categoria.nome) atualizarCategoria(categoria, { nome: valor });
                 }}
                 className="h-10 font-medium"
               />
 
-              <select
-                value={categoria.catalogo_id ?? ""}
-                onChange={(e) =>
-                  atualizarCategoria(categoria, { catalogo_id: e.target.value || null })
+              <Select
+                value={categoria.catalogo_id ?? SEM_COLECAO}
+                onValueChange={(valor) =>
+                  atualizarCategoria(categoria, {
+                    catalogo_id: valor === SEM_COLECAO ? null : valor,
+                  })
                 }
-                className="h-10 rounded-xl border border-[var(--cream-deep)] bg-white px-3 text-sm outline-none focus:border-[var(--terracotta)]"
               >
-                <option value="">Sem coleção</option>
-                {catalogosOrdenados.map((catalogo) => (
-                  <option key={catalogo.id} value={catalogo.id}>
-                    {catalogo.nome}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 rounded-xl border-[var(--cream-deep)] px-4 text-sm">
+                  <SelectValue placeholder="Sem coleção" />
+                </SelectTrigger>
+                <SelectContent
+                  sideOffset={8}
+                  className="min-w-[240px] rounded-3xl border border-[var(--cream-deep)] bg-white p-2 shadow-[0_22px_55px_rgba(84,52,48,0.18)]"
+                >
+                  {opcoesColecao}
+                </SelectContent>
+              </Select>
 
               <Input
                 defaultValue={categoria.subtitulo ?? ""}
                 onBlur={(e) => {
                   const valor = e.target.value.trim() || null;
-                  if (valor !== (categoria.subtitulo ?? null)) {
-                    atualizarCategoria(categoria, { subtitulo: valor });
-                  }
+                  if (valor !== (categoria.subtitulo ?? null)) atualizarCategoria(categoria, { subtitulo: valor });
                 }}
                 placeholder="Descrição curta (opcional)"
                 className="h-10 text-sm"
@@ -216,9 +237,7 @@ export function CategoriasPanel({
                       aria-label={`Cor ${cor.nome}`}
                       className={cn(
                         "grid h-6 w-6 place-items-center rounded-full border text-[9px] transition-transform hover:scale-110",
-                        selecionada
-                          ? "ring-2 ring-foreground ring-offset-1"
-                          : "border-[var(--cream-deep)]",
+                        selecionada ? "ring-2 ring-foreground ring-offset-1" : "border-[var(--cream-deep)]",
                       )}
                       style={cor.valor ? { backgroundColor: cor.valor } : undefined}
                     >

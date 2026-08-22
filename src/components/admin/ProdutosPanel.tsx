@@ -1,24 +1,9 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { GripVertical, Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-  arrayMove,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 
-import { removerProduto, reordenarProdutos, salvarProduto } from "@/lib/admin";
+import { removerProduto, salvarProduto } from "@/lib/admin";
 import { formatPreco } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,39 +34,14 @@ function LinhaProduto({
   onExcluir: (p: ProdutoRow) => void;
   onVisibilidade: (p: ProdutoRow, ativo: boolean) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: produto.id,
-  });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.6 : 1,
-    zIndex: isDragging ? 20 : undefined,
-  };
   const capa = produto.produto_imagens
     ?.slice()
     .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))[0];
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center gap-2 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 sm:gap-3"
-    >
-      <button
-        type="button"
-        aria-label="Arrastar para reordenar"
-        className="shrink-0 cursor-grab touch-none rounded-md p-1 text-[var(--bronze)] transition-colors hover:bg-[var(--cream-deep)]/60 active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-5 w-5" />
-      </button>
-
+    <div className="flex items-center gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3">
       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-[var(--cream-deep)] sm:h-14 sm:w-14">
-        {capa && (
-          <img src={capa.url} alt="" className="h-full w-full object-cover" loading="lazy" />
-        )}
+        {capa && <img src={capa.url} alt="" className="h-full w-full object-cover" loading="lazy" />}
       </div>
 
       <div className="min-w-0">
@@ -132,20 +92,15 @@ export function ProdutosPanel({
   onEditar: (p: ProdutoRow) => void;
   onChange: () => void;
 }) {
+  void onNovo;
   const [itens, setItens] = useState<ProdutoRow[]>(produtos);
   const confirmar = useConfirmar();
-  const [alterado, setAlterado] = useState(false);
-  const [salvandoOrdem, setSalvandoOrdem] = useState(false);
   const [busca, setBusca] = useState("");
   const [filtroColecao, setFiltroColecao] = useState("todas");
 
   useEffect(() => {
-    if (!alterado) setItens(produtos);
-  }, [produtos, alterado]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-  );
+    setItens(produtos);
+  }, [produtos]);
 
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
@@ -166,12 +121,7 @@ export function ProdutosPanel({
       const slug = (produto.slug ?? "").toLocaleLowerCase("pt-BR");
       const id = produto.id.toLocaleLowerCase("pt-BR");
 
-      return (
-        nome.includes(termo) ||
-        codigo.includes(termo) ||
-        slug.includes(termo) ||
-        id.includes(termo)
-      );
+      return nome.includes(termo) || codigo.includes(termo) || slug.includes(termo) || id.includes(termo);
     });
   }, [itens, categorias, busca, filtroColecao]);
 
@@ -191,9 +141,7 @@ export function ProdutosPanel({
 
   async function alterarVisibilidade(p: ProdutoRow, ativo: boolean) {
     const anterior = p.ativo !== false;
-    setItens((prev) =>
-      prev.map((item) => (item.id === p.id ? { ...item, ativo } : item)),
-    );
+    setItens((prev) => prev.map((item) => (item.id === p.id ? { ...item, ativo } : item)));
 
     try {
       await salvarProduto({
@@ -216,50 +164,9 @@ export function ProdutosPanel({
       toast.success(ativo ? "Produto visível no site." : "Produto ocultado do site.");
       onChange();
     } catch {
-      setItens((prev) =>
-        prev.map((item) => (item.id === p.id ? { ...item, ativo: anterior } : item)),
-      );
+      setItens((prev) => prev.map((item) => (item.id === p.id ? { ...item, ativo: anterior } : item)));
       toast.error("Não foi possível alterar a visibilidade do produto.");
     }
-  }
-
-  function onDragEnd(e: DragEndEvent) {
-    const { active, over } = e;
-    if (!over || active.id === over.id) return;
-
-    const ativo = itens.find((p) => p.id === String(active.id));
-    const destino = itens.find((p) => p.id === String(over.id));
-    if (!ativo || !destino) return;
-
-    if ((ativo.categoria_id ?? null) !== (destino.categoria_id ?? null)) return;
-
-    const catId = ativo.categoria_id ?? null;
-    const grupo = itens.filter((p) => (p.categoria_id ?? null) === catId);
-    const ids = grupo.map((p) => p.id);
-    const oldIndex = ids.indexOf(String(active.id));
-    const newIndex = ids.indexOf(String(over.id));
-    if (oldIndex < 0 || newIndex < 0) return;
-
-    const novoGrupo = arrayMove(grupo, oldIndex, newIndex);
-    const doGrupo = new Set(novoGrupo.map((p) => p.id));
-    let i = 0;
-    setItens((prev) => prev.map((p) => (doGrupo.has(p.id) ? novoGrupo[i++] : p)));
-    setAlterado(true);
-  }
-
-  async function salvarOrdem() {
-    setSalvandoOrdem(true);
-    try {
-      await reordenarProdutos({ data: { ids: itens.map((p) => p.id) } });
-      setAlterado(false);
-    } finally {
-      setSalvandoOrdem(false);
-    }
-  }
-
-  function desfazer() {
-    setItens(produtos);
-    setAlterado(false);
   }
 
   const filtrosAtivos = busca.trim() !== "" || filtroColecao !== "todas";
@@ -267,14 +174,9 @@ export function ProdutosPanel({
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
-          </h2>
-          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-            Todos os produtos cadastrados. Arraste pelo <GripVertical className="inline h-3.5 w-3.5" /> para reordenar produtos da mesma categoria.
-          </p>
-        </div>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground">
+          Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
+        </h2>
 
         <Button asChild>
           <Link href="/cadastros/produtos/novo">
@@ -356,49 +258,19 @@ export function ProdutosPanel({
       ) : itensFiltrados.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-[var(--cream-deep)] p-10 text-center">
           <p className="text-sm font-semibold text-foreground">Nenhum produto encontrado</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Tente outro nome, código ou coleção.
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">Tente outro nome, código ou coleção.</p>
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={onDragEnd}
-        >
-          <SortableContext
-            items={itensFiltrados.map((p) => p.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="mt-5 space-y-2">
-              {itensFiltrados.map((p) => (
-                <LinhaProduto
-                  key={p.id}
-                  produto={p}
-                  onEditar={onEditar}
-                  onExcluir={excluir}
-                  onVisibilidade={alterarVisibilidade}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      )}
-
-      {alterado && (
-        <div className="sticky bottom-3 z-10 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--terracotta)]/40 bg-card p-3 shadow-[var(--shadow-lift)]">
-          <span className="text-sm font-medium text-foreground">
-            Você reorganizou os produtos — salve para aplicar.
-          </span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={desfazer} disabled={salvandoOrdem}>
-              Desfazer
-            </Button>
-            <Button size="sm" onClick={salvarOrdem} disabled={salvandoOrdem}>
-              {salvandoOrdem && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-              Salvar ordem
-            </Button>
-          </div>
+        <div className="mt-5 space-y-2">
+          {itensFiltrados.map((p) => (
+            <LinhaProduto
+              key={p.id}
+              produto={p}
+              onEditar={onEditar}
+              onExcluir={excluir}
+              onVisibilidade={alterarVisibilidade}
+            />
+          ))}
         </div>
       )}
     </section>
