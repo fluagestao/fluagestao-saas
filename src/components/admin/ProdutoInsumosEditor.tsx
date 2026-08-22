@@ -218,7 +218,6 @@ export function ProdutoInsumosEditor({
                     Quantidade
                   </p>
                   <Input
-                    key={`${item.insumoId}-${item.quantidade}`}
                     defaultValue={String(item.quantidade).replace(".", ",")}
                     onChange={(e) => alterarQuantidade(item.insumoId, e.target.value)}
                     inputMode="decimal"
