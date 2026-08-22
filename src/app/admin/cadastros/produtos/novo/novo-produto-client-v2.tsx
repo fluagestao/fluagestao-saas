@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { toast, Toaster } from "sonner";
 
+import { ProdutoInsumosEditor } from "@/components/admin/ProdutoInsumosEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,7 @@ import {
   reordenarImagens,
   salvarProduto,
 } from "@/lib/admin";
+import type { InsumoRow } from "@/lib/insumos";
 import { mensagemDeErro } from "@/lib/erros";
 import { cn } from "@/lib/utils";
 import {
@@ -47,6 +49,7 @@ export function NovoProdutoClient({
   categorias,
   catalogos,
   etiquetas,
+  insumos,
   companyName,
   displayName,
   draft,
@@ -54,6 +57,7 @@ export function NovoProdutoClient({
   categorias: CategoriaRow[];
   catalogos: CatalogoRow[];
   etiquetas: EtiquetaRow[];
+  insumos: InsumoRow[];
   companyName: string;
   displayName: string;
   draft: DraftProduto;
@@ -276,7 +280,7 @@ export function NovoProdutoClient({
           </div>
         </div>
 
-        <div className="grid gap-4 xl:h-[calc(100%-86px)] xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="grid gap-4 xl:h-[calc(100%-86px)] xl:grid-cols-[minmax(0,1fr)_380px]">
           <section className="rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] xl:overflow-hidden">
             <div className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
@@ -404,11 +408,11 @@ export function NovoProdutoClient({
 
               <Campo label="Descrição do produto">
                 <Textarea
-                  rows={5}
+                  rows={4}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Descreva o produto, diferenciais, tamanho, apresentação ou outras informações importantes."
-                  className="min-h-[132px] resize-none xl:min-h-[118px]"
+                  className="min-h-[110px] resize-none xl:min-h-[96px]"
                 />
               </Campo>
 
@@ -416,12 +420,12 @@ export function NovoProdutoClient({
             </div>
           </section>
 
-          <aside className="self-start rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] xl:h-full xl:overflow-hidden">
+          <aside className="self-start rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] xl:h-full xl:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <h2 className="text-base font-semibold">Fotos do produto</h2>
             <p className="mt-1 text-xs text-muted-foreground">Você já pode adicionar as fotos antes de salvar.</p>
             <p className="mt-1 text-xs font-medium text-[var(--terracotta)]">Recomendado: 500 × 500 px, formato quadrado.</p>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid max-h-[245px] grid-cols-2 gap-3 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {imagens.map((img, index) => (
                 <div key={img.id} className="group relative aspect-square overflow-hidden rounded-2xl bg-[var(--cream-deep)]">
                   <img src={img.url} alt="" className="h-full w-full object-cover" />
@@ -453,6 +457,8 @@ export function NovoProdutoClient({
                 />
               </label>
             </div>
+
+            <ProdutoInsumosEditor produtoId={draft.id} insumos={insumos} />
           </aside>
         </div>
       </main>
