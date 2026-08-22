@@ -1,6 +1,5 @@
-import { useState } from "react";
-import { ChevronLeft, ChevronRight, ImageIcon, Loader2, Plus, Trash2, Upload, X } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo, useState } from "react";
+import { Check, ChevronLeft, ChevronRight, Loader2, Plus, Upload, X } from "lucide-react";
 
 import {
   enviarImagem,
@@ -34,9 +33,7 @@ import {
   type ImagemRow,
   type ProdutoRow,
 } from "./tipos";
-import { useConfirmar } from "./shell";
 
-// ---------- dialog de edição de produto ----------
 export function ProdutoDialog({
   produto,
   categorias,
@@ -53,12 +50,13 @@ export function ProdutoDialog({
   const [id, setId] = useState<string | undefined>(produto?.id);
   const [nome, setNome] = useState(produto?.nome ?? "");
   const [categoriaId, setCategoriaId] = useState<string | "">(produto?.categoria_id ?? "");
+  const [categoriasAbertas, setCategoriasAbertas] = useState(false);
   const [preco, setPreco] = useState<string>(produto?.preco != null ? String(produto.preco) : "");
   const [precoLabel, setPrecoLabel] = useState(produto?.preco_label ?? "");
   const [serve, setServe] = useState(produto?.serve ?? "");
   const [itens, setItens] = useState(asStringArray(produto?.itens).join("\n"));
-  const [precosExtra, setPrecosExtra] = useState(asPrecosExtra(produto?.precos_extra));
-  const [observacao, setObservacao] = useState(produto?.observacao ?? "");
+  const [precosExtra] = useState(asPrecosExtra(produto?.precos_extra));
+  const [descricao, setDescricao] = useState(produto?.observacao ?? "");
   const [ativo, setAtivo] = useState(produto?.ativo ?? true);
   const [ordem, setOrdem] = useState<string>(String(produto?.ordem ?? 0));
   const [badge, setBadge] = useState(produto?.badge ?? "");
@@ -71,25 +69,65 @@ export function ProdutoDialog({
   const [erro, setErro] = useState<string | null>(null);
 
   const slugAtual = produto?.slug ?? slugFromNome(nome);
+  const categoriaSelecionada = categorias.find((categoria) => categoria.id === categoriaId);
+
+  const categoriasOrdenadas = useMemo(() => {
+    const ordemCatalogos = new Map(
+      catalogos
+        .slice()
+        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+        .map((catalogo, index) => [catalogo.id, index]),
+    );
+
+    return categorias.slice().sort((a, b) => {
+      const ordemA = a.catalogo_id ? (ordemCatalogos.get(a.catalogo_id) ?? 999) : 999;
+      const ordemB = b.catalogo_id ? (ordemCatalogos.get(b.catalogo_id) ?? 999) : 999;
+      if (ordemA !== ordemB) return ordemA - ordemB;
+      return (a.ordem ?? 0) - (b.ordem ?? 0);
+    });
+  }, [categorias, catalogos]);
+
+  function rotuloCategoria(categoria: CategoriaRow) {
+    const colecao = catalogos.find((catalogo) => catalogo.id === categoria.catalogo_id);
+    return colecao ? `${colecao.nome} · ${categoria.nome}` : categoria.nome;
+  }
 
   async function salvar() {
     setErro(null);
+
+    const nomeLimpo = nome.trim();
+    const valorPreco = Number(preco.replace(",", "."));
+    const listaItens = itens
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (!nomeLimpo) {
+      setErro("Informe o nome do produto.");
+      return;
+    }
+    if (!preco.trim() || Number.isNaN(valorPreco) || valorPreco < 0) {
+      setErro("Informe um preço válido para o produto.");
+      return;
+    }
+    if (listaItens.length === 0) {
+      setErro("Informe pelo menos um item na descrição da composição do produto.");
+      return;
+    }
+
     setSalvando(true);
     try {
       const res = await salvarProduto({
         data: {
           id,
-          nome: nome.trim(),
+          nome: nomeLimpo,
           categoria_id: categoriaId || null,
-          preco: preco.trim() === "" ? null : Number(preco.replace(",", ".")),
+          preco: valorPreco,
           preco_label: precoLabel.trim() || null,
           serve: serve.trim() || null,
-          itens: itens
-            .split("\n")
-            .map((s) => s.trim())
-            .filter(Boolean),
+          itens: listaItens,
           precos_extra: precosExtra.filter((p) => p.label.trim() && p.valor >= 0),
-          observacao: observacao.trim() || null,
+          observacao: descricao.trim() || null,
           ativo,
           ordem: Number(ordem) || 0,
           badge: badge.trim() || null,
@@ -100,8 +138,9 @@ export function ProdutoDialog({
       onSaved();
     } catch (e) {
       setErro(mensagemDeErro(e, "salvar"));
+    } finally {
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   async function adicionarFoto(file: File) {
@@ -120,8 +159,9 @@ export function ProdutoDialog({
       onSaved();
     } catch (e) {
       setErro(mensagemDeErro(e, "enviar foto"));
+    } finally {
+      setEnviando(false);
     }
-    setEnviando(false);
   }
 
   async function excluirFoto(img: ImagemRow) {
@@ -150,64 +190,86 @@ export function ProdutoDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <Campo label="Nome">
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} />
+          <Campo label="Nome" obrigatorio>
+            <Input
+              required
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome do produto"
+            />
           </Campo>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Campo label="Categoria">
-              <select
-                value={categoriaId}
-                onChange={(e) => setCategoriaId(e.target.value)}
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="">— sem categoria —</option>
-                {catalogos.length === 0
-                  ? categorias.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                        {!c.ativa ? " (oculta)" : ""}
-                      </option>
-                    ))
-                  : catalogos.map((cl) => {
-                      const subs = categorias.filter((c) => c.catalogo_id === cl.id);
-                      if (subs.length === 0) return null;
-                      return (
-                        <optgroup key={cl.id} label={cl.nome}>
-                          {subs.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.nome}
-                              {!c.ativa ? " (oculta)" : ""}
-                            </option>
-                          ))}
-                        </optgroup>
-                      );
-                    })}
-                {catalogos.length > 0 &&
-                  categorias.some((c) => !catalogos.some((cl) => cl.id === c.catalogo_id)) && (
-                    <optgroup label="Sem catálogo">
-                      {categorias
-                        .filter((c) => !catalogos.some((cl) => cl.id === c.catalogo_id))
-                        .map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.nome}
-                            {!c.ativa ? " (oculta)" : ""}
-                          </option>
-                        ))}
-                    </optgroup>
-                  )}
-              </select>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setCategoriasAbertas((aberta) => !aberta)}
+                  className="flex h-10 w-full items-center justify-between gap-3 rounded-md border border-input bg-background px-3 text-left text-sm transition-colors hover:border-[var(--terracotta)]"
+                >
+                  <span className={cn("truncate", !categoriaSelecionada && "text-muted-foreground")}>
+                    {categoriaSelecionada ? rotuloCategoria(categoriaSelecionada) : "Selecionar categoria"}
+                  </span>
+                  <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-[var(--cream)] text-[var(--terracotta)]">
+                    <Plus className={cn("h-4 w-4 transition-transform", categoriasAbertas && "rotate-45")} />
+                  </span>
+                </button>
+
+                {categoriasAbertas && (
+                  <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-white p-1.5 shadow-[var(--shadow-lift)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCategoriaId("");
+                        setCategoriasAbertas(false);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-[var(--cream-soft)]"
+                    >
+                      Sem categoria
+                      {!categoriaId && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
+                    </button>
+                    {categoriasOrdenadas.map((categoria) => (
+                      <button
+                        key={categoria.id}
+                        type="button"
+                        onClick={() => {
+                          setCategoriaId(categoria.id);
+                          setCategoriasAbertas(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--cream-soft)]"
+                      >
+                        <span className="min-w-0 truncate">
+                          {rotuloCategoria(categoria)}
+                          {!categoria.ativa && (
+                            <span className="ml-1 text-xs text-muted-foreground">(oculta)</span>
+                          )}
+                        </span>
+                        {categoria.id === categoriaId && (
+                          <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
+                        )}
+                      </button>
+                    ))}
+                    {categoriasOrdenadas.length === 0 && (
+                      <p className="px-3 py-3 text-xs text-muted-foreground">
+                        Nenhuma categoria cadastrada ainda.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </Campo>
+
             <Campo label="Serve (ex.: Ideal para 2 pessoas)">
               <Input value={serve} onChange={(e) => setServe(e.target.value)} />
             </Campo>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Campo label="Preço (R$)">
+            <Campo label="Preço (R$)" obrigatorio>
               <Input
+                required
                 inputMode="decimal"
-                placeholder="145.00"
+                placeholder="145,00"
                 value={preco}
                 onChange={(e) => setPreco(e.target.value)}
               />
@@ -221,7 +283,6 @@ export function ProdutoDialog({
             </Campo>
           </div>
 
-          {/* Ordem: só ao editar. Produto novo entra no fim da categoria. */}
           {produto ? (
             <Campo label="Ordem (posição na categoria)">
               <Input
@@ -237,19 +298,23 @@ export function ProdutoDialog({
             </p>
           )}
 
-          <VariacoesEditor precos={precosExtra} onChange={setPrecosExtra} />
-
-          <Campo label="Itens da caixa (um por linha)">
+          <Campo label="Descrição do produto">
             <Textarea
-              rows={4}
+              rows={3}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Descreva o produto, diferenciais, tamanho, apresentação ou outras informações importantes."
+            />
+          </Campo>
+
+          <Campo label="Itens da caixa (um por linha)" obrigatorio>
+            <Textarea
+              required
+              rows={5}
               value={itens}
               onChange={(e) => setItens(e.target.value)}
               placeholder={"Croissant\nSuco natural 300ml\nPão de queijo"}
             />
-          </Campo>
-
-          <Campo label="Observação (opcional)">
-            <Textarea rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
           </Campo>
 
           <label className="flex items-center gap-2 text-sm">
@@ -257,7 +322,6 @@ export function ProdutoDialog({
             Produto visível no site
           </label>
 
-          {/* etiqueta de destaque (badge) */}
           <div className="rounded-2xl border border-[var(--cream-deep)] p-4">
             <p className="text-sm font-medium text-foreground">Etiqueta de destaque</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -334,7 +398,6 @@ export function ProdutoDialog({
             )}
           </div>
 
-          {/* fotos */}
           <div className="rounded-2xl border border-[var(--cream-deep)] p-4">
             <p className="text-sm font-medium text-foreground">Fotos</p>
             {!id && (
@@ -387,8 +450,8 @@ export function ProdutoDialog({
                     accept="image/*"
                     className="hidden"
                     onChange={(e) => {
-                      const f = e.target.files?.[0];
-                      if (f) adicionarFoto(f);
+                      const file = e.target.files?.[0];
+                      if (file) adicionarFoto(file);
                       e.target.value = "";
                     }}
                   />
@@ -397,14 +460,18 @@ export function ProdutoDialog({
             </div>
           </div>
 
-          {erro && <p className="text-sm text-destructive">{erro}</p>}
+          {erro && (
+            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm font-medium text-destructive">
+              {erro}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Fechar
           </Button>
-          <Button onClick={salvar} disabled={salvando || !nome.trim()}>
+          <Button onClick={salvar} disabled={salvando}>
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar
           </Button>
@@ -414,71 +481,21 @@ export function ProdutoDialog({
   );
 }
 
-// ---------- editor de variações de preço ----------
-function VariacoesEditor({
-  precos,
-  onChange,
+function Campo({
+  label,
+  obrigatorio = false,
+  children,
 }: {
-  precos: { label: string; valor: number }[];
-  onChange: (v: { label: string; valor: number }[]) => void;
+  label: string;
+  obrigatorio?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-[var(--cream-deep)] p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-foreground">Variações de tamanho/preço (opcional)</p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => onChange([...precos, { label: "", valor: 0 }])}
-        >
-          <Plus className="mr-1 h-3.5 w-3.5" /> Variação
-        </Button>
-      </div>
-      {precos.length > 0 && (
-        <div className="mt-3 space-y-2">
-          {precos.map((p, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Input
-                placeholder="Ex.: Pequena"
-                value={p.label}
-                onChange={(e) => {
-                  const n = precos.slice();
-                  n[i] = { ...n[i], label: e.target.value };
-                  onChange(n);
-                }}
-              />
-              <Input
-                inputMode="decimal"
-                placeholder="valor"
-                className="max-w-[120px]"
-                value={p.valor ? String(p.valor) : ""}
-                onChange={(e) => {
-                  const n = precos.slice();
-                  n[i] = { ...n[i], valor: Number(e.target.value.replace(",", ".")) || 0 };
-                  onChange(n);
-                }}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => onChange(precos.filter((_, j) => j !== i))}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Campo({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
     <div className="space-y-1.5">
-      <Label>{label}</Label>
+      <Label>
+        {label}
+        {obrigatorio && <span className="ml-1 text-[var(--terracotta)]">*</span>}
+      </Label>
       {children}
     </div>
   );
