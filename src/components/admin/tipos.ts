@@ -38,6 +38,7 @@ export type ImagemRow = { id: string; url: string; ordem: number | null };
 export type ProdutoRow = {
   id: string;
   categoria_id: string | null;
+  sku: string;
   slug: string;
   nome: string;
   preco: number | null;
