@@ -24,9 +24,9 @@ export const metadata: Metadata = {
   applicationName: "Flua Gestão",
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon.png", type: "image/png" },
+      { url: "/flua-favicon.svg", type: "image/svg+xml" },
     ],
+    shortcut: "/flua-favicon.svg",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
@@ -58,4 +58,3 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     </html>
   );
 }
-
