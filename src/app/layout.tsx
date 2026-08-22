@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.fluagestao.com.br"),
   title: {
-    default: "Flua Gestão | Gestão simples. Negócio fluindo.",
+    default: "Flua Gestão",
     template: "%s | Flua Gestão",
   },
   description:
