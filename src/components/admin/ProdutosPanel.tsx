@@ -27,11 +27,13 @@ const ITENS_POR_PAGINA = 7;
 
 function LinhaProduto({
   produto,
+  categoriaNome,
   onEditar,
   onExcluir,
   onVisibilidade,
 }: {
   produto: ProdutoRow;
+  categoriaNome: string;
   onEditar: (p: ProdutoRow) => void;
   onExcluir: (p: ProdutoRow) => void;
   onVisibilidade: (p: ProdutoRow, ativo: boolean) => void;
@@ -47,7 +49,12 @@ function LinhaProduto({
       </div>
 
       <div className="min-w-0">
-        <p className="truncate font-medium text-foreground">{produto.nome}</p>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <p className="truncate font-medium text-foreground">{produto.nome}</p>
+          <span className="shrink-0 rounded-full bg-[var(--cream)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.04em] text-[var(--terracotta)]">
+            {categoriaNome}
+          </span>
+        </div>
         <p className="truncate text-xs text-muted-foreground">
           {produto.preco != null
             ? formatPreco(produto.preco)
@@ -141,8 +148,15 @@ export function ProdutosPanel({
       const codigo = (produto.sku ?? "").toLocaleLowerCase("pt-BR");
       const slug = (produto.slug ?? "").toLocaleLowerCase("pt-BR");
       const id = produto.id.toLocaleLowerCase("pt-BR");
+      const categoriaNome = (categoria?.nome ?? "").toLocaleLowerCase("pt-BR");
 
-      return nome.includes(termo) || codigo.includes(termo) || slug.includes(termo) || id.includes(termo);
+      return (
+        nome.includes(termo) ||
+        codigo.includes(termo) ||
+        slug.includes(termo) ||
+        id.includes(termo) ||
+        categoriaNome.includes(termo)
+      );
     });
   }, [itens, categorias, busca, filtroColecao]);
 
@@ -231,7 +245,7 @@ export function ProdutosPanel({
             type="search"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            placeholder="Buscar por nome ou código do produto"
+            placeholder="Buscar por nome, código ou categoria"
             className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
           {busca && (
@@ -298,23 +312,27 @@ export function ProdutosPanel({
       ) : itensFiltrados.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-dashed border-[var(--cream-deep)] p-10 text-center">
           <p className="text-sm font-semibold text-foreground">Nenhum produto encontrado</p>
-          <p className="mt-1 text-xs text-muted-foreground">Tente outro nome, código ou coleção.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Tente outro nome, código, categoria ou coleção.</p>
         </div>
       ) : (
         <>
           <div className="mt-5 space-y-2">
-            {itensPagina.map((p) => (
-              <LinhaProduto
-                key={p.id}
-                produto={p}
-                onEditar={onEditar}
-                onExcluir={excluir}
-                onVisibilidade={alterarVisibilidade}
-              />
-            ))}
+            {itensPagina.map((p) => {
+              const categoria = categorias.find((item) => item.id === p.categoria_id);
+              return (
+                <LinhaProduto
+                  key={p.id}
+                  produto={p}
+                  categoriaNome={categoria?.nome ?? "Sem categoria"}
+                  onEditar={onEditar}
+                  onExcluir={excluir}
+                  onVisibilidade={alterarVisibilidade}
+                />
+              );
+            })}
           </div>
 
-          <div className="mt-1 flex h-10 items-center justify-between gap-4">
+          <div className="mt-0.5 flex h-10 items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
               Exibindo {inicioExibido}–{fimExibido} de {itensFiltrados.length} produtos
             </p>
