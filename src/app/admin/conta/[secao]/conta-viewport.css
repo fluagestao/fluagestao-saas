@@ -3,6 +3,11 @@
   background: var(--admin-bg);
 }
 
+/* O cabeçalho antigo das páginas de conta fica oculto: o AppHeader padrão é exibido acima. */
+.conta-viewport > div[class*="min-h-dvh"] > header {
+  display: none !important;
+}
+
 /* Desktop e notebook: a tela de conta ocupa somente o viewport, sem barra de rolagem. */
 @media (min-width: 1024px) {
   html:has(.conta-viewport),
@@ -257,5 +262,26 @@
   body:has(.conta-viewport)::-webkit-scrollbar,
   .conta-viewport::-webkit-scrollbar {
     display: none;
+  }
+}
+
+/* O cabeçalho padrão mantém exatamente a mesma altura usada no restante do sistema. */
+@media (min-width: 1024px) {
+  .conta-viewport > .app-top-header > div {
+    height: 74px !important;
+  }
+
+  .conta-viewport > div[class*="min-h-dvh"] {
+    height: calc(100dvh - 74px) !important;
+    min-height: 0 !important;
+  }
+
+  .conta-viewport > div[class*="min-h-dvh"] > main {
+    height: 100% !important;
+    max-height: 100% !important;
+  }
+
+  .conta-viewport aside[class*="sticky"] {
+    top: 14px !important;
   }
 }
