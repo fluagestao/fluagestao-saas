@@ -1,6 +1,15 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Search, Trash2, X } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { removerProduto, salvarProduto } from "@/lib/admin";
@@ -227,15 +236,30 @@ export function ProdutosPanel({
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">
-          Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
-        </h2>
+        <div>
+          <h2 className="text-xl font-semibold tracking-tight text-foreground">
+            Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
+          </h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Cadastre os produtos e gere uma vitrine pública automaticamente.
+          </p>
+        </div>
 
-        <Button asChild>
-          <Link href="/cadastros/produtos/novo">
-            <Plus className="mr-1.5 h-4 w-4" /> Novo produto
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/catalogo/gerar" target="_blank" rel="noreferrer">
+              <Sparkles className="mr-1.5 h-4 w-4 text-[var(--terracotta)]" />
+              Gerar catálogo inteligente
+              <ExternalLink className="ml-1 h-3.5 w-3.5" />
+            </Link>
+          </Button>
+
+          <Button asChild>
+            <Link href="/cadastros/produtos/novo">
+              <Plus className="mr-1.5 h-4 w-4" /> Novo produto
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 md:grid-cols-[minmax(0,1fr)_280px_auto]">
