@@ -230,7 +230,7 @@ export default function AdminClient({
               <img
                 src="/flua-logo.webp"
                 alt="Flua Gestão"
-                className="h-12 w-[118px] object-contain object-left sm:w-[128px]"
+                className="h-10 w-[108px] object-contain object-left sm:w-[116px]"
               />
             </button>
 
