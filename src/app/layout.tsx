@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./admin-fill.css";
 
+import { AdminPathSync } from "@/components/admin/AdminPathSync";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -54,6 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden">
+        <AdminPathSync />
         {children}
       </body>
     </html>
