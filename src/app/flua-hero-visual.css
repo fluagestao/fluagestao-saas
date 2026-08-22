@@ -1,0 +1,162 @@
+/* Hero da landing: usa a arte oficial enviada e refina a tipografia. */
+.flua2-site .flua2-hero {
+  background: #6a302f !important;
+}
+
+.flua2-site .flua2-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    url("/flua-hero-1.webp"),
+    url("/flua-hero-2.webp"),
+    url("/flua-hero-3.webp"),
+    url("/flua-hero-4.webp");
+  background-repeat: no-repeat;
+  background-size: 25% auto, 25% auto, 25% auto, 25% auto;
+  background-position:
+    left top,
+    33.333333% top,
+    66.666667% top,
+    right top;
+}
+
+.flua2-site .flua2-hero::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  height: auto !important;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(48, 17, 17, .68) 0%,
+      rgba(57, 20, 20, .53) 24%,
+      rgba(59, 21, 21, .26) 42%,
+      rgba(59, 21, 21, .06) 58%,
+      rgba(59, 21, 21, 0) 73%
+    ),
+    linear-gradient(180deg, rgba(35, 11, 11, .14), rgba(35, 11, 11, 0) 42%) !important;
+}
+
+/* A arte já contém dashboard, cestas e tábua: evita duplicidade visual. */
+.flua2-site .flua2-product-preview,
+.flua2-site .flua2-decor {
+  display: none !important;
+}
+
+.flua2-site .flua2-hero-layout {
+  position: relative !important;
+  z-index: 10 !important;
+  grid-template-columns: minmax(430px, 610px) 1fr !important;
+  gap: clamp(28px, 4vw, 72px) !important;
+}
+
+.flua2-site .flua2-hero-copy {
+  max-width: 610px !important;
+  padding-bottom: 34px !important;
+}
+
+.flua2-site .flua2-eyebrow {
+  margin-bottom: 18px !important;
+  color: #edc6a9 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: .13em !important;
+}
+
+.flua2-site .flua2-hero h1 {
+  max-width: 600px !important;
+  font-family: var(--font-flua-serif), Georgia, serif !important;
+  font-size: clamp(54px, 4.7vw, 76px) !important;
+  line-height: .94 !important;
+  letter-spacing: -.035em !important;
+  font-weight: 600 !important;
+  color: #fff8ef !important;
+  text-wrap: balance;
+  text-shadow: 0 2px 28px rgba(45, 16, 16, .16);
+}
+
+.flua2-site .flua2-lead {
+  max-width: 555px !important;
+  margin-top: 22px !important;
+  color: #e7b88f !important;
+  font-family: var(--font-flua-serif), Georgia, serif !important;
+  font-size: clamp(22px, 1.45vw, 28px) !important;
+  line-height: 1.28 !important;
+  font-weight: 500 !important;
+  letter-spacing: -.01em !important;
+}
+
+.flua2-site .flua2-supporting {
+  max-width: 545px !important;
+  margin-top: 19px !important;
+  color: rgba(255, 255, 255, .92) !important;
+  font-size: 15px !important;
+  line-height: 1.65 !important;
+  font-weight: 400 !important;
+  text-wrap: pretty;
+}
+
+.flua2-site .flua2-nav-links {
+  font-weight: 650 !important;
+}
+
+.flua2-site .flua2-btn {
+  font-weight: 700 !important;
+}
+
+.flua2-site .flua2-feature-ribbon > .flua2-shell > p,
+.flua2-site .flua2-section h2,
+.flua2-site .flua2-audience-cards span,
+.flua2-site .flua2-benefit-grid span {
+  font-family: var(--font-flua-serif), Georgia, serif !important;
+}
+
+@media (max-width: 1080px) {
+  .flua2-site .flua2-hero::before {
+    opacity: .52;
+    background-size: 33.333333% auto, 33.333333% auto, 33.333333% auto, 33.333333% auto;
+    background-position:
+      -16.666667% top,
+      33.333333% top,
+      83.333333% top,
+      133.333333% top;
+  }
+
+  .flua2-site .flua2-hero::after {
+    background: linear-gradient(180deg, rgba(58, 22, 22, .58), rgba(58, 22, 22, .28)) !important;
+  }
+
+  .flua2-site .flua2-hero-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .flua2-site .flua2-hero::before {
+    opacity: .30;
+    background-size: 42% auto, 42% auto, 42% auto, 42% auto;
+    background-position:
+      -35% top,
+      21.666667% top,
+      78.333333% top,
+      135% top;
+  }
+
+  .flua2-site .flua2-hero::after {
+    background: linear-gradient(180deg, rgba(61, 24, 24, .74), rgba(61, 24, 24, .38)) !important;
+  }
+
+  .flua2-site .flua2-hero h1 {
+    font-size: clamp(43px, 12vw, 56px) !important;
+    line-height: .96 !important;
+  }
+
+  .flua2-site .flua2-lead {
+    font-size: 21px !important;
+  }
+}

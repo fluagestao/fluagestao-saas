@@ -1,9 +1,10 @@
 import "./scrollbars.css";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./admin-fill.css";
 import "./panel-shell.css";
+import "./flua-hero-visual.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
 
@@ -15,6 +16,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const fluaSerif = Cormorant_Garamond({
+  variable: "--font-flua-serif",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -54,7 +62,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fluaSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden">
         <AdminPathSync />
