@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
+import { AppHeader } from "@/components/admin/AppHeader";
 import { ContaPageClient, type ContaSecao } from "@/components/admin/ContaPageClient";
 import { createClient } from "@/lib/supabase/server";
 import "./conta-viewport.css";
@@ -47,13 +48,20 @@ export default async function ContaPage({
     .eq("id", membro.company_id)
     .maybeSingle();
 
+  const nomeEmpresa = empresa?.name ?? "Empresa";
+
   return (
     <div className="conta-viewport">
+      <AppHeader
+        email={membro.email}
+        displayName={membro.display_name}
+        companyName={nomeEmpresa}
+      />
       <ContaPageClient
         secao={secao as ContaSecao}
         email={membro.email}
         displayName={membro.display_name}
-        companyName={empresa?.name ?? "Empresa"}
+        companyName={nomeEmpresa}
       />
     </div>
   );
