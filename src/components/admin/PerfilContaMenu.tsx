@@ -96,7 +96,7 @@ export function PerfilContaMenu({
   const plano = rotuloPlano(assinatura?.plan);
   const status = rotuloStatus(assinatura?.status);
 
-  // Cada item do perfil navega para uma página própria.
+  // Navegação de conta em páginas dedicadas — sem modal sobre o dashboard.
   const itens = [
     { label: "Dados da empresa", icon: Building2, href: "/admin/conta/empresa" },
     { label: "Plano e assinatura", icon: CreditCard, href: "/admin/conta/plano" },
