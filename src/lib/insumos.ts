@@ -66,34 +66,55 @@ async function contextoEmpresa() {
   return { supabase, companyId: membro.company_id };
 }
 
+function normalizarUnidade(unidade: string | null | undefined): UnidadeInsumo {
+  const valor = (unidade ?? "UN").toUpperCase();
+  return unidadeSchema.safeParse(valor).success ? (valor as UnidadeInsumo) : "UN";
+}
+
 export async function listarInsumos(): Promise<InsumoRow[]> {
   const { supabase, companyId } = await contextoEmpresa();
   const { data, error } = await supabase
     .from("insumos")
-    .select("id, nome, unidade, quantidade_referencia, custo_referencia, ativo")
+    .select("id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo")
     .eq("company_id", companyId)
     .order("nome");
 
   if (error) throw error;
-  return (data ?? []).map((item) => ({
-    ...item,
-    unidade: item.unidade as UnidadeInsumo,
-    quantidade_referencia: Number(item.quantidade_referencia),
-    custo_referencia: Number(item.custo_referencia),
-  }));
+  return (data ?? []).map((item) => {
+    const quantidadeReferencia = Number(item.qtd_embalagem ?? 1) || 1;
+    const custoReferencia = Number(item.preco_pacote ?? 0);
+    return {
+      id: item.id,
+      nome: item.nome,
+      unidade: normalizarUnidade(item.unidade),
+      quantidade_referencia: quantidadeReferencia,
+      custo_referencia: custoReferencia,
+      ativo: item.ativo !== false,
+    };
+  });
 }
 
 export async function salvarInsumo(input: ActionInput<unknown>) {
   const data = insumoSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
 
+  const custoUnitario =
+    data.quantidade_referencia > 0
+      ? data.custo_referencia / data.quantidade_referencia
+      : 0;
+
+  // A tabela de insumos já existia no projeto com os nomes qtd_embalagem,
+  // preco_pacote e custo. Mantemos esses campos como fonte oficial e fazemos
+  // a tradução para quantidade_referencia/custo_referencia apenas na UI.
   const row = {
     company_id: companyId,
     nome: data.nome,
     unidade: data.unidade,
-    quantidade_referencia: data.quantidade_referencia,
-    custo_referencia: data.custo_referencia,
+    qtd_embalagem: data.quantidade_referencia,
+    preco_pacote: data.custo_referencia,
+    custo: custoUnitario,
     ativo: data.ativo,
+    updated_at: new Date().toISOString(),
   };
 
   if (data.id) {
@@ -102,7 +123,7 @@ export async function salvarInsumo(input: ActionInput<unknown>) {
       .update(row)
       .eq("id", data.id)
       .eq("company_id", companyId)
-      .select("id, nome, unidade, quantidade_referencia, custo_referencia, ativo")
+      .select("id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo")
       .single();
     if (error) throw error;
     return atualizado;
@@ -111,7 +132,7 @@ export async function salvarInsumo(input: ActionInput<unknown>) {
   const { data: criado, error } = await supabase
     .from("insumos")
     .insert(row)
-    .select("id, nome, unidade, quantidade_referencia, custo_referencia, ativo")
+    .select("id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo")
     .single();
   if (error) throw error;
   return criado;
@@ -159,11 +180,12 @@ export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
     const { error: upsertError } = await supabase
       .from("produto_insumos")
       .upsert(
-        data.itens.map((item) => ({
+        data.itens.map((item, index) => ({
           company_id: companyId,
           produto_id: data.produtoId,
           insumo_id: item.insumoId,
           quantidade: item.quantidade,
+          ordem: index,
         })),
         { onConflict: "company_id,produto_id,insumo_id" },
       );
@@ -192,10 +214,10 @@ export async function listarComposicaoProduto(input: ActionInput<unknown>) {
 
   const { data, error } = await supabase
     .from("produto_insumos")
-    .select("id, insumo_id, quantidade, insumos!inner(id, nome, unidade, quantidade_referencia, custo_referencia, ativo)")
+    .select("id, insumo_id, quantidade, ordem, insumos!inner(id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo)")
     .eq("company_id", companyId)
     .eq("produto_id", produtoId)
-    .order("created_at");
+    .order("ordem");
 
   if (error) throw error;
   return data ?? [];
