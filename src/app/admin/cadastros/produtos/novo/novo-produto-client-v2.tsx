@@ -118,8 +118,7 @@ export function NovoProdutoClient({
       if (rascunho) {
         await removerProduto({ data: { id: draft.id } });
       }
-      router.push("/admin/cadastros/produtos");
-      router.refresh();
+      router.back();
     } catch (e) {
       setErro(mensagemDeErro(e, "cancelar cadastro"));
       setCancelando(false);
@@ -223,16 +222,16 @@ export function NovoProdutoClient({
   }
 
   return (
-    <div className="min-h-screen bg-[var(--admin-bg)] text-foreground">
+    <div className="min-h-screen bg-[var(--admin-bg)] text-foreground xl:h-dvh xl:min-h-0 xl:overflow-hidden">
       <Toaster position="bottom-right" richColors />
 
       <header className="border-b border-[var(--admin-border)] bg-white">
-        <div className="mx-auto flex h-[74px] max-w-[1500px] items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
+        <div className="mx-auto flex h-[68px] max-w-[1500px] items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
           <div className="flex min-w-0 items-center gap-4">
             <img
               src="/flua-logo.webp"
               alt="Flua Gestão"
-              className="h-10 w-[112px] shrink-0 object-contain object-left"
+              className="h-9 w-[104px] shrink-0 object-contain object-left"
             />
             <span className="hidden h-7 w-px bg-[var(--admin-border)] sm:block" />
             <button
@@ -253,15 +252,13 @@ export function NovoProdutoClient({
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 xl:px-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <main className="mx-auto max-w-[1500px] px-4 py-4 sm:px-6 xl:h-[calc(100dvh-68px)] xl:overflow-hidden xl:px-8 xl:py-4">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--terracotta)]">
               Cadastros · Produtos
             </p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
-              Novo produto
-            </h1>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">Novo produto</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               O código já é reservado ao abrir o cadastro e permanece definitivo.
             </p>
@@ -279,9 +276,9 @@ export function NovoProdutoClient({
           </div>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <section className="rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] sm:p-6">
-            <div className="grid gap-5">
+        <div className="grid gap-4 xl:h-[calc(100%-86px)] xl:grid-cols-[minmax(0,1fr)_340px]">
+          <section className="rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] xl:overflow-hidden">
+            <div className="grid gap-4">
               <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px]">
                 <Campo label="Nome" obrigatorio>
                   <Input
@@ -310,249 +307,143 @@ export function NovoProdutoClient({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Campo label="Categoria">
-                  <div className="relative">
+                  <DropdownCampo
+                    aberto={categoriasAbertas}
+                    onToggle={() => {
+                      setCategoriasAbertas((v) => !v);
+                      setEtiquetasAbertas(false);
+                    }}
+                    texto={categoriaSelecionada ? rotuloCategoria(categoriaSelecionada) : "Selecionar categoria"}
+                    vazio={!categoriaSelecionada}
+                  >
                     <button
                       type="button"
                       onClick={() => {
-                        setCategoriasAbertas((aberta) => !aberta);
-                        setEtiquetasAbertas(false);
+                        setCategoriaId("");
+                        setCategoriasAbertas(false);
                       }}
-                      className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-background px-3.5 text-left text-sm transition-colors hover:border-[var(--terracotta)]"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-[var(--cream-soft)]"
                     >
-                      <span className={cn("truncate", !categoriaSelecionada && "text-muted-foreground")}>
-                        {categoriaSelecionada
-                          ? rotuloCategoria(categoriaSelecionada)
-                          : "Selecionar categoria"}
-                      </span>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--cream)] text-[var(--terracotta)]">
-                        <Plus className={cn("h-4 w-4 transition-transform", categoriasAbertas && "rotate-45")} />
-                      </span>
+                      Sem categoria
+                      {!categoriaId && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
                     </button>
-
-                    {categoriasAbertas && (
-                      <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-white p-1.5 shadow-[var(--shadow-lift)]">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCategoriaId("");
-                            setCategoriasAbertas(false);
-                          }}
-                          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-[var(--cream-soft)]"
-                        >
-                          Sem categoria
-                          {!categoriaId && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
-                        </button>
-
-                        {categoriasOrdenadas.map((categoria) => (
-                          <button
-                            key={categoria.id}
-                            type="button"
-                            onClick={() => {
-                              setCategoriaId(categoria.id);
-                              setCategoriasAbertas(false);
-                            }}
-                            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--cream-soft)]"
-                          >
-                            <span className="min-w-0 truncate">
-                              {rotuloCategoria(categoria)}
-                              {!categoria.ativa && (
-                                <span className="ml-1 text-xs text-muted-foreground">(oculta)</span>
-                              )}
-                            </span>
-                            {categoria.id === categoriaId && (
-                              <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    {categoriasOrdenadas.map((categoria) => (
+                      <button
+                        key={categoria.id}
+                        type="button"
+                        onClick={() => {
+                          setCategoriaId(categoria.id);
+                          setCategoriasAbertas(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--cream-soft)]"
+                      >
+                        <span className="truncate">{rotuloCategoria(categoria)}</span>
+                        {categoria.id === categoriaId && <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />}
+                      </button>
+                    ))}
+                  </DropdownCampo>
                 </Campo>
 
                 <Campo label="Etiqueta">
-                  <div className="relative">
+                  <DropdownCampo
+                    aberto={etiquetasAbertas}
+                    onToggle={() => {
+                      setEtiquetasAbertas((v) => !v);
+                      setCategoriasAbertas(false);
+                    }}
+                    texto={badge || "Selecionar etiqueta"}
+                    vazio={!badge}
+                    cor={badge ? etiquetaSelecionada?.cor || badgeCor || "#B8893B" : undefined}
+                  >
                     <button
                       type="button"
                       onClick={() => {
-                        setEtiquetasAbertas((aberta) => !aberta);
-                        setCategoriasAbertas(false);
+                        setBadge("");
+                        setBadgeCor("");
+                        setEtiquetasAbertas(false);
                       }}
-                      className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-background px-3.5 text-left text-sm transition-colors hover:border-[var(--terracotta)]"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-[var(--cream-soft)]"
                     >
-                      <span className={cn("flex min-w-0 items-center gap-2 truncate", !badge && "text-muted-foreground")}>
-                        {badge && (
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: etiquetaSelecionada?.cor || badgeCor || "#B8893B" }}
-                          />
-                        )}
-                        <span className="truncate">{badge || "Selecionar etiqueta"}</span>
-                      </span>
-                      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--cream)] text-[var(--terracotta)]">
-                        <Plus className={cn("h-4 w-4 transition-transform", etiquetasAbertas && "rotate-45")} />
-                      </span>
+                      Sem etiqueta
+                      {!badge && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
                     </button>
-
-                    {etiquetasAbertas && (
-                      <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-white p-1.5 shadow-[var(--shadow-lift)]">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBadge("");
-                            setBadgeCor("");
-                            setEtiquetasAbertas(false);
-                          }}
-                          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm text-muted-foreground hover:bg-[var(--cream-soft)]"
-                        >
-                          Sem etiqueta
-                          {!badge && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
-                        </button>
-
-                        {etiquetasDisponiveis.map((etiqueta) => (
-                          <button
-                            key={etiqueta.id}
-                            type="button"
-                            onClick={() => {
-                              setBadge(etiqueta.nome);
-                              setBadgeCor(etiqueta.cor || "#B8893B");
-                              setEtiquetasAbertas(false);
-                            }}
-                            className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--cream-soft)]"
-                          >
-                            <span className="flex min-w-0 items-center gap-2 truncate">
-                              <span
-                                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                                style={{ backgroundColor: etiqueta.cor || "#B8893B" }}
-                              />
-                              <span className="truncate">{etiqueta.nome}</span>
-                            </span>
-                            {badge === etiqueta.nome && (
-                              <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    {etiquetasDisponiveis.map((etiqueta) => (
+                      <button
+                        key={etiqueta.id}
+                        type="button"
+                        onClick={() => {
+                          setBadge(etiqueta.nome);
+                          setBadgeCor(etiqueta.cor || "#B8893B");
+                          setEtiquetasAbertas(false);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--cream-soft)]"
+                      >
+                        <span className="flex min-w-0 items-center gap-2 truncate">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: etiqueta.cor || "#B8893B" }} />
+                          <span className="truncate">{etiqueta.nome}</span>
+                        </span>
+                        {badge === etiqueta.nome && <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />}
+                      </button>
+                    ))}
+                  </DropdownCampo>
                 </Campo>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <Campo label="Serve (ex.: Ideal para 2 pessoas)">
-                  <Input
-                    value={serve}
-                    onChange={(e) => setServe(e.target.value)}
-                    placeholder="Ex.: 2 pessoas"
-                    className="h-11"
-                  />
+                  <Input value={serve} onChange={(e) => setServe(e.target.value)} placeholder="Ex.: 2 pessoas" className="h-11" />
                 </Campo>
-
                 <Campo label="Preço (R$)" obrigatorio>
-                  <Input
-                    required
-                    inputMode="decimal"
-                    value={preco}
-                    onChange={(e) => setPreco(e.target.value)}
-                    placeholder="145,00"
-                    className="h-11"
-                  />
+                  <Input required inputMode="decimal" value={preco} onChange={(e) => setPreco(e.target.value)} placeholder="145,00" className="h-11" />
                 </Campo>
               </div>
 
               <Campo label="Rótulo de preço (opcional)">
-                <Input
-                  value={precoLabel}
-                  onChange={(e) => setPrecoLabel(e.target.value)}
-                  placeholder="a partir de / sob consulta"
-                  className="h-11"
-                />
+                <Input value={precoLabel} onChange={(e) => setPrecoLabel(e.target.value)} placeholder="a partir de / sob consulta" className="h-11" />
               </Campo>
 
               <Campo label="Descrição do produto">
                 <Textarea
-                  rows={7}
+                  rows={5}
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Descreva o produto, diferenciais, tamanho, apresentação ou outras informações importantes."
-                  className="min-h-[170px] resize-none"
+                  className="min-h-[132px] resize-none xl:min-h-[118px]"
                 />
               </Campo>
 
-              {erro && (
-                <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-destructive">
-                  {erro}
-                </p>
-              )}
+              {erro && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-destructive">{erro}</p>}
             </div>
           </section>
 
-          <aside className="self-start rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] sm:p-6 xl:sticky xl:top-6">
-            <div className="mb-4">
-              <h2 className="text-base font-semibold">Fotos do produto</h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Você já pode adicionar as fotos antes de salvar o produto.
-              </p>
-              <p className="mt-1 text-xs font-medium text-[var(--terracotta)]">
-                Recomendado: 500 × 500 px, formato quadrado.
-              </p>
-            </div>
+          <aside className="self-start rounded-3xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_10px_35px_rgba(112,61,58,0.04)] xl:h-full xl:overflow-hidden">
+            <h2 className="text-base font-semibold">Fotos do produto</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Você já pode adicionar as fotos antes de salvar.</p>
+            <p className="mt-1 text-xs font-medium text-[var(--terracotta)]">Recomendado: 500 × 500 px, formato quadrado.</p>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-2">
+            <div className="mt-4 grid grid-cols-2 gap-3">
               {imagens.map((img, index) => (
-                <div
-                  key={img.id}
-                  className="group relative aspect-square overflow-hidden rounded-2xl bg-[var(--cream-deep)]"
-                >
+                <div key={img.id} className="group relative aspect-square overflow-hidden rounded-2xl bg-[var(--cream-deep)]">
                   <img src={img.url} alt="" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => excluirFoto(img)}
-                    className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label="Remover foto"
-                  >
+                  <button type="button" onClick={() => excluirFoto(img)} className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100" aria-label="Remover foto">
                     <X className="h-3.5 w-3.5" />
                   </button>
-                  <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/45 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => moverFoto(index, -1)}
-                      className="p-2 text-white"
-                      aria-label="Mover foto para a esquerda"
-                    >
+                  <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/45 opacity-0 transition group-hover:opacity-100">
+                    <button type="button" onClick={() => moverFoto(index, -1)} className="p-2 text-white" aria-label="Mover foto para a esquerda">
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => moverFoto(index, 1)}
-                      className="p-2 text-white"
-                      aria-label="Mover foto para a direita"
-                    >
+                    <button type="button" onClick={() => moverFoto(index, 1)} className="p-2 text-white" aria-label="Mover foto para a direita">
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               ))}
 
-              <label
-                className={cn(
-                  "flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--bronze)]/50 bg-[var(--cream-soft)]/40 text-[var(--bronze)] transition-colors hover:bg-[var(--cream-soft)]",
-                  enviando && "pointer-events-none opacity-60",
-                )}
-              >
-                {enviando ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <>
-                    <Upload className="h-6 w-6" />
-                    <span className="text-xs font-medium">Adicionar foto</span>
-                    <span className="px-2 text-center text-[10px] text-muted-foreground">
-                      JPG, PNG ou WEBP
-                    </span>
-                  </>
-                )}
+              <label className={cn("flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--bronze)]/50 text-[var(--bronze)] transition hover:bg-[var(--cream-soft)]", enviando && "pointer-events-none opacity-60")}>
+                {enviando ? <Loader2 className="h-6 w-6 animate-spin" /> : <><Upload className="h-6 w-6" /><span className="text-xs font-medium">Adicionar foto</span></>}
                 <input
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,image/avif"
+                  accept="image/*"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
@@ -562,38 +453,14 @@ export function NovoProdutoClient({
                 />
               </label>
             </div>
-
-            {imagens.length === 0 && (
-              <div className="mt-4 rounded-2xl bg-[var(--cream-soft)] px-4 py-3 text-xs text-muted-foreground">
-                A primeira imagem será usada como capa do produto.
-              </div>
-            )}
           </aside>
-        </div>
-
-        <div className="mt-5 flex justify-end gap-2">
-          <Button variant="outline" onClick={cancelar} disabled={cancelando || salvando}>
-            Voltar
-          </Button>
-          <Button onClick={salvar} disabled={salvando || cancelando || !nome.trim()}>
-            {salvando && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-            {rascunho ? "Salvar produto" : "Salvar alterações"}
-          </Button>
         </div>
       </main>
     </div>
   );
 }
 
-function Campo({
-  label,
-  obrigatorio = false,
-  children,
-}: {
-  label: string;
-  obrigatorio?: boolean;
-  children: React.ReactNode;
-}) {
+function Campo({ label, obrigatorio = false, children }: { label: string; obrigatorio?: boolean; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-sm font-medium">
@@ -601,6 +468,23 @@ function Campo({
         {obrigatorio && <span className="ml-1 text-[var(--terracotta)]">*</span>}
       </Label>
       {children}
+    </div>
+  );
+}
+
+function DropdownCampo({ aberto, onToggle, texto, vazio, cor, children }: { aberto: boolean; onToggle: () => void; texto: string; vazio?: boolean; cor?: string; children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      <button type="button" onClick={onToggle} className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-background px-3.5 text-left text-sm transition-colors hover:border-[var(--terracotta)]">
+        <span className={cn("flex min-w-0 items-center gap-2 truncate", vazio && "text-muted-foreground")}>
+          {cor && <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: cor }} />}
+          <span className="truncate">{texto}</span>
+        </span>
+        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--cream)] text-[var(--terracotta)]">
+          <Plus className={cn("h-4 w-4 transition-transform", aberto && "rotate-45")} />
+        </span>
+      </button>
+      {aberto && <div className="absolute left-0 right-0 top-full z-30 mt-1 max-h-60 overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-white p-1.5 shadow-[var(--shadow-lift)]">{children}</div>}
     </div>
   );
 }
