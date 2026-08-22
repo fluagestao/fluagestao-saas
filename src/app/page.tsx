@@ -12,6 +12,7 @@ import {
   WandSparkles,
 } from "lucide-react";
 import "./home.css";
+import "./hero-refine.css";
 
 const features = [
   {
@@ -70,6 +71,19 @@ function BrandLogo({ className = "" }: { className?: string }) {
       priority
       className={className}
     />
+  );
+}
+
+function MiniSidebar() {
+  return (
+    <aside className="flua-screen-sidebar">
+      <strong>flua</strong>
+      <i />
+      <i />
+      <i />
+      <i />
+      <i />
+    </aside>
   );
 }
 
@@ -136,85 +150,91 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flua-product-showcase" aria-label="Prévia do sistema Flua">
-            <div className="flua-browser">
-              <div className="flua-browser-top">
-                <span />
-                <span />
-                <span />
-                <small>Flua Gestão</small>
+          <div className="flua-screen-fan" aria-label="Prévia das telas da Flua">
+            <article className="flua-screen-card flua-screen-left">
+              <div className="flua-screen-topbar">
+                <span /><span /><span />
+                <small>Vendas</small>
               </div>
-
-              <div className="flua-dashboard-preview">
-                <aside>
-                  <strong>flua</strong>
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                  <i />
-                </aside>
-
-                <div className="flua-preview-main">
-                  <div className="flua-preview-head">
-                    <div>
-                      <small>Visão geral</small>
-                      <b>Seu negócio em movimento.</b>
-                    </div>
+              <div className="flua-screen-body">
+                <MiniSidebar />
+                <div className="flua-screen-content">
+                  <div className="flua-screen-title">
+                    <div><small>Vendas</small><b>Pedidos em andamento</b></div>
                     <span>Hoje</span>
                   </div>
-
-                  <div className="flua-preview-cards">
-                    <article>
-                      <small>Faturamento</small>
-                      <strong>R$ 12.480</strong>
-                      <em>+ 18% no mês</em>
-                    </article>
-                    <article>
-                      <small>Pedidos</small>
-                      <strong>38</strong>
-                      <em>7 em aberto</em>
-                    </article>
-                    <article>
-                      <small>Saldo</small>
-                      <strong>R$ 8.940</strong>
-                      <em>atualizado</em>
-                    </article>
+                  <div className="flua-screen-stats two">
+                    <div><small>Em aberto</small><strong>07</strong></div>
+                    <div><small>Prontos</small><strong>12</strong></div>
                   </div>
-
-                  <div className="flua-preview-bottom">
-                    <section>
-                      <small>Pedidos da semana</small>
-                      <div className="flua-bars">
-                        <i style={{ height: "38%" }} />
-                        <i style={{ height: "58%" }} />
-                        <i style={{ height: "46%" }} />
-                        <i style={{ height: "78%" }} />
-                        <i style={{ height: "68%" }} />
-                        <i style={{ height: "92%" }} />
-                        <i style={{ height: "61%" }} />
-                      </div>
-                    </section>
-                    <section className="flua-mini-list">
-                      <small>Próximas entregas</small>
-                      <p><span /> Pedido #128 <b>Hoje</b></p>
-                      <p><span /> Pedido #129 <b>Amanhã</b></p>
-                      <p><span /> Pedido #130 <b>Sex.</b></p>
-                    </section>
+                  <div className="flua-screen-list">
+                    <p><span><i /> #128 · Maria</span><b>R$ 289</b></p>
+                    <p><span><i /> #129 · Ana</span><b>R$ 420</b></p>
+                    <p><span><i /> #130 · Carla</span><b>R$ 198</b></p>
+                    <p><span><i /> #131 · Júlia</span><b>R$ 346</b></p>
                   </div>
                 </div>
               </div>
-            </div>
+            </article>
 
-            <div className="flua-float-card flua-float-one">
-              <span>Entradas hoje</span>
-              <strong>R$ 1.840,00</strong>
-            </div>
+            <article className="flua-screen-card flua-screen-center">
+              <div className="flua-screen-topbar">
+                <span /><span /><span />
+                <small>Visão geral</small>
+              </div>
+              <div className="flua-screen-body">
+                <MiniSidebar />
+                <div className="flua-screen-content">
+                  <div className="flua-screen-title">
+                    <div><small>Dashboard</small><b>Seu negócio em movimento.</b></div>
+                    <span>Hoje</span>
+                  </div>
+                  <div className="flua-screen-stats three">
+                    <div><small>Faturamento</small><strong>R$ 12.480</strong></div>
+                    <div><small>Pedidos</small><strong>38</strong></div>
+                    <div><small>Saldo</small><strong>R$ 8.940</strong></div>
+                  </div>
+                  <div className="flua-screen-chart">
+                    <small>Pedidos da semana</small>
+                    <div className="flua-screen-bars">
+                      <i style={{ height: "38%" }} />
+                      <i style={{ height: "58%" }} />
+                      <i style={{ height: "46%" }} />
+                      <i style={{ height: "78%" }} />
+                      <i style={{ height: "68%" }} />
+                      <i style={{ height: "92%" }} />
+                      <i style={{ height: "61%" }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
 
-            <div className="flua-float-card flua-float-two">
-              <span>Pedidos em aberto</span>
-              <strong>07</strong>
-            </div>
+            <article className="flua-screen-card flua-screen-right">
+              <div className="flua-screen-topbar">
+                <span /><span /><span />
+                <small>Financeiro</small>
+              </div>
+              <div className="flua-screen-body">
+                <MiniSidebar />
+                <div className="flua-screen-content">
+                  <div className="flua-screen-title">
+                    <div><small>Financeiro</small><b>Entradas e saídas</b></div>
+                    <span>Agosto</span>
+                  </div>
+                  <div className="flua-screen-stats two">
+                    <div><small>Entrou</small><strong>R$ 18.920</strong></div>
+                    <div><small>Sobrou</small><strong>R$ 11.340</strong></div>
+                  </div>
+                  <div className="flua-screen-list finance">
+                    <p><span><i /> Pedido #128</span><b>+ R$ 289</b></p>
+                    <p><span><i /> Pedido #129</span><b>+ R$ 420</b></p>
+                    <p><span><i /> Insumos</span><b>- R$ 680</b></p>
+                    <p><span><i /> Entrega</span><b>- R$ 95</b></p>
+                  </div>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
       </section>
