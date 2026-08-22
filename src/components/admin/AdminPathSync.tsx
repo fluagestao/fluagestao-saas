@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 
 const ROTAS_DIRETAS: Record<string, string> = {
@@ -80,9 +80,11 @@ function encontrarBotaoNoHeader(texto: string) {
   const header = document.querySelector("header");
   if (!header) return null;
 
-  return Array.from(header.querySelectorAll<HTMLButtonElement>("button")).find(
-    (botao) => textoElemento(botao) === texto,
-  ) ?? null;
+  return (
+    Array.from(header.querySelectorAll<HTMLButtonElement>("button")).find(
+      (botao) => textoElemento(botao) === texto,
+    ) ?? null
+  );
 }
 
 function abrirEstadoDaRota(pathname: string) {
@@ -100,30 +102,54 @@ function abrirEstadoDaRota(pathname: string) {
   pai.click();
   window.setTimeout(() => {
     encontrarBotaoNoHeader(estado.filho)?.click();
-  }, 30);
+  }, 40);
 }
 
 export function AdminPathSync() {
   const pathname = usePathname();
+  const inicializado = useRef(false);
 
   useEffect(() => {
     if (!ROTAS_PAINEL.has(pathname)) return;
 
-    const timer = window.setTimeout(() => abrirEstadoDaRota(pathname), 80);
+    let timer: number | undefined;
+    if (!inicializado.current) {
+      inicializado.current = true;
+      timer = window.setTimeout(() => abrirEstadoDaRota(pathname), 100);
+    }
 
     function aoClicar(evento: MouseEvent) {
       const alvo = evento.target as HTMLElement | null;
       const clicavel = alvo?.closest("button, a");
       if (!clicavel) return;
 
+      const aria = clicavel.getAttribute("aria-label") ?? "";
+      if (aria === "Ir para o início") {
+        if (window.location.pathname !== "/admin") {
+          window.history.pushState({}, "", "/admin");
+        }
+        return;
+      }
+
+      if (aria === "Agenda") {
+        if (window.location.pathname !== "/tarefas") {
+          window.history.pushState({}, "", "/tarefas");
+        }
+        return;
+      }
+
       const texto = textoElemento(clicavel);
       let destino = ROTAS_DIRETAS[texto];
+      const dentroDoHeader = Boolean(clicavel.closest("header"));
 
       if (!destino) {
-        if (texto === "Vendas" && window.innerWidth < 1024) destino = "/pedidos";
-        else if (texto === "Financeiro" && window.innerWidth < 1024) destino = "/entradas";
-        else if (texto === "Cadastros" && window.innerWidth < 1024) destino = "/clientes";
-        else if (texto === "BIA" && window.innerWidth < 1024) destino = "/bia";
+        const deveNavegarPai = window.innerWidth < 1024 || !dentroDoHeader;
+        if (deveNavegarPai) {
+          if (texto === "Vendas") destino = "/pedidos";
+          else if (texto === "Financeiro") destino = "/entradas";
+          else if (texto === "Cadastros") destino = "/clientes";
+          else if (texto === "BIA") destino = "/bia";
+        }
       }
 
       if (!destino || window.location.pathname === destino) return;
@@ -138,7 +164,7 @@ export function AdminPathSync() {
     window.addEventListener("popstate", aoVoltar);
 
     return () => {
-      window.clearTimeout(timer);
+      if (timer) window.clearTimeout(timer);
       document.removeEventListener("click", aoClicar, true);
       window.removeEventListener("popstate", aoVoltar);
     };
