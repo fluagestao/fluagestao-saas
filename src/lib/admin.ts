@@ -150,7 +150,26 @@ export async function verificarAdmin() {
 
 export async function carregarCatalogoAdmin() {
   const { supabase, companyId } = await contextoEmpresa();
-  return listCatalogo(supabase, companyId);
+  const catalogo = await listCatalogo(supabase, companyId);
+
+  // O catálogo legado ainda não seleciona o SKU. Acrescentamos o código aqui
+  // sem permitir que o cliente o envie ou altere em qualquer formulário.
+  const { data: codigos, error } = await supabase
+    .from("produtos")
+    .select("id, sku")
+    .eq("company_id", companyId);
+
+  if (error) throw error;
+
+  const porId = new Map((codigos ?? []).map((item) => [item.id, item.sku]));
+
+  return {
+    ...catalogo,
+    produtos: (catalogo.produtos ?? []).map((produto) => ({
+      ...produto,
+      sku: porId.get(produto.id) ?? "",
+    })),
+  };
 }
 
 export async function carregarConfig() {
@@ -169,7 +188,19 @@ export async function salvarHorarios(input: ActionInput<unknown>) {
 export async function salvarProduto(input: ActionInput<unknown>) {
   const data = produtoSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
-  return upsertProduto(supabase, companyId, data);
+  const salvo = await upsertProduto(supabase, companyId, data);
+
+  // O código é criado no banco por trigger e nunca é aceito como entrada.
+  // Reconsultamos para devolver ao formulário o valor definitivo (0001, 0002...).
+  const { data: produto, error } = await supabase
+    .from("produtos")
+    .select("id, slug, sku")
+    .eq("company_id", companyId)
+    .eq("id", salvo.id)
+    .single();
+
+  if (error) throw error;
+  return produto;
 }
 
 export async function removerProduto(input: ActionInput<unknown>) {
