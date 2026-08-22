@@ -378,6 +378,7 @@ export default function AdminClient({
               <VendasPanel
                 vista={subVendas}
                 onVista={setSubVendas}
+                empresaNome={companyName}
                 produtos={produtos.map((produto) => {
                   const categoria = categorias.find(
                     (item) => item.id === produto.categoria_id,

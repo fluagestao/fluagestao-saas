@@ -215,18 +215,19 @@ function primeiroNome(nome: string | null | undefined): string {
  * enviar. Como o carrinho grava antes de abrir o WhatsApp, temos nome, telefone
  * e itens mesmo quando a conversa nunca começou.
  *
- * Para editar o texto: é aqui, no código — a AB decidiu não ter isso na UI.
+ * O nome da empresa é recebido do painel para não existir marca fixa no SaaS.
  */
-export function mensagemRetomada(pedido: Pedido): string {
+export function mensagemRetomada(pedido: Pedido, empresaNome = "Sua empresa"): string {
   const nome = primeiroNome(pedido.cliente_nome);
+  const empresa = empresaNome.trim() || "Sua empresa";
   const linhas = pedido.itens.map(
     (i) => `• ${i.qtd}x ${i.nome}${i.variacao ? ` (${i.variacao})` : ""}`,
   );
 
   const partes = [
     nome
-      ? `Oi, ${nome}! 🤍 Aqui é da *AB Sabor na Caixa*.`
-      : "Oi! 🤍 Aqui é da *AB Sabor na Caixa*.",
+      ? `Oi, ${nome}! 🤍 Aqui é da *${empresa}*.`
+      : `Oi! 🤍 Aqui é da *${empresa}*.`,
     "",
     "Vi que você montou esse pedido no nosso site:",
     ...linhas,
@@ -245,10 +246,10 @@ export function mensagemRetomada(pedido: Pedido): string {
 }
 
 /** Link do WhatsApp já com a mensagem de retomada preenchida. */
-export function linkRetomada(pedido: Pedido): string | null {
+export function linkRetomada(pedido: Pedido, empresaNome = "Sua empresa"): string | null {
   const base = whatsappDoCliente(pedido.cliente_whatsapp);
   if (!base) return null;
-  return `${base}?text=${encodeURIComponent(mensagemRetomada(pedido))}`;
+  return `${base}?text=${encodeURIComponent(mensagemRetomada(pedido, empresaNome))}`;
 }
 
 const DIAS_SEMANA_EXT = [

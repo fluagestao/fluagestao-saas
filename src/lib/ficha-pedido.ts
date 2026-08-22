@@ -26,7 +26,8 @@ function esc(v: string | null | undefined): string {
     .replace(/\n/g, "<br>");
 }
 
-export function htmlDaFicha(p: Pedido): string {
+export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
+  const empresa = esc(empresaNome.trim() || "Sua empresa");
   const linhas = p.itens
     .map((i) => {
       const qtd = i.qtd > 1 ? `${String(i.qtd).padStart(2, "0")} ` : "";
@@ -48,7 +49,7 @@ export function htmlDaFicha(p: Pedido): string {
 
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
-<title>Pedido #${p.numero} — AB Sabor na Caixa</title>
+<title>Pedido #${p.numero} — ${empresa}</title>
 <style>
   @page { size: A5; margin: 10mm; }
   * { box-sizing: border-box; }
@@ -61,7 +62,9 @@ export function htmlDaFicha(p: Pedido): string {
   header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8mm; }
   h1 { font-size: 20pt; letter-spacing: .06em; margin: 0; font-weight: 400; text-transform: uppercase; }
   .sub { color: #9a8578; font-size: 11pt; }
-  .logo { height: 16mm; }
+  .marca { text-align: right; max-width: 58mm; }
+  .marca strong { display: block; color: #703D3A; font-size: 12pt; }
+  .marca span { display: block; margin-top: 1mm; color: #9a8578; font-size: 7.5pt; }
   .campo, table { border: 1px solid #c9b9ad; border-radius: 2mm; }
   .campo { padding: 2mm 3mm; margin-top: 2.5mm; }
   .rot {
@@ -94,7 +97,7 @@ export function htmlDaFicha(p: Pedido): string {
       <h1>Ficha do pedido</h1>
       <div class="sub">#${p.numero}${p.origem === "bia" ? " • pela BIA" : p.origem === "site" ? " • pelo site" : ""}</div>
     </div>
-    <img class="logo" src="/logo-ab-terracota.png" alt="AB Sabor na Caixa">
+    <div class="marca"><strong>${empresa}</strong><span>Gestão via Flua</span></div>
   </header>
 
   <div class="campo"><span class="rot">${p.tipo === "retirada" ? "Retirada" : "Entrega"}</span>${dataPorExtenso(p.data_entrega)}${p.janela_entrega ? ` • ${esc(p.janela_entrega)}` : ""}</div>
@@ -142,7 +145,7 @@ export function htmlDaFicha(p: Pedido): string {
 
   ${p.observacao ? `<div class="campo"><span class="rot">Observação</span>${esc(p.observacao)}</div>` : ""}
 
-  <div class="rodape"><span>AB Sabor na Caixa • Tubarão/SC</span><span>absabornacaixa.com.br</span></div>
+  <div class="rodape"><span>${empresa}</span><span>Gerado pela Flua Gestão</span></div>
 </body></html>`;
 }
 
@@ -152,10 +155,10 @@ export function htmlDaFicha(p: Pedido): string {
  * Precisa ser chamada direto do clique, sem await antes: o navegador só deixa
  * abrir janela dentro do gesto da pessoa.
  */
-export function imprimirFicha(p: Pedido): boolean {
+export function imprimirFicha(p: Pedido, empresaNome = "Sua empresa"): boolean {
   const janela = window.open("", "_blank", "width=820,height=1000");
   if (!janela) return false;
-  janela.document.write(htmlDaFicha(p));
+  janela.document.write(htmlDaFicha(p, empresaNome));
   janela.document.close();
   // Espera a logo carregar, senão a impressão sai sem ela.
   janela.onload = () => janela.print();

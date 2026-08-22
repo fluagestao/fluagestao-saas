@@ -49,11 +49,13 @@ export function PedidoCard({
   acoes,
   compacto = false,
   className,
+  empresaNome = "Sua empresa",
 }: {
   pedido: Pedido;
   acoes: AcoesPedido;
   compacto?: boolean;
   className?: string;
+  empresaNome?: string;
 }) {
   const prox = proximoStatus(p.status);
   const wa = whatsappDoCliente(p.cliente_whatsapp);
@@ -203,7 +205,7 @@ export function PedidoCard({
             size="sm"
             variant="outline"
             onClick={() => {
-              if (!imprimirFicha(p)) {
+              if (!imprimirFicha(p, empresaNome)) {
                 toast.error(
                   "O navegador bloqueou a janela da ficha. Libere o pop-up e tente de novo.",
                 );
@@ -266,7 +268,7 @@ export function PedidoCard({
             <span className="inline-flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => enviar(mensagemRetomada(p))}
+                onClick={() => enviar(mensagemRetomada(p, empresaNome))}
                 className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--whatsapp)] px-3 text-xs font-medium text-[var(--whatsapp-foreground)]"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
@@ -276,7 +278,7 @@ export function PedidoCard({
                 <button
                   type="button"
                   title="Copiar a mensagem, caso o WhatsApp abra sem ela"
-                  onClick={() => copiar(mensagemRetomada(p))}
+                  onClick={() => copiar(mensagemRetomada(p, empresaNome))}
                   className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--cream-deep)] text-foreground/50 hover:text-foreground"
                 >
                   <Copy className="h-3.5 w-3.5" />

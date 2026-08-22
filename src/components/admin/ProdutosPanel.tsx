@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { ChevronRight, GripVertical, ImageIcon, Layers, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -25,9 +25,9 @@ import { Switch } from "@/components/ui/switch";
 import { type CatalogoRow, type CategoriaRow, type ProdutoRow } from "./tipos";
 import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
-const CHAVE_FECHADAS = "ab-admin-produtos-fechadas";
+const CHAVE_FECHADAS = "flua-admin-produtos-fechadas";
 
-// ---------- lista de produtos (arrastável, por coleção e categoria) ----------
+// ---------- lista de produtos (arrastÃ¡vel, por coleÃ§Ã£o e categoria) ----------
 function LinhaProduto({
   produto,
   onEditar,
@@ -74,8 +74,8 @@ function LinhaProduto({
           {produto.preco != null
             ? formatPreco(produto.preco)
             : produto.preco_label || "sob consulta"}
-          {!produto.ativo && " · oculto"}
-          {produto.badge && ` · 🏷️ ${produto.badge}`}
+          {!produto.ativo && " Â· oculto"}
+          {produto.badge && ` Â· ðŸ·ï¸ ${produto.badge}`}
         </p>
       </div>
       <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -105,12 +105,12 @@ export function ProdutosPanel({
   onEditar: (p: ProdutoRow) => void;
   onChange: () => void;
 }) {
-  // Ordem local editável: arraste à vontade e salve tudo de uma vez no fim.
+  // Ordem local editÃ¡vel: arraste Ã  vontade e salve tudo de uma vez no fim.
   const [itens, setItens] = useState<ProdutoRow[]>(produtos);
   const confirmar = useConfirmar();
   const [alterado, setAlterado] = useState(false);
   const [salvandoOrdem, setSalvandoOrdem] = useState(false);
-  // Só sincroniza do servidor quando NÃO há reordenação pendente (não perde o arrasto).
+  // SÃ³ sincroniza do servidor quando NÃƒO hÃ¡ reordenaÃ§Ã£o pendente (nÃ£o perde o arrasto).
   useEffect(() => {
     if (!alterado) setItens(produtos);
   }, [produtos, alterado]);
@@ -118,11 +118,11 @@ export function ProdutosPanel({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
   /**
-   * Coleção → categoria → produtos.
+   * ColeÃ§Ã£o â†’ categoria â†’ produtos.
    *
-   * O nome da categoria se repete entre coleções ("Café da Manhã" existe no
-   * Geral e no Dia dos Pais), então sem a coleção por fora não dá pra saber
-   * qual lista é qual.
+   * O nome da categoria se repete entre coleÃ§Ãµes ("CafÃ© da ManhÃ£" existe no
+   * Geral e no Dia dos Pais), entÃ£o sem a coleÃ§Ã£o por fora nÃ£o dÃ¡ pra saber
+   * qual lista Ã© qual.
    */
   const colecoes = useMemo(() => {
     const byCat = (id: string | null) => itens.filter((p) => (p.categoria_id ?? null) === id);
@@ -142,7 +142,7 @@ export function ProdutosPanel({
       }))
       .filter((g) => g.categorias.length > 0);
 
-    // Categoria órfã e produto sem categoria caem num grupo final, pra nada
+    // Categoria Ã³rfÃ£ e produto sem categoria caem num grupo final, pra nada
     // sumir da tela por causa de cadastro incompleto.
     const orfas = montar(
       cats.filter((c) => !c.catalogo_id || !cols.some((col) => col.id === c.catalogo_id)),
@@ -151,12 +151,12 @@ export function ProdutosPanel({
     if (semCategoria.length) {
       orfas.push({ id: null, nome: "Sem categoria", produtos: semCategoria });
     }
-    if (orfas.length) grupos.push({ id: null, nome: "Sem coleção", categorias: orfas });
+    if (orfas.length) grupos.push({ id: null, nome: "Sem coleÃ§Ã£o", categorias: orfas });
 
     return grupos;
   }, [itens, categorias, catalogos]);
 
-  // Quais categorias estão recolhidas. Guardado no navegador: reabrir tudo a
+  // Quais categorias estÃ£o recolhidas. Guardado no navegador: reabrir tudo a
   // cada refresh anula o sentido de poder fechar.
   const [fechadas, setFechadas] = useState<Set<string>>(new Set());
   useEffect(() => {
@@ -164,7 +164,7 @@ export function ProdutosPanel({
       const salvo = localStorage.getItem(CHAVE_FECHADAS);
       if (salvo) setFechadas(new Set(JSON.parse(salvo) as string[]));
     } catch {
-      // modo privado: só não lembra
+      // modo privado: sÃ³ nÃ£o lembra
     }
   }, []);
   function alternar(catId: string) {
@@ -184,7 +184,7 @@ export function ProdutosPanel({
   async function excluir(p: ProdutoRow) {
     const ok = await confirmar({
       titulo: `Excluir "${p.nome}"?`,
-      descricao: "O produto e as fotos dele somem. Isso não tem volta.",
+      descricao: "O produto e as fotos dele somem. Isso nÃ£o tem volta.",
       confirmar: "Excluir",
       destrutivo: true,
     });
@@ -194,7 +194,7 @@ export function ProdutosPanel({
     onChange();
   }
 
-  // Arrastar só atualiza a ordem local (não salva ainda) — salva tudo no botão.
+  // Arrastar sÃ³ atualiza a ordem local (nÃ£o salva ainda) â€” salva tudo no botÃ£o.
   function onDragEnd(catId: string | null, e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -242,13 +242,13 @@ export function ProdutosPanel({
 
       {colecoes.length === 0 ? (
         <p className="mt-4 rounded-2xl border border-dashed border-[var(--cream-deep)] p-8 text-center text-sm text-muted-foreground">
-          Nenhum produto ainda. Clique em “Novo produto”.
+          Nenhum produto ainda. Clique em â€œNovo produtoâ€.
         </p>
       ) : (
         <div className="mt-5 space-y-10">
           {colecoes.map((col) => {
             const total = col.categorias.reduce((t, c) => t + c.produtos.length, 0);
-            // Prefixo separado: id de coleção e de categoria vivem no mesmo Set.
+            // Prefixo separado: id de coleÃ§Ã£o e de categoria vivem no mesmo Set.
             const chaveColecao = `col:${col.id ?? "sem"}`;
             const colecaoFechada = fechadas.has(chaveColecao);
             return (
@@ -332,7 +332,7 @@ export function ProdutosPanel({
       {alterado && (
         <div className="sticky bottom-3 z-10 mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--terracotta)]/40 bg-card p-3 shadow-[var(--shadow-lift)]">
           <span className="text-sm font-medium text-foreground">
-            Você reorganizou os produtos — salve para aplicar.
+            VocÃª reorganizou os produtos â€” salve para aplicar.
           </span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={desfazer} disabled={salvandoOrdem}>
@@ -348,3 +348,4 @@ export function ProdutosPanel({
     </section>
   );
 }
+

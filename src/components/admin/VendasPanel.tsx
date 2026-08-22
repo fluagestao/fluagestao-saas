@@ -42,7 +42,7 @@ import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
 
 const PAGINA = 25;
-const CHAVE_VISAO = "ab-admin-vendas-visao";
+const CHAVE_VISAO = "flua-admin-vendas-visao";
 
 type FiltroStatus = "todos" | StatusPedido;
 
@@ -144,8 +144,10 @@ export function VendasPanel({
   produtos,
   vista: subExterna,
   onVista,
+  empresaNome,
 }: {
   produtos: ProdutoOpcao[];
+  empresaNome: string;
   /** Sub-aba escolhida na lateral. Sem ela, o painel controla sozinho. */
   vista?: SubVenda;
   onVista?: (v: SubVenda) => void;
@@ -692,7 +694,7 @@ export function VendasPanel({
 
           <div className="mt-3 space-y-3">
             {realizadas.map((p) => (
-              <PedidoCard key={p.id} pedido={p} acoes={acoes} />
+              <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
             ))}
           </div>
         </div>
@@ -743,7 +745,7 @@ export function VendasPanel({
             </h3>
             <div className="space-y-3">
               {g.pedidos.map((p) => (
-                <PedidoCard key={p.id} pedido={p} acoes={acoes} />
+                <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
               ))}
             </div>
           </section>

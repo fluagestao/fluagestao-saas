@@ -15,6 +15,21 @@ const WA_SIMULADOR = "5548999990000";
 type Contexto = Awaited<ReturnType<typeof requireCompany>>;
 type Supabase = Contexto["supabase"];
 
+async function nomeDaEmpresa(supabase: Supabase, companyId: string): Promise<string> {
+  const { data, error } = await supabase
+    .from("companies")
+    .select("name")
+    .eq("id", companyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.name?.trim() || "sua empresa";
+}
+
+function promptDaEmpresa(prompt: string, companyName: string): string {
+  return prompt.replaceAll("{{EMPRESA_NOME}}", companyName);
+}
+
 async function garantirConversa(
   supabase: Supabase,
   companyId: string,
@@ -168,6 +183,7 @@ async function respostaDaIa(input: {
 
 export async function carregarBia() {
   const { supabase, companyId } = await requireCompany();
+  const companyName = await nomeDaEmpresa(supabase, companyId);
 
   const conversa = await garantirConversa(supabase, companyId, {
     canal: "simulador",
@@ -197,7 +213,7 @@ export async function carregarBia() {
     configurada: Boolean(process.env.ANTHROPIC_API_KEY?.trim()),
     config: {
       ...config,
-      prompt: config.prompt ?? PROMPT_PADRAO,
+      prompt: promptDaEmpresa(config.prompt ?? PROMPT_PADRAO, companyName),
       max_turnos: Number(config.max_turnos ?? 20),
     },
     simulador: { conversa, mensagens },
@@ -214,6 +230,7 @@ export async function enviarParaBia(input: { data: unknown }) {
     .parse(input.data);
 
   const { supabase, companyId } = await requireCompany();
+  const companyName = await nomeDaEmpresa(supabase, companyId);
 
   const { data: conversa, error: conversaError } = await supabase
     .from("conversas")
@@ -273,7 +290,7 @@ export async function enviarParaBia(input: { data: unknown }) {
 
   const texto = await respostaDaIa({
     modelo: config?.modelo || "claude-sonnet-4-20250514",
-    prompt: config?.prompt || PROMPT_PADRAO,
+    prompt: promptDaEmpresa(config?.prompt || PROMPT_PADRAO, companyName),
     historico: historico.slice(0, -1),
     texto: data.texto,
   });
