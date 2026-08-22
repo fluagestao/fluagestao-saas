@@ -44,7 +44,7 @@ function CardArrastavel({
     <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform) }}
-      className={cn("touch-none", isDragging && "opacity-40")}
+      className={cn("min-w-0 touch-none", isDragging && "opacity-40")}
       {...attributes}
       {...listeners}
       onDoubleClick={() => onAbrir(pedido)}
@@ -72,25 +72,25 @@ function Coluna({
     <div
       ref={setNodeRef}
       className={cn(
-        "flex min-h-[12rem] flex-1 flex-col rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3 transition-colors",
+        "flex min-h-[12rem] min-w-0 flex-col rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3 transition-colors",
         isOver && "border-[var(--terracotta)] bg-[var(--cream)]",
       )}
     >
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+      <div className="mb-3 flex min-w-0 items-center justify-between gap-2">
+        <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-foreground">
           <span
-            className="h-2 w-2 rounded-full"
+            className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: statusCor(status) }}
           />
-          {statusLabel(status)}
-          <span className="text-muted-foreground">({pedidos.length})</span>
+          <span className="truncate">{statusLabel(status)}</span>
+          <span className="shrink-0 text-muted-foreground">({pedidos.length})</span>
         </span>
         {total > 0 && (
-          <span className="text-xs tabular-nums text-muted-foreground">{formatBRL(total)}</span>
+          <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatBRL(total)}</span>
         )}
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-2">
         {pedidos.map((p) => (
           <CardArrastavel key={p.id} pedido={p} acoes={acoes} onAbrir={onAbrir} />
         ))}
@@ -107,11 +107,8 @@ function Coluna({
 }
 
 /**
- * Quadro por etapa. Só aparece no desktop — em tela de celular arrastar card
- * entre colunas é pior que os botões da lista.
- *
- * Dentro de cada coluna a ordem é por data de entrega, não por criação: a
- * pergunta que o quadro responde é "o que sai primeiro", não "o que chegou".
+ * Quadro por etapa. Em larguras menores que as quatro colunas, somente o
+ * quadro ganha rolagem horizontal — nunca a página inteira.
  */
 export function VendasKanban({
   pedidos,
@@ -145,19 +142,21 @@ export function VendasKanban({
       onDragEnd={aoSoltar}
       onDragCancel={() => setArrastando(null)}
     >
-      <div className="flex gap-3">
-        {COLUNAS.map((status) => (
-          <Coluna
-            key={status}
-            status={status}
-            // Entregue e pago fica até o fim do dia; depois vira histórico.
-            pedidos={ordenarPorEntrega(
-              pedidos.filter((p) => p.status === status && !saiuDoQuadro(p)),
-            )}
-            acoes={acoes}
-            onAbrir={acoes.editar}
-          />
-        ))}
+      <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain pb-2">
+        <div className="grid min-w-[1040px] grid-cols-4 gap-3">
+          {COLUNAS.map((status) => (
+            <Coluna
+              key={status}
+              status={status}
+              // Entregue e pago fica até o fim do dia; depois vira histórico.
+              pedidos={ordenarPorEntrega(
+                pedidos.filter((p) => p.status === status && !saiuDoQuadro(p)),
+              )}
+              acoes={acoes}
+              onAbrir={acoes.editar}
+            />
+          ))}
+        </div>
       </div>
 
       {/* O card segue o cursor; sem isso ele some enquanto arrasta. */}
