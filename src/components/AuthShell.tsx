@@ -6,9 +6,15 @@ type AuthShellProps = {
   title: string;
   subtitle: string;
   children: ReactNode;
+  hideIntro?: boolean;
 };
 
-export default function AuthShell({ title, subtitle, children }: AuthShellProps) {
+export default function AuthShell({
+  title,
+  subtitle,
+  children,
+  hideIntro = false,
+}: AuthShellProps) {
   return (
     <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#703D3A] px-4 py-8 sm:px-6">
       <div
@@ -37,15 +43,19 @@ export default function AuthShell({ title, subtitle, children }: AuthShellProps)
             />
           </div>
 
-          <h1 className="mt-1 text-[1.72rem] font-semibold tracking-[-0.035em] text-[#3f2422]">
-            {title}
-          </h1>
-          <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#703D3A]/70">
-            {subtitle}
-          </p>
+          {!hideIntro && (
+            <>
+              <h1 className="mt-1 text-[1.72rem] font-semibold tracking-[-0.035em] text-[#3f2422]">
+                {title}
+              </h1>
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-[#703D3A]/70">
+                {subtitle}
+              </p>
+            </>
+          )}
         </div>
 
-        <div className="mt-7">{children}</div>
+        <div className={hideIntro ? "mt-2" : "mt-7"}>{children}</div>
 
         <div className="mt-7 flex items-center justify-center gap-2 border-t border-[#D9C6B2]/75 pt-5 text-[11px] font-medium text-[#703D3A]/60">
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
