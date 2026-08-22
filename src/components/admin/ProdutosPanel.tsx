@@ -314,7 +314,7 @@ export function ProdutosPanel({
             ))}
           </div>
 
-          <div className="mt-3 flex h-10 items-center justify-between gap-4">
+          <div className="mt-1 flex h-10 items-center justify-between gap-4">
             <p className="text-xs text-muted-foreground">
               Exibindo {inicioExibido}–{fimExibido} de {itensFiltrados.length} produtos
             </p>
