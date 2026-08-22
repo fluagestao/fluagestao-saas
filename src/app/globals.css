@@ -29,42 +29,60 @@
 }
 
 :root {
-  --radius: 0.75rem;
-  --background: #fafafa;
-  --foreground: #18181b;
-  --card: #ffffff;
-  --card-foreground: #18181b;
-  --popover: #ffffff;
-  --popover-foreground: #18181b;
-  --primary: #18181b;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #18181b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #18181b;
-  --destructive: #dc2626;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #a1a1aa;
+  --radius: 0.9rem;
 
-  /* Compatibilidade visual com componentes herdados da vitrine antiga. */
-  --cream: #f7f4ef;
-  --cream-soft: #fbfaf8;
-  --cream-deep: #ebe5dc;
-  --bronze: #8a745c;
-  --terracotta: #8b5e4a;
-  --rose: #ead8d4;
+  /* Paleta oficial Flua */
+  --flua-terracotta: #a94f45;
+  --flua-wine: #703d3a;
+  --flua-cream: #f7f1e8;
+  --flua-beige: #d9c6b2;
+  --flua-olive: #74745b;
+
+  --background: #fbfaf8;
+  --foreground: #2c2421;
+  --card: #ffffff;
+  --card-foreground: #2c2421;
+  --popover: #ffffff;
+  --popover-foreground: #2c2421;
+  --primary: #a94f45;
+  --primary-foreground: #ffffff;
+  --secondary: #f7f1e8;
+  --secondary-foreground: #703d3a;
+  --muted: #f4eee8;
+  --muted-foreground: #84766e;
+  --accent: #f7f1e8;
+  --accent-foreground: #703d3a;
+  --destructive: #c1433b;
+  --border: #eadfd6;
+  --input: #e5d9cf;
+  --ring: #a94f45;
+
+  /* Tokens do painel Flua */
+  --admin-bg: #fbfaf8;
+  --admin-ink: #2c2421;
+  --admin-ink-soft: #574943;
+  --admin-muted: #8f8179;
+  --admin-border: #eadfd6;
+  --cream: #f7f1e8;
+  --cream-soft: #fffdfa;
+  --cream-deep: #eadfd3;
+  --bronze: #8c6d5c;
+  --terracotta: #a94f45;
+  --wine: #703d3a;
+  --olive: #74745b;
+  --rose: #d9c6b2;
+  --rose-strong: #b99883;
   --whatsapp: #25d366;
   --whatsapp-foreground: #ffffff;
-  --shadow-soft: 0 8px 30px rgb(24 24 27 / 0.06);
-  --shadow-lift: 0 18px 45px rgb(24 24 27 / 0.12);
-  --shadow-card: 0 18px 50px rgb(24 24 27 / 0.08);
+
+  --shadow-soft: 0 8px 30px rgb(112 61 58 / 0.055);
+  --shadow-lift: 0 18px 50px rgb(112 61 58 / 0.14);
+  --shadow-card: 0 16px 44px rgb(112 61 58 / 0.075);
 }
 
 * {
   border-color: var(--border);
+  box-sizing: border-box;
 }
 
 html {
@@ -75,6 +93,8 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
 button,
@@ -83,4 +103,14 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgb(169 79 69 / 0.18);
+  color: var(--wine);
 }

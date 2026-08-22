@@ -1,18 +1,21 @@
 "use client";
 
 import {
+  Bell,
   BookOpen,
   Bot,
+  CalendarDays,
   ChartPie,
   CheckSquare,
   ChevronDown,
-  Clock,
+  CircleHelp,
   Contact,
   Home,
-  Layers,
   Loader2,
   LogOut,
   Package,
+  Search,
+  Settings,
   ShoppingCart,
   Wallet,
   type LucideIcon,
@@ -39,7 +42,6 @@ import {
   type ProdutoRow,
 } from "@/components/admin/tipos";
 import { VendasPanel } from "@/components/admin/VendasPanel";
-import { Button } from "@/components/ui/button";
 import { carregarCatalogoAdmin } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -132,12 +134,12 @@ const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "horarios"];
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart },
+  { id: "dashboard", label: "Dashboard", icon: ChartPie },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
-  { id: "produtos", label: "Produtos", icon: Package },
-  { id: "colecoes", label: "Coleções", icon: Layers },
-  { id: "horarios", label: "Horários", icon: Clock },
+  { id: "bia", label: "BIA", icon: Bot },
+  { id: "produtos", label: "Catálogo", icon: Package },
 ];
 
 export default function AdminClient({
@@ -164,6 +166,7 @@ export default function AdminClient({
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
   const [subCad, setSubCad] = useState<SubCadastros>("clientes");
   const [expandida, setExpandida] = useState<AbaId | null>(null);
+  const [perfilAberto, setPerfilAberto] = useState(false);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -171,7 +174,6 @@ export default function AdminClient({
 
     try {
       const res = await carregarCatalogoAdmin();
-
       setCatalogos((res.catalogos ?? []) as CatalogoRow[]);
       setCategorias((res.categorias ?? []) as CategoriaRow[]);
       setProdutos((res.produtos ?? []) as ProdutoRow[]);
@@ -197,76 +199,75 @@ export default function AdminClient({
     router.refresh();
   }
 
+  function itemAtivo(item: ItemMenu) {
+    return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
+  }
+
+  function selecionarSub(item: ItemMenu, subId: string) {
+    if (!item.vistas) {
+      setAba(subId as AbaId);
+      setExpandida(null);
+      return;
+    }
+
+    setAba(item.id);
+    if (item.id === "vendas") setSubVendas(subId as SubVendas);
+    else if (item.id === "financeiro") setSubFin(subId as SubFinanceiro);
+    else if (item.id === "cadastros") setSubCad(subId as SubCadastros);
+    else setSubBia(subId as SubBia);
+    setExpandida(null);
+  }
+
   return (
     <ConfirmProvider>
       <Toaster position="bottom-right" richColors />
 
-      <div className="min-h-screen bg-zinc-50">
-        <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white/95 backdrop-blur">
-          <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 font-semibold text-white">
-                F
-              </div>
+      <div className="min-h-screen bg-[var(--admin-bg)] text-foreground">
+        <header className="sticky top-0 z-40 border-b border-[var(--admin-border)] bg-white/96 shadow-[0_6px_24px_rgba(112,61,58,0.04)] backdrop-blur-xl">
+          <div className="mx-auto flex h-[74px] max-w-[1680px] items-center gap-4 px-4 sm:px-6 xl:px-8">
+            <button
+              type="button"
+              onClick={() => {
+                setAba("inicio");
+                setExpandida(null);
+              }}
+              className="flex shrink-0 items-center"
+              aria-label="Ir para o início"
+            >
+              <img
+                src="/flua-logo.webp"
+                alt="Flua Gestão"
+                className="h-12 w-[118px] object-contain object-left sm:w-[128px]"
+              />
+            </button>
 
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="truncate text-lg font-semibold text-zinc-950">
-                    Flua Gestão
-                  </h1>
-                  <span className="hidden text-zinc-300 sm:inline">•</span>
-                  <span className="hidden truncate text-sm text-zinc-500 sm:inline">
-                    {companyName}
-                  </span>
-                </div>
-                <p className="truncate text-xs text-zinc-500">
-                  {displayName} · {email}
-                </p>
-              </div>
-            </div>
-
-            <Button variant="outline" size="sm" onClick={sair}>
-              <LogOut className="mr-1.5 h-4 w-4" />
-              Sair
-            </Button>
-          </div>
-        </header>
-
-        <div className="flex">
-          <aside className="hidden w-60 shrink-0 border-r border-zinc-200 bg-zinc-950 md:block">
-            <nav className="sticky top-[65px] flex min-h-[calc(100dvh-65px)] flex-col gap-1 px-3 py-4">
+            <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
               {MENU.map((item) => {
                 const filhos = item.vistas ?? item.abas;
-                const ativo = item.abas
-                  ? DO_CATALOGO.includes(aba)
-                  : aba === item.id;
-                const aberta =
-                  Boolean(filhos) && expandida === item.id && ativo;
+                const ativo = itemAtivo(item);
+                const aberta = Boolean(filhos) && expandida === item.id;
 
                 return (
-                  <div key={item.id}>
+                  <div key={item.id} className="relative">
                     <button
                       type="button"
                       onClick={() => {
                         setAba(item.id);
-                        setExpandida(
-                          filhos ? (aberta ? null : item.id) : null,
-                        );
+                        setPerfilAberto(false);
+                        setExpandida(filhos ? (aberta ? null : item.id) : null);
                       }}
                       className={cn(
-                        "flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition-colors",
+                        "inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold transition-all",
                         ativo
-                          ? "bg-white text-zinc-950"
-                          : "text-zinc-400 hover:bg-white/10 hover:text-white",
+                          ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                          : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)] hover:text-[var(--wine)]",
                       )}
                     >
-                      <item.icon className="h-4 w-4" strokeWidth={1.9} />
                       {item.label}
-
                       {filhos && (
                         <ChevronDown
                           className={cn(
-                            "ml-auto h-3.5 w-3.5 transition-transform",
+                            "h-3.5 w-3.5 transition-transform",
                             aberta && "rotate-180",
                           )}
                         />
@@ -274,155 +275,210 @@ export default function AdminClient({
                     </button>
 
                     {aberta && filhos && (
-                      <div className="ml-4 mt-1 flex flex-col gap-0.5 border-l border-white/15 pl-3">
-                        {filhos.map((sub) => {
-                          const selecionado = item.vistas
-                            ? item.id === "vendas"
-                              ? subVendas === sub.id
-                              : item.id === "financeiro"
-                                ? subFin === sub.id
-                                : item.id === "cadastros"
-                                  ? subCad === sub.id
-                                  : subBia === sub.id
-                            : aba === sub.id;
-
-                          return (
-                            <button
-                              key={sub.id}
-                              type="button"
-                              onClick={() => {
-                                if (!item.vistas) {
-                                  setAba(sub.id as AbaId);
-                                  return;
-                                }
-
-                                if (item.id === "vendas") {
-                                  setSubVendas(sub.id as SubVendas);
-                                  return;
-                                }
-
-                                if (item.id === "financeiro") {
-                                  setSubFin(sub.id as SubFinanceiro);
-                                  return;
-                                }
-
-                                if (item.id === "cadastros") {
-                                  setSubCad(sub.id as SubCadastros);
-                                  return;
-                                }
-
-                                setSubBia(sub.id as SubBia);
-                              }}
-                              className={cn(
-                                "rounded-lg px-3 py-1.5 text-left text-sm transition-colors",
-                                selecionado
-                                  ? "bg-white/15 font-medium text-white"
-                                  : "text-zinc-500 hover:text-white",
-                              )}
-                            >
-                              {sub.label}
-                            </button>
-                          );
-                        })}
+                      <div className="absolute left-0 top-full mt-2 min-w-48 rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[var(--shadow-lift)]">
+                        {filhos.map((sub) => (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => selecionarSub(item, sub.id)}
+                            className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                          >
+                            {sub.label}
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
                 );
               })}
             </nav>
-          </aside>
 
-          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6">
-            <nav className="mb-5 flex gap-2 overflow-x-auto pb-1 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {ABAS_PLANAS.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setAba(item.id)}
-                  className={cn(
-                    "inline-flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                    aba === item.id
-                      ? "bg-zinc-950 text-white"
-                      : "border border-zinc-200 bg-white text-zinc-600",
-                  )}
-                >
-                  <item.icon className="h-4 w-4" strokeWidth={1.9} />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
+            <div className="ml-auto hidden min-w-[220px] max-w-[300px] flex-1 xl:block">
+              <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-3.5 text-[var(--admin-muted)] transition focus-within:border-[var(--terracotta)] focus-within:bg-white">
+                <Search className="h-4 w-4 shrink-0" />
+                <input
+                  type="search"
+                  placeholder="Buscar no sistema..."
+                  className="min-w-0 flex-1 bg-transparent text-sm text-[var(--admin-ink)] outline-none placeholder:text-[var(--admin-muted)]"
+                />
+                <span className="rounded-md border border-[var(--admin-border)] bg-white px-1.5 py-0.5 text-[10px] font-semibold">
+                  ⌘ K
+                </span>
+              </label>
+            </div>
 
-            {erro && (
-              <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {erro}
-              </div>
-            )}
+            <div className="hidden items-center gap-1 md:flex">
+              <button
+                type="button"
+                className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                aria-label="Notificações"
+              >
+                <Bell className="h-[18px] w-[18px]" />
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setAba("tarefas")}
+                className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                aria-label="Agenda"
+              >
+                <CalendarDays className="h-[18px] w-[18px]" />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                aria-label="Ajuda"
+              >
+                <CircleHelp className="h-[18px] w-[18px]" />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                aria-label="Configurações"
+              >
+                <Settings className="h-[18px] w-[18px]" />
+              </button>
+            </div>
 
-            {carregando ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
-              </div>
-            ) : aba === "inicio" ? (
-              <InicioPanel onIrPara={setAba} />
-            ) : aba === "dashboard" ? (
-              <DashboardPanel />
-            ) : aba === "financeiro" ? (
-              <FinanceiroPanel vista={subFin} />
-            ) : aba === "cadastros" ? (
-              <CadastrosPanel vista={subCad} />
-            ) : aba === "tarefas" ? (
-              <TarefasPanel />
-            ) : aba === "bia" ? (
-              <BiaPanel vista={subBia} />
-            ) : aba === "vendas" ? (
-              <VendasPanel
-                vista={subVendas}
-                onVista={setSubVendas}
-                empresaNome={companyName}
-                produtos={produtos.map((produto) => {
-                  const categoria = categorias.find(
-                    (item) => item.id === produto.categoria_id,
-                  );
-                  const catalogo = catalogos.find(
-                    (item) => item.id === categoria?.catalogo_id,
-                  );
+            <div className="relative ml-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setPerfilAberto((v) => !v);
+                  setExpandida(null);
+                }}
+                className="flex items-center gap-2 rounded-xl px-1.5 py-1.5 text-left transition hover:bg-[var(--cream-soft)]"
+              >
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--wine)] text-sm font-bold text-white shadow-sm">
+                  {(displayName || email || "F").trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="hidden min-w-0 sm:block">
+                  <strong className="block max-w-28 truncate text-xs font-semibold text-[var(--admin-ink)]">
+                    {displayName || "Usuário"}
+                  </strong>
+                  <span className="block max-w-28 truncate text-[10px] text-[var(--admin-muted)]">
+                    {companyName}
+                  </span>
+                </span>
+                <ChevronDown className="hidden h-3.5 w-3.5 text-[var(--admin-muted)] sm:block" />
+              </button>
 
-                  return {
-                    slug: produto.slug,
-                    nome: produto.nome,
-                    preco: produto.preco,
-                    precos_extra: asPrecosExtra(produto.precos_extra),
-                    grupo: categoria
-                      ? catalogo
-                        ? `${categoria.nome} · ${catalogo.nome}`
-                        : categoria.nome
-                      : "Sem categoria",
-                    ordemGrupo:
-                      (catalogo?.ordem ?? 99) * 100 +
-                      (categoria?.ordem ?? 99),
-                  };
-                })}
-              />
-            ) : aba === "produtos" ? (
-              <ProdutosPanel
-                produtos={produtos}
-                categorias={categorias}
-                catalogos={catalogos}
-                onNovo={() => setEditando("novo")}
-                onEditar={(produto) => setEditando(produto)}
-                onChange={recarregar}
-              />
-            ) : aba === "colecoes" ? (
-              <ColecoesPanel
-                catalogos={catalogos}
-                categorias={categorias}
-                onChange={recarregar}
-              />
-            ) : (
-              <HorariosPanel />
-            )}
-          </main>
-        </div>
+              {perfilAberto && (
+                <div className="absolute right-0 top-full mt-2 w-64 rounded-2xl border border-[var(--admin-border)] bg-white p-3 shadow-[var(--shadow-lift)]">
+                  <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
+                    {displayName || "Usuário"}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-[var(--admin-muted)]">{email}</p>
+                  <p className="mt-1 truncate text-xs font-medium text-[var(--terracotta)]">
+                    {companyName}
+                  </p>
+                  <div className="my-3 h-px bg-[var(--admin-border)]" />
+                  <button
+                    type="button"
+                    onClick={sair}
+                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--admin-ink-soft)] transition hover:bg-red-50 hover:text-red-700"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sair do sistema
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto px-4 pb-3 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {ABAS_PLANAS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => {
+                  setAba(item.id);
+                  setExpandida(null);
+                }}
+                className={cn(
+                  "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors",
+                  itemAtivo(item)
+                    ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
+                    : "border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)]",
+                )}
+              >
+                <item.icon className="h-3.5 w-3.5" />
+                {item.label}
+              </button>
+            ))}
+          </nav>
+        </header>
+
+        <main className="mx-auto min-w-0 max-w-[1680px] px-4 py-5 sm:px-6 lg:py-6 xl:px-8">
+          {erro && (
+            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {erro}
+            </div>
+          )}
+
+          {carregando ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-[var(--terracotta)]" />
+            </div>
+          ) : aba === "inicio" ? (
+            <InicioPanel onIrPara={setAba} />
+          ) : aba === "dashboard" ? (
+            <DashboardPanel />
+          ) : aba === "financeiro" ? (
+            <FinanceiroPanel vista={subFin} />
+          ) : aba === "cadastros" ? (
+            <CadastrosPanel vista={subCad} />
+          ) : aba === "tarefas" ? (
+            <TarefasPanel />
+          ) : aba === "bia" ? (
+            <BiaPanel vista={subBia} />
+          ) : aba === "vendas" ? (
+            <VendasPanel
+              vista={subVendas}
+              onVista={setSubVendas}
+              empresaNome={companyName}
+              produtos={produtos.map((produto) => {
+                const categoria = categorias.find(
+                  (item) => item.id === produto.categoria_id,
+                );
+                const catalogo = catalogos.find(
+                  (item) => item.id === categoria?.catalogo_id,
+                );
+
+                return {
+                  slug: produto.slug,
+                  nome: produto.nome,
+                  preco: produto.preco,
+                  precos_extra: asPrecosExtra(produto.precos_extra),
+                  grupo: categoria
+                    ? catalogo
+                      ? `${categoria.nome} · ${catalogo.nome}`
+                      : categoria.nome
+                    : "Sem categoria",
+                  ordemGrupo:
+                    (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
+                };
+              })}
+            />
+          ) : aba === "produtos" ? (
+            <ProdutosPanel
+              produtos={produtos}
+              categorias={categorias}
+              catalogos={catalogos}
+              onNovo={() => setEditando("novo")}
+              onEditar={(produto) => setEditando(produto)}
+              onChange={recarregar}
+            />
+          ) : aba === "colecoes" ? (
+            <ColecoesPanel
+              catalogos={catalogos}
+              categorias={categorias}
+              onChange={recarregar}
+            />
+          ) : (
+            <HorariosPanel />
+          )}
+        </main>
 
         {editando && (
           <ProdutoDialog
