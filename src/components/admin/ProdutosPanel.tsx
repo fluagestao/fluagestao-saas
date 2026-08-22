@@ -85,8 +85,8 @@ function LinhaProduto({
             : produto.preco_label || "sob consulta"}
           {produto.badge && ` · ${produto.badge}`}
         </p>
-        <p className="mt-0.5 truncate text-[10px] text-muted-foreground/80">
-          Código: {produto.slug || produto.id}
+        <p className="mt-0.5 truncate text-[10px] font-semibold tabular-nums text-[var(--terracotta)]">
+          Código: {produto.sku}
         </p>
       </div>
 
@@ -155,10 +155,16 @@ export function ProdutosPanel({
       if (!termo) return true;
 
       const nome = produto.nome.toLocaleLowerCase("pt-BR");
+      const codigo = (produto.sku ?? "").toLocaleLowerCase("pt-BR");
       const slug = (produto.slug ?? "").toLocaleLowerCase("pt-BR");
       const id = produto.id.toLocaleLowerCase("pt-BR");
 
-      return nome.includes(termo) || slug.includes(termo) || id.includes(termo);
+      return (
+        nome.includes(termo) ||
+        codigo.includes(termo) ||
+        slug.includes(termo) ||
+        id.includes(termo)
+      );
     });
   }, [itens, categorias, busca, filtroColecao]);
 
