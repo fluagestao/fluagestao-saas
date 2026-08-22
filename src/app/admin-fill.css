@@ -287,3 +287,18 @@ main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > d
     min-height: 30px !important;
   }
 }
+
+/*
+ * Cabecalho do sistema: permanece preso no topo em todas as telas internas.
+ * O seletor pega apenas o header direto do shell administrativo, sem afetar
+ * cabecalhos de cards, secoes ou o site publico.
+ */
+div[class~="bg-[var(--admin-bg)]"] > header:first-child {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 60 !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 6px 24px rgba(112, 61, 58, 0.04);
+}
