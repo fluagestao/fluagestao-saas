@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { GripVertical, Loader2, Plus, Search, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   DndContext,
   closestCenter,
@@ -16,20 +17,29 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { removerProduto, reordenarProdutos } from "@/lib/admin";
+import { removerProduto, reordenarProdutos, salvarProduto } from "@/lib/admin";
 import { formatPreco } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
-import { type CatalogoRow, type CategoriaRow, type ProdutoRow } from "./tipos";
+import { Switch } from "@/components/ui/switch";
+import {
+  asPrecosExtra,
+  asStringArray,
+  type CatalogoRow,
+  type CategoriaRow,
+  type ProdutoRow,
+} from "./tipos";
 import { useConfirmar } from "./shell";
 
 function LinhaProduto({
   produto,
   onEditar,
   onExcluir,
+  onVisibilidade,
 }: {
   produto: ProdutoRow;
   onEditar: (p: ProdutoRow) => void;
   onExcluir: (p: ProdutoRow) => void;
+  onVisibilidade: (p: ProdutoRow, ativo: boolean) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: produto.id,
@@ -72,7 +82,6 @@ function LinhaProduto({
           {produto.preco != null
             ? formatPreco(produto.preco)
             : produto.preco_label || "sob consulta"}
-          {!produto.ativo && " · oculto"}
           {produto.badge && ` · ${produto.badge}`}
         </p>
         <p className="mt-0.5 truncate text-[10px] text-muted-foreground/80">
@@ -80,7 +89,15 @@ function LinhaProduto({
         </p>
       </div>
 
-      <div className="ml-auto flex shrink-0 items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-3">
+        <label className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs font-medium text-[var(--admin-ink-soft)]">
+          <Switch
+            checked={produto.ativo !== false}
+            onCheckedChange={(ativo) => onVisibilidade(produto, ativo)}
+          />
+          <span className="hidden sm:inline">Visível no site</span>
+        </label>
+
         <Button variant="outline" size="sm" onClick={() => onEditar(produto)}>
           Editar
         </Button>
@@ -158,6 +175,40 @@ export function ProdutosPanel({
     onChange();
   }
 
+  async function alterarVisibilidade(p: ProdutoRow, ativo: boolean) {
+    const anterior = p.ativo !== false;
+    setItens((prev) =>
+      prev.map((item) => (item.id === p.id ? { ...item, ativo } : item)),
+    );
+
+    try {
+      await salvarProduto({
+        data: {
+          id: p.id,
+          nome: p.nome,
+          categoria_id: p.categoria_id,
+          preco: p.preco,
+          preco_label: p.preco_label,
+          serve: p.serve,
+          itens: asStringArray(p.itens),
+          precos_extra: asPrecosExtra(p.precos_extra),
+          observacao: p.observacao,
+          ativo,
+          ordem: p.ordem ?? 0,
+          badge: p.badge,
+          badge_cor: p.badge_cor,
+        },
+      });
+      toast.success(ativo ? "Produto visível no site." : "Produto ocultado do site.");
+      onChange();
+    } catch {
+      setItens((prev) =>
+        prev.map((item) => (item.id === p.id ? { ...item, ativo: anterior } : item)),
+      );
+      toast.error("Não foi possível alterar a visibilidade do produto.");
+    }
+  }
+
   function onDragEnd(e: DragEndEvent) {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
@@ -166,7 +217,6 @@ export function ProdutosPanel({
     const destino = itens.find((p) => p.id === String(over.id));
     if (!ativo || !destino) return;
 
-    // Mantém a regra original: reordenação somente entre produtos da mesma categoria.
     if ((ativo.categoria_id ?? null) !== (destino.categoria_id ?? null)) return;
 
     const catId = ativo.categoria_id ?? null;
@@ -300,6 +350,7 @@ export function ProdutosPanel({
                   produto={p}
                   onEditar={onEditar}
                   onExcluir={excluir}
+                  onVisibilidade={alterarVisibilidade}
                 />
               ))}
             </div>
