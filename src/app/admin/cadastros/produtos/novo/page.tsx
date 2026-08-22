@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { NovoProdutoClient } from "./novo-produto-client";
-import { carregarCatalogoAdmin } from "@/lib/admin";
+import { NovoProdutoClient } from "./novo-produto-client-v2";
+import { carregarCatalogoAdmin, prepararNovoProduto } from "@/lib/admin";
 import { listarEtiquetas } from "@/lib/etiquetas";
 import { createClient } from "@/lib/supabase/server";
 import type {
@@ -12,7 +12,11 @@ import type {
 
 export const dynamic = "force-dynamic";
 
-export default async function NovoProdutoPage() {
+export default async function NovoProdutoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ draft?: string }>;
+}) {
   const supabase = await createClient();
   const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
   const userId = claimsData?.claims?.sub;
@@ -34,6 +38,34 @@ export default async function NovoProdutoPage() {
     redirect("/onboarding");
   }
 
+  const params = await searchParams;
+  let draft:
+    | { id: string; sku: string; slug: string; rascunho: boolean }
+    | null = null;
+
+  if (params.draft) {
+    const { data } = await supabase
+      .from("produtos")
+      .select("id, sku, slug, rascunho")
+      .eq("company_id", membro.company_id)
+      .eq("id", params.draft)
+      .maybeSingle();
+
+    if (data?.rascunho) {
+      draft = {
+        id: data.id,
+        sku: data.sku,
+        slug: data.slug,
+        rascunho: true,
+      };
+    }
+  }
+
+  if (!draft) {
+    const novo = await prepararNovoProduto();
+    redirect(`/admin/cadastros/produtos/novo?draft=${novo.id}`);
+  }
+
   const [{ data: empresa }, catalogo, etiquetas] = await Promise.all([
     supabase
       .from("companies")
@@ -51,6 +83,7 @@ export default async function NovoProdutoPage() {
       etiquetas={(etiquetas ?? []) as EtiquetaRow[]}
       companyName={empresa?.name ?? "Empresa"}
       displayName={membro.display_name ?? "Usuário"}
+      draft={draft}
     />
   );
 }

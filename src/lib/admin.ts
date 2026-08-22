@@ -152,24 +152,61 @@ export async function carregarCatalogoAdmin() {
   const { supabase, companyId } = await contextoEmpresa();
   const catalogo = await listCatalogo(supabase, companyId);
 
-  // O catálogo legado ainda não seleciona o SKU. Acrescentamos o código aqui
-  // sem permitir que o cliente o envie ou altere em qualquer formulário.
   const { data: codigos, error } = await supabase
     .from("produtos")
-    .select("id, sku")
+    .select("id, sku, rascunho")
     .eq("company_id", companyId);
 
   if (error) throw error;
 
-  const porId = new Map((codigos ?? []).map((item) => [item.id, item.sku]));
+  const estadoPorId = new Map(
+    (codigos ?? []).map((item) => [
+      item.id,
+      { sku: item.sku ?? "", rascunho: item.rascunho === true },
+    ]),
+  );
 
   return {
     ...catalogo,
-    produtos: (catalogo.produtos ?? []).map((produto) => ({
-      ...produto,
-      sku: porId.get(produto.id) ?? "",
-    })),
+    produtos: (catalogo.produtos ?? [])
+      .filter((produto) => !estadoPorId.get(produto.id)?.rascunho)
+      .map((produto) => ({
+        ...produto,
+        sku: estadoPorId.get(produto.id)?.sku ?? "",
+      })),
   };
+}
+
+export async function prepararNovoProduto() {
+  const { supabase, companyId } = await contextoEmpresa();
+  const id = crypto.randomUUID();
+  const slug = `rascunho-${id}`;
+
+  const { data, error } = await supabase
+    .from("produtos")
+    .insert({
+      id,
+      company_id: companyId,
+      categoria_id: null,
+      slug,
+      nome: "Novo produto",
+      preco: null,
+      preco_label: null,
+      serve: null,
+      itens: [],
+      precos_extra: [],
+      observacao: null,
+      ativo: false,
+      ordem: 0,
+      badge: null,
+      badge_cor: null,
+      rascunho: true,
+    })
+    .select("id, slug, sku")
+    .single();
+
+  if (error) throw error;
+  return data;
 }
 
 export async function carregarConfig() {
@@ -190,8 +227,14 @@ export async function salvarProduto(input: ActionInput<unknown>) {
   const { supabase, companyId } = await contextoEmpresa();
   const salvo = await upsertProduto(supabase, companyId, data);
 
-  // O código é criado no banco por trigger e nunca é aceito como entrada.
-  // Reconsultamos para devolver ao formulário o valor definitivo (0001, 0002...).
+  const { error: finalizarError } = await supabase
+    .from("produtos")
+    .update({ rascunho: false })
+    .eq("company_id", companyId)
+    .eq("id", salvo.id);
+
+  if (finalizarError) throw finalizarError;
+
   const { data: produto, error } = await supabase
     .from("produtos")
     .select("id, slug, sku")
