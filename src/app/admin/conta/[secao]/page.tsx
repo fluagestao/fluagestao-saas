@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { ContaPageClient, type ContaSecao } from "@/components/admin/ContaPageClient";
 import { createClient } from "@/lib/supabase/server";
+import "./conta-viewport.css";
 
 export const dynamic = "force-dynamic";
 
@@ -47,11 +48,13 @@ export default async function ContaPage({
     .maybeSingle();
 
   return (
-    <ContaPageClient
-      secao={secao as ContaSecao}
-      email={membro.email}
-      displayName={membro.display_name}
-      companyName={empresa?.name ?? "Empresa"}
-    />
+    <div className="conta-viewport">
+      <ContaPageClient
+        secao={secao as ContaSecao}
+        email={membro.email}
+        displayName={membro.display_name}
+        companyName={empresa?.name ?? "Empresa"}
+      />
+    </div>
   );
 }
