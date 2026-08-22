@@ -81,12 +81,11 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
 ];
 
 const SUB_CADASTROS: { id: string; label: string }[] = [
+  { id: "produtos", label: "Produtos" },
+  { id: "colecoes", label: "Coleções" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
   { id: "bairros", label: "Bairros" },
-  { id: "usuarios", label: "Usuários" },
-  { id: "produtos", label: "Produtos" },
-  { id: "colecoes", label: "Coleções" },
   { id: "horarios", label: "Horários" },
 ];
 
