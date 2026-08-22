@@ -28,14 +28,16 @@ export function PageHeader({
   acoes?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-start justify-between gap-3 pb-4">
-      <div className="min-w-0">
-        <h2 className="text-xl font-semibold tracking-tight text-foreground">{titulo}</h2>
+    <header className="flex w-full min-w-0 flex-wrap items-start justify-between gap-3 pb-4">
+      <div className="min-w-0 flex-1">
+        <h2 className="break-words text-xl font-semibold tracking-tight text-foreground">{titulo}</h2>
         {descricao && (
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{descricao}</p>
+          <p className="mt-1 max-w-2xl break-words text-sm text-muted-foreground">{descricao}</p>
         )}
       </div>
-      {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
+      {acoes && (
+        <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">{acoes}</div>
+      )}
     </header>
   );
 }
@@ -43,7 +45,7 @@ export function PageHeader({
 /** Envelope da tabela: borda, cantos e rolagem horizontal própria. */
 export function TabelaEnvelope({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-[var(--cream-deep)] bg-card">
+    <div className="w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-2xl border border-[var(--cream-deep)] bg-card">
       {children}
     </div>
   );
@@ -64,10 +66,10 @@ export function EstadoVazio({
   acao?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 px-5 py-14 text-center">
-      <p className="text-lg font-semibold text-foreground">{titulo}</p>
-      {descricao && <p className="max-w-sm text-sm text-muted-foreground">{descricao}</p>}
-      {acao && <div className="mt-2">{acao}</div>}
+    <div className="flex min-w-0 flex-col items-center justify-center gap-2 px-5 py-14 text-center">
+      <p className="break-words text-lg font-semibold text-foreground">{titulo}</p>
+      {descricao && <p className="max-w-sm break-words text-sm text-muted-foreground">{descricao}</p>}
+      {acao && <div className="mt-2 max-w-full">{acao}</div>}
     </div>
   );
 }
@@ -75,11 +77,11 @@ export function EstadoVazio({
 /** Esqueleto no formato da tabela — menos salto de layout que "carregando…". */
 export function TabelaSkeleton({ linhas = 5, colunas = 4 }: { linhas?: number; colunas?: number }) {
   return (
-    <div className="divide-y divide-[var(--cream-deep)]">
+    <div className="min-w-0 divide-y divide-[var(--cream-deep)]">
       {Array.from({ length: linhas }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-4 py-3">
+        <div key={i} className="flex min-w-0 items-center gap-4 px-4 py-3">
           {Array.from({ length: colunas }).map((_, j) => (
-            <Skeleton key={j} className={j === 0 ? "h-4 flex-1" : "h-4 w-20"} />
+            <Skeleton key={j} className={j === 0 ? "h-4 min-w-0 flex-1" : "h-4 w-20 shrink-0"} />
           ))}
         </div>
       ))}
@@ -89,9 +91,9 @@ export function TabelaSkeleton({ linhas = 5, colunas = 4 }: { linhas?: number; c
 
 export function Carregando({ texto = "carregando…" }: { texto?: string }) {
   return (
-    <p className="flex items-center gap-2 px-4 py-6 text-sm text-muted-foreground">
-      <Loader2 className="h-4 w-4 animate-spin" />
-      {texto}
+    <p className="flex min-w-0 items-center gap-2 px-4 py-6 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+      <span className="min-w-0 break-words">{texto}</span>
     </p>
   );
 }
@@ -149,9 +151,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-xl font-semibold tracking-tight">{pedido?.titulo}</AlertDialogTitle>
+            <AlertDialogTitle className="break-words text-xl font-semibold tracking-tight">
+              {pedido?.titulo}
+            </AlertDialogTitle>
             {pedido?.descricao && (
-              <AlertDialogDescription>{pedido.descricao}</AlertDialogDescription>
+              <AlertDialogDescription className="break-words">{pedido.descricao}</AlertDialogDescription>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
