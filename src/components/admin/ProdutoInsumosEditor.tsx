@@ -55,8 +55,8 @@ export function ProdutoInsumosEditor({
     () =>
       itens.reduce((total, item) => {
         const insumo = insumos.find((i) => i.id === item.insumoId);
-        if (!insumo || insumo.quantidade_referencia <= 0) return total;
-        return total + (item.quantidade / insumo.quantidade_referencia) * insumo.custo_referencia;
+        if (!insumo) return total;
+        return total + item.quantidade * insumo.custo_referencia;
       }, 0),
     [itens, insumos],
   );
@@ -103,7 +103,7 @@ export function ProdutoInsumosEditor({
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Insumos do produto</h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">O custo é calculado automaticamente.</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">O custo é calculado pela quantidade usada × custo unitário.</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Custo estimado</p>
@@ -140,15 +140,13 @@ export function ProdutoInsumosEditor({
           itens.map((item) => {
             const insumo = insumos.find((i) => i.id === item.insumoId);
             if (!insumo) return null;
-            const custo = insumo.quantidade_referencia > 0
-              ? (item.quantidade / insumo.quantidade_referencia) * insumo.custo_referencia
-              : 0;
+            const custo = item.quantidade * insumo.custo_referencia;
             return (
               <div key={item.insumoId} className="grid grid-cols-[minmax(0,1fr)_76px_76px_30px] items-center gap-2 rounded-xl bg-[var(--cream-soft)] px-2.5 py-2">
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold">{insumo.nome}</p>
                   <p className="text-[10px] text-muted-foreground">
-                    {moeda(insumo.custo_referencia)} / {String(insumo.quantidade_referencia).replace(".", ",")} {insumo.unidade}
+                    {moeda(insumo.custo_referencia)} / {insumo.unidade}
                   </p>
                 </div>
                 <Input

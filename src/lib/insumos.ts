@@ -80,38 +80,32 @@ export async function listarInsumos(): Promise<InsumoRow[]> {
     .order("nome");
 
   if (error) throw error;
-  return (data ?? []).map((item) => {
-    const quantidadeReferencia = Number(item.qtd_embalagem ?? 1) || 1;
-    const custoReferencia = Number(item.preco_pacote ?? 0);
-    return {
-      id: item.id,
-      nome: item.nome,
-      unidade: normalizarUnidade(item.unidade),
-      quantidade_referencia: quantidadeReferencia,
-      custo_referencia: custoReferencia,
-      ativo: item.ativo !== false,
-    };
-  });
+  return (data ?? []).map((item) => ({
+    id: item.id,
+    nome: item.nome,
+    unidade: normalizarUnidade(item.unidade),
+    quantidade_referencia: Number(item.qtd_embalagem ?? 1) || 1,
+    custo_referencia: Number(item.custo ?? 0),
+    ativo: item.ativo !== false,
+  }));
 }
 
 export async function salvarInsumo(input: ActionInput<unknown>) {
   const data = insumoSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
 
-  const custoUnitario =
-    data.quantidade_referencia > 0
-      ? data.custo_referencia / data.quantidade_referencia
-      : 0;
+  // Na tela, custo_referencia representa sempre o valor UNITÁRIO do insumo.
+  // A tabela existente mantém também preco_pacote, que fica apenas como valor
+  // de referência calculado pela quantidade-base x custo unitário.
+  const custoUnitario = data.custo_referencia;
+  const precoReferencia = data.quantidade_referencia * custoUnitario;
 
-  // A tabela de insumos já existia no projeto com os nomes qtd_embalagem,
-  // preco_pacote e custo. Mantemos esses campos como fonte oficial e fazemos
-  // a tradução para quantidade_referencia/custo_referencia apenas na UI.
   const row = {
     company_id: companyId,
     nome: data.nome,
     unidade: data.unidade,
     qtd_embalagem: data.quantidade_referencia,
-    preco_pacote: data.custo_referencia,
+    preco_pacote: precoReferencia,
     custo: custoUnitario,
     ativo: data.ativo,
     updated_at: new Date().toISOString(),
