@@ -105,6 +105,24 @@ export function ProdutosPanel({
     setItens(produtos);
   }, [produtos]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const desktop = window.matchMedia("(min-width: 1024px)");
+    if (!desktop.matches) return;
+
+    const overflowHtml = document.documentElement.style.overflow;
+    const overflowBody = document.body.style.overflow;
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.documentElement.style.overflow = overflowHtml;
+      document.body.style.overflow = overflowBody;
+    };
+  }, []);
+
   const itensFiltrados = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
 
@@ -301,52 +319,50 @@ export function ProdutosPanel({
               Exibindo {inicioExibido}–{fimExibido} de {itensFiltrados.length} produtos
             </p>
 
-            {totalPaginas > 1 && (
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
-                  disabled={pagina === 1}
-                  className="h-8 px-2.5"
-                  aria-label="Página anterior"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
+                disabled={pagina === 1}
+                className="h-8 px-2.5"
+                aria-label="Página anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
 
-                {Array.from({ length: totalPaginas }, (_, index) => index + 1).map(
-                  (numero) => (
-                    <button
-                      key={numero}
-                      type="button"
-                      onClick={() => setPagina(numero)}
-                      className={`grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
-                        pagina === numero
-                          ? "bg-[var(--terracotta)] text-white"
-                          : "border border-[var(--cream-deep)] bg-white text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]"
-                      }`}
-                    >
-                      {numero}
-                    </button>
-                  ),
-                )}
+              {Array.from({ length: totalPaginas }, (_, index) => index + 1).map(
+                (numero) => (
+                  <button
+                    key={numero}
+                    type="button"
+                    onClick={() => setPagina(numero)}
+                    className={`grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
+                      pagina === numero
+                        ? "bg-[var(--terracotta)] text-white"
+                        : "border border-[var(--cream-deep)] bg-white text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]"
+                    }`}
+                  >
+                    {numero}
+                  </button>
+                ),
+              )}
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPagina((atual) => Math.min(totalPaginas, atual + 1))
-                  }
-                  disabled={pagina === totalPaginas}
-                  className="h-8 px-2.5"
-                  aria-label="Próxima página"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setPagina((atual) => Math.min(totalPaginas, atual + 1))
+                }
+                disabled={pagina === totalPaginas}
+                className="h-8 px-2.5"
+                aria-label="Próxima página"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </>
       )}
