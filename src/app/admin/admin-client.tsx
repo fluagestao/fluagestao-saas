@@ -2,7 +2,6 @@
 
 import {
   Bell,
-  BookOpen,
   Bot,
   CalendarDays,
   ChartPie,
@@ -12,7 +11,6 @@ import {
   Contact,
   Home,
   Loader2,
-  Package,
   Search,
   Settings,
   ShoppingCart,
@@ -82,11 +80,14 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
   { id: "realizadas", label: "Realizadas" },
 ];
 
-const SUB_CADASTROS: { id: SubCadastros; label: string }[] = [
+const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
   { id: "bairros", label: "Bairros" },
   { id: "usuarios", label: "Usuários" },
+  { id: "produtos", label: "Produtos" },
+  { id: "colecoes", label: "Coleções" },
+  { id: "horarios", label: "Horários" },
 ];
 
 type ItemMenu = {
@@ -115,16 +116,6 @@ const MENU: ItemMenu[] = [
   },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
   { id: "bia", label: "BIA", icon: Bot, vistas: SUB_BIA },
-  {
-    id: "produtos",
-    label: "Catálogo",
-    icon: BookOpen,
-    abas: [
-      { id: "produtos", label: "Produtos" },
-      { id: "colecoes", label: "Coleções" },
-      { id: "horarios", label: "Horários" },
-    ],
-  },
 ];
 
 const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "horarios"];
@@ -137,7 +128,6 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
   { id: "bia", label: "BIA", icon: Bot },
-  { id: "produtos", label: "Catálogo", icon: Package },
 ];
 
 export default function AdminClient({
@@ -188,10 +178,19 @@ export default function AdminClient({
   }, [recarregar]);
 
   function itemAtivo(item: ItemMenu) {
+    if (item.id === "cadastros") {
+      return aba === "cadastros" || DO_CATALOGO.includes(aba);
+    }
     return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
   }
 
   function selecionarSub(item: ItemMenu, subId: string) {
+    if (item.id === "cadastros" && DO_CATALOGO.includes(subId as AbaId)) {
+      setAba(subId as AbaId);
+      setExpandida(null);
+      return;
+    }
+
     if (!item.vistas) {
       setAba(subId as AbaId);
       setExpandida(null);
@@ -362,6 +361,31 @@ export default function AdminClient({
               </button>
             ))}
           </nav>
+
+          {(aba === "cadastros" || DO_CATALOGO.includes(aba)) && (
+            <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SUB_CADASTROS.map((sub) => {
+                const ativo = DO_CATALOGO.includes(sub.id as AbaId)
+                  ? aba === sub.id
+                  : aba === "cadastros" && subCad === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => selecionarSub(MENU.find((item) => item.id === "cadastros")!, sub.id)}
+                    className={cn(
+                      "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                      ativo
+                        ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                        : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+                    )}
+                  >
+                    {sub.label}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
         </header>
 
         <main className="mx-auto min-w-0 max-w-[1680px] px-4 py-5 sm:px-6 lg:py-6 xl:px-8">
