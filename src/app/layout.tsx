@@ -7,6 +7,7 @@ import "./panel-shell.css";
 import "./flua-hero-visual.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
+import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden">
         <AdminPathSync />
+        <NovoPedidoRouteBridge />
         {children}
       </body>
     </html>
