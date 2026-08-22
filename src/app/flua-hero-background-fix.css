@@ -1,0 +1,40 @@
+/* Correção definitiva do fundo do hero: foto servida pelo próprio app. */
+.flua2-site .flua2-hero{
+  background-color:#6f3532!important;
+  background-image:
+    linear-gradient(90deg,rgba(75,29,28,.98) 0%,rgba(83,33,31,.95) 25%,rgba(89,35,33,.82) 43%,rgba(72,26,25,.50) 68%,rgba(43,14,14,.30) 100%),
+    linear-gradient(180deg,rgba(35,10,10,.18) 0%,rgba(61,22,21,.06) 52%,rgba(62,23,22,.62) 100%),
+    url('/api/flua-hero-bg')!important;
+  background-size:cover,cover,cover!important;
+  background-repeat:no-repeat!important;
+  background-position:center,center,center 52%!important;
+}
+
+.flua2-site .flua2-hero::before{
+  background:
+    radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.025),transparent 55%),
+    linear-gradient(90deg,rgba(32,9,9,.22),transparent 36%,transparent 78%,rgba(24,7,7,.10))!important;
+}
+
+/* A foto já contém cesta, presente e tábua; evita duplicar objetos decorativos. */
+.flua2-site .flua2-decor-gift,
+.flua2-site .flua2-decor-box,
+.flua2-site .flua2-decor-board{
+  display:none!important;
+}
+
+@media(max-width:1080px){
+  .flua2-site .flua2-hero{
+    background-position:center,center,58% center!important;
+  }
+}
+
+@media(max-width:640px){
+  .flua2-site .flua2-hero{
+    background-image:
+      linear-gradient(180deg,rgba(72,27,26,.92),rgba(72,27,26,.78)),
+      url('/api/flua-hero-bg')!important;
+    background-size:cover!important;
+    background-position:center!important;
+  }
+}
