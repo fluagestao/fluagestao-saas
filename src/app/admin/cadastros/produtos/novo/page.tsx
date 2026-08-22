@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { NovoProdutoClient } from "./novo-produto-client-v2";
 import { carregarCatalogoAdmin, prepararNovoProduto } from "@/lib/admin";
 import { listarEtiquetas } from "@/lib/etiquetas";
+import { listarInsumos } from "@/lib/insumos";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CatalogoRow,
@@ -66,7 +67,7 @@ export default async function NovoProdutoPage({
     redirect(`/admin/cadastros/produtos/novo?draft=${novo.id}`);
   }
 
-  const [{ data: empresa }, catalogo, etiquetas] = await Promise.all([
+  const [{ data: empresa }, catalogo, etiquetas, insumos] = await Promise.all([
     supabase
       .from("companies")
       .select("name")
@@ -74,6 +75,7 @@ export default async function NovoProdutoPage({
       .maybeSingle(),
     carregarCatalogoAdmin(),
     listarEtiquetas(),
+    listarInsumos(),
   ]);
 
   return (
@@ -81,6 +83,7 @@ export default async function NovoProdutoPage({
       categorias={(catalogo.categorias ?? []) as CategoriaRow[]}
       catalogos={(catalogo.catalogos ?? []) as CatalogoRow[]}
       etiquetas={(etiquetas ?? []) as EtiquetaRow[]}
+      insumos={insumos}
       companyName={empresa?.name ?? "Empresa"}
       displayName={membro.display_name ?? "Usuário"}
       draft={draft}
