@@ -18,6 +18,7 @@ import { CORES_DESTAQUE, type CatalogoRow, type CategoriaRow } from "./tipos";
 import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
 const SEM_COLECAO = "sem";
+const COR_PADRAO = "#B8893B";
 
 export function CategoriasPanel({
   categorias,
@@ -30,6 +31,7 @@ export function CategoriasPanel({
 }) {
   const [nome, setNome] = useState("");
   const [catalogoId, setCatalogoId] = useState(SEM_COLECAO);
+  const [cor, setCor] = useState(COR_PADRAO);
   const [busca, setBusca] = useState("");
   const [salvando, setSalvando] = useState(false);
   const confirmar = useConfirmar();
@@ -78,11 +80,13 @@ export function CategoriasPanel({
           nome: nomeLimpo,
           ordem: categorias.length,
           ativa: true,
+          cor,
           catalogo_id: catalogoId === SEM_COLECAO ? null : catalogoId,
         },
       });
       setNome("");
       setCatalogoId(SEM_COLECAO);
+      setCor(COR_PADRAO);
       toast.success(`Categoria "${nomeLimpo}" criada.`);
       onChange();
     } finally {
@@ -133,7 +137,12 @@ export function CategoriasPanel({
       />
 
       <div className="mt-4 rounded-2xl border border-[var(--cream-deep)] bg-card p-4">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_280px_auto]">
+        <div className="mb-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--terracotta)]">Novo cadastro</p>
+          <h3 className="mt-1 text-base font-semibold text-foreground">Nova categoria</h3>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-[minmax(240px,1.3fr)_minmax(220px,280px)_auto_auto] lg:items-center">
           <Input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
@@ -155,8 +164,27 @@ export function CategoriasPanel({
             </SelectContent>
           </Select>
 
+          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2">
+            {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
+              <button
+                key={item.nome}
+                type="button"
+                onClick={() => setCor(item.valor)}
+                title={item.nome}
+                aria-label={`Cor ${item.nome}`}
+                className={cn(
+                  "h-6 w-6 rounded-full border transition-transform hover:scale-110",
+                  cor === item.valor
+                    ? "ring-2 ring-foreground ring-offset-1"
+                    : "border-[var(--cream-deep)]",
+                )}
+                style={{ backgroundColor: item.valor }}
+              />
+            ))}
+          </div>
+
           <Button onClick={criarCategoria} disabled={salvando || !nome.trim()} className="h-11">
-            <Plus className="mr-1.5 h-4 w-4" /> Nova categoria
+            <Plus className="mr-1.5 h-4 w-4" /> Adicionar categoria
           </Button>
         </div>
       </div>
@@ -185,7 +213,7 @@ export function CategoriasPanel({
           {categoriasFiltradas.map((categoria) => (
             <article
               key={categoria.id}
-              className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 lg:grid-cols-[minmax(180px,1.1fr)_minmax(180px,1fr)_minmax(180px,1.1fr)_auto_auto] lg:items-center"
+              className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 lg:grid-cols-[minmax(200px,1.1fr)_minmax(200px,1fr)_minmax(220px,1.1fr)_auto_auto] lg:items-center"
             >
               <Input
                 defaultValue={categoria.nome}
@@ -226,25 +254,22 @@ export function CategoriasPanel({
               />
 
               <div className="flex items-center gap-1.5">
-                {CORES_DESTAQUE.map((cor) => {
-                  const selecionada = (categoria.cor ?? "") === cor.valor;
-                  return (
-                    <button
-                      key={cor.nome}
-                      type="button"
-                      onClick={() => atualizarCategoria(categoria, { cor: cor.valor || null })}
-                      title={cor.nome}
-                      aria-label={`Cor ${cor.nome}`}
-                      className={cn(
-                        "grid h-6 w-6 place-items-center rounded-full border text-[9px] transition-transform hover:scale-110",
-                        selecionada ? "ring-2 ring-foreground ring-offset-1" : "border-[var(--cream-deep)]",
-                      )}
-                      style={cor.valor ? { backgroundColor: cor.valor } : undefined}
-                    >
-                      {!cor.valor ? "—" : ""}
-                    </button>
-                  );
-                })}
+                {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
+                  <button
+                    key={item.nome}
+                    type="button"
+                    onClick={() => atualizarCategoria(categoria, { cor: item.valor })}
+                    title={item.nome}
+                    aria-label={`Cor ${item.nome}`}
+                    className={cn(
+                      "h-6 w-6 rounded-full border transition-transform hover:scale-110",
+                      (categoria.cor || COR_PADRAO) === item.valor
+                        ? "ring-2 ring-foreground ring-offset-1"
+                        : "border-[var(--cream-deep)]",
+                    )}
+                    style={{ backgroundColor: item.valor }}
+                  />
+                ))}
               </div>
 
               <div className="flex items-center justify-end gap-2">
