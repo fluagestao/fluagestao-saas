@@ -36,6 +36,8 @@
   }
 
   .conta-viewport main {
+    width: 100% !important;
+    max-width: 1680px !important;
     height: calc(100dvh - 64px);
     overflow: hidden;
     padding-top: 12px !important;
@@ -277,6 +279,8 @@
   }
 
   .conta-viewport > div[class*="min-h-dvh"] > main {
+    width: 100% !important;
+    max-width: 1680px !important;
     height: 100% !important;
     max-height: 100% !important;
   }
