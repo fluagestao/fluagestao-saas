@@ -20,6 +20,7 @@ type ItemMenu = { label: string; href?: string; filhos?: ItemFilho[] };
 
 const MENU: ItemMenu[] = [
   { label: "Início", href: "/inicio" },
+  { label: "Dashboard", href: "/dashboard" },
   {
     label: "Vendas",
     filhos: [
@@ -28,7 +29,6 @@ const MENU: ItemMenu[] = [
       { label: "Realizadas", href: "/vendas/realizadas" },
     ],
   },
-  { label: "Dashboard", href: "/dashboard" },
   {
     label: "Financeiro",
     filhos: [
