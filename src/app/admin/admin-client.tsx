@@ -24,6 +24,7 @@ import { BiaPanel } from "@/components/admin/BiaPanel";
 import { CadastrosPanel } from "@/components/admin/CadastrosPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
+import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
 import { FinanceiroPanel } from "@/components/admin/FinanceiroPanel";
 import { HorariosPanel } from "@/components/admin/HorariosPanel";
 import { InicioPanel } from "@/components/admin/InicioPanel";
@@ -36,10 +37,12 @@ import {
   asPrecosExtra,
   type CatalogoRow,
   type CategoriaRow,
+  type EtiquetaRow,
   type ProdutoRow,
 } from "@/components/admin/tipos";
 import { VendasPanel } from "@/components/admin/VendasPanel";
 import { carregarCatalogoAdmin } from "@/lib/admin";
+import { listarEtiquetas } from "@/lib/etiquetas";
 import { cn } from "@/lib/utils";
 
 export type AbaId =
@@ -52,6 +55,7 @@ export type AbaId =
   | "bia"
   | "produtos"
   | "colecoes"
+  | "etiquetas"
   | "horarios";
 
 export type SubFinanceiro = "entradas" | "saidas";
@@ -83,6 +87,7 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
 const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "produtos", label: "Produtos" },
   { id: "colecoes", label: "Coleções" },
+  { id: "etiquetas", label: "Etiquetas" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
   { id: "bairros", label: "Bairros" },
@@ -117,7 +122,7 @@ const MENU: ItemMenu[] = [
   { id: "bia", label: "BIA", icon: Bot, vistas: SUB_BIA },
 ];
 
-const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "horarios"];
+const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "etiquetas", "horarios"];
 
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
@@ -141,6 +146,7 @@ export default function AdminClient({
   const [catalogos, setCatalogos] = useState<CatalogoRow[]>([]);
   const [categorias, setCategorias] = useState<CategoriaRow[]>([]);
   const [produtos, setProdutos] = useState<ProdutoRow[]>([]);
+  const [etiquetas, setEtiquetas] = useState<EtiquetaRow[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [editando, setEditando] = useState<ProdutoRow | "novo" | null>(null);
@@ -157,10 +163,14 @@ export default function AdminClient({
     setErro(null);
 
     try {
-      const res = await carregarCatalogoAdmin();
+      const [res, listaEtiquetas] = await Promise.all([
+        carregarCatalogoAdmin(),
+        listarEtiquetas(),
+      ]);
       setCatalogos((res.catalogos ?? []) as CatalogoRow[]);
       setCategorias((res.categorias ?? []) as CategoriaRow[]);
       setProdutos((res.produtos ?? []) as ProdutoRow[]);
+      setEtiquetas((listaEtiquetas ?? []) as EtiquetaRow[]);
     } catch (error) {
       setErro(
         error instanceof Error
@@ -296,51 +306,27 @@ export default function AdminClient({
                   placeholder="Buscar no sistema..."
                   className="min-w-0 flex-1 bg-transparent text-sm text-[var(--admin-ink)] outline-none placeholder:text-[var(--admin-muted)]"
                 />
-                <span className="rounded-md border border-[var(--admin-border)] bg-white px-1.5 py-0.5 text-[10px] font-semibold">
-                  ⌘ K
-                </span>
+                <span className="rounded-md border border-[var(--admin-border)] bg-white px-1.5 py-0.5 text-[10px] font-semibold">⌘ K</span>
               </label>
             </div>
 
             <div className="hidden items-center gap-1 md:flex">
-              <button
-                type="button"
-                className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-                aria-label="Notificações"
-              >
+              <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Notificações">
                 <Bell className="h-[18px] w-[18px]" />
                 <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
               </button>
-              <button
-                type="button"
-                onClick={() => setAba("tarefas")}
-                className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-                aria-label="Agenda"
-              >
+              <button type="button" onClick={() => setAba("tarefas")} className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Agenda">
                 <CalendarDays className="h-[18px] w-[18px]" />
               </button>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-                aria-label="Ajuda"
-              >
+              <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Ajuda">
                 <CircleHelp className="h-[18px] w-[18px]" />
               </button>
-              <button
-                type="button"
-                className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-                aria-label="Configurações"
-              >
+              <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
                 <Settings className="h-[18px] w-[18px]" />
               </button>
             </div>
 
-            <PerfilContaMenu
-              email={email}
-              displayName={displayName}
-              companyName={companyName}
-              onUsuarios={abrirUsuarios}
-            />
+            <PerfilContaMenu email={email} displayName={displayName} companyName={companyName} onUsuarios={abrirUsuarios} />
           </div>
 
           <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto px-4 pb-3 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -393,9 +379,7 @@ export default function AdminClient({
 
         <main className="mx-auto min-w-0 max-w-[1680px] px-4 py-5 sm:px-6 lg:py-6 xl:px-8">
           {erro && (
-            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {erro}
-            </div>
+            <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
           )}
 
           {carregando ? (
@@ -420,12 +404,8 @@ export default function AdminClient({
               onVista={setSubVendas}
               empresaNome={companyName}
               produtos={produtos.map((produto) => {
-                const categoria = categorias.find(
-                  (item) => item.id === produto.categoria_id,
-                );
-                const catalogo = catalogos.find(
-                  (item) => item.id === categoria?.catalogo_id,
-                );
+                const categoria = categorias.find((item) => item.id === produto.categoria_id);
+                const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
 
                 return {
                   slug: produto.slug,
@@ -437,8 +417,7 @@ export default function AdminClient({
                       ? `${categoria.nome} · ${catalogo.nome}`
                       : categoria.nome
                     : "Sem categoria",
-                  ordemGrupo:
-                    (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
+                  ordemGrupo: (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
                 };
               })}
             />
@@ -452,11 +431,9 @@ export default function AdminClient({
               onChange={recarregar}
             />
           ) : aba === "colecoes" ? (
-            <ColecoesPanel
-              catalogos={catalogos}
-              categorias={categorias}
-              onChange={recarregar}
-            />
+            <ColecoesPanel catalogos={catalogos} categorias={categorias} onChange={recarregar} />
+          ) : aba === "etiquetas" ? (
+            <EtiquetasPanel etiquetas={etiquetas} onChange={recarregar} />
           ) : (
             <HorariosPanel />
           )}
@@ -467,6 +444,7 @@ export default function AdminClient({
             produto={editando === "novo" ? null : editando}
             categorias={categorias}
             catalogos={catalogos}
+            etiquetas={etiquetas}
             onClose={() => setEditando(null)}
             onSaved={recarregar}
           />
