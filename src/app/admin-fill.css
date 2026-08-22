@@ -1,18 +1,39 @@
-/* Ajuste final da tela Início.
-   Usa toda a altura disponível sem rolagem, com cards mais presentes e
-   intervalos menores entre os blocos. */
+/* Ajuste fino da tela Início.
+   A ideia aqui é ocupar a altura útil com os próprios cards, e não com espaços
+   entre as seções. O painel continua sem rolagem no desktop. */
 
 @media (min-width: 1024px) {
-  /* O space-y-4 do componente somava margem ao espaçamento do layout.
-     Neutralizamos essa margem e controlamos aqui uma distância única e menor. */
   main > section:has(button[aria-label="Mudar meu nome"]) > * {
     margin-top: 0 !important;
     margin-block-start: 0 !important;
   }
 
+  /* Quase elimina os vazios entre as faixas do painel. */
   main > section:has(button[aria-label="Mudar meu nome"]) > :not(:first-child) {
-    margin-top: 8px !important;
-    margin-block-start: 8px !important;
+    margin-top: 3px !important;
+    margin-block-start: 3px !important;
+  }
+
+  /* Resumo do dia um pouco mais alto. */
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(1) {
+    min-height: 52px !important;
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  /* Saudação + lembretes mais encorpados. */
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside {
+    min-height: 154px !important;
+    padding-top: 17px !important;
+    padding-bottom: 17px !important;
+  }
+
+  /* KPIs maiores para preencher o espaço entre as faixas. */
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article {
+    min-height: 92px !important;
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
   }
 }
 
@@ -24,20 +45,7 @@
     gap: 0;
   }
 
-  /* Saudação e lembretes ganham mais presença sem voltar a estourar a tela. */
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside {
-    min-height: 148px;
-  }
-
-  /* Indicadores ficam um pouco mais altos e confortáveis. */
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article {
-    min-height: 86px !important;
-    padding-top: 13px !important;
-    padding-bottom: 13px !important;
-  }
-
-  /* Área principal absorve o espaço recuperado entre os blocos. */
+  /* A área principal cresce e absorve toda a altura restante. */
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
     flex: 1 1 auto;
     min-height: 0;
@@ -50,36 +58,41 @@
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) article:first-child > div:nth-of-type(2) {
-    height: clamp(190px, 24dvh, 280px) !important;
+    height: clamp(205px, 25dvh, 295px) !important;
   }
 
+  /* Atalhos e BIA ficam mais cheios e quase sem vão entre si. */
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child {
     display: grid;
     grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 8px !important;
+    gap: 4px !important;
   }
 
-  /* Atalhos maiores para não parecerem comprimidos. */
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child article {
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+  }
+
   main > section:has(button[aria-label="Mudar meu nome"]) button[class*="min-h-16"] {
-    min-height: 48px !important;
+    min-height: 52px !important;
   }
 
-  /* Dica Flua acompanha a nova proporção. */
+  /* Faixa final também ganha corpo e fica colada ao bloco acima. */
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > div {
-    min-height: 60px !important;
-    padding-top: 9px !important;
-    padding-bottom: 9px !important;
+    min-height: 64px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
   }
 }
 
-/* Monitores altos recebem um pouco mais de presença visual. */
+/* Em telas realmente altas usamos o espaço extra nos cards, não nos intervalos. */
 @media (min-width: 1280px) and (min-height: 950px) {
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside {
-    min-height: 160px;
+    min-height: 168px !important;
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article {
-    min-height: 94px !important;
+    min-height: 100px !important;
   }
 }
