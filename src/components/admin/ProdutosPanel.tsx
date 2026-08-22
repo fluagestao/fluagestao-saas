@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Search, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { removerProduto, salvarProduto } from "@/lib/admin";
@@ -22,6 +22,8 @@ import {
   type ProdutoRow,
 } from "./tipos";
 import { useConfirmar } from "./shell";
+
+const ITENS_POR_PAGINA = 7;
 
 function LinhaProduto({
   produto,
@@ -97,6 +99,7 @@ export function ProdutosPanel({
   const confirmar = useConfirmar();
   const [busca, setBusca] = useState("");
   const [filtroColecao, setFiltroColecao] = useState("todas");
+  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     setItens(produtos);
@@ -124,6 +127,21 @@ export function ProdutosPanel({
       return nome.includes(termo) || codigo.includes(termo) || slug.includes(termo) || id.includes(termo);
     });
   }, [itens, categorias, busca, filtroColecao]);
+
+  const totalPaginas = Math.max(1, Math.ceil(itensFiltrados.length / ITENS_POR_PAGINA));
+
+  const itensPagina = useMemo(() => {
+    const inicio = (pagina - 1) * ITENS_POR_PAGINA;
+    return itensFiltrados.slice(inicio, inicio + ITENS_POR_PAGINA);
+  }, [itensFiltrados, pagina]);
+
+  useEffect(() => {
+    setPagina(1);
+  }, [busca, filtroColecao]);
+
+  useEffect(() => {
+    if (pagina > totalPaginas) setPagina(totalPaginas);
+  }, [pagina, totalPaginas]);
 
   async function excluir(p: ProdutoRow) {
     const ok = await confirmar({
@@ -170,6 +188,9 @@ export function ProdutosPanel({
   }
 
   const filtrosAtivos = busca.trim() !== "" || filtroColecao !== "todas";
+  const inicioExibido =
+    itensFiltrados.length === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
+  const fimExibido = Math.min(pagina * ITENS_POR_PAGINA, itensFiltrados.length);
 
   return (
     <section>
@@ -243,6 +264,7 @@ export function ProdutosPanel({
             onClick={() => {
               setBusca("");
               setFiltroColecao("todas");
+              setPagina(1);
             }}
             className="h-11"
           >
@@ -261,17 +283,72 @@ export function ProdutosPanel({
           <p className="mt-1 text-xs text-muted-foreground">Tente outro nome, código ou coleção.</p>
         </div>
       ) : (
-        <div className="mt-5 space-y-2">
-          {itensFiltrados.map((p) => (
-            <LinhaProduto
-              key={p.id}
-              produto={p}
-              onEditar={onEditar}
-              onExcluir={excluir}
-              onVisibilidade={alterarVisibilidade}
-            />
-          ))}
-        </div>
+        <>
+          <div className="mt-5 space-y-2">
+            {itensPagina.map((p) => (
+              <LinhaProduto
+                key={p.id}
+                produto={p}
+                onEditar={onEditar}
+                onExcluir={excluir}
+                onVisibilidade={alterarVisibilidade}
+              />
+            ))}
+          </div>
+
+          <div className="mt-3 flex h-10 items-center justify-between gap-4">
+            <p className="text-xs text-muted-foreground">
+              Exibindo {inicioExibido}–{fimExibido} de {itensFiltrados.length} produtos
+            </p>
+
+            {totalPaginas > 1 && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
+                  disabled={pagina === 1}
+                  className="h-8 px-2.5"
+                  aria-label="Página anterior"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                {Array.from({ length: totalPaginas }, (_, index) => index + 1).map(
+                  (numero) => (
+                    <button
+                      key={numero}
+                      type="button"
+                      onClick={() => setPagina(numero)}
+                      className={`grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
+                        pagina === numero
+                          ? "bg-[var(--terracotta)] text-white"
+                          : "border border-[var(--cream-deep)] bg-white text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]"
+                      }`}
+                    >
+                      {numero}
+                    </button>
+                  ),
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setPagina((atual) => Math.min(totalPaginas, atual + 1))
+                  }
+                  disabled={pagina === totalPaginas}
+                  className="h-8 px-2.5"
+                  aria-label="Próxima página"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </section>
   );
