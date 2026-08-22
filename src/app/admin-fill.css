@@ -176,3 +176,114 @@ main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > d
     width: 100% !important;
   }
 }
+
+/*
+ * Insumos: tela operacional congelada no desktop.
+ * A lista usa paginacao de 7 itens; portanto o rodape de paginas deve sempre
+ * permanecer dentro do viewport, sem scrollbar vertical e sem cortar botoes.
+ */
+@media (min-width: 1024px) {
+  body:has(input[placeholder="Buscar insumo"]) {
+    height: 100dvh !important;
+    overflow-y: hidden !important;
+  }
+
+  div[class~="bg-[var(--admin-bg)]"] > main:has(input[placeholder="Buscar insumo"]) {
+    height: calc(100dvh - 74px) !important;
+    max-height: calc(100dvh - 74px) !important;
+    overflow: hidden !important;
+    padding-top: 14px !important;
+    padding-bottom: 10px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"]) > section {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  /* Card de novo insumo. */
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(+ div input[placeholder="Buscar insumo"]) {
+    margin-top: 10px !important;
+    padding: 12px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(+ div input[placeholder="Buscar insumo"])
+    > div:nth-child(2) {
+    margin-top: 8px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(+ div input[placeholder="Buscar insumo"])
+    input,
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(+ div input[placeholder="Buscar insumo"])
+    select,
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(+ div input[placeholder="Buscar insumo"])
+    button {
+    height: 38px !important;
+  }
+
+  /* Busca. */
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(input[placeholder="Buscar insumo"]) {
+    height: 38px !important;
+    margin-top: 10px !important;
+  }
+
+  /* Tabela e sete linhas compactas. */
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(input[placeholder="Buscar insumo"])
+    + div {
+    margin-top: 10px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(input[placeholder="Buscar insumo"])
+    + div
+    > div:first-child {
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(input[placeholder="Buscar insumo"])
+    + div
+    > div:not(:first-child) {
+    min-height: 46px !important;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  /* Rodape de paginacao: sobe um pouco e fica inteiramente visivel. */
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(input[placeholder="Buscar insumo"])
+    + div
+    + div {
+    height: 34px !important;
+    margin-top: 6px !important;
+    padding-bottom: 2px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"])
+    section
+    > div:has(input[placeholder="Buscar insumo"])
+    + div
+    + div button {
+    height: 30px !important;
+    min-height: 30px !important;
+  }
+}
