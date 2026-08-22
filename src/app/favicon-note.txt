@@ -1,0 +1,1 @@
+Favicon oficial da Flua configurado via metadata para /flua-favicon.svg.
