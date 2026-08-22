@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function ProdutosRoutePage() {
-  redirect("/admin");
+  redirect("/produtos");
 }
