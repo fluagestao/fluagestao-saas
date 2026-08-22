@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import {
   asPrecosExtra,
@@ -56,11 +55,7 @@ export function ProdutoDialog({
   const [preco, setPreco] = useState<string>(produto?.preco != null ? String(produto.preco) : "");
   const [precoLabel, setPrecoLabel] = useState(produto?.preco_label ?? "");
   const [serve, setServe] = useState(produto?.serve ?? "");
-  const [itens, setItens] = useState(asStringArray(produto?.itens).join("\n"));
-  const [precosExtra] = useState(asPrecosExtra(produto?.precos_extra));
   const [descricao, setDescricao] = useState(produto?.observacao ?? "");
-  const [ativo, setAtivo] = useState(produto?.ativo ?? true);
-  const [ordem, setOrdem] = useState<string>(String(produto?.ordem ?? 0));
   const [badge, setBadge] = useState(produto?.badge ?? "");
   const [badgeCor, setBadgeCor] = useState(produto?.badge_cor ?? "");
   const [imagens, setImagens] = useState<ImagemRow[]>(
@@ -73,6 +68,10 @@ export function ProdutoDialog({
   const slugAtual = produto?.slug ?? slugFromNome(nome);
   const categoriaSelecionada = categorias.find((categoria) => categoria.id === categoriaId);
   const etiquetaSelecionada = etiquetas.find((etiqueta) => etiqueta.nome === badge);
+  const itensPreservados = asStringArray(produto?.itens);
+  const precosExtraPreservados = asPrecosExtra(produto?.precos_extra);
+  const ativoPreservado = produto?.ativo ?? true;
+  const ordemPreservada = produto?.ordem ?? 0;
 
   const categoriasOrdenadas = useMemo(() => {
     const ordemCatalogos = new Map(
@@ -105,10 +104,6 @@ export function ProdutoDialog({
 
     const nomeLimpo = nome.trim();
     const valorPreco = Number(preco.replace(",", "."));
-    const listaItens = itens
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean);
 
     if (!nomeLimpo) {
       setErro("Informe o nome do produto.");
@@ -116,10 +111,6 @@ export function ProdutoDialog({
     }
     if (!preco.trim() || Number.isNaN(valorPreco) || valorPreco < 0) {
       setErro("Informe um preço válido para o produto.");
-      return;
-    }
-    if (listaItens.length === 0) {
-      setErro("Informe pelo menos um item na composição do produto.");
       return;
     }
 
@@ -133,11 +124,11 @@ export function ProdutoDialog({
           preco: valorPreco,
           preco_label: precoLabel.trim() || null,
           serve: serve.trim() || null,
-          itens: listaItens,
-          precos_extra: precosExtra.filter((p) => p.label.trim() && p.valor >= 0),
+          itens: itensPreservados,
+          precos_extra: precosExtraPreservados,
           observacao: descricao.trim() || null,
-          ativo,
-          ordem: Number(ordem) || 0,
+          ativo: ativoPreservado,
+          ordem: ordemPreservada,
           badge: badge.trim() || null,
           badge_cor: badge.trim() ? badgeCor || null : null,
         },
@@ -199,7 +190,12 @@ export function ProdutoDialog({
 
         <div className="space-y-4">
           <Campo label="Nome" obrigatorio>
-            <Input required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome do produto" />
+            <Input
+              required
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome do produto"
+            />
           </Campo>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -246,61 +242,25 @@ export function ProdutoDialog({
                       >
                         <span className="min-w-0 truncate">
                           {rotuloCategoria(categoria)}
-                          {!categoria.ativa && <span className="ml-1 text-xs text-muted-foreground">(oculta)</span>}
+                          {!categoria.ativa && (
+                            <span className="ml-1 text-xs text-muted-foreground">(oculta)</span>
+                          )}
                         </span>
-                        {categoria.id === categoriaId && <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />}
+                        {categoria.id === categoriaId && (
+                          <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
+                        )}
                       </button>
                     ))}
                     {categoriasOrdenadas.length === 0 && (
-                      <p className="px-3 py-3 text-xs text-muted-foreground">Nenhuma categoria cadastrada ainda.</p>
+                      <p className="px-3 py-3 text-xs text-muted-foreground">
+                        Nenhuma categoria cadastrada ainda.
+                      </p>
                     )}
                   </div>
                 )}
               </div>
             </Campo>
 
-            <Campo label="Serve (ex.: Ideal para 2 pessoas)">
-              <Input value={serve} onChange={(e) => setServe(e.target.value)} />
-            </Campo>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Campo label="Preço (R$)" obrigatorio>
-              <Input required inputMode="decimal" placeholder="145,00" value={preco} onChange={(e) => setPreco(e.target.value)} />
-            </Campo>
-            <Campo label="Rótulo de preço (opcional)">
-              <Input placeholder="a partir de / sob consulta" value={precoLabel} onChange={(e) => setPrecoLabel(e.target.value)} />
-            </Campo>
-          </div>
-
-          {produto ? (
-            <Campo label="Ordem (posição na categoria)">
-              <Input inputMode="numeric" value={ordem} onChange={(e) => setOrdem(e.target.value)} className="max-w-[160px]" />
-            </Campo>
-          ) : (
-            <p className="text-xs text-muted-foreground">O produto novo entra no fim da categoria. Depois você pode ajustar a posição editando.</p>
-          )}
-
-          <Campo label="Descrição do produto">
-            <Textarea
-              rows={3}
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-              placeholder="Descreva o produto, diferenciais, tamanho, apresentação ou outras informações importantes."
-            />
-          </Campo>
-
-          <Campo label="Itens da caixa (um por linha)" obrigatorio>
-            <Textarea
-              required
-              rows={5}
-              value={itens}
-              onChange={(e) => setItens(e.target.value)}
-              placeholder={"Croissant\nSuco natural 300ml\nPão de queijo"}
-            />
-          </Campo>
-
-          <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
             <Campo label="Etiqueta">
               <div className="relative">
                 <button
@@ -352,33 +312,75 @@ export function ProdutoDialog({
                         className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm hover:bg-[var(--cream-soft)]"
                       >
                         <span className="flex min-w-0 items-center gap-2 truncate">
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: etiqueta.cor || "#B8893B" }} />
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: etiqueta.cor || "#B8893B" }}
+                          />
                           <span className="truncate">{etiqueta.nome}</span>
                         </span>
-                        {badge === etiqueta.nome && <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />}
+                        {badge === etiqueta.nome && (
+                          <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
+                        )}
                       </button>
                     ))}
 
                     {etiquetasDisponiveis.length === 0 && (
-                      <p className="px-3 py-3 text-xs text-muted-foreground">Nenhuma etiqueta cadastrada. Crie em Cadastros &gt; Etiquetas.</p>
+                      <p className="px-3 py-3 text-xs text-muted-foreground">
+                        Nenhuma etiqueta cadastrada. Crie em Cadastros &gt; Etiquetas.
+                      </p>
                     )}
                   </div>
                 )}
               </div>
             </Campo>
-
-            <label className="flex h-10 items-center gap-2 text-sm">
-              <Switch checked={ativo} onCheckedChange={setAtivo} />
-              Produto visível no site
-            </label>
           </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Campo label="Serve (ex.: Ideal para 2 pessoas)">
+              <Input value={serve} onChange={(e) => setServe(e.target.value)} />
+            </Campo>
+
+            <Campo label="Preço (R$)" obrigatorio>
+              <Input
+                required
+                inputMode="decimal"
+                placeholder="145,00"
+                value={preco}
+                onChange={(e) => setPreco(e.target.value)}
+              />
+            </Campo>
+          </div>
+
+          <Campo label="Rótulo de preço (opcional)">
+            <Input
+              placeholder="a partir de / sob consulta"
+              value={precoLabel}
+              onChange={(e) => setPrecoLabel(e.target.value)}
+            />
+          </Campo>
+
+          <Campo label="Descrição do produto">
+            <Textarea
+              rows={4}
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder="Descreva o produto, diferenciais, tamanho, apresentação ou outras informações importantes."
+            />
+          </Campo>
 
           <div className="rounded-2xl border border-[var(--cream-deep)] p-4">
             <p className="text-sm font-medium text-foreground">Fotos</p>
-            {!id && <p className="mt-1 text-xs text-muted-foreground">Salve o produto para liberar o envio de fotos.</p>}
+            {!id && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Salve o produto para liberar o envio de fotos.
+              </p>
+            )}
             <div className="mt-3 flex flex-wrap gap-3">
               {imagens.map((img, i) => (
-                <div key={img.id} className="group relative h-24 w-24 overflow-hidden rounded-xl bg-[var(--cream-deep)]">
+                <div
+                  key={img.id}
+                  className="group relative h-24 w-24 overflow-hidden rounded-xl bg-[var(--cream-deep)]"
+                >
                   <img src={img.url} alt="" className="h-full w-full object-cover" />
                   <button
                     type="button"
@@ -389,15 +391,26 @@ export function ProdutoDialog({
                     <X className="h-3.5 w-3.5" />
                   </button>
                   <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button type="button" onClick={() => mover(i, -1)} className="p-1 text-white" aria-label="Mover foto para a esquerda">
+                    <button
+                      type="button"
+                      onClick={() => mover(i, -1)}
+                      className="p-1 text-white"
+                      aria-label="Mover foto para a esquerda"
+                    >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
-                    <button type="button" onClick={() => mover(i, 1)} className="p-1 text-white" aria-label="Mover foto para a direita">
+                    <button
+                      type="button"
+                      onClick={() => mover(i, 1)}
+                      className="p-1 text-white"
+                      aria-label="Mover foto para a direita"
+                    >
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
               ))}
+
               {id && (
                 <label
                   className={cn(
@@ -405,7 +418,14 @@ export function ProdutoDialog({
                     enviando && "pointer-events-none opacity-60",
                   )}
                 >
-                  {enviando ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Upload className="h-5 w-5" /><span className="text-[11px]">Adicionar</span></>}
+                  {enviando ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5" />
+                      <span className="text-[11px]">Adicionar</span>
+                    </>
+                  )}
                   <input
                     type="file"
                     accept="image/*"
@@ -421,11 +441,17 @@ export function ProdutoDialog({
             </div>
           </div>
 
-          {erro && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-destructive">{erro}</p>}
+          {erro && (
+            <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-destructive">
+              {erro}
+            </p>
+          )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
           <Button onClick={salvar} disabled={salvando || !nome.trim()}>
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Salvar
@@ -438,16 +464,16 @@ export function ProdutoDialog({
 
 function Campo({
   label,
-  children,
   obrigatorio = false,
+  children,
 }: {
   label: string;
-  children: React.ReactNode;
   obrigatorio?: boolean;
+  children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
-      <Label>
+      <Label className="text-sm font-medium">
         {label}
         {obrigatorio && <span className="ml-1 text-[var(--terracotta)]">*</span>}
       </Label>
