@@ -151,13 +151,8 @@ export default function CadastroPage() {
             />
           </Link>
 
-          <div className="mt-12 max-w-[560px]">
-            <span className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#A94F45]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#A94F45]" />
-              7 dias para conhecer a Flua
-            </span>
-
-            <h1 className="mt-5 text-[clamp(2.8rem,4.2vw,4.6rem)] font-semibold leading-[.98] tracking-[-0.055em] text-[#2C2421]">
+          <div className="mt-10 max-w-[560px]">
+            <h1 className="text-[clamp(2.45rem,3.6vw,4rem)] font-semibold leading-[.99] tracking-[-0.05em] text-[#2C2421]">
               Comece sua operação com <span className="text-[#A94F45]">tudo organizado.</span>
             </h1>
 
@@ -178,10 +173,6 @@ export default function CadastroPage() {
                 </span>
               ))}
             </div>
-
-            <p className="mt-8 text-xs font-medium text-[#74745B]">
-              Sem cartão · Cadastro rápido · Acesso imediato
-            </p>
           </div>
         </section>
 
