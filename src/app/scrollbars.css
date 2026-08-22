@@ -1,0 +1,49 @@
+/* FLUA GLOBAL TOKENS + RESPONSIVE SCROLLING */
+:root {
+  --flua-primary: #A94F45;
+  --flua-primary-dark: #703D3A;
+  --flua-bg: #F7F1E8;
+  --flua-soft: #D9C6B2;
+  --flua-olive: #74745B;
+}
+
+/* Mantém a rolagem funcionando, mas remove a barra visual. */
+html,
+body {
+  max-width: 100%;
+  overflow-x: clip;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Utilitários para evitar componentes estourando telas pequenas. */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+input,
+select,
+textarea,
+button {
+  max-width: 100%;
+}
