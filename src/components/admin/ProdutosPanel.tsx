@@ -21,6 +21,13 @@ import { CSS } from "@dnd-kit/utilities";
 import { removerProduto, reordenarProdutos, salvarProduto } from "@/lib/admin";
 import { formatPreco } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
   asPrecosExtra,
@@ -270,7 +277,7 @@ export function ProdutosPanel({
         </div>
 
         <Button asChild>
-          <Link href="/admin/cadastros/produtos/novo">
+          <Link href="/cadastros/produtos/novo">
             <Plus className="mr-1.5 h-4 w-4" /> Novo produto
           </Link>
         </Button>
@@ -298,23 +305,34 @@ export function ProdutosPanel({
           )}
         </label>
 
-        <select
-          value={filtroColecao}
-          onChange={(e) => setFiltroColecao(e.target.value)}
-          className="h-11 w-full rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
-          aria-label="Filtrar por coleção"
-        >
-          <option value="todas">Todas as coleções</option>
-          {catalogos
-            .slice()
-            .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-            .map((catalogo) => (
-              <option key={catalogo.id} value={catalogo.id}>
-                {catalogo.nome}
-              </option>
-            ))}
-          <option value="sem">Sem coleção</option>
-        </select>
+        <Select value={filtroColecao} onValueChange={setFiltroColecao}>
+          <SelectTrigger
+            className="h-11 rounded-xl border-[var(--cream-deep)] px-4 text-sm font-medium"
+            aria-label="Filtrar por coleção"
+          >
+            <SelectValue placeholder="Todas as coleções" />
+          </SelectTrigger>
+          <SelectContent
+            align="end"
+            sideOffset={8}
+            className="min-w-[280px] rounded-3xl border border-[var(--cream-deep)] bg-white p-2 shadow-[0_22px_55px_rgba(84,52,48,0.18)]"
+          >
+            <SelectItem value="todas" className="rounded-2xl px-4 py-3">
+              Todas as coleções
+            </SelectItem>
+            {catalogos
+              .slice()
+              .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+              .map((catalogo) => (
+                <SelectItem key={catalogo.id} value={catalogo.id} className="rounded-2xl px-4 py-3">
+                  {catalogo.nome}
+                </SelectItem>
+              ))}
+            <SelectItem value="sem" className="rounded-2xl px-4 py-3">
+              Sem coleção
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
         {filtrosAtivos && (
           <Button
