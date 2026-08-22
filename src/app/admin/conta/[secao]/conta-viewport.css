@@ -1,0 +1,213 @@
+.conta-viewport {
+  min-height: 100dvh;
+  background: var(--admin-bg);
+}
+
+/* Desktop e notebook: a tela de conta ocupa somente o viewport, sem barra de rolagem. */
+@media (min-width: 1024px) {
+  html:has(.conta-viewport),
+  body:has(.conta-viewport) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .conta-viewport {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .conta-viewport > div {
+    height: 100dvh;
+    min-height: 0 !important;
+    overflow: hidden;
+  }
+
+  .conta-viewport header > div {
+    height: 58px !important;
+  }
+
+  .conta-viewport header img {
+    max-height: 46px;
+  }
+
+  .conta-viewport main {
+    height: calc(100dvh - 58px);
+    overflow: hidden;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .conta-viewport main > div:first-child {
+    margin-bottom: 10px !important;
+  }
+
+  .conta-viewport main > div:first-child h1 {
+    margin-top: 2px !important;
+    font-size: 1.55rem !important;
+    line-height: 1.05 !important;
+  }
+
+  .conta-viewport main > div:first-child p:last-child {
+    margin-top: 4px !important;
+    font-size: 0.78rem !important;
+    line-height: 1.25 !important;
+  }
+
+  .conta-viewport main > div:nth-child(2) {
+    gap: 12px !important;
+  }
+
+  .conta-viewport aside[class*="sticky"] {
+    top: 70px !important;
+  }
+
+  .conta-viewport aside[class*="sticky"] a {
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+  }
+
+  .conta-viewport section .gap-5 {
+    gap: 12px !important;
+  }
+
+  .conta-viewport section .gap-4 {
+    gap: 9px !important;
+  }
+
+  .conta-viewport section .space-y-5 > * + * {
+    margin-top: 10px !important;
+  }
+
+  .conta-viewport section .space-y-4 > * + * {
+    margin-top: 8px !important;
+  }
+
+  .conta-viewport section [class~="p-5"],
+  .conta-viewport section [class~="p-6"],
+  .conta-viewport section [class~="sm:p-6"] {
+    padding: 14px !important;
+  }
+
+  .conta-viewport section [class~="mt-5"] {
+    margin-top: 10px !important;
+  }
+
+  .conta-viewport section [class~="mt-4"] {
+    margin-top: 8px !important;
+  }
+
+  .conta-viewport section [class~="mt-3"] {
+    margin-top: 6px !important;
+  }
+
+  .conta-viewport section input,
+  .conta-viewport section select,
+  .conta-viewport section button[class*="h-11"],
+  .conta-viewport section label[class*="h-11"] {
+    height: 37px !important;
+    min-height: 37px !important;
+  }
+
+  .conta-viewport section input,
+  .conta-viewport section select {
+    font-size: 0.78rem !important;
+  }
+
+  .conta-viewport section label > span:first-child {
+    margin-bottom: 3px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .conta-viewport section [class*="min-h-[160px]"] {
+    min-height: 108px !important;
+    padding: 10px !important;
+  }
+
+  .conta-viewport section [class*="max-h-[110px]"] {
+    max-height: 76px !important;
+  }
+
+  .conta-viewport section h2 {
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .conta-viewport section h2 + p {
+    margin-top: 3px !important;
+    font-size: 0.68rem !important;
+    line-height: 1.25 !important;
+  }
+}
+
+/* Notebooks baixos recebem uma compactação adicional, mantendo todos os campos visíveis. */
+@media (min-width: 1024px) and (max-height: 780px) {
+  .conta-viewport header > div {
+    height: 52px !important;
+  }
+
+  .conta-viewport main {
+    height: calc(100dvh - 52px);
+    padding-top: 7px !important;
+    padding-bottom: 7px !important;
+  }
+
+  .conta-viewport main > div:first-child {
+    margin-bottom: 7px !important;
+  }
+
+  .conta-viewport main > div:first-child h1 {
+    font-size: 1.35rem !important;
+  }
+
+  .conta-viewport section .gap-5 {
+    gap: 8px !important;
+  }
+
+  .conta-viewport section .gap-4 {
+    gap: 6px !important;
+  }
+
+  .conta-viewport section .space-y-5 > * + * {
+    margin-top: 7px !important;
+  }
+
+  .conta-viewport section [class~="p-5"],
+  .conta-viewport section [class~="p-6"],
+  .conta-viewport section [class~="sm:p-6"] {
+    padding: 10px !important;
+  }
+
+  .conta-viewport section [class~="mt-5"] {
+    margin-top: 7px !important;
+  }
+
+  .conta-viewport section input,
+  .conta-viewport section select,
+  .conta-viewport section button[class*="h-11"],
+  .conta-viewport section label[class*="h-11"] {
+    height: 33px !important;
+    min-height: 33px !important;
+  }
+
+  .conta-viewport section [class*="min-h-[160px]"] {
+    min-height: 86px !important;
+  }
+
+  .conta-viewport section [class*="max-h-[110px]"] {
+    max-height: 62px !important;
+  }
+}
+
+/* Em telas menores, preserva o acesso a todos os campos sem exibir a barra cinza. */
+@media (max-width: 1023px) {
+  html:has(.conta-viewport),
+  body:has(.conta-viewport),
+  .conta-viewport {
+    scrollbar-width: none;
+  }
+
+  body:has(.conta-viewport)::-webkit-scrollbar,
+  .conta-viewport::-webkit-scrollbar {
+    display: none;
+  }
+}
