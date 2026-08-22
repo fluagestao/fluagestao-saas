@@ -1,18 +1,10 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Search, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   listarComposicaoProduto,
   salvarComposicaoProduto,
@@ -37,6 +29,13 @@ function moeda(valor: number) {
   }).format(valor || 0);
 }
 
+function normalizar(texto: string) {
+  return texto
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLocaleLowerCase("pt-BR");
+}
+
 export function ProdutoInsumosEditor({
   produtoId,
   insumos,
@@ -49,7 +48,7 @@ export function ProdutoInsumosEditor({
   onChange?: (payload: ChangePayload) => void;
 }) {
   const [itens, setItens] = useState<ItemComposicaoProduto[]>([]);
-  const [novoInsumoId, setNovoInsumoId] = useState("");
+  const [busca, setBusca] = useState("");
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
@@ -66,6 +65,16 @@ export function ProdutoInsumosEditor({
   }, [produtoId]);
 
   const ativos = useMemo(() => insumos.filter((item) => item.ativo), [insumos]);
+
+  const sugestoes = useMemo(() => {
+    const termo = normalizar(busca.trim());
+    if (!termo) return [];
+
+    return ativos
+      .filter((insumo) => !itens.some((item) => item.insumoId === insumo.id))
+      .filter((insumo) => normalizar(insumo.nome).includes(termo))
+      .slice(0, 8);
+  }, [ativos, busca, itens]);
 
   const custoTotal = useMemo(
     () =>
@@ -100,15 +109,16 @@ export function ProdutoInsumosEditor({
     }
   }
 
-  function adicionar() {
-    if (!novoInsumoId || itens.some((item) => item.insumoId === novoInsumoId)) return;
-    aplicar([...itens, { insumoId: novoInsumoId, quantidade: 1 }]);
-    setNovoInsumoId("");
+  function selecionarInsumo(insumoId: string) {
+    if (itens.some((item) => item.insumoId === insumoId)) return;
+    aplicar([...itens, { insumoId, quantidade: 1 }]);
+    setBusca("");
   }
 
   function alterarQuantidade(insumoId: string, valor: string) {
     const numero = Number(valor.replace(",", "."));
     if (!Number.isFinite(numero) || numero <= 0) return;
+
     aplicar(
       itens.map((item) =>
         item.insumoId === insumoId ? { ...item, quantidade: numero } : item,
@@ -122,87 +132,116 @@ export function ProdutoInsumosEditor({
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-start justify-between gap-5">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Insumos do produto</h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
-            Informe os itens e a quantidade usada em cada produto.
+          <h3 className="text-base font-semibold text-foreground">Insumos do produto</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Pesquise um insumo, selecione e informe a quantidade utilizada.
           </p>
         </div>
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
             Custo estimado
           </p>
-          <p className="text-lg font-bold text-[var(--terracotta)]">{moeda(custoTotal)}</p>
+          <p className="text-xl font-bold text-[var(--terracotta)]">{moeda(custoTotal)}</p>
         </div>
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <Select value={novoInsumoId} onValueChange={setNovoInsumoId}>
-          <SelectTrigger className="h-10 min-w-0 flex-1">
-            <SelectValue placeholder="Selecionar insumo" />
-          </SelectTrigger>
-          <SelectContent>
-            {ativos
-              .filter((insumo) => !itens.some((item) => item.insumoId === insumo.id))
-              .map((insumo) => (
-                <SelectItem key={insumo.id} value={insumo.id}>
-                  {insumo.nome} · {insumo.unidade}
-                </SelectItem>
-              ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={adicionar}
-          disabled={!novoInsumoId || salvando}
-          className="h-10"
-        >
-          <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar
-        </Button>
+      <div className="relative mt-5">
+        <label className="flex h-12 items-center gap-2 rounded-2xl border border-[var(--admin-border)] bg-white px-4 shadow-sm transition focus-within:border-[var(--terracotta)] focus-within:ring-2 focus-within:ring-[color:rgba(169,79,69,0.10)]">
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Pesquisar insumo pelo nome..."
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            autoComplete="off"
+          />
+        </label>
+
+        {busca.trim() && (
+          <div className="absolute inset-x-0 top-full z-40 mt-2 max-h-64 overflow-y-auto rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[0_20px_50px_rgba(84,52,48,0.16)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {sugestoes.length === 0 ? (
+              <p className="px-3 py-4 text-center text-xs text-muted-foreground">
+                Nenhum insumo disponível com esse nome.
+              </p>
+            ) : (
+              sugestoes.map((insumo) => (
+                <button
+                  key={insumo.id}
+                  type="button"
+                  onClick={() => selecionarInsumo(insumo.id)}
+                  className="flex w-full items-center justify-between gap-4 rounded-xl px-3 py-3 text-left transition hover:bg-[var(--cream-soft)]"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{insumo.nome}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                      {insumo.unidade} · custo unitário {moeda(insumo.custo_referencia)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs font-semibold text-[var(--terracotta)]">
+                    Selecionar
+                  </span>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="mt-4 max-h-[280px] space-y-2 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-5 max-h-[360px] space-y-2.5 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {itens.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--admin-border)] px-3 py-6 text-center text-xs text-muted-foreground">
-            Nenhum insumo adicionado.
+          <div className="rounded-2xl border border-dashed border-[var(--admin-border)] px-4 py-8 text-center text-sm text-muted-foreground">
+            Pesquise acima para adicionar os insumos deste produto.
           </div>
         ) : (
           itens.map((item) => {
             const insumo = insumos.find((i) => i.id === item.insumoId);
             if (!insumo) return null;
             const custo = item.quantidade * insumo.custo_referencia;
+
             return (
               <div
                 key={item.insumoId}
-                className="grid grid-cols-[minmax(0,1fr)_92px_104px_34px] items-center gap-2 rounded-2xl bg-[var(--cream-soft)] px-3 py-2.5"
+                className="grid grid-cols-[minmax(0,1fr)_130px_130px_40px] items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold">{insumo.nome}</p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="truncate text-sm font-semibold">{insumo.nome}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
                     {moeda(insumo.custo_referencia)} / {insumo.unidade}
                   </p>
                 </div>
-                <Input
-                  key={`${item.insumoId}-${item.quantidade}`}
-                  defaultValue={String(item.quantidade).replace(".", ",")}
-                  onBlur={(e) => alterarQuantidade(item.insumoId, e.target.value)}
-                  inputMode="decimal"
-                  className="h-9 px-2 text-xs"
-                  aria-label={`Quantidade de ${insumo.nome}`}
-                />
-                <span className="text-right text-xs font-semibold text-[var(--wine)]">
-                  {moeda(custo)}
-                </span>
+
+                <div>
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground">
+                    Quantidade
+                  </p>
+                  <Input
+                    key={`${item.insumoId}-${item.quantidade}`}
+                    defaultValue={String(item.quantidade).replace(".", ",")}
+                    onChange={(e) => alterarQuantidade(item.insumoId, e.target.value)}
+                    inputMode="decimal"
+                    className="h-9 bg-white px-3 text-sm"
+                    aria-label={`Quantidade de ${insumo.nome}`}
+                  />
+                </div>
+
+                <div className="text-right">
+                  <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground">
+                    Custo
+                  </p>
+                  <p className="h-9 content-center text-sm font-bold text-[var(--wine)]">{moeda(custo)}</p>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => remover(item.insumoId)}
-                  className="grid h-8 w-8 place-items-center rounded-xl text-destructive hover:bg-red-50"
+                  disabled={salvando}
+                  className="grid h-9 w-9 place-items-center rounded-xl text-destructive transition hover:bg-red-50 disabled:opacity-50"
                   aria-label={`Remover ${insumo.nome}`}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             );
