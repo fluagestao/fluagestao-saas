@@ -15,10 +15,10 @@ export function MarketingHeader() {
       <div className="marketing-global-shell">
         <Link href="/" className="marketing-global-brand" aria-label="Flua Gestão">
           <Image
-            src="/flua-logo.webp"
+            src="/logotipo-flua-branco-sem-fundo.png"
             alt="Flua Gestão"
-            width={1200}
-            height={676}
+            width={2172}
+            height={724}
             priority
           />
         </Link>
