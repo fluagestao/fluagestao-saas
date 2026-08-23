@@ -12,7 +12,68 @@
 .flua2-nav-menu-copy strong{display:block;font-size:13px;line-height:1.15;color:#4f2c2a}
 .flua2-nav-menu-copy small{display:block;margin-top:4px;font-size:10px;line-height:1.35;font-weight:500;color:#8a7169}
 
+/* Cabeçalho institucional enxuto e delicado. */
+.marketing-nav-simple{
+  grid-template-columns:180px minmax(0,1fr)!important;
+}
+
+.marketing-nav-simple-links{
+  width:100%;
+  justify-content:flex-end!important;
+  gap:clamp(18px,2.25vw,44px)!important;
+  font-family:var(--font-flua-serif),Georgia,"Times New Roman",serif!important;
+  font-size:12px!important;
+  font-weight:500!important;
+  letter-spacing:.12em!important;
+  text-transform:uppercase;
+  line-height:1;
+}
+
+.marketing-nav-simple-links a{
+  position:relative;
+  padding:12px 0!important;
+  color:rgba(255,255,255,.92)!important;
+  font-weight:500!important;
+  white-space:nowrap;
+  transition:opacity .2s ease,letter-spacing .2s ease!important;
+}
+
+.marketing-nav-simple-links a::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:6px;
+  width:0;
+  height:1px;
+  background:currentColor;
+  opacity:.48;
+  transform:translateX(-50%);
+  transition:width .2s ease;
+}
+
+.marketing-nav-simple-links a:hover{
+  opacity:.78!important;
+  letter-spacing:.145em!important;
+  transform:none!important;
+}
+
+.marketing-nav-simple-links a:hover::after{width:72%;}
+
+.cv-nav.marketing-nav-simple{
+  grid-template-columns:190px minmax(0,1fr)!important;
+}
+
+.cv-nav-links.marketing-nav-simple-links{
+  justify-content:flex-end!important;
+}
+
+@media(max-width:1100px){
+  .marketing-nav-simple-links{gap:18px!important;font-size:11px!important;letter-spacing:.09em!important;}
+}
+
 @media(max-width:900px){
   .flua2-nav-menu-panel{left:0;transform:translate(0,-8px)}
   .flua2-nav-menu:hover .flua2-nav-menu-panel,.flua2-nav-menu:focus-within .flua2-nav-menu-panel{transform:translate(0,0)}
+  .marketing-nav-simple{grid-template-columns:130px 1fr!important;}
+  .cv-nav.marketing-nav-simple{grid-template-columns:130px 1fr!important;}
 }
