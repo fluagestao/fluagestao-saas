@@ -5,7 +5,7 @@ import { NossoSaasClient } from "./NossoSaasClient";
 export const metadata: Metadata = {
   title: "Nosso SaaS | Flua Gestão",
   description:
-    "Conheça a Flua: gestão completa para cestas artesanais, tábuas de frios, presentes e negócios sob encomenda.",
+    "Conheça a Flua: gestão completa e especializada para cestas artesanais, tábuas de frios, presentes e negócios sob encomenda.",
 };
 
 export default function NossoSaasPage() {
