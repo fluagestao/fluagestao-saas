@@ -38,6 +38,14 @@ export const metadata: Metadata = {
     "Sistema de gestão especializado para cestas artesanais, cafés da manhã, presentes e tábuas de frios. Controle pedidos, clientes, produção, estoque, entregas e financeiro em um só lugar.",
   applicationName: "Flua Gestão",
   icons: {
+    icon: [
+      {
+        url: "/flua-favicon.svg?v=20260823-1036",
+        type: "image/svg+xml",
+        sizes: "any",
+      },
+    ],
+    shortcut: "/flua-favicon.svg?v=20260823-1036",
     apple: "/apple-touch-icon.png",
   },
   openGraph: {
