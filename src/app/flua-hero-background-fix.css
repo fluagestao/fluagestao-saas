@@ -1,22 +1,44 @@
-/* Correção definitiva do fundo do hero: foto servida pelo próprio app. */
+/* Fundo premium do hero. A imagem fica atrás dos cards; dashboard e textos continuam em HTML/CSS. */
 .flua2-site .flua2-hero{
   background-color:#6f3532!important;
   background-image:
-    linear-gradient(90deg,rgba(75,29,28,.98) 0%,rgba(83,33,31,.95) 25%,rgba(89,35,33,.82) 43%,rgba(72,26,25,.50) 68%,rgba(43,14,14,.30) 100%),
-    linear-gradient(180deg,rgba(35,10,10,.18) 0%,rgba(61,22,21,.06) 52%,rgba(62,23,22,.62) 100%),
-    url('/api/flua-hero-bg')!important;
+    linear-gradient(90deg,
+      rgba(47,13,13,.92) 0%,
+      rgba(66,20,20,.84) 24%,
+      rgba(79,27,25,.68) 42%,
+      rgba(74,26,24,.38) 62%,
+      rgba(45,13,13,.20) 100%
+    ),
+    linear-gradient(180deg,
+      rgba(27,7,7,.18) 0%,
+      rgba(49,16,15,.04) 48%,
+      rgba(48,14,14,.42) 100%
+    ),
+    url('/flua-hero-bg-premium.png')!important;
   background-size:cover,cover,cover!important;
   background-repeat:no-repeat!important;
-  background-position:center,center,center 52%!important;
+  background-position:center,center,center center!important;
+  background-attachment:scroll!important;
 }
 
+/* Vinheta leve para o texto ganhar contraste sem esconder a foto. */
 .flua2-site .flua2-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
   background:
-    radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.025),transparent 55%),
-    linear-gradient(90deg,rgba(32,9,9,.22),transparent 36%,transparent 78%,rgba(24,7,7,.10))!important;
+    radial-gradient(ellipse at 72% 54%,rgba(255,255,255,.035),transparent 42%),
+    linear-gradient(90deg,rgba(27,7,7,.16),transparent 38%,transparent 78%,rgba(18,5,5,.08))!important;
 }
 
-/* A foto já contém cesta, presente e tábua; evita duplicar objetos decorativos. */
+.flua2-site .flua2-hero > *{
+  position:relative;
+  z-index:1;
+}
+
+/* A nova arte já compõe o cenário; evita objetos duplicados nas laterais. */
 .flua2-site .flua2-decor-gift,
 .flua2-site .flua2-decor-box,
 .flua2-site .flua2-decor-board{
@@ -32,8 +54,8 @@
 @media(max-width:640px){
   .flua2-site .flua2-hero{
     background-image:
-      linear-gradient(180deg,rgba(72,27,26,.92),rgba(72,27,26,.78)),
-      url('/api/flua-hero-bg')!important;
+      linear-gradient(180deg,rgba(63,21,20,.84),rgba(55,17,17,.70)),
+      url('/flua-hero-bg-premium.png')!important;
     background-size:cover!important;
     background-position:center!important;
   }
