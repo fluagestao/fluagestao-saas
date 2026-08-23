@@ -18,6 +18,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import "./landing-v2.css";
+import "./marketing-nav.css";
 
 const featureStrip = [
   {
@@ -106,7 +107,20 @@ export default function HomePage() {
             </Link>
 
             <nav className="flua2-nav-links" aria-label="Navegação principal">
-              <a href="#funcionalidades">Funcionalidades</a>
+              <div className="flua2-nav-menu">
+                <button type="button" className="flua2-nav-trigger">
+                  Funcionalidades <ChevronDown size={14} />
+                </button>
+                <div className="flua2-nav-menu-panel">
+                  <Link href="/funcionalidades/controle-de-vendas">
+                    <span className="flua2-nav-menu-icon"><ClipboardCheck size={18} /></span>
+                    <span className="flua2-nav-menu-copy">
+                      <strong>Controle de Vendas</strong>
+                      <small>Pedidos, vendas e recebimentos em uma única tela.</small>
+                    </span>
+                  </Link>
+                </div>
+              </div>
               <a href="#para-quem">Para quem é</a>
               <a href="#planos">Planos</a>
               <a href="#recursos" className="flua2-nav-dropdown">
