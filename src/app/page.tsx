@@ -5,7 +5,6 @@ import {
   BarChart3,
   Boxes,
   Check,
-  ChevronDown,
   ClipboardCheck,
   Headphones,
   Heart,
@@ -101,42 +100,19 @@ export default function HomePage() {
     <main className="flua2-site">
       <section className="flua2-hero">
         <header className="flua2-header">
-          <div className="flua2-shell flua2-nav">
+          <div className="flua2-shell flua2-nav marketing-nav-simple">
             <Link href="/" className="flua2-brand" aria-label="Flua Gestão">
               <BrandLogo />
             </Link>
 
-            <nav className="flua2-nav-links" aria-label="Navegação principal">
-              <div className="flua2-nav-menu">
-                <button type="button" className="flua2-nav-trigger">
-                  Funcionalidades <ChevronDown size={14} />
-                </button>
-                <div className="flua2-nav-menu-panel">
-                  <Link href="/funcionalidades/controle-de-vendas">
-                    <span className="flua2-nav-menu-icon"><ClipboardCheck size={18} /></span>
-                    <span className="flua2-nav-menu-copy">
-                      <strong>Controle de Vendas</strong>
-                      <small>Pedidos, vendas e recebimentos em uma única tela.</small>
-                    </span>
-                  </Link>
-                </div>
-              </div>
-              <a href="#para-quem">Para quem é</a>
-              <a href="#planos">Planos</a>
-              <a href="#recursos" className="flua2-nav-dropdown">
-                Recursos <ChevronDown size={14} />
-              </a>
-              <a href="#faq">FAQ</a>
+            <nav className="flua2-nav-links marketing-nav-simple-links" aria-label="Navegação principal">
+              <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
+              <a href="#para-quem">A FLUA</a>
+              <a href="#contato">CONTATO</a>
+              <Link href="/catalogo">MINHA LOJA</Link>
+              <a href="#documentos">DOCUMENTOS</a>
+              <Link href="/login">PORTAL</Link>
             </nav>
-
-            <div className="flua2-nav-actions">
-              <Link href="/login" className="flua2-btn flua2-btn-outline">
-                Entrar
-              </Link>
-              <Link href="/cadastro" className="flua2-btn flua2-btn-light">
-                Teste grátis
-              </Link>
-            </div>
           </div>
         </header>
 
@@ -398,7 +374,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="flua2-footer">
+      <footer id="contato" className="flua2-footer">
+        <span id="documentos" aria-hidden="true" />
         <div className="flua2-shell flua2-footer-row">
           <Link href="/" className="flua2-brand"><BrandLogo /></Link>
           <p>Gestão especializada para cestas, tábuas de frios, presentes e encomendas.</p>
