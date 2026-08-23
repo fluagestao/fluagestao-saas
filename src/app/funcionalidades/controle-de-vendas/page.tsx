@@ -6,7 +6,6 @@ import {
   BarChart3,
   CalendarRange,
   Check,
-  ChevronDown,
   CircleDollarSign,
   ClipboardList,
   MousePointerClick,
@@ -75,36 +74,19 @@ export default function ControleDeVendasPage() {
     <main className="cv-page">
       <section className="cv-hero">
         <header className="cv-header">
-          <div className="cv-shell cv-nav">
+          <div className="cv-shell cv-nav marketing-nav-simple">
             <Link href="/" className="cv-brand" aria-label="Flua Gestão">
               <Logo />
             </Link>
 
-            <nav className="cv-nav-links" aria-label="Navegação principal">
-              <div className="flua2-nav-menu">
-                <button className="flua2-nav-trigger cv-nav-active" type="button">
-                  Funcionalidades <ChevronDown size={14} />
-                </button>
-                <div className="flua2-nav-menu-panel">
-                  <Link href="/funcionalidades/controle-de-vendas">
-                    <span className="flua2-nav-menu-icon"><ShoppingBag size={18} /></span>
-                    <span className="flua2-nav-menu-copy">
-                      <strong>Controle de Vendas</strong>
-                      <small>Pedidos, vendas e recebimentos em uma única tela.</small>
-                    </span>
-                  </Link>
-                </div>
-              </div>
-              <Link href="/#para-quem">Para quem é</Link>
-              <Link href="/#planos">Planos</Link>
-              <Link href="/#recursos">Recursos</Link>
-              <Link href="/#faq">FAQ</Link>
+            <nav className="cv-nav-links marketing-nav-simple-links" aria-label="Navegação principal">
+              <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
+              <Link href="/#para-quem">A FLUA</Link>
+              <Link href="/#contato">CONTATO</Link>
+              <Link href="/catalogo">MINHA LOJA</Link>
+              <Link href="/#documentos">DOCUMENTOS</Link>
+              <Link href="/login">PORTAL</Link>
             </nav>
-
-            <div className="cv-nav-actions">
-              <Link href="/login" className="cv-btn cv-btn-outline">Entrar</Link>
-              <Link href="/cadastro" className="cv-btn cv-btn-light">Teste grátis</Link>
-            </div>
           </div>
         </header>
 
