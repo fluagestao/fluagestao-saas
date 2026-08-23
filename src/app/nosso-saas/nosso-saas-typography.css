@@ -1,0 +1,131 @@
+.saas-page{
+  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+
+.saas-page p,
+.saas-page li,
+.saas-page span,
+.saas-page small,
+.saas-page em{
+  font-weight:400;
+}
+
+.saas-page .saas-kicker,
+.saas-page .saas-section-kicker{
+  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-weight:600;
+  letter-spacing:.11em;
+}
+
+.saas-page .saas-hero h1,
+.saas-page .saas-section-heading h2,
+.saas-page .saas-intro h2,
+.saas-page .saas-final-box h2{
+  font-family:var(--font-flua-serif),Georgia,"Times New Roman",serif;
+  font-weight:500;
+  letter-spacing:-.035em;
+}
+
+.saas-page .saas-hero h1{
+  line-height:1.01;
+}
+
+.saas-page .saas-hero-lead,
+.saas-page .saas-section-heading p,
+.saas-page .saas-intro-text p,
+.saas-page .saas-module-card p,
+.saas-page .saas-flow-copy p{
+  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-weight:400;
+  line-height:1.7;
+  letter-spacing:-.008em;
+}
+
+.saas-page .saas-module-card h3,
+.saas-page .saas-flow-copy h3,
+.saas-page .saas-chaos-card h3,
+.saas-page .saas-order-card h3,
+.saas-page .saas-growth h3,
+.saas-page .saas-step-card h3,
+.saas-page .saas-faq-item h3,
+.saas-page .saas-faq-item button,
+.saas-page .saas-quick-grid strong{
+  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-weight:500;
+  letter-spacing:-.025em;
+}
+
+.saas-page .saas-module-card h3{
+  font-size:20px;
+  line-height:1.25;
+}
+
+.saas-page .saas-flow-copy h3{
+  font-size:34px;
+  line-height:1.14;
+}
+
+.saas-page .saas-chaos-card h3,
+.saas-page .saas-order-card h3{
+  font-size:36px;
+  line-height:1.12;
+}
+
+.saas-page .saas-btn,
+.saas-page .saas-flow-tabs button,
+.saas-page .saas-flow-visual button,
+.saas-page .saas-module-card>span,
+.saas-page .saas-flow-copy a,
+.saas-page .saas-hero-proof,
+.saas-page .saas-demo-nav,
+.saas-page .saas-demo-heading button,
+.saas-page .saas-demo-filters>*{
+  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-weight:600;
+}
+
+.saas-page .saas-btn{
+  letter-spacing:-.01em;
+}
+
+.saas-page .saas-demo-heading h3,
+.saas-page .saas-demo-topbar>strong,
+.saas-page .saas-demo-kpis strong,
+.saas-page .saas-demo-table span b{
+  font-weight:600;
+}
+
+.saas-page .saas-demo-heading small,
+.saas-page .saas-demo-kpis span,
+.saas-page .saas-demo-table .head,
+.saas-page .saas-flow-copy>span{
+  font-weight:600;
+}
+
+.saas-page .saas-demo-table i{
+  font-weight:500;
+}
+
+.saas-page .saas-quick-grid strong{
+  font-size:21px;
+}
+
+.saas-page .saas-quick-grid span{
+  font-size:13px;
+  line-height:1.55;
+}
+
+.saas-page strong,
+.saas-page b{
+  font-weight:600;
+}
+
+@media(max-width:760px){
+  .saas-page .saas-module-card h3{font-size:19px}
+  .saas-page .saas-flow-copy h3{font-size:30px}
+  .saas-page .saas-chaos-card h3,
+  .saas-page .saas-order-card h3{font-size:31px}
+}
