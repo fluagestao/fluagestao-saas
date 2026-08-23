@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 export function MarketingHeader() {
   const pathname = usePathname();
-  const visible = pathname === "/" || pathname.startsWith("/funcionalidades/");
+  const visible = pathname === "/" || pathname === "/nosso-saas" || pathname.startsWith("/funcionalidades/");
 
   if (!visible) return null;
 
@@ -24,7 +24,7 @@ export function MarketingHeader() {
         </Link>
 
         <nav className="marketing-global-nav" aria-label="Navegação institucional">
-          <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
+          <Link href="/nosso-saas">NOSSO SAAS</Link>
           <Link href="/#para-quem">A FLUA</Link>
           <Link href="/#contato">CONTATO</Link>
           <Link href="/catalogo">MINHA LOJA</Link>
