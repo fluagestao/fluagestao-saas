@@ -38,6 +38,13 @@
   z-index:1;
 }
 
+/* O cabeçalho deve ficar preso ao topo do hero, sem herdar o posicionamento relativo acima. */
+.flua2-site .flua2-header{
+  position:absolute!important;
+  inset:0 0 auto!important;
+  z-index:60!important;
+}
+
 /* A nova arte já compõe o cenário; evita objetos duplicados nas laterais. */
 .flua2-site .flua2-decor-gift,
 .flua2-site .flua2-decor-box,
