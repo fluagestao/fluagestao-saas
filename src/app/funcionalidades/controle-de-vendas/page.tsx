@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import "../../marketing-nav.css";
 import "./controle-vendas.css";
+import "./sales-preview-demo.css";
+import SalesPreviewDemo from "./SalesPreviewDemo";
 
 export const metadata: Metadata = {
   title: "Controle de Vendas",
@@ -126,34 +128,7 @@ export default function ControleDeVendasPage() {
             </div>
           </div>
 
-          <div className="cv-sales-preview" aria-label="Prévia do controle de vendas Flua">
-            <div className="cv-preview-top">
-              <div>
-                <small>VENDAS</small>
-                <strong>Pedidos</strong>
-                <span>Todos os canais em uma única operação.</span>
-              </div>
-              <button type="button"><span>+</span> Novo pedido</button>
-            </div>
-
-            <div className="cv-summary-grid">
-              <article><small>Faturamento do mês</small><strong>R$ 24.860,00</strong><span>+12,4% no período</span></article>
-              <article><small>A receber</small><strong>R$ 6.420,00</strong><span>9 vendas pendentes</span></article>
-              <article><small>Pedidos</small><strong>86</strong><span>18 em andamento</span></article>
-            </div>
-
-            <div className="cv-status-tabs">
-              <span className="active">Todos</span><span>Novo</span><span>Em produção</span><span>Aguardando retirada</span><span>Entregue</span>
-            </div>
-
-            <div className="cv-orders">
-              <div className="cv-order-row cv-order-head"><span>Pedido</span><span>Cliente</span><span>Origem</span><span>Entrega</span><span>Valor</span><span>Status</span></div>
-              <div className="cv-order-row"><b>#1842</b><span>Ana Paula</span><em className="site">Site</em><span>Hoje · 14:00</span><strong>R$ 259,90</strong><i className="production">Em produção</i></div>
-              <div className="cv-order-row"><b>#1841</b><span>Juliana Martins</span><em className="manual">Manual</em><span>Hoje · Retirada</span><strong>R$ 189,90</strong><i className="new">Novo</i></div>
-              <div className="cv-order-row"><b>#1840</b><span>Camila Ribeiro</span><em className="site">Site</em><span>Amanhã · 09:00</span><strong>R$ 329,90</strong><i className="waiting">Aguardando</i></div>
-              <div className="cv-order-row"><b>#1839</b><span>Marina Lopes</span><em className="manual">Manual</em><span>Ontem · Entregue</span><strong>R$ 149,90</strong><i className="done">Entregue</i></div>
-            </div>
-          </div>
+          <SalesPreviewDemo />
         </div>
       </section>
 
