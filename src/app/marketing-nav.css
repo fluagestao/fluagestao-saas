@@ -1,0 +1,18 @@
+.flua2-nav-menu{position:relative;display:flex;align-items:center}
+.flua2-nav-trigger{appearance:none;border:0;background:transparent;color:inherit;font:inherit;font-weight:inherit;display:inline-flex;align-items:center;gap:5px;padding:8px 2px;cursor:pointer;transition:.2s}
+.flua2-nav-trigger:hover,.flua2-nav-menu:focus-within .flua2-nav-trigger{opacity:.76}
+.flua2-nav-trigger svg{transition:transform .2s ease}
+.flua2-nav-menu:hover .flua2-nav-trigger svg,.flua2-nav-menu:focus-within .flua2-nav-trigger svg{transform:rotate(180deg)}
+.flua2-nav-menu-panel{position:absolute;left:50%;top:calc(100% + 10px);z-index:90;width:310px;padding:10px;border:1px solid rgba(111,57,54,.14);border-radius:16px;background:rgba(255,251,246,.98);box-shadow:0 24px 60px rgba(45,20,19,.2);opacity:0;visibility:hidden;transform:translate(-50%,-8px);transition:opacity .18s ease,transform .18s ease,visibility .18s ease;backdrop-filter:blur(16px)}
+.flua2-nav-menu:hover .flua2-nav-menu-panel,.flua2-nav-menu:focus-within .flua2-nav-menu-panel{opacity:1;visibility:visible;transform:translate(-50%,0)}
+.flua2-nav-menu-panel>a{display:flex!important;align-items:center!important;gap:12px!important;padding:12px!important;border-radius:11px!important;color:#5b302e!important;background:transparent!important;transform:none!important}
+.flua2-nav-menu-panel>a:hover{opacity:1!important;background:#f5ebe2!important}
+.flua2-nav-menu-icon{width:36px;height:36px;flex:0 0 auto;border-radius:10px;display:grid;place-items:center;background:#eee3d6;color:#7a433e}
+.flua2-nav-menu-copy{min-width:0;display:block}
+.flua2-nav-menu-copy strong{display:block;font-size:13px;line-height:1.15;color:#4f2c2a}
+.flua2-nav-menu-copy small{display:block;margin-top:4px;font-size:10px;line-height:1.35;font-weight:500;color:#8a7169}
+
+@media(max-width:900px){
+  .flua2-nav-menu-panel{left:0;transform:translate(0,-8px)}
+  .flua2-nav-menu:hover .flua2-nav-menu-panel,.flua2-nav-menu:focus-within .flua2-nav-menu-panel{transform:translate(0,0)}
+}
