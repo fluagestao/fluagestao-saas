@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./nosso-saas.css";
+import "./nosso-saas-typography.css";
 import { NossoSaasClient } from "./NossoSaasClient";
 
 export const metadata: Metadata = {
