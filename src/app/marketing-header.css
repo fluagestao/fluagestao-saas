@@ -8,7 +8,7 @@
 
 .marketing-global-shell{
   position:relative;
-  width:min(1440px,calc(100% - 64px));
+  width:min(1440px, calc(100% - 64px));
   height:96px;
   margin:0 auto;
   display:flex;
@@ -38,18 +38,18 @@
   position:absolute;
   left:50%;
   top:50%;
-  transform:translate(-50%,-50%);
+  transform:translate(-50%, -50%);
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:clamp(22px,2.2vw,42px);
+  gap:clamp(22px, 2.2vw, 42px);
   white-space:nowrap;
 }
 
 .marketing-global-nav a{
   position:relative;
   color:rgba(255,255,255,.92);
-  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-family:var(--font-geist-sans), Arial, sans-serif;
   font-size:11px;
   font-weight:400;
   line-height:1;
@@ -93,19 +93,19 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-family:var(--font-geist-sans), Arial, sans-serif;
   font-size:12px;
   font-weight:650;
   text-decoration:none;
-  transition:transform .2s ease,background .2s ease;
+  transition:transform .2s ease, background .2s ease;
 }
 
 .marketing-global-actions .marketing-global-login,
 .marketing-global-actions .marketing-global-trial{
-  color:#5a312d!important;
-  border:1px solid rgba(255,255,255,.9)!important;
-  background:#fff9f2!important;
-  box-shadow:none!important;
+  color:#5a312d !important;
+  border:1px solid rgba(255,255,255,.9) !important;
+  background:#fff9f2 !important;
+  box-shadow:none !important;
 }
 
 .marketing-global-actions a:hover{
@@ -114,87 +114,227 @@
 
 .flua2-header,
 .cv-header{
-  display:none!important;
+  display:none !important;
 }
 
-/* Home: troca o dashboard antigo pelo mockup de vendas do public. */
+
+/* =========================================================
+   HOME — MOCKUP DE VENDAS
+   IMAGEM ORIGINAL, SEM CORTE E SEM DISTORÇÃO
+   ========================================================= */
+
 .flua2-site .flua2-product-preview{
-  max-width:1010px!important;
-  min-height:650px!important;
-  margin-left:auto!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  overflow:visible!important;
+  position:relative;
+
+  width:100%;
+  max-width:1120px !important;
+
+  height:660px;
+  min-height:660px !important;
+
+  margin-left:auto !important;
+
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+
+  /*
+   * IMPORTANTE:
+   * deixa a imagem passar para cima ou para os lados
+   * sem cortar nenhuma parte.
+   */
+  overflow:visible !important;
 }
 
 .flua2-site .flua2-product-preview > *{
-  display:none!important;
+  display:none !important;
 }
 
 .flua2-site .flua2-product-preview::before{
   content:"";
-  display:block;
-  width:128%;
-  height:650px;
+
+  position:absolute;
+
+  left:50%;
+  top:50%;
+
+  /*
+   * Mantém o tamanho grande que aprovamos.
+   */
+  width:140%;
+  height:720px;
+
   background-image:url("/mockup vendas.png");
+
   background-repeat:no-repeat;
-  background-position:center;
+
+  /*
+   * A imagem fica inteira.
+   * Nada de cover.
+   */
   background-size:contain;
-  filter:drop-shadow(0 30px 48px rgba(32,13,12,.30));
-  transform:translateX(4%);
+
+  /*
+   * Centraliza a arte original.
+   */
+  background-position:center center;
+
+  /*
+   * Só sombra.
+   * Nenhuma rotação ou perspectiva adicional.
+   */
+  filter:drop-shadow(
+    0 30px 48px rgba(32,13,12,.28)
+  );
+
+  /*
+   * Apenas posiciona.
+   * Não gira, não achata e não estica.
+   */
+  transform:translate(-50%, -55%);
+
+  pointer-events:none;
 }
+
+
+/* =========================================================
+   TELAS MÉDIAS / NOTEBOOK
+   ========================================================= */
 
 @media(max-width:1320px){
+
   .flua2-site .flua2-product-preview{
-    max-width:860px!important;
-    min-height:570px!important;
+    max-width:950px !important;
+
+    height:600px;
+    min-height:600px !important;
+
+    overflow:visible !important;
   }
+
   .flua2-site .flua2-product-preview::before{
-    height:570px;
-    width:120%;
-    transform:translateX(3%);
+    width:130%;
+    height:650px;
+
+    background-size:contain;
+    background-position:center center;
+
+    transform:translate(-50%, -55%);
   }
 }
+
+
+/* =========================================================
+   CABEÇALHO EM TELAS MENORES
+   ========================================================= */
 
 @media(max-width:1220px){
+
   .marketing-global-shell{
-    width:min(100% - 40px,1440px);
+    width:min(1440px, calc(100% - 40px));
     gap:20px;
   }
-  .marketing-global-nav{gap:20px;}
-  .marketing-global-nav a{font-size:10px;letter-spacing:.07em;}
-  .marketing-global-actions a{padding:0 14px;}
+
+  .marketing-global-nav{
+    gap:20px;
+  }
+
+  .marketing-global-nav a{
+    font-size:10px;
+    letter-spacing:.07em;
+  }
+
+  .marketing-global-actions a{
+    padding:0 14px;
+  }
 }
+
+
+/* =========================================================
+   TABLET / NOTEBOOK PEQUENO
+   ========================================================= */
 
 @media(max-width:1080px){
+
   .flua2-site .flua2-product-preview{
-    max-width:900px!important;
-    min-height:550px!important;
-    margin:0 auto!important;
+    max-width:940px !important;
+
+    height:560px;
+    min-height:560px !important;
+
+    margin:0 auto !important;
+
+    overflow:visible !important;
   }
+
   .flua2-site .flua2-product-preview::before{
-    width:108%;
-    height:550px;
-    transform:none;
+    width:114%;
+    height:590px;
+
+    background-size:contain;
+    background-position:center center;
+
+    transform:translate(-50%, -53%);
   }
 }
+
+
+/* =========================================================
+   MENU MOBILE
+   ========================================================= */
 
 @media(max-width:980px){
-  .marketing-global-nav{display:none;}
+
+  .marketing-global-nav{
+    display:none;
+  }
 }
 
+
+/* =========================================================
+   CELULAR
+   ========================================================= */
+
 @media(max-width:640px){
-  .marketing-global-header,.marketing-global-shell{height:78px;}
-  .marketing-global-shell{width:min(100% - 24px,1440px);}
-  .marketing-global-brand{width:96px;height:48px;}
-  .marketing-global-login{display:none!important;}
-  .marketing-global-actions a{min-height:38px;padding:0 14px;font-size:11px;}
-  .flua2-site .flua2-product-preview{
-    min-height:350px!important;
+
+  .marketing-global-header,
+  .marketing-global-shell{
+    height:78px;
   }
-  .flua2-site .flua2-product-preview::before{
-    width:104%;
+
+  .marketing-global-shell{
+    width:min(1440px, calc(100% - 24px));
+  }
+
+  .marketing-global-brand{
+    width:96px;
+    height:48px;
+  }
+
+  .marketing-global-login{
+    display:none !important;
+  }
+
+  .marketing-global-actions a{
+    min-height:38px;
+    padding:0 14px;
+    font-size:11px;
+  }
+
+  .flua2-site .flua2-product-preview{
     height:350px;
+    min-height:350px !important;
+
+    overflow:visible !important;
+  }
+
+  .flua2-site .flua2-product-preview::before{
+    width:108%;
+    height:370px;
+
+    background-size:contain;
+    background-position:center center;
+
+    transform:translate(-50%, -52%);
   }
 }
