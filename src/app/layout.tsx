@@ -4,11 +4,11 @@ import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./admin-fill.css";
 import "./panel-shell.css";
-import "./responsive-system.css";
 import "./flua-hero-visual.css";
 import "./flua-hero-background.css";
 import "./flua-hero-background-fix.css";
 import "./marketing-header.css";
+import "./responsive-system.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
 import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
