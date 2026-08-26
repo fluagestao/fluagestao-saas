@@ -2,25 +2,25 @@
   position:absolute;
   inset:0 0 auto;
   z-index:120;
-  height:96px;
+  min-height:clamp(78px,7vw,96px);
   pointer-events:none;
 }
 
 .marketing-global-shell{
   position:relative;
-  width:min(1440px, calc(100% - 64px));
-  height:96px;
+  width:min(1440px,calc(100% - clamp(24px,4vw,64px)));
+  min-height:clamp(78px,7vw,96px);
   margin:0 auto;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:30px;
+  gap:clamp(12px,2vw,30px);
   pointer-events:auto;
 }
 
 .marketing-global-brand{
   flex:0 0 auto;
-  width:118px;
+  width:clamp(96px,9vw,118px);
   height:56px;
   display:flex;
   align-items:center;
@@ -38,22 +38,23 @@
   position:absolute;
   left:50%;
   top:50%;
-  transform:translate(-50%, -50%);
+  transform:translate(-50%,-50%);
   display:flex;
+  min-width:0;
   align-items:center;
   justify-content:center;
-  gap:clamp(22px, 2.2vw, 42px);
+  gap:clamp(16px,2vw,38px);
   white-space:nowrap;
 }
 
 .marketing-global-nav a{
   position:relative;
   color:rgba(255,255,255,.92);
-  font-family:var(--font-geist-sans), Arial, sans-serif;
-  font-size:11px;
+  font-family:var(--font-geist-sans),Arial,sans-serif;
+  font-size:clamp(9px,.75vw,11px);
   font-weight:400;
   line-height:1;
-  letter-spacing:.095em;
+  letter-spacing:.085em;
   text-decoration:none;
   transition:opacity .2s ease;
 }
@@ -70,34 +71,29 @@
   transition:width .2s ease;
 }
 
-.marketing-global-nav a:hover{
-  opacity:.72;
-}
-
-.marketing-global-nav a:hover::after{
-  width:70%;
-}
+.marketing-global-nav a:hover{opacity:.72}
+.marketing-global-nav a:hover::after{width:70%}
 
 .marketing-global-actions{
   flex:0 0 auto;
   margin-left:auto;
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:clamp(7px,1vw,10px);
 }
 
 .marketing-global-actions a{
   min-height:40px;
-  padding:0 18px;
+  padding:0 clamp(12px,1.3vw,18px);
   border-radius:11px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  font-family:var(--font-geist-sans), Arial, sans-serif;
+  font-family:var(--font-geist-sans),Arial,sans-serif;
   font-size:12px;
   font-weight:650;
   text-decoration:none;
-  transition:transform .2s ease, background .2s ease;
+  transition:transform .2s ease,background .2s ease;
 }
 
 .marketing-global-actions .marketing-global-login,
@@ -108,233 +104,104 @@
   box-shadow:none !important;
 }
 
-.marketing-global-actions a:hover{
-  transform:translateY(-1px);
-}
+.marketing-global-actions a:hover{transform:translateY(-1px)}
 
-.flua2-header,
-.cv-header{
-  display:none !important;
-}
+.flua2-header,.cv-header{display:none !important}
 
-
-/* =========================================================
-   HOME — MOCKUP DE VENDAS
-   IMAGEM ORIGINAL, SEM CORTE E SEM DISTORÇÃO
-   ========================================================= */
-
+/* Home: mockup sempre inteiro e dimensionado pelo viewport, sem ultrapassar a coluna. */
 .flua2-site .flua2-product-preview{
   position:relative;
-
   width:100%;
-  max-width:1120px !important;
-
-  height:660px;
-  min-height:660px !important;
-
+  max-width:min(100%,1120px) !important;
+  height:clamp(420px,42vw,660px);
+  min-height:0 !important;
   margin-left:auto !important;
-
   display:flex !important;
   align-items:center !important;
   justify-content:center !important;
-
-  /*
-   * IMPORTANTE:
-   * deixa a imagem passar para cima ou para os lados
-   * sem cortar nenhuma parte.
-   */
   overflow:visible !important;
 }
 
-.flua2-site .flua2-product-preview > *{
-  display:none !important;
-}
+.flua2-site .flua2-product-preview > *{display:none !important}
 
 .flua2-site .flua2-product-preview::before{
   content:"";
-
   position:absolute;
-
   left:50%;
   top:50%;
-
-  /*
-   * Mantém o tamanho grande que aprovamos.
-   */
-  width:140%;
-  height:720px;
-
+  width:min(118%,1120px);
+  height:min(100%,680px);
+  max-width:calc(100vw - 24px);
   background-image:url("/mockup vendas.png");
-
   background-repeat:no-repeat;
-
-  /*
-   * A imagem fica inteira.
-   * Nada de cover.
-   */
   background-size:contain;
-
-  /*
-   * Centraliza a arte original.
-   */
   background-position:center center;
-
-  /*
-   * Só sombra.
-   * Nenhuma rotação ou perspectiva adicional.
-   */
-  filter:drop-shadow(
-    0 30px 48px rgba(32,13,12,.28)
-  );
-
-  /*
-   * Apenas posiciona.
-   * Não gira, não achata e não estica.
-   */
-  transform:translate(-50%, -55%);
-
+  filter:drop-shadow(0 30px 48px rgba(32,13,12,.28));
+  transform:translate(-50%,-52%);
   pointer-events:none;
 }
 
-
-/* =========================================================
-   TELAS MÉDIAS / NOTEBOOK
-   ========================================================= */
-
 @media(max-width:1320px){
+  .marketing-global-shell{width:min(1440px,calc(100% - 40px))}
 
   .flua2-site .flua2-product-preview{
-    max-width:950px !important;
-
-    height:600px;
-    min-height:600px !important;
-
-    overflow:visible !important;
+    height:clamp(410px,44vw,590px);
+    max-width:100% !important;
   }
 
   .flua2-site .flua2-product-preview::before{
-    width:130%;
-    height:650px;
-
-    background-size:contain;
-    background-position:center center;
-
-    transform:translate(-50%, -55%);
+    width:min(112%,950px);
+    height:100%;
   }
 }
-
-
-/* =========================================================
-   CABEÇALHO EM TELAS MENORES
-   ========================================================= */
 
 @media(max-width:1220px){
-
-  .marketing-global-shell{
-    width:min(1440px, calc(100% - 40px));
-    gap:20px;
-  }
-
-  .marketing-global-nav{
-    gap:20px;
-  }
-
-  .marketing-global-nav a{
-    font-size:10px;
-    letter-spacing:.07em;
-  }
-
-  .marketing-global-actions a{
-    padding:0 14px;
-  }
+  .marketing-global-nav{gap:16px}
+  .marketing-global-nav a{font-size:9.5px;letter-spacing:.055em}
+  .marketing-global-actions a{padding-inline:12px}
 }
-
-
-/* =========================================================
-   TABLET / NOTEBOOK PEQUENO
-   ========================================================= */
 
 @media(max-width:1080px){
-
   .flua2-site .flua2-product-preview{
-    max-width:940px !important;
-
-    height:560px;
-    min-height:560px !important;
-
+    width:100% !important;
+    height:clamp(390px,53vw,550px);
     margin:0 auto !important;
-
-    overflow:visible !important;
   }
 
   .flua2-site .flua2-product-preview::before{
-    width:114%;
-    height:590px;
-
-    background-size:contain;
-    background-position:center center;
-
-    transform:translate(-50%, -53%);
+    width:min(106%,900px);
+    max-width:100%;
+    height:100%;
+    transform:translate(-50%,-50%);
   }
 }
-
-
-/* =========================================================
-   MENU MOBILE
-   ========================================================= */
 
 @media(max-width:980px){
-
-  .marketing-global-nav{
-    display:none;
-  }
+  .marketing-global-nav{display:none}
+  .marketing-global-shell{width:calc(100% - 32px)}
 }
 
-
-/* =========================================================
-   CELULAR
-   ========================================================= */
-
 @media(max-width:640px){
-
-  .marketing-global-header,
-  .marketing-global-shell{
-    height:78px;
-  }
-
-  .marketing-global-shell{
-    width:min(1440px, calc(100% - 24px));
-  }
-
-  .marketing-global-brand{
-    width:96px;
-    height:48px;
-  }
-
-  .marketing-global-login{
-    display:none !important;
-  }
-
-  .marketing-global-actions a{
-    min-height:38px;
-    padding:0 14px;
-    font-size:11px;
-  }
+  .marketing-global-header,.marketing-global-shell{min-height:78px}
+  .marketing-global-shell{width:calc(100% - 24px);gap:8px}
+  .marketing-global-brand{width:96px;height:48px}
+  .marketing-global-login{display:none !important}
+  .marketing-global-actions a{min-height:38px;padding:0 12px;font-size:11px}
 
   .flua2-site .flua2-product-preview{
-    height:350px;
-    min-height:350px !important;
-
-    overflow:visible !important;
+    width:100% !important;
+    height:clamp(260px,82vw,350px);
   }
 
   .flua2-site .flua2-product-preview::before{
-    width:108%;
-    height:370px;
-
-    background-size:contain;
-    background-position:center center;
-
-    transform:translate(-50%, -52%);
+    width:100%;
+    max-width:100%;
+    height:100%;
+    transform:translate(-50%,-50%);
   }
+}
+
+@media(max-width:390px){
+  .marketing-global-brand{width:86px}
+  .marketing-global-actions .marketing-global-trial{padding-inline:10px;font-size:10px}
 }
