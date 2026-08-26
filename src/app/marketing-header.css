@@ -183,10 +183,11 @@
 
 @media(max-width:640px){
   .marketing-global-header,.marketing-global-shell{min-height:78px}
-  .marketing-global-shell{width:calc(100% - 24px);gap:8px}
-  .marketing-global-brand{width:96px;height:48px}
-  .marketing-global-login{display:none !important}
-  .marketing-global-actions a{min-height:38px;padding:0 12px;font-size:11px}
+  .marketing-global-shell{width:calc(100% - 24px);gap:7px}
+  .marketing-global-brand{width:88px;height:46px}
+  .marketing-global-actions{gap:6px}
+  .marketing-global-login{display:inline-flex !important}
+  .marketing-global-actions a{min-height:36px;padding:0 10px;font-size:10.5px;border-radius:10px}
 
   .flua2-site .flua2-product-preview{
     width:100% !important;
@@ -202,6 +203,9 @@
 }
 
 @media(max-width:390px){
-  .marketing-global-brand{width:86px}
-  .marketing-global-actions .marketing-global-trial{padding-inline:10px;font-size:10px}
+  .marketing-global-shell{width:calc(100% - 18px);gap:5px}
+  .marketing-global-brand{width:76px}
+  .marketing-global-actions{gap:5px}
+  .marketing-global-actions a{min-height:35px;padding-inline:8px;font-size:9.5px}
+  .marketing-global-actions .marketing-global-trial{padding-inline:8px;font-size:9.5px}
 }
