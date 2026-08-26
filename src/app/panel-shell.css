@@ -1,55 +1,63 @@
-/* Mantém o painel Flua com a mesma largura e escala em todas as páginas internas. */
+/* Mantém o painel Flua com largura consistente sem prender o conteúdo ao viewport. */
 html {
   scrollbar-gutter: stable;
 }
 
 @media (min-width: 1024px) {
-  /* Cabeçalho padrão: mesma altura, largura máxima e respiro em qualquer rota interna. */
+  /* Cabeçalho padrão: largura máxima comum e respiro fluido. */
   body .app-top-header > div:first-child,
   body div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
     width: 100% !important;
     max-width: 1680px !important;
-    height: 64px !important;
+    min-height: 64px !important;
+    height: auto !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding-left: 32px !important;
-    padding-right: 32px !important;
+    padding-left: clamp(24px, 2vw, 32px) !important;
+    padding-right: clamp(24px, 2vw, 32px) !important;
   }
 
-  /* Conteúdo central: nunca cresce nem encolhe ao trocar de página. */
+  /* Conteúdo central usa toda a largura possível até 1680px e pode crescer em altura. */
   body div[class~="bg-[var(--admin-bg)]"] > main,
   html body .conta-viewport > div[class*="min-h-dvh"] > main {
     width: 100% !important;
     max-width: 1680px !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding-left: 32px !important;
-    padding-right: 32px !important;
+    padding-left: clamp(24px, 2vw, 32px) !important;
+    padding-right: clamp(24px, 2vw, 32px) !important;
     box-sizing: border-box !important;
   }
 
-  /* Conta usa exatamente o mesmo cabeçalho e a mesma área útil do painel principal. */
+  /* Conta segue a mesma largura, mas nunca bloqueia a rolagem vertical. */
   html body .conta-viewport > .app-top-header > div:first-child {
     width: 100% !important;
     max-width: 1680px !important;
-    height: 64px !important;
+    min-height: 64px !important;
+    height: auto !important;
     margin-left: auto !important;
     margin-right: auto !important;
-    padding-left: 32px !important;
-    padding-right: 32px !important;
+    padding-left: clamp(24px, 2vw, 32px) !important;
+    padding-right: clamp(24px, 2vw, 32px) !important;
   }
 
   html body .conta-viewport > div[class*="min-h-dvh"] {
-    height: calc(100dvh - 64px) !important;
-    min-height: 0 !important;
+    min-height: calc(100dvh - 74px) !important;
+    height: auto !important;
+    overflow: visible !important;
   }
 
   html body .conta-viewport > div[class*="min-h-dvh"] > main {
-    height: 100% !important;
-    max-height: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
-  /* Remove a ampliação/redução exclusiva da tela Início que fazia o painel mudar de tamanho. */
+  /* A tela Início nunca usa escala fixa. */
   body div[class~="bg-[var(--admin-bg)]"] > main:has(> section button[aria-label="Mudar meu nome"]) > section {
     transform: none !important;
     transform-origin: initial !important;
@@ -65,5 +73,16 @@ html {
   html body .conta-viewport > div[class*="min-h-dvh"] > main {
     padding-left: 24px !important;
     padding-right: 24px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body div[class~="bg-[var(--admin-bg)]"] > main,
+  html body .conta-viewport > div[class*="min-h-dvh"] > main {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding-left: clamp(12px, 3vw, 20px) !important;
+    padding-right: clamp(12px, 3vw, 20px) !important;
   }
 }
