@@ -1,0 +1,357 @@
+/* Responsive system hardening for Flua marketing + SaaS */
+
+:root {
+  --flua-page-gutter: clamp(12px, 2.5vw, 36px);
+  --flua-content-max: 1600px;
+}
+
+html {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+img,
+svg,
+video,
+canvas,
+picture {
+  max-width: 100%;
+}
+
+img,
+video {
+  height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+pre,
+code {
+  overflow-wrap: anywhere;
+}
+
+/* Never let flex/grid children force the viewport wider than the screen. */
+main,
+section,
+article,
+aside,
+header,
+footer,
+nav,
+form,
+div {
+  min-width: 0;
+}
+
+/* Shared responsive containers used by the marketing site. */
+.flua2-shell,
+.marketing-shell,
+.sales-shell,
+.nosso-saas-shell {
+  width: min(var(--flua-content-max), calc(100% - (var(--flua-page-gutter) * 2))) !important;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+/* Tables should scroll horizontally inside their own area instead of cutting content. */
+[data-slot="table-container"],
+.table-responsive,
+.responsive-table-wrap,
+.flua-table-wrap,
+.admin-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Dialogs/sheets must fit short and narrow displays. */
+[data-slot="dialog-content"],
+[role="dialog"] {
+  max-width: min(96vw, 1100px);
+  max-height: min(92dvh, 920px);
+}
+
+[role="dialog"] {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* Keep long labels, e-mails, product names and URLs from overflowing cards. */
+.break-responsive,
+.flua2-site p,
+.flua2-site span,
+.flua2-site strong,
+.flua2-site small,
+.admin-shell p,
+.admin-shell span,
+.admin-shell strong,
+.admin-shell small {
+  overflow-wrap: anywhere;
+}
+
+/* SaaS shell: allow content to shrink and scroll instead of being clipped. */
+.admin-shell,
+.admin-main,
+.admin-content,
+.admin-page,
+.admin-panel,
+[data-admin-shell],
+[data-admin-main] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-main,
+.admin-content,
+[data-admin-main] {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+/* Large desktop screens: use available width without stretching text excessively. */
+@media (min-width: 1600px) {
+  :root {
+    --flua-page-gutter: clamp(28px, 3vw, 56px);
+    --flua-content-max: 1680px;
+  }
+}
+
+/* Notebook range: compress gaps before content starts clipping. */
+@media (max-width: 1366px) {
+  :root {
+    --flua-page-gutter: clamp(14px, 2vw, 24px);
+  }
+
+  .flua2-shell {
+    width: min(1280px, calc(100% - (var(--flua-page-gutter) * 2))) !important;
+  }
+}
+
+/* Tablet + narrow notebook. */
+@media (max-width: 1100px) {
+  .flua2-nav,
+  .marketing-nav-simple {
+    grid-template-columns: auto 1fr auto !important;
+    gap: clamp(10px, 2vw, 20px) !important;
+  }
+
+  .flua2-nav-links,
+  .marketing-nav-simple-links {
+    gap: clamp(10px, 1.5vw, 18px) !important;
+    font-size: 12px !important;
+  }
+
+  .flua2-hero-layout,
+  .flua2-two-columns,
+  .flua2-cesteira-grid,
+  .flua-showcase-layout,
+  .flua2-faq-layout {
+    gap: clamp(24px, 4vw, 48px) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --flua-page-gutter: 16px;
+  }
+
+  .flua2-hero {
+    min-height: auto !important;
+  }
+
+  .flua2-hero-layout,
+  .flua2-two-columns,
+  .flua2-cesteira-grid,
+  .flua-showcase-layout,
+  .flua2-faq-layout,
+  .flua2-growth-card,
+  .flua2-footer-main {
+    grid-template-columns: 1fr !important;
+  }
+
+  .flua2-product-preview,
+  .flua2-section-copy,
+  .flua-showcase-stage,
+  .flua2-cesteira-visual {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: auto !important;
+  }
+
+  .flua2-mini-grid,
+  .flua2-audience-cards,
+  .flua2-investment-grid {
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  .flua2-app-window {
+    max-width: 100%;
+    transform: none !important;
+  }
+
+  .flua2-decor {
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Site navigation must never be wider than the phone. */
+  .flua2-header {
+    position: relative !important;
+  }
+
+  .flua2-nav,
+  .marketing-nav-simple {
+    min-height: auto !important;
+    padding-block: 14px;
+    grid-template-columns: 1fr auto !important;
+  }
+
+  .flua2-nav-links,
+  .marketing-nav-simple-links {
+    grid-column: 1 / -1;
+    order: 3;
+    width: 100%;
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    padding-bottom: 4px;
+  }
+
+  .flua2-nav-links::-webkit-scrollbar,
+  .marketing-nav-simple-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .flua2-nav-actions {
+    gap: 8px !important;
+  }
+
+  .flua2-nav-actions .flua2-btn {
+    min-height: 40px;
+    padding-inline: 12px;
+    font-size: 12px;
+  }
+
+  .flua2-hero-layout {
+    padding-top: 28px !important;
+  }
+
+  .flua2-hero-copy {
+    max-width: 100% !important;
+  }
+
+  .flua2-hero h1,
+  .flua2-section h2,
+  .flua-showcase-heading h2 {
+    max-width: 100%;
+  }
+
+  .flua2-hero-actions,
+  .flua2-cesteira-actions {
+    align-items: stretch;
+  }
+
+  .flua2-hero-actions > *,
+  .flua2-cesteira-actions > * {
+    flex: 1 1 220px;
+  }
+
+  .flua2-mini-grid,
+  .flua2-audience-cards,
+  .flua2-investment-grid,
+  .flua2-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .flua2-app-window {
+    grid-template-columns: 1fr !important;
+  }
+
+  .flua2-app-sidebar {
+    display: none !important;
+  }
+
+  .flua2-orders-list {
+    overflow-x: auto;
+  }
+
+  .flua2-orders-list p {
+    min-width: 620px;
+  }
+
+  .flua2-footer-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  :root {
+    --flua-page-gutter: 12px;
+  }
+
+  .flua2-section {
+    padding-block: clamp(48px, 12vw, 72px) !important;
+  }
+
+  .flua2-shell {
+    width: calc(100% - 24px) !important;
+  }
+
+  .flua2-hero h1 {
+    font-size: clamp(40px, 12vw, 58px) !important;
+  }
+
+  .flua2-lead {
+    font-size: clamp(20px, 6vw, 26px) !important;
+  }
+
+  .flua2-section h2,
+  .flua-showcase-heading h2 {
+    font-size: clamp(32px, 9vw, 44px) !important;
+  }
+
+  .flua2-btn,
+  .flua2-btn-main {
+    width: 100%;
+  }
+
+  .flua2-footer-nav {
+    grid-template-columns: 1fr !important;
+  }
+
+  .flua2-footer-cta {
+    align-items: stretch !important;
+  }
+}
+
+/* Very short notebook displays: avoid vertical clipping caused by 100vh sections. */
+@media (max-height: 760px) and (min-width: 761px) {
+  .flua2-hero {
+    min-height: auto !important;
+  }
+
+  .flua2-hero-layout {
+    min-height: auto !important;
+    padding-top: 48px !important;
+    padding-bottom: 72px !important;
+  }
+}
