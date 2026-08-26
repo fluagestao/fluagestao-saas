@@ -1,0 +1,167 @@
+/* Experiência principal do Flua no celular: Início, Pedidos e Dashboard. */
+.mobile-admin-nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-admin-nav {
+    position: fixed;
+    z-index: 90;
+    right: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    padding: 7px;
+    border: 1px solid rgba(112, 61, 58, 0.13);
+    border-radius: 22px;
+    background: rgba(255, 252, 249, 0.96);
+    box-shadow: 0 16px 42px rgba(70, 37, 34, 0.18);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .mobile-admin-nav a {
+    min-width: 0;
+    min-height: 54px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border-radius: 16px;
+    color: var(--admin-ink-soft);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    text-decoration: none;
+    transition: background .18s ease, color .18s ease, transform .18s ease;
+  }
+
+  .mobile-admin-nav a svg {
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.9;
+  }
+
+  .mobile-admin-nav a[data-active="true"] {
+    color: #fff;
+    background: var(--terracotta);
+    box-shadow: 0 7px 18px rgba(169, 79, 69, 0.24);
+  }
+
+  .mobile-admin-nav a:active {
+    transform: scale(.97);
+  }
+
+  /* O conteúdo nunca fica atrás da barra inferior. */
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > main {
+    padding-top: 16px !important;
+    padding-bottom: calc(102px + env(safe-area-inset-bottom)) !important;
+  }
+
+  /* Cabeçalho interno mais compacto para ganhar altura útil. */
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
+    height: 64px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header img {
+    max-height: 38px;
+  }
+
+  /* Cabeçalho de cada página: ações descem sem cortar título ou filtro. */
+  body:has(.mobile-admin-nav) main > section > header {
+    gap: 10px !important;
+    padding-bottom: 12px !important;
+  }
+
+  body:has(.mobile-admin-nav) main > section > header > div[class*="flex-wrap"] {
+    width: 100%;
+  }
+
+  body:has(.mobile-admin-nav) main > section > header h2 {
+    font-size: 1.35rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body:has(.mobile-admin-nav) main > section > header p {
+    line-height: 1.45;
+  }
+
+  /* Dashboard: primeiro KPI vira destaque e os dois seguintes ficam lado a lado. */
+  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] > div:first-child {
+    grid-column: 1 / -1;
+  }
+
+  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] > div {
+    padding: 14px !important;
+  }
+
+  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] p[class*="text-2xl"] {
+    font-size: 1.45rem !important;
+  }
+
+  /* Filtro mensal do Dashboard ocupa a largura disponível. */
+  body:has(.mobile-admin-nav) input[type="month"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Pedidos: busca primeiro, em largura total. */
+  body:has(.mobile-admin-nav) input[placeholder="Buscar por nome ou WhatsApp"] {
+    order: -1;
+    flex: 0 0 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
+
+  /* Novo pedido vira ação principal no celular. */
+  body:has(.mobile-admin-nav) main button:has(> svg.lucide-plus) {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
+    margin-left: 0 !important;
+  }
+
+  /* Cards de pedido ficam confortáveis para toque e leitura. */
+  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] > div:first-child {
+    gap: 8px;
+  }
+
+  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] p[class*="truncate"] {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  /* Ações expandidas de pedido precisam ser tocáveis com o polegar. */
+  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] > div[class*="border-t"] button,
+  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] > div[class*="border-t"] a {
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobile-admin-nav {
+    right: 8px;
+    left: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-admin-nav a {
+    min-height: 52px;
+  }
+
+  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] {
+    gap: 10px !important;
+  }
+}
