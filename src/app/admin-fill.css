@@ -1,12 +1,9 @@
 /*
  * Contrato responsivo do painel Flua.
  *
- * Regra: a pagina nunca depende de uma resolucao fixa. O conteudo cresce
- * naturalmente, a rolagem vertical pertence a pagina e a rolagem horizontal
- * fica somente em componentes que realmente precisam dela (tabelas/kanban).
- *
- * Este arquivo e importado depois de globals.css e neutraliza os antigos
- * ajustes que congelavam e escalavam a tela inicial em notebooks baixos.
+ * Nenhuma rota interna depende de uma resolucao fixa. A pagina pode crescer
+ * verticalmente; tabelas, kanbans e faixas de navegacao recebem rolagem local
+ * quando necessario. Nao usamos scale() para esconder conteudo.
  */
 
 html,
@@ -17,23 +14,28 @@ body {
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 img,
 video,
-canvas {
+canvas,
+svg {
   max-width: 100%;
+}
+
+img,
+video {
   height: auto;
 }
 
-/* Shell do admin: nunca congela o viewport nem corta a pagina. */
+/* Shell administrativo */
 div[class~="bg-[var(--admin-bg)]"][class~="min-h-screen"] {
   width: 100%;
   min-width: 0;
   min-height: 100dvh !important;
   height: auto !important;
-  overflow-x: hidden !important;
+  overflow-x: clip !important;
   overflow-y: visible !important;
 }
 
@@ -42,20 +44,20 @@ div[class~="bg-[var(--admin-bg)]"] > main {
   min-width: 0;
   height: auto !important;
   max-height: none !important;
-  overflow-x: hidden !important;
-  overflow-y: visible !important;
+  overflow: visible !important;
   overscroll-behavior: auto !important;
 }
 
 div[class~="bg-[var(--admin-bg)]"] > main > *,
 div[class~="bg-[var(--admin-bg)]"] > main section,
 div[class~="bg-[var(--admin-bg)]"] > main article,
-div[class~="bg-[var(--admin-bg)]"] > main aside {
+div[class~="bg-[var(--admin-bg)]"] > main aside,
+div[class~="bg-[var(--admin-bg)]"] > main form {
   min-width: 0;
   max-width: 100%;
 }
 
-/* A tela Inicio volta ao layout responsivo nativo do componente. */
+/* Home do painel: segue o grid nativo e nunca e ampliada/reduzida artificialmente. */
 main > section:has(button[aria-label="Mudar meu nome"]) {
   width: 100% !important;
   height: auto !important;
@@ -71,33 +73,25 @@ main > section:has(button[aria-label="Mudar meu nome"]) > :not(:first-child) {
   margin-block-start: 1rem !important;
 }
 
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(1) {
-  min-height: 0 !important;
-  padding-top: 0.875rem !important;
-  padding-bottom: 0.875rem !important;
-}
-
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(1),
 main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside {
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside,
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article,
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4),
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > article,
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child,
+main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > div {
   min-height: 0 !important;
   height: auto !important;
 }
 
 main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article {
-  min-height: 7rem !important;
-  height: auto !important;
-  padding: 1rem !important;
-}
-
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4),
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > article,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child {
-  min-height: 0 !important;
-  height: auto !important;
+  padding: clamp(0.85rem, 1.5vw, 1rem) !important;
 }
 
 main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) article:first-child > div:nth-of-type(2) {
-  height: 14rem !important;
+  height: clamp(12rem, 24vw, 16rem) !important;
+  min-height: 0 !important;
 }
 
 main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child {
@@ -105,14 +99,26 @@ main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > d
   grid-template-rows: none !important;
 }
 
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > div {
-  min-height: 0 !important;
+/* Header sempre acessivel; somente o header direto do shell. */
+div[class~="bg-[var(--admin-bg)]"] > header:first-child {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 60 !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 6px 24px rgba(112, 61, 58, 0.04);
 }
 
-/*
- * 1024-1279: notebook estreito. A navegacao principal desce para a faixa
- * horizontal e a home nao tenta encaixar 4 KPIs/3 paineis lado a lado.
- */
+/* Componentes largos: a rolagem fica no componente, nao no viewport inteiro. */
+main [class*="overflow-x-auto"],
+main [data-slot="table-container"] {
+  max-width: 100%;
+  overscroll-behavior-inline: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Notebook estreito */
 @media (min-width: 1024px) and (max-width: 1279px) {
   div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > nav {
     display: none !important;
@@ -122,27 +128,24 @@ main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > d
     display: flex !important;
   }
 
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) {
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2),
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
-
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
 
-/* 1280-1535: preserva espaco para menu/perfil; busca global aparece no 2XL. */
+/* Desktop medio: busca global some antes de disputar espaco com menu e perfil. */
 @media (min-width: 1280px) and (max-width: 1535px) {
   div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > div:has(input[placeholder="Buscar no sistema..."]) {
     display: none !important;
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) {
-    grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.72fr) !important;
+    grid-template-columns: minmax(0, 1.75fr) minmax(260px, 0.72fr) !important;
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
@@ -154,10 +157,10 @@ main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > d
   }
 }
 
-/* 2XL em diante: usa as tres colunas previstas pelo componente. */
+/* Monitores grandes */
 @media (min-width: 1536px) {
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) {
-    grid-template-columns: minmax(0, 1.75fr) minmax(320px, 0.72fr) !important;
+    grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.72fr) !important;
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
@@ -165,140 +168,65 @@ main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > d
   }
 
   main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(290px, 0.72fr) !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(280px, 0.72fr) !important;
   }
 }
 
-/* Em alturas pequenas o conteudo rola; nunca e reduzido com transform: scale. */
+/* Tablet/celular: os paineis empilham e a pagina rola naturalmente. */
+@media (max-width: 1023px) {
+  div[class~="bg-[var(--admin-bg)]"] > main {
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2),
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3),
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Telas baixas: mantem tamanho legivel e libera scroll vertical. */
 @media (max-height: 820px) {
-  main > section:has(button[aria-label="Mudar meu nome"]) {
-    transform: none !important;
-    width: 100% !important;
-  }
-}
-
-/*
- * Insumos: tela operacional congelada no desktop.
- * A lista usa paginacao de 7 itens; portanto o rodape de paginas deve sempre
- * permanecer dentro do viewport, sem scrollbar vertical e sem cortar botoes.
- */
-@media (min-width: 1024px) {
-  body:has(input[placeholder="Buscar insumo"]) {
-    height: 100dvh !important;
-    overflow-y: hidden !important;
+  html,
+  body,
+  div[class~="bg-[var(--admin-bg)]"][class~="min-h-screen"] {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
   }
 
-  div[class~="bg-[var(--admin-bg)]"] > main:has(input[placeholder="Buscar insumo"]) {
-    height: calc(100dvh - 74px) !important;
-    max-height: calc(100dvh - 74px) !important;
-    overflow: hidden !important;
-    padding-top: 14px !important;
-    padding-bottom: 10px !important;
-  }
-
+  div[class~="bg-[var(--admin-bg)]"] > main,
+  main > section:has(button[aria-label="Mudar meu nome"]),
   main:has(input[placeholder="Buscar insumo"]) > section {
-    height: 100% !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-
-  /* Card de novo insumo. */
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(+ div input[placeholder="Buscar insumo"]) {
-    margin-top: 10px !important;
-    padding: 12px !important;
-  }
-
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(+ div input[placeholder="Buscar insumo"])
-    > div:nth-child(2) {
-    margin-top: 8px !important;
-  }
-
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(+ div input[placeholder="Buscar insumo"])
-    input,
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(+ div input[placeholder="Buscar insumo"])
-    select,
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(+ div input[placeholder="Buscar insumo"])
-    button {
-    height: 38px !important;
-  }
-
-  /* Busca. */
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(input[placeholder="Buscar insumo"]) {
-    height: 38px !important;
-    margin-top: 10px !important;
-  }
-
-  /* Tabela e sete linhas compactas. */
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(input[placeholder="Buscar insumo"])
-    + div {
-    margin-top: 10px !important;
-  }
-
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(input[placeholder="Buscar insumo"])
-    + div
-    > div:first-child {
-    padding-top: 7px !important;
-    padding-bottom: 7px !important;
-  }
-
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(input[placeholder="Buscar insumo"])
-    + div
-    > div:not(:first-child) {
-    min-height: 46px !important;
-    padding-top: 5px !important;
-    padding-bottom: 5px !important;
-  }
-
-  /* Rodape de paginacao: sobe um pouco e fica inteiramente visivel. */
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(input[placeholder="Buscar insumo"])
-    + div
-    + div {
-    height: 34px !important;
-    margin-top: 6px !important;
-    padding-bottom: 2px !important;
-  }
-
-  main:has(input[placeholder="Buscar insumo"])
-    section
-    > div:has(input[placeholder="Buscar insumo"])
-    + div
-    + div button {
-    height: 30px !important;
-    min-height: 30px !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
   }
 }
 
 /*
- * Cabecalho do sistema: permanece preso no topo em todas as telas internas.
- * O seletor pega apenas o header direto do shell administrativo, sem afetar
- * cabecalhos de cards, secoes ou o site publico.
+ * Insumos: removemos o antigo congelamento em 100dvh. Em notebooks baixos a
+ * pagina deve rolar, nunca esconder rodape, paginacao ou botoes.
  */
-div[class~="bg-[var(--admin-bg)]"] > header:first-child {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 60 !important;
-  background: rgba(255, 255, 255, 0.97) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 6px 24px rgba(112, 61, 58, 0.04);
+body:has(input[placeholder="Buscar insumo"]),
+div[class~="bg-[var(--admin-bg)]"] > main:has(input[placeholder="Buscar insumo"]),
+main:has(input[placeholder="Buscar insumo"]) > section {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+@media (min-width: 1024px) {
+  div[class~="bg-[var(--admin-bg)]"] > main:has(input[placeholder="Buscar insumo"]) {
+    padding-top: 14px !important;
+    padding-bottom: 18px !important;
+  }
+
+  main:has(input[placeholder="Buscar insumo"]) section input,
+  main:has(input[placeholder="Buscar insumo"]) section select,
+  main:has(input[placeholder="Buscar insumo"]) section button {
+    min-height: 38px;
+  }
 }
