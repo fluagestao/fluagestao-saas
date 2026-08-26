@@ -1,6 +1,9 @@
 .conta-viewport {
+  width: 100%;
+  min-width: 0;
   min-height: 100dvh;
   background: var(--admin-bg);
+  overflow-x: clip;
 }
 
 /* O cabeçalho antigo das páginas de conta fica oculto: o AppHeader padrão é exibido acima. */
@@ -8,27 +11,50 @@
   display: none !important;
 }
 
-/* Desktop e notebook: a tela de conta ocupa somente o viewport, sem barra de rolagem. */
+.conta-viewport > div,
+.conta-viewport main,
+.conta-viewport main > *,
+.conta-viewport section,
+.conta-viewport aside {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/*
+ * A área de conta cresce de acordo com o conteúdo. Antes ela era travada em
+ * 100dvh/overflow:hidden e campos podiam ficar inacessíveis em notebooks baixos.
+ */
+.conta-viewport > div[class*="min-h-dvh"] {
+  min-height: calc(100dvh - 74px) !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.conta-viewport main {
+  width: 100% !important;
+  max-width: 1680px !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  margin-inline: auto;
+}
+
+.conta-viewport aside[class*="sticky"] {
+  top: 88px !important;
+}
+
 @media (min-width: 1024px) {
   html:has(.conta-viewport),
   body:has(.conta-viewport) {
-    height: 100dvh;
-    overflow: hidden;
+    height: auto !important;
+    min-height: 100%;
+    overflow-x: clip;
+    overflow-y: auto !important;
   }
 
-  .conta-viewport {
-    height: 100dvh;
-    overflow: hidden;
-  }
-
-  .conta-viewport > div {
-    height: 100dvh;
-    min-height: 0 !important;
-    overflow: hidden;
-  }
-
+  .conta-viewport > .app-top-header > div,
   .conta-viewport header > div {
-    height: 64px !important;
+    height: 74px !important;
   }
 
   .conta-viewport header img {
@@ -36,256 +62,109 @@
   }
 
   .conta-viewport main {
-    width: 100% !important;
-    max-width: 1680px !important;
-    height: calc(100dvh - 64px);
-    overflow: hidden;
-    padding-top: 12px !important;
-    padding-bottom: 12px !important;
+    padding-top: 16px !important;
+    padding-bottom: 28px !important;
   }
 
   .conta-viewport main > div:first-child {
-    margin-bottom: 12px !important;
+    margin-bottom: 16px !important;
   }
 
   .conta-viewport main > div:first-child h1 {
-    margin-top: 2px !important;
-    font-size: 1.7rem !important;
-    line-height: 1.06 !important;
+    font-size: clamp(1.45rem, 2vw, 1.85rem) !important;
+    line-height: 1.1 !important;
   }
 
   .conta-viewport main > div:first-child p:last-child {
     margin-top: 4px !important;
-    font-size: 0.82rem !important;
-    line-height: 1.3 !important;
+    font-size: 0.84rem !important;
+    line-height: 1.4 !important;
   }
 
   .conta-viewport main > div:nth-child(2) {
-    gap: 14px !important;
-  }
-
-  .conta-viewport aside[class*="sticky"] {
-    top: 76px !important;
-  }
-
-  .conta-viewport aside[class*="sticky"] a {
-    padding-top: 11px !important;
-    padding-bottom: 11px !important;
-    font-size: 0.88rem !important;
-  }
-
-  .conta-viewport section .gap-5 {
-    gap: 15px !important;
-  }
-
-  .conta-viewport section .gap-4 {
-    gap: 13px !important;
-  }
-
-  .conta-viewport section .space-y-5 > * + * {
-    margin-top: 13px !important;
-  }
-
-  .conta-viewport section .space-y-4 > * + * {
-    margin-top: 11px !important;
+    gap: clamp(12px, 1.5vw, 20px) !important;
   }
 
   .conta-viewport section [class~="p-5"],
   .conta-viewport section [class~="p-6"],
   .conta-viewport section [class~="sm:p-6"] {
-    padding: 18px !important;
+    padding: clamp(14px, 1.5vw, 20px) !important;
   }
 
-  .conta-viewport section [class~="mt-5"] {
-    margin-top: 13px !important;
+  .conta-viewport section input,
+  .conta-viewport section select,
+  .conta-viewport section button[class*="h-11"],
+  .conta-viewport section label[class*="h-11"] {
+    min-height: 42px !important;
+  }
+}
+
+/* Notebook baixo: reduz apenas espaçamentos, nunca oculta conteúdo. */
+@media (min-width: 1024px) and (max-height: 780px) {
+  .conta-viewport main {
+    padding-top: 10px !important;
+    padding-bottom: 20px !important;
   }
 
-  .conta-viewport section [class~="mt-4"] {
+  .conta-viewport main > div:first-child {
+    margin-bottom: 10px !important;
+  }
+
+  .conta-viewport main > div:nth-child(2) {
+    gap: 10px !important;
+  }
+
+  .conta-viewport section .gap-5,
+  .conta-viewport section .gap-4 {
+    gap: 10px !important;
+  }
+
+  .conta-viewport section .space-y-5 > * + *,
+  .conta-viewport section .space-y-4 > * + * {
     margin-top: 10px !important;
   }
 
-  .conta-viewport section [class~="mt-3"] {
-    margin-top: 7px !important;
-  }
-
-  .conta-viewport section input,
-  .conta-viewport section select,
-  .conta-viewport section button[class*="h-11"],
-  .conta-viewport section label[class*="h-11"] {
-    height: 46px !important;
-    min-height: 46px !important;
-  }
-
-  .conta-viewport section input,
-  .conta-viewport section select {
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-    font-size: 0.9rem !important;
-  }
-
-  .conta-viewport section label > span:first-child {
-    margin-bottom: 5px !important;
-    font-size: 0.78rem !important;
-  }
-
-  .conta-viewport section [class*="min-h-[160px]"] {
-    min-height: 132px !important;
-    padding: 14px !important;
-  }
-
-  .conta-viewport section [class*="max-h-[110px]"] {
-    max-height: 92px !important;
-  }
-
-  .conta-viewport section h2 {
-    font-size: 1rem !important;
-    line-height: 1.2 !important;
-  }
-
-  .conta-viewport section h2 + p {
-    margin-top: 4px !important;
-    font-size: 0.73rem !important;
-    line-height: 1.3 !important;
-  }
-}
-
-/* Notebooks baixos recebem uma compactação adicional, mantendo todos os campos visíveis. */
-@media (min-width: 1024px) and (max-height: 780px) {
-  .conta-viewport header > div {
-    height: 52px !important;
-  }
-
-  .conta-viewport main {
-    height: calc(100dvh - 52px);
-    padding-top: 7px !important;
-    padding-bottom: 7px !important;
-  }
-
-  .conta-viewport main > div:first-child {
-    margin-bottom: 7px !important;
-  }
-
-  .conta-viewport main > div:first-child h1 {
-    font-size: 1.35rem !important;
-  }
-
-  .conta-viewport main > div:first-child p:last-child {
-    font-size: 0.74rem !important;
-  }
-
-  .conta-viewport main > div:nth-child(2) {
-    gap: 8px !important;
-  }
-
-  .conta-viewport aside[class*="sticky"] {
-    top: 62px !important;
-  }
-
-  .conta-viewport aside[class*="sticky"] a {
-    padding-top: 8px !important;
-    padding-bottom: 8px !important;
-    font-size: 0.82rem !important;
-  }
-
-  .conta-viewport section .gap-5 {
-    gap: 8px !important;
-  }
-
-  .conta-viewport section .gap-4 {
-    gap: 7px !important;
-  }
-
-  .conta-viewport section .space-y-5 > * + * {
-    margin-top: 7px !important;
-  }
-
-  .conta-viewport section .space-y-4 > * + * {
-    margin-top: 7px !important;
-  }
-
   .conta-viewport section [class~="p-5"],
   .conta-viewport section [class~="p-6"],
   .conta-viewport section [class~="sm:p-6"] {
-    padding: 10px !important;
-  }
-
-  .conta-viewport section [class~="mt-5"] {
-    margin-top: 7px !important;
-  }
-
-  .conta-viewport section [class~="mt-4"] {
-    margin-top: 7px !important;
-  }
-
-  .conta-viewport section input,
-  .conta-viewport section select,
-  .conta-viewport section button[class*="h-11"],
-  .conta-viewport section label[class*="h-11"] {
-    height: 35px !important;
-    min-height: 35px !important;
-  }
-
-  .conta-viewport section input,
-  .conta-viewport section select {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
-    font-size: 0.78rem !important;
-  }
-
-  .conta-viewport section label > span:first-child {
-    font-size: 0.69rem !important;
-  }
-
-  .conta-viewport section [class*="min-h-[160px]"] {
-    min-height: 88px !important;
-  }
-
-  .conta-viewport section [class*="max-h-[110px]"] {
-    max-height: 64px !important;
-  }
-
-  .conta-viewport section h2 {
-    font-size: 0.9rem !important;
-  }
-
-  .conta-viewport section h2 + p {
-    font-size: 0.67rem !important;
+    padding: 12px !important;
   }
 }
 
-/* Em telas menores, preserva o acesso a todos os campos sem exibir a barra cinza. */
+/* Tablet/celular: menu lateral e conteúdo passam a ocupar toda a largura. */
 @media (max-width: 1023px) {
   html:has(.conta-viewport),
   body:has(.conta-viewport),
   .conta-viewport {
-    scrollbar-width: none;
+    width: 100%;
+    min-height: 100%;
+    overflow-x: clip;
   }
 
-  body:has(.conta-viewport)::-webkit-scrollbar,
-  .conta-viewport::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-/* O cabeçalho padrão mantém exatamente a mesma altura usada no restante do sistema. */
-@media (min-width: 1024px) {
-  .conta-viewport > .app-top-header > div {
-    height: 74px !important;
+  .conta-viewport main {
+    padding-inline: clamp(12px, 3vw, 20px) !important;
+    padding-bottom: 28px !important;
   }
 
-  .conta-viewport > div[class*="min-h-dvh"] {
-    height: calc(100dvh - 74px) !important;
-    min-height: 0 !important;
-  }
-
-  .conta-viewport > div[class*="min-h-dvh"] > main {
-    width: 100% !important;
-    max-width: 1680px !important;
-    height: 100% !important;
-    max-height: 100% !important;
+  .conta-viewport main > div:nth-child(2) {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .conta-viewport aside[class*="sticky"] {
-    top: 14px !important;
+    position: static !important;
+    top: auto !important;
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .conta-viewport main {
+    padding-inline: 12px !important;
+  }
+
+  .conta-viewport section [class~="p-5"],
+  .conta-viewport section [class~="p-6"],
+  .conta-viewport section [class~="sm:p-6"] {
+    padding: 14px !important;
   }
 }
