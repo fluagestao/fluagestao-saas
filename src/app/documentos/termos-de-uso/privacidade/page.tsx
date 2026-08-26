@@ -1,99 +1,99 @@
-import type { Metadata } from "next";
-import LegalDocumentPage from "../LegalDocumentPage";
+﻿import type { Metadata } from "next";
+import LegalDocumentPage from "../../LegalDocumentPage";
 
 export const metadata: Metadata = {
   title: "Privacidade e LGPD",
-  description: "Política de Privacidade e proteção de dados da Flua Gestão.",
+  description: "PolÃ­tica de Privacidade e proteÃ§Ã£o de dados da Flua GestÃ£o.",
 };
 
 const sections = [
   {
     title: "Compromisso com a privacidade",
     paragraphs: [
-      "A Flua Gestão trata dados pessoais com respeito à privacidade, à transparência e à legislação brasileira, especialmente a Lei Geral de Proteção de Dados Pessoais — LGPD (Lei nº 13.709/2018).",
-      "Esta Política explica quais informações podem ser tratadas quando você acessa o site, cria uma conta ou utiliza a plataforma, bem como as principais finalidades e direitos relacionados a esses dados.",
+      "A Flua GestÃ£o trata dados pessoais com respeito Ã  privacidade, Ã  transparÃªncia e Ã  legislaÃ§Ã£o brasileira, especialmente a Lei Geral de ProteÃ§Ã£o de Dados Pessoais â€” LGPD (Lei nÂº 13.709/2018).",
+      "Esta PolÃ­tica explica quais informaÃ§Ãµes podem ser tratadas quando vocÃª acessa o site, cria uma conta ou utiliza a plataforma, bem como as principais finalidades e direitos relacionados a esses dados.",
     ],
   },
   {
     title: "Dados que podem ser tratados",
     paragraphs: [
-      "Os dados tratados variam conforme a relação do titular com a Flua e os recursos utilizados.",
+      "Os dados tratados variam conforme a relaÃ§Ã£o do titular com a Flua e os recursos utilizados.",
     ],
     bullets: [
-      "Dados cadastrais, como nome, telefone, e-mail e informações da empresa.",
-      "Dados de autenticação, perfil, permissões e registros de acesso.",
-      "Informações fornecidas pelo usuário durante o uso da plataforma.",
-      "Dados técnicos de dispositivo, navegador, endereço IP e eventos de segurança.",
-      "Informações relacionadas a suporte, atendimento e comunicações.",
-      "Dados necessários à contratação, cobrança e cumprimento de obrigações legais, quando aplicável.",
+      "Dados cadastrais, como nome, telefone, e-mail e informaÃ§Ãµes da empresa.",
+      "Dados de autenticaÃ§Ã£o, perfil, permissÃµes e registros de acesso.",
+      "InformaÃ§Ãµes fornecidas pelo usuÃ¡rio durante o uso da plataforma.",
+      "Dados tÃ©cnicos de dispositivo, navegador, endereÃ§o IP e eventos de seguranÃ§a.",
+      "InformaÃ§Ãµes relacionadas a suporte, atendimento e comunicaÃ§Ãµes.",
+      "Dados necessÃ¡rios Ã  contrataÃ§Ã£o, cobranÃ§a e cumprimento de obrigaÃ§Ãµes legais, quando aplicÃ¡vel.",
     ],
   },
   {
     title: "Finalidades do tratamento",
     bullets: [
-      "Criar e administrar contas de usuário e empresas.",
+      "Criar e administrar contas de usuÃ¡rio e empresas.",
       "Disponibilizar funcionalidades contratadas e prestar suporte.",
-      "Proteger contas, prevenir fraudes e manter a segurança da plataforma.",
-      "Processar pagamentos e administrar assinaturas, quando aplicável.",
-      "Cumprir obrigações legais, regulatórias e ordens de autoridades competentes.",
+      "Proteger contas, prevenir fraudes e manter a seguranÃ§a da plataforma.",
+      "Processar pagamentos e administrar assinaturas, quando aplicÃ¡vel.",
+      "Cumprir obrigaÃ§Ãµes legais, regulatÃ³rias e ordens de autoridades competentes.",
       "Melhorar desempenho, usabilidade e funcionalidades da Flua.",
-      "Enviar comunicações operacionais e, quando permitido, informações comerciais.",
+      "Enviar comunicaÃ§Ãµes operacionais e, quando permitido, informaÃ§Ãµes comerciais.",
     ],
   },
   {
     title: "Bases legais",
     paragraphs: [
-      "O tratamento poderá ocorrer, conforme o caso, com fundamento na execução de contrato ou procedimentos preliminares, cumprimento de obrigação legal ou regulatória, legítimo interesse, exercício regular de direitos, proteção contra fraude e consentimento, nos termos da LGPD.",
+      "O tratamento poderÃ¡ ocorrer, conforme o caso, com fundamento na execuÃ§Ã£o de contrato ou procedimentos preliminares, cumprimento de obrigaÃ§Ã£o legal ou regulatÃ³ria, legÃ­timo interesse, exercÃ­cio regular de direitos, proteÃ§Ã£o contra fraude e consentimento, nos termos da LGPD.",
     ],
   },
   {
     title: "Dados inseridos por clientes da Flua",
     paragraphs: [
-      "Empresas que utilizam a Flua podem inserir dados de seus próprios clientes, destinatários, contatos ou colaboradores. Nessas situações, a empresa usuária normalmente define as finalidades do tratamento e deve assegurar que possui base legal adequada para utilizar essas informações.",
-      "A Flua processa esses dados para disponibilizar as funcionalidades da plataforma e de acordo com as instruções e configurações do cliente, observadas as obrigações legais aplicáveis.",
+      "Empresas que utilizam a Flua podem inserir dados de seus prÃ³prios clientes, destinatÃ¡rios, contatos ou colaboradores. Nessas situaÃ§Ãµes, a empresa usuÃ¡ria normalmente define as finalidades do tratamento e deve assegurar que possui base legal adequada para utilizar essas informaÃ§Ãµes.",
+      "A Flua processa esses dados para disponibilizar as funcionalidades da plataforma e de acordo com as instruÃ§Ãµes e configuraÃ§Ãµes do cliente, observadas as obrigaÃ§Ãµes legais aplicÃ¡veis.",
     ],
   },
   {
     title: "Compartilhamento e operadores",
     paragraphs: [
-      "Dados podem ser compartilhados com fornecedores necessários à operação da plataforma, como serviços de infraestrutura, hospedagem, autenticação, comunicação, suporte e processamento de pagamentos, sempre na medida necessária à prestação do serviço.",
-      "Também poderá haver compartilhamento para cumprimento de obrigação legal, ordem judicial ou proteção de direitos, segurança e prevenção a fraudes.",
+      "Dados podem ser compartilhados com fornecedores necessÃ¡rios Ã  operaÃ§Ã£o da plataforma, como serviÃ§os de infraestrutura, hospedagem, autenticaÃ§Ã£o, comunicaÃ§Ã£o, suporte e processamento de pagamentos, sempre na medida necessÃ¡ria Ã  prestaÃ§Ã£o do serviÃ§o.",
+      "TambÃ©m poderÃ¡ haver compartilhamento para cumprimento de obrigaÃ§Ã£o legal, ordem judicial ou proteÃ§Ã£o de direitos, seguranÃ§a e prevenÃ§Ã£o a fraudes.",
     ],
   },
   {
-    title: "Armazenamento e retenção",
+    title: "Armazenamento e retenÃ§Ã£o",
     paragraphs: [
-      "Os dados são mantidos pelo período necessário às finalidades informadas, à execução da relação contratual e ao cumprimento de obrigações legais ou regulatórias.",
-      "Após o término da relação, determinadas informações poderão ser conservadas para cumprimento de dever legal, exercício regular de direitos, prevenção a fraudes ou outras hipóteses autorizadas pela LGPD.",
+      "Os dados sÃ£o mantidos pelo perÃ­odo necessÃ¡rio Ã s finalidades informadas, Ã  execuÃ§Ã£o da relaÃ§Ã£o contratual e ao cumprimento de obrigaÃ§Ãµes legais ou regulatÃ³rias.",
+      "ApÃ³s o tÃ©rmino da relaÃ§Ã£o, determinadas informaÃ§Ãµes poderÃ£o ser conservadas para cumprimento de dever legal, exercÃ­cio regular de direitos, prevenÃ§Ã£o a fraudes ou outras hipÃ³teses autorizadas pela LGPD.",
     ],
   },
   {
     title: "Direitos do titular",
     paragraphs: [
-      "Nos termos da LGPD e conforme aplicável, o titular poderá solicitar informações e exercer direitos relacionados aos seus dados pessoais.",
+      "Nos termos da LGPD e conforme aplicÃ¡vel, o titular poderÃ¡ solicitar informaÃ§Ãµes e exercer direitos relacionados aos seus dados pessoais.",
     ],
     bullets: [
-      "Confirmação da existência de tratamento e acesso aos dados.",
-      "Correção de dados incompletos, inexatos ou desatualizados.",
-      "Anonimização, bloqueio ou eliminação quando cabível.",
-      "Portabilidade, observados os requisitos legais e técnicos.",
-      "Informações sobre compartilhamentos.",
-      "Revogação do consentimento, quando essa for a base legal utilizada.",
-      "Revisão ou oposição ao tratamento nas hipóteses previstas em lei.",
+      "ConfirmaÃ§Ã£o da existÃªncia de tratamento e acesso aos dados.",
+      "CorreÃ§Ã£o de dados incompletos, inexatos ou desatualizados.",
+      "AnonimizaÃ§Ã£o, bloqueio ou eliminaÃ§Ã£o quando cabÃ­vel.",
+      "Portabilidade, observados os requisitos legais e tÃ©cnicos.",
+      "InformaÃ§Ãµes sobre compartilhamentos.",
+      "RevogaÃ§Ã£o do consentimento, quando essa for a base legal utilizada.",
+      "RevisÃ£o ou oposiÃ§Ã£o ao tratamento nas hipÃ³teses previstas em lei.",
     ],
   },
   {
-    title: "Segurança e incidentes",
+    title: "SeguranÃ§a e incidentes",
     paragraphs: [
-      "A Flua adota medidas técnicas e administrativas voltadas à proteção dos dados contra acessos não autorizados, destruição, perda, alteração ou divulgação indevida.",
-      "Nenhum ambiente digital é totalmente imune a riscos. Caso ocorra incidente relevante envolvendo dados pessoais, serão adotadas medidas de contenção, avaliação e comunicação conforme as exigências legais aplicáveis.",
+      "A Flua adota medidas tÃ©cnicas e administrativas voltadas Ã  proteÃ§Ã£o dos dados contra acessos nÃ£o autorizados, destruiÃ§Ã£o, perda, alteraÃ§Ã£o ou divulgaÃ§Ã£o indevida.",
+      "Nenhum ambiente digital Ã© totalmente imune a riscos. Caso ocorra incidente relevante envolvendo dados pessoais, serÃ£o adotadas medidas de contenÃ§Ã£o, avaliaÃ§Ã£o e comunicaÃ§Ã£o conforme as exigÃªncias legais aplicÃ¡veis.",
     ],
   },
   {
-    title: "Atualizações e contato",
+    title: "AtualizaÃ§Ãµes e contato",
     paragraphs: [
-      "Esta Política poderá ser atualizada para refletir mudanças na plataforma, em processos internos ou na legislação. A versão vigente ficará disponível nos canais oficiais da Flua.",
-      "Solicitações relacionadas à privacidade e ao exercício de direitos podem ser encaminhadas pelos canais oficiais de contato disponibilizados pela Flua Gestão.",
+      "Esta PolÃ­tica poderÃ¡ ser atualizada para refletir mudanÃ§as na plataforma, em processos internos ou na legislaÃ§Ã£o. A versÃ£o vigente ficarÃ¡ disponÃ­vel nos canais oficiais da Flua.",
+      "SolicitaÃ§Ãµes relacionadas Ã  privacidade e ao exercÃ­cio de direitos podem ser encaminhadas pelos canais oficiais de contato disponibilizados pela Flua GestÃ£o.",
     ],
   },
 ];
@@ -103,9 +103,10 @@ export default function PrivacidadePage() {
     <LegalDocumentPage
       eyebrow="PRIVACIDADE E LGPD"
       title="Seus dados tratados com clareza e responsabilidade."
-      description="Entenda como a Flua pode coletar, utilizar, proteger e armazenar dados pessoais durante o uso de seus serviços."
+      description="Entenda como a Flua pode coletar, utilizar, proteger e armazenar dados pessoais durante o uso de seus serviÃ§os."
       updatedAt="23 de agosto de 2026"
       sections={sections}
     />
   );
 }
+

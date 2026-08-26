@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-import "./documentos.css";
+﻿import type { Metadata } from "next";
+import "../documento.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Documentos | Flua Gestão",
-    template: "%s | Flua Gestão",
+    default: "Documentos | Flua GestÃ£o",
+    template: "%s | Flua GestÃ£o",
   },
   description:
-    "Termos, privacidade, cookies e informações de segurança da Flua Gestão.",
+    "Termos, privacidade, cookies e informaÃ§Ãµes de seguranÃ§a da Flua GestÃ£o.",
 };
 
 export default function DocumentosLayout({
@@ -17,3 +17,4 @@ export default function DocumentosLayout({
 }>) {
   return children;
 }
+

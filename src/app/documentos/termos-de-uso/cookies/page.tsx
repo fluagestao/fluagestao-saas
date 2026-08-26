@@ -1,72 +1,72 @@
-import type { Metadata } from "next";
-import LegalDocumentPage from "../LegalDocumentPage";
+﻿import type { Metadata } from "next";
+import LegalDocumentPage from "../../LegalDocumentPage";
 
 export const metadata: Metadata = {
-  title: "Política de Cookies",
-  description: "Política de Cookies da Flua Gestão.",
+  title: "PolÃ­tica de Cookies",
+  description: "PolÃ­tica de Cookies da Flua GestÃ£o.",
 };
 
 const sections = [
   {
-    title: "O que são cookies",
+    title: "O que sÃ£o cookies",
     paragraphs: [
-      "Cookies são pequenos arquivos ou identificadores armazenados no navegador ou dispositivo durante a navegação. Eles podem ajudar um site a funcionar corretamente, lembrar preferências, proteger sessões e compreender como as páginas são utilizadas.",
+      "Cookies sÃ£o pequenos arquivos ou identificadores armazenados no navegador ou dispositivo durante a navegaÃ§Ã£o. Eles podem ajudar um site a funcionar corretamente, lembrar preferÃªncias, proteger sessÃµes e compreender como as pÃ¡ginas sÃ£o utilizadas.",
     ],
   },
   {
     title: "Como a Flua pode utilizar cookies",
     paragraphs: [
-      "A Flua pode utilizar cookies e tecnologias semelhantes de acordo com a necessidade de funcionamento do site e da plataforma, respeitando as preferências e a legislação aplicável.",
+      "A Flua pode utilizar cookies e tecnologias semelhantes de acordo com a necessidade de funcionamento do site e da plataforma, respeitando as preferÃªncias e a legislaÃ§Ã£o aplicÃ¡vel.",
     ],
     bullets: [
-      "Manter sessões autenticadas e recursos essenciais em funcionamento.",
-      "Salvar preferências e configurações escolhidas pelo usuário.",
-      "Reforçar mecanismos de segurança e prevenção a acessos indevidos.",
-      "Medir desempenho e entender a utilização do site.",
-      "Avaliar campanhas e comunicações, quando houver base legal e configuração compatível.",
+      "Manter sessÃµes autenticadas e recursos essenciais em funcionamento.",
+      "Salvar preferÃªncias e configuraÃ§Ãµes escolhidas pelo usuÃ¡rio.",
+      "ReforÃ§ar mecanismos de seguranÃ§a e prevenÃ§Ã£o a acessos indevidos.",
+      "Medir desempenho e entender a utilizaÃ§Ã£o do site.",
+      "Avaliar campanhas e comunicaÃ§Ãµes, quando houver base legal e configuraÃ§Ã£o compatÃ­vel.",
     ],
   },
   {
     title: "Cookies essenciais",
     paragraphs: [
-      "São necessários para que funcionalidades básicas operem de forma segura, incluindo autenticação, navegação, preferências de sessão e proteção contra uso indevido. Por serem necessários ao serviço solicitado, podem não depender de consentimento quando a legislação assim permitir.",
+      "SÃ£o necessÃ¡rios para que funcionalidades bÃ¡sicas operem de forma segura, incluindo autenticaÃ§Ã£o, navegaÃ§Ã£o, preferÃªncias de sessÃ£o e proteÃ§Ã£o contra uso indevido. Por serem necessÃ¡rios ao serviÃ§o solicitado, podem nÃ£o depender de consentimento quando a legislaÃ§Ã£o assim permitir.",
     ],
   },
   {
-    title: "Preferências e funcionalidades",
+    title: "PreferÃªncias e funcionalidades",
     paragraphs: [
-      "Podem permitir que o site lembre escolhas feitas anteriormente, como preferências de interface ou configurações que tornam a navegação mais conveniente.",
+      "Podem permitir que o site lembre escolhas feitas anteriormente, como preferÃªncias de interface ou configuraÃ§Ãµes que tornam a navegaÃ§Ã£o mais conveniente.",
     ],
   },
   {
-    title: "Medição e análise",
+    title: "MediÃ§Ã£o e anÃ¡lise",
     paragraphs: [
-      "Quando utilizados, cookies analíticos ajudam a compreender de forma agregada como visitantes interagem com páginas e recursos, permitindo identificar pontos de melhoria de desempenho e experiência.",
+      "Quando utilizados, cookies analÃ­ticos ajudam a compreender de forma agregada como visitantes interagem com pÃ¡ginas e recursos, permitindo identificar pontos de melhoria de desempenho e experiÃªncia.",
     ],
   },
   {
     title: "Publicidade e campanhas",
     paragraphs: [
-      "Tecnologias relacionadas a publicidade ou medição de campanhas somente devem ser utilizadas quando houver fundamento jurídico adequado e de acordo com as escolhas disponíveis ao usuário.",
+      "Tecnologias relacionadas a publicidade ou mediÃ§Ã£o de campanhas somente devem ser utilizadas quando houver fundamento jurÃ­dico adequado e de acordo com as escolhas disponÃ­veis ao usuÃ¡rio.",
     ],
   },
   {
     title: "Gerenciamento de cookies",
     paragraphs: [
-      "Você pode utilizar as configurações disponibilizadas pela Flua, quando presentes, e também as opções do seu navegador para bloquear, excluir ou limitar cookies.",
-      "A desativação de cookies essenciais pode impedir o funcionamento correto de determinadas funcionalidades da plataforma.",
+      "VocÃª pode utilizar as configuraÃ§Ãµes disponibilizadas pela Flua, quando presentes, e tambÃ©m as opÃ§Ãµes do seu navegador para bloquear, excluir ou limitar cookies.",
+      "A desativaÃ§Ã£o de cookies essenciais pode impedir o funcionamento correto de determinadas funcionalidades da plataforma.",
     ],
   },
   {
     title: "Cookies de terceiros",
     paragraphs: [
-      "Alguns recursos podem depender de serviços de terceiros que adotam suas próprias tecnologias e políticas. Nesses casos, o tratamento realizado diretamente por esses terceiros estará sujeito às respectivas condições de privacidade.",
+      "Alguns recursos podem depender de serviÃ§os de terceiros que adotam suas prÃ³prias tecnologias e polÃ­ticas. Nesses casos, o tratamento realizado diretamente por esses terceiros estarÃ¡ sujeito Ã s respectivas condiÃ§Ãµes de privacidade.",
     ],
   },
   {
-    title: "Alterações desta política",
+    title: "AlteraÃ§Ãµes desta polÃ­tica",
     paragraphs: [
-      "Esta Política poderá ser revisada em razão de mudanças tecnológicas, regulatórias ou na forma de utilização dos cookies. A versão atualizada será disponibilizada nos canais oficiais da Flua.",
+      "Esta PolÃ­tica poderÃ¡ ser revisada em razÃ£o de mudanÃ§as tecnolÃ³gicas, regulatÃ³rias ou na forma de utilizaÃ§Ã£o dos cookies. A versÃ£o atualizada serÃ¡ disponibilizada nos canais oficiais da Flua.",
     ],
   },
 ];
@@ -74,11 +74,12 @@ const sections = [
 export default function CookiesPage() {
   return (
     <LegalDocumentPage
-      eyebrow="POLÍTICA DE COOKIES"
-      title="Tecnologia útil sem perder a transparência."
-      description="Veja como cookies e tecnologias semelhantes podem apoiar segurança, funcionamento e melhoria da experiência na Flua."
+      eyebrow="POLÃTICA DE COOKIES"
+      title="Tecnologia Ãºtil sem perder a transparÃªncia."
+      description="Veja como cookies e tecnologias semelhantes podem apoiar seguranÃ§a, funcionamento e melhoria da experiÃªncia na Flua."
       updatedAt="23 de agosto de 2026"
       sections={sections}
     />
   );
 }
+
