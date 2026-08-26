@@ -30,16 +30,16 @@ export default function AuthShell({
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(247,241,232,0.10),transparent_38%)]"
       />
 
-      <section className="relative z-10 w-full max-w-[430px] rounded-[30px] border border-white/35 bg-[#F7F1E8] p-6 shadow-[0_28px_90px_rgba(37,17,16,0.34)] sm:p-8">
+      <section className="relative z-10 w-full max-w-[398px] rounded-[28px] border border-white/35 bg-[#F7F1E8] p-5 shadow-[0_28px_90px_rgba(37,17,16,0.34)] sm:max-w-[430px] sm:rounded-[30px] sm:p-8">
         <div className="text-center">
-          <div className="mx-auto flex min-h-24 items-center justify-center">
+          <div className="mx-auto flex min-h-20 items-center justify-center sm:min-h-24">
             <Image
               src="/flua-logo.webp"
               alt="Flua Gestão"
               width={230}
               height={100}
               priority
-              className="h-auto w-[190px] object-contain sm:w-[210px]"
+              className="h-auto w-[176px] object-contain sm:w-[210px]"
             />
           </div>
 
@@ -55,9 +55,9 @@ export default function AuthShell({
           )}
         </div>
 
-        <div className={hideIntro ? "mt-2" : "mt-7"}>{children}</div>
+        <div className={hideIntro ? "mt-1.5" : "mt-6 sm:mt-7"}>{children}</div>
 
-        <div className="mt-7 flex items-center justify-center gap-2 border-t border-[#D9C6B2]/75 pt-5 text-[11px] font-medium text-[#703D3A]/60">
+        <div className="mt-6 flex items-center justify-center gap-2 border-t border-[#D9C6B2]/75 pt-4 text-[11px] font-medium text-[#703D3A]/60 sm:mt-7 sm:pt-5">
           <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
           <span>Ambiente protegido e autenticação segura</span>
         </div>
