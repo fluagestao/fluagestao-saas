@@ -9,8 +9,10 @@ import "./flua-hero-background.css";
 import "./flua-hero-background-fix.css";
 import "./marketing-header.css";
 import "./responsive-system.css";
+import "./mobile-admin.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
+import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
 import { MarketingHeader } from "@/components/MarketingHeader";
 
@@ -81,6 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <NovoPedidoRouteBridge />
         <MarketingHeader />
         {children}
+        <MobileAdminNav />
       </body>
     </html>
   );
