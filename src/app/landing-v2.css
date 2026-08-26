@@ -953,3 +953,233 @@
 .flua2-pricing-card{padding:28px 22px}
 .flua2-pricing-card .flua2-btn{width:100%}
 }
+
+/* FLUA INVESTIMENTO APRESENTACAO */
+
+.flua2-investment-heading{
+  max-width:820px;
+  margin:0 auto 38px;
+  text-align:center;
+}
+
+.flua2-investment-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:18px;
+  align-items:stretch;
+  max-width:1260px;
+  margin:0 auto;
+}
+
+.flua2-investment-card{
+  position:relative;
+  min-width:0;
+  padding:32px 28px 28px;
+  border:1px solid #e7d8cc;
+  border-radius:24px;
+  display:flex;
+  flex-direction:column;
+  background:#fff;
+  box-shadow:0 18px 55px rgba(83,44,40,.07);
+}
+
+.flua2-investment-featured{
+  border:2px solid #a65349;
+  transform:translateY(-10px);
+  box-shadow:0 28px 70px rgba(111,57,54,.17);
+}
+
+.flua2-investment-badge{
+  position:absolute;
+  top:-14px;
+  left:24px;
+  min-height:28px;
+  padding:0 13px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  background:#a65349;
+  color:#fff !important;
+  font-size:10px !important;
+  font-weight:900;
+  letter-spacing:.1em;
+}
+
+.flua2-investment-option{
+  color:#a65349;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+
+.flua2-investment-card h3{
+  margin:12px 0 0;
+  color:#6f3936;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:34px;
+  line-height:1.02;
+  letter-spacing:-.035em;
+}
+
+.flua2-investment-card h3 small{
+  display:block;
+  margin-top:3px;
+  color:#6f3936;
+  font-size:24px;
+}
+
+.flua2-investment-description{
+  min-height:66px;
+  margin:14px 0 22px;
+  color:#786963;
+  font-size:14px;
+  line-height:1.55;
+}
+
+.flua2-investment-price{
+  display:flex;
+  align-items:baseline;
+  gap:8px;
+}
+
+.flua2-investment-price strong{
+  color:#552a2a;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:35px;
+  line-height:1;
+  letter-spacing:-.04em;
+}
+
+.flua2-investment-price span{
+  color:#8b7770;
+  font-size:12px;
+  font-weight:700;
+}
+
+.flua2-investment-no-setup{
+  min-height:38px;
+}
+
+.flua2-investment-no-setup strong{
+  font-size:29px;
+}
+
+.flua2-investment-monthly{
+  margin-top:15px;
+  padding-bottom:21px;
+  border-bottom:1px solid #eadfd6;
+}
+
+.flua2-investment-monthly>div{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+}
+
+.flua2-investment-monthly b{
+  color:#a65349;
+  font-size:22px;
+}
+
+.flua2-investment-monthly span{
+  color:#7f6c65;
+  font-size:13px;
+  font-weight:700;
+}
+
+.flua2-investment-monthly small{
+  display:block;
+  margin-top:4px;
+  color:#96847c;
+  font-size:11px;
+}
+
+.flua2-investment-features{
+  margin:22px 0 25px;
+  display:grid;
+  gap:11px;
+}
+
+.flua2-investment-features p{
+  margin:0;
+  display:flex;
+  align-items:flex-start;
+  gap:9px;
+  color:#574541;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.flua2-investment-features svg{
+  flex:0 0 auto;
+  margin-top:2px;
+  color:#a65349;
+}
+
+.flua2-investment-ai{
+  margin-top:4px !important;
+  color:#8b443e !important;
+  font-weight:900;
+}
+
+.flua2-investment-button{
+  width:100%;
+  margin-top:auto;
+}
+
+.flua2-investment-payment{
+  max-width:1260px;
+  margin:26px auto 0;
+  padding:17px 22px;
+  border:1px solid #e5d6ca;
+  border-radius:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px 30px;
+  flex-wrap:wrap;
+  background:#f5ebe1;
+}
+
+.flua2-investment-payment p{
+  margin:0;
+  color:#76635d;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.flua2-investment-payment strong{
+  color:#6f3936;
+}
+
+@media(max-width:1000px){
+  .flua2-investment-grid{
+    grid-template-columns:1fr;
+    max-width:680px;
+  }
+
+  .flua2-investment-featured{
+    transform:none;
+  }
+
+  .flua2-investment-description{
+    min-height:0;
+  }
+}
+
+@media(max-width:640px){
+  .flua2-investment-card{
+    padding:28px 22px 24px;
+    border-radius:20px;
+  }
+
+  .flua2-investment-price strong{
+    font-size:31px;
+  }
+
+  .flua2-investment-payment{
+    align-items:flex-start;
+    justify-content:flex-start;
+  }
+}
