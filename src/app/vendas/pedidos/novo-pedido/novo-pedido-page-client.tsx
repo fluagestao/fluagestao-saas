@@ -20,20 +20,13 @@ export function NovoPedidoPageClient({
   const router = useRouter();
 
   useEffect(() => {
-    document.documentElement.classList.add("flua-novo-pedido-page");
     document.body.classList.add("flua-novo-pedido-page");
-
-    const bodyOverflowAnterior = document.body.style.overflow;
-    const htmlOverflowAnterior = document.documentElement.style.overflow;
-
+    const overflowAnterior = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
 
     return () => {
-      document.documentElement.classList.remove("flua-novo-pedido-page");
       document.body.classList.remove("flua-novo-pedido-page");
-      document.body.style.overflow = bodyOverflowAnterior;
-      document.documentElement.style.overflow = htmlOverflowAnterior;
+      document.body.style.overflow = overflowAnterior;
     };
   }, []);
 
@@ -47,74 +40,58 @@ export function NovoPedidoPageClient({
       <Toaster position="bottom-right" richColors />
 
       <style jsx global>{`
-        html.flua-novo-pedido-page,
         body.flua-novo-pedido-page {
-          width: 100% !important;
-          min-width: 100% !important;
-          max-width: none !important;
-          margin: 0 !important;
           background: var(--admin-bg) !important;
-          overflow: hidden !important;
         }
 
-        body.flua-novo-pedido-page
-          div:has(> [role="dialog"].max-w-2xl)
-          > [data-state="open"].fixed.inset-0:not([role="dialog"]) {
-          display: none !important;
-        }
-
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl {
+        body.flua-novo-pedido-page [role="dialog"] {
           position: fixed !important;
-          inset: 0 auto auto 0 !important;
+          inset: 0 !important;
           left: 0 !important;
+          right: 0 !important;
           top: 0 !important;
-          right: auto !important;
-          bottom: auto !important;
-          box-sizing: border-box !important;
+          bottom: 0 !important;
           width: 100vw !important;
           min-width: 100vw !important;
           max-width: 100vw !important;
           height: 100dvh !important;
           min-height: 100dvh !important;
           max-height: 100dvh !important;
-          margin: 0 !important;
           transform: none !important;
+          margin: 0 !important;
           border: 0 !important;
           border-radius: 0 !important;
           box-shadow: none !important;
           background: var(--admin-bg) !important;
-          padding: 28px max(24px, calc((100vw - 1040px) / 2)) 56px !important;
+          padding: 28px max(24px, calc((100vw - 1040px) / 2)) 48px !important;
           overflow-x: hidden !important;
           overflow-y: auto !important;
-          overscroll-behavior: contain;
-          -webkit-overflow-scrolling: touch;
+          z-index: 100 !important;
         }
 
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl > button.absolute {
+        body.flua-novo-pedido-page [role="dialog"] > button.absolute {
           display: none !important;
         }
 
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl > div:first-of-type {
-          width: 100%;
-          max-width: 1040px;
-          margin-inline: auto;
+        body.flua-novo-pedido-page [role="dialog"] > div,
+        body.flua-novo-pedido-page [role="dialog"] > form,
+        body.flua-novo-pedido-page [role="dialog"] section {
+          width: 100% !important;
+          max-width: 1040px !important;
+          margin-inline: auto !important;
+        }
+
+        body.flua-novo-pedido-page [role="dialog"] > div:first-of-type {
           padding-bottom: 18px;
           border-bottom: 1px solid var(--admin-border);
         }
 
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl > *:not(button.absolute) {
-          width: 100%;
-          max-width: 1040px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl::before {
+        body.flua-novo-pedido-page [role="dialog"]::before {
           content: "Vendas  ·  Pedidos";
           display: block;
           width: 100%;
           max-width: 1040px;
-          margin: 0 auto -4px;
+          margin: 0 auto 8px;
           color: var(--terracotta);
           font-size: 11px;
           font-weight: 800;
@@ -122,24 +99,19 @@ export function NovoPedidoPageClient({
           text-transform: uppercase;
         }
 
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl input,
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl select,
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl textarea,
-        body.flua-novo-pedido-page [role="dialog"].max-w-2xl button {
-          max-width: 100%;
+        body.flua-novo-pedido-page [role="dialog"] input,
+        body.flua-novo-pedido-page [role="dialog"] select,
+        body.flua-novo-pedido-page [role="dialog"] textarea,
+        body.flua-novo-pedido-page [role="dialog"] button {
+          max-width: 100% !important;
         }
 
-        @media (max-width: 640px) {
-          body.flua-novo-pedido-page [role="dialog"].max-w-2xl {
-            width: 100vw !important;
-            min-width: 100vw !important;
-            max-width: 100vw !important;
-            padding: 18px 14px calc(32px + env(safe-area-inset-bottom)) !important;
-          }
-
-          body.flua-novo-pedido-page [role="dialog"].max-w-2xl::before,
-          body.flua-novo-pedido-page [role="dialog"].max-w-2xl > *:not(button.absolute) {
-            max-width: 100%;
+        @media (max-width: 760px) {
+          body.flua-novo-pedido-page [role="dialog"] {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            padding: 18px 14px 32px !important;
           }
         }
       `}</style>
