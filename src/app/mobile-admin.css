@@ -22,7 +22,7 @@
     -webkit-backdrop-filter: blur(18px);
   }
 
-  .mobile-admin-nav a {
+  .mobile-admin-nav button {
     min-width: 0;
     min-height: 54px;
     display: flex;
@@ -30,28 +30,34 @@
     align-items: center;
     justify-content: center;
     gap: 3px;
+    border: 0;
     border-radius: 16px;
+    background: transparent;
     color: var(--admin-ink-soft);
+    font: inherit;
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
     text-decoration: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
     transition: background .18s ease, color .18s ease, transform .18s ease;
   }
 
-  .mobile-admin-nav a svg {
+  .mobile-admin-nav button svg {
     width: 19px;
     height: 19px;
     stroke-width: 1.9;
   }
 
-  .mobile-admin-nav a[data-active="true"] {
+  .mobile-admin-nav button[data-active="true"] {
     color: #fff;
     background: var(--terracotta);
     box-shadow: 0 7px 18px rgba(169, 79, 69, 0.24);
   }
 
-  .mobile-admin-nav a:active {
+  .mobile-admin-nav button:active {
     transform: scale(.97);
   }
 
@@ -61,15 +67,46 @@
     padding-bottom: calc(102px + env(safe-area-inset-bottom)) !important;
   }
 
-  /* Cabeçalho interno mais compacto para ganhar altura útil. */
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
+  /* Cabeçalho móvel: Flua exatamente no centro e logo/conta do cliente à direita. */
+  body:has(.mobile-admin-nav) header > div:first-child {
+    position: relative;
     height: 64px !important;
+    justify-content: flex-end;
     padding-left: 14px !important;
     padding-right: 14px !important;
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header img {
+  body:has(.mobile-admin-nav) header > div:first-child > :first-child {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    margin: 0 !important;
+  }
+
+  body:has(.mobile-admin-nav) header > div:first-child > :last-child {
+    position: relative;
+    z-index: 3;
+    margin-left: auto !important;
+  }
+
+  body:has(.mobile-admin-nav) header > div:first-child > :first-child img {
+    width: 106px !important;
     max-height: 38px;
+    object-position: center !important;
+  }
+
+  body:has(.mobile-admin-nav) header > div:first-child > :last-child button {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 4px !important;
+  }
+
+  body:has(.mobile-admin-nav) header > div:first-child > :last-child button > span:first-child {
+    width: 40px !important;
+    height: 40px !important;
   }
 
   /* Cabeçalho de cada página: ações descem sem cortar título ou filtro. */
@@ -157,7 +194,7 @@
     bottom: calc(8px + env(safe-area-inset-bottom));
   }
 
-  .mobile-admin-nav a {
+  .mobile-admin-nav button {
     min-height: 52px;
   }
 
