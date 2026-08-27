@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 
@@ -19,17 +18,6 @@ export function NovoPedidoPageClient({
 }) {
   const router = useRouter();
 
-  useEffect(() => {
-    document.body.classList.add("flua-novo-pedido-page");
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.classList.remove("flua-novo-pedido-page");
-      document.body.style.overflow = overflowAnterior;
-    };
-  }, []);
-
   function voltar() {
     router.replace("/vendas/pedidos");
     router.refresh();
@@ -37,14 +25,22 @@ export function NovoPedidoPageClient({
 
   return (
     <>
+      <div className="flua-novo-pedido-route" aria-hidden="true" />
       <Toaster position="bottom-right" richColors />
 
       <style jsx global>{`
-        body.flua-novo-pedido-page {
+        body:has(.flua-novo-pedido-route) {
           background: var(--admin-bg) !important;
+          overflow: hidden !important;
         }
 
-        body.flua-novo-pedido-page [role="dialog"] {
+        /* Nesta rota o PedidoDialog deixa de se comportar como modal. */
+        body:has(.flua-novo-pedido-route)
+          [data-state="open"].fixed.inset-0:not([role="dialog"]) {
+          display: none !important;
+        }
+
+        body:has(.flua-novo-pedido-route) [role="dialog"] {
           position: fixed !important;
           inset: 0 !important;
           left: 0 !important;
@@ -69,24 +65,28 @@ export function NovoPedidoPageClient({
           z-index: 100 !important;
         }
 
-        body.flua-novo-pedido-page [role="dialog"] > button.absolute {
+        body:has(.flua-novo-pedido-route) [role="dialog"] > button.absolute {
           display: none !important;
         }
 
-        body.flua-novo-pedido-page [role="dialog"] > div,
-        body.flua-novo-pedido-page [role="dialog"] > form,
-        body.flua-novo-pedido-page [role="dialog"] section {
+        body:has(.flua-novo-pedido-route) [role="dialog"] > * {
+          box-sizing: border-box;
+        }
+
+        body:has(.flua-novo-pedido-route) [role="dialog"] > div,
+        body:has(.flua-novo-pedido-route) [role="dialog"] > form,
+        body:has(.flua-novo-pedido-route) [role="dialog"] section {
           width: 100% !important;
           max-width: 1040px !important;
           margin-inline: auto !important;
         }
 
-        body.flua-novo-pedido-page [role="dialog"] > div:first-of-type {
+        body:has(.flua-novo-pedido-route) [role="dialog"] > div:first-of-type {
           padding-bottom: 18px;
           border-bottom: 1px solid var(--admin-border);
         }
 
-        body.flua-novo-pedido-page [role="dialog"]::before {
+        body:has(.flua-novo-pedido-route) [role="dialog"]::before {
           content: "Vendas  ·  Pedidos";
           display: block;
           width: 100%;
@@ -99,19 +99,27 @@ export function NovoPedidoPageClient({
           text-transform: uppercase;
         }
 
-        body.flua-novo-pedido-page [role="dialog"] input,
-        body.flua-novo-pedido-page [role="dialog"] select,
-        body.flua-novo-pedido-page [role="dialog"] textarea,
-        body.flua-novo-pedido-page [role="dialog"] button {
+        body:has(.flua-novo-pedido-route) [role="dialog"] input,
+        body:has(.flua-novo-pedido-route) [role="dialog"] select,
+        body:has(.flua-novo-pedido-route) [role="dialog"] textarea,
+        body:has(.flua-novo-pedido-route) [role="dialog"] button {
           max-width: 100% !important;
         }
 
         @media (max-width: 760px) {
-          body.flua-novo-pedido-page [role="dialog"] {
+          body:has(.flua-novo-pedido-route) [role="dialog"] {
             width: 100% !important;
             min-width: 100% !important;
             max-width: 100% !important;
             padding: 18px 14px 32px !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .flex {
+            max-width: 100%;
           }
         }
       `}</style>
