@@ -1,5 +1,10 @@
-﻿import Link from "next/link";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+﻿import { ArrowRight, Check, Sparkles } from "lucide-react";
+
+const WHATSAPP_NUMBER = "5548996510100";
+
+function whatsappLink(message: string) {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
 
 export default function PricingSection() {
   return (
@@ -45,9 +50,14 @@ export default function PricingSection() {
               ))}
             </div>
 
-            <Link href="/cadastro" className="flua2-btn flua2-btn-wine flua2-investment-button">
+            <a
+              href={whatsappLink("Tenho interesse na OPÇÃO 1 - SITE, podemos conversar?")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flua2-btn flua2-btn-wine flua2-investment-button"
+            >
               Quero começar <ArrowRight size={17} />
-            </Link>
+            </a>
           </article>
 
           <article className="flua2-investment-card flua2-investment-featured">
@@ -92,9 +102,14 @@ export default function PricingSection() {
               </p>
             </div>
 
-            <Link href="/cadastro" className="flua2-btn flua2-btn-wine flua2-investment-button">
+            <a
+              href={whatsappLink("Tenho interesse na OPÇÃO 2 - SITE + SISTEMA, podemos conversar?")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flua2-btn flua2-btn-wine flua2-investment-button"
+            >
               Quero o mais completo <ArrowRight size={17} />
-            </Link>
+            </a>
           </article>
 
           <article className="flua2-investment-card">
@@ -133,9 +148,14 @@ export default function PricingSection() {
               </p>
             </div>
 
-            <Link href="/cadastro" className="flua2-btn flua2-btn-wine flua2-investment-button">
+            <a
+              href={whatsappLink("Tenho interesse na OPÇÃO 3 - SISTEMA, podemos conversar?")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flua2-btn flua2-btn-wine flua2-investment-button"
+            >
               Quero usar a Flua <ArrowRight size={17} />
-            </Link>
+            </a>
           </article>
         </div>
 
