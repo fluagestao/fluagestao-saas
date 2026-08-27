@@ -1,0 +1,236 @@
+/* Home do painel: mantém todas as informações visíveis sem rolagem em desktop/notebook. */
+
+@media (min-width: 1280px) {
+  body:has(main > section.space-y-3.pb-4) {
+    overflow-y: hidden;
+  }
+
+  body:has(main > section.space-y-3.pb-4) > div > header,
+  body:has(main > section.space-y-3.pb-4) header.sticky {
+    min-height: 0 !important;
+  }
+
+  body:has(main > section.space-y-3.pb-4) header.sticky > div:first-child {
+    height: 64px !important;
+  }
+
+  body:has(main > section.space-y-3.pb-4) main {
+    height: calc(100dvh - 64px) !important;
+    max-height: calc(100dvh - 64px) !important;
+    padding-top: 10px !important;
+    padding-bottom: 8px !important;
+    overflow: hidden !important;
+  }
+
+  main > section.space-y-3.pb-4 {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-rows: 38px 76px minmax(0, 1fr) 160px !important;
+    gap: 8px !important;
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+  }
+
+  main > section.space-y-3.pb-4 > * {
+    min-height: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Saudação */
+  main > section.space-y-3.pb-4 > :nth-child(1) {
+    min-height: 38px !important;
+    height: 38px !important;
+    align-items: center !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(1) h1 {
+    font-size: 20px !important;
+    line-height: 1.1 !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(1) button {
+    min-height: 34px !important;
+    height: 34px !important;
+  }
+
+  /* KPIs */
+  main > section.space-y-3.pb-4 > :nth-child(2) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article {
+    min-height: 76px !important;
+    height: 76px !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article > span {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article p:nth-child(2) {
+    font-size: 20px !important;
+    line-height: 1 !important;
+  }
+
+  /* Miolo: Entregas | Próximos 7 dias | tarefas + pedidos */
+  main > section.space-y-3.pb-4 > :nth-child(3) {
+    min-height: 0 !important;
+    height: 100% !important;
+    grid-template-columns: minmax(0, 1.02fr) minmax(0, 1.02fr) minmax(350px, .96fr) !important;
+    gap: 8px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > article,
+  main > section.space-y-3.pb-4 > :nth-child(3) > div {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > article {
+    border-radius: 14px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
+    display: grid !important;
+    grid-template-rows: 96px minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
+    min-height: 96px !important;
+    height: 96px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:last-child {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  /* Cabeçalhos dos cards */
+  main > section.space-y-3.pb-4 > :nth-child(3) article > div:first-child,
+  main > section.space-y-3.pb-4 > :nth-child(4) article > div:first-child {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  /* Linhas mais compactas sem esconder dados */
+  main > section.space-y-3.pb-4 > :nth-child(3) article .py-4 {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) article .py-3 {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) article .py-2\.5 {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) article .px-4 {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) article p,
+  main > section.space-y-3.pb-4 > :nth-child(3) article span {
+    line-height: 1.2 !important;
+  }
+
+  /* Rodapé: resumo + versículo */
+  main > section.space-y-3.pb-4 > :nth-child(4) {
+    min-height: 160px !important;
+    height: 160px !important;
+    grid-template-columns: minmax(0, 2.08fr) minmax(350px, .95fr) !important;
+    gap: 8px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) > * {
+    min-height: 0 !important;
+    height: 160px !important;
+    border-radius: 14px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) > article > div:last-child {
+    padding: 8px 12px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) .h-28 {
+    height: 72px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) figure {
+    padding: 12px !important;
+  }
+}
+
+/* Notebook baixo: comprime um pouco mais para continuar sem scroll. */
+@media (min-width: 1280px) and (max-height: 820px) {
+  body:has(main > section.space-y-3.pb-4) header.sticky > div:first-child {
+    height: 58px !important;
+  }
+
+  body:has(main > section.space-y-3.pb-4) main {
+    height: calc(100dvh - 58px) !important;
+    max-height: calc(100dvh - 58px) !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  main > section.space-y-3.pb-4 {
+    grid-template-rows: 34px 68px minmax(0, 1fr) 138px !important;
+    gap: 6px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(1) {
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(1) h1 {
+    font-size: 18px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article {
+    height: 68px !important;
+    min-height: 68px !important;
+    padding: 8px 10px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
+    grid-template-rows: 86px minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
+    height: 86px !important;
+    min-height: 86px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4),
+  main > section.space-y-3.pb-4 > :nth-child(4) > * {
+    height: 138px !important;
+    min-height: 138px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) .h-28 {
+    height: 58px !important;
+  }
+}
+
+/* Em tablet/celular, mantém o fluxo normal com rolagem vertical. */
+@media (max-width: 1279px) {
+  body:has(main > section.space-y-3.pb-4) {
+    overflow-y: auto;
+  }
+}
