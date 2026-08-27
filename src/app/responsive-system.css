@@ -44,7 +44,6 @@ code {
   overflow-wrap: anywhere;
 }
 
-/* Never let flex/grid children force the viewport wider than the screen. */
 main,
 section,
 article,
@@ -57,7 +56,6 @@ div {
   min-width: 0;
 }
 
-/* Shared responsive containers used by the marketing site. */
 .flua2-shell,
 .marketing-shell,
 .sales-shell,
@@ -67,7 +65,6 @@ div {
   margin-inline: auto;
 }
 
-/* Tables should scroll horizontally inside their own area instead of cutting content. */
 [data-slot="table-container"],
 .table-responsive,
 .responsive-table-wrap,
@@ -80,7 +77,6 @@ div {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Dialogs/sheets must fit short and narrow displays. */
 [data-slot="dialog-content"],
 [role="dialog"] {
   max-width: min(96vw, 1100px);
@@ -92,7 +88,6 @@ div {
   overscroll-behavior: contain;
 }
 
-/* Keep long labels, e-mails, product names and URLs from overflowing cards. */
 .break-responsive,
 .flua2-site p,
 .flua2-site span,
@@ -105,7 +100,6 @@ div {
   overflow-wrap: anywhere;
 }
 
-/* SaaS shell: allow content to shrink and scroll instead of being clipped. */
 .admin-shell,
 .admin-main,
 .admin-content,
@@ -124,15 +118,101 @@ div {
   overscroll-behavior-inline: contain;
 }
 
-/* Large desktop screens: use available width without stretching text excessively. */
+/* HOME DO PAINEL — reproduz a composicao da referencia no desktop. */
+@media (min-width: 1280px) {
+  main > section.space-y-3.pb-4 {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto minmax(390px, 1fr) 215px !important;
+    gap: 12px !important;
+    min-height: calc(100dvh - 112px) !important;
+    padding-bottom: 8px !important;
+  }
+
+  main > section.space-y-3.pb-4 > * {
+    margin-top: 0 !important;
+  }
+
+  /* Saudacao + Novo pedido */
+  main > section.space-y-3.pb-4 > :nth-child(1) {
+    min-height: 44px !important;
+    align-items: center !important;
+  }
+
+  /* KPIs: quatro cards iguais em uma unica linha */
+  main > section.space-y-3.pb-4 > :nth-child(2) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article {
+    min-height: 96px !important;
+    height: 96px !important;
+    padding: 14px 16px !important;
+  }
+
+  /* Miolo: Entregas | Proximos 7 dias | coluna direita */
+  main > section.space-y-3.pb-4 > :nth-child(3) {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.05fr) minmax(350px, .99fr) !important;
+    gap: 12px !important;
+    min-height: 390px !important;
+    height: 100% !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > article {
+    min-height: 390px !important;
+    height: 100% !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
+    grid-template-rows: 122px minmax(0, 1fr) !important;
+    gap: 12px !important;
+    height: 100% !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
+    min-height: 122px !important;
+    height: 122px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:last-child {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  /* Rodape: grafico largo + versiculo estreito */
+  main > section.space-y-3.pb-4 > :nth-child(4) {
+    grid-template-columns: minmax(0, 2.08fr) minmax(350px, .95fr) !important;
+    gap: 12px !important;
+    min-height: 215px !important;
+    height: 215px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) > * {
+    height: 215px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) > article > div:last-child {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) .h-28 {
+    height: 104px !important;
+  }
+}
+
 @media (min-width: 1600px) {
   :root {
     --flua-page-gutter: clamp(28px, 3vw, 56px);
     --flua-content-max: 1680px;
   }
+
+  main > section.space-y-3.pb-4 > :nth-child(3) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(390px, .95fr) !important;
+  }
 }
 
-/* Notebook range: compress gaps before content starts clipping. */
 @media (max-width: 1366px) {
   :root {
     --flua-page-gutter: clamp(14px, 2vw, 24px);
@@ -143,7 +223,6 @@ div {
   }
 }
 
-/* Tablet + narrow notebook. */
 @media (max-width: 1100px) {
   .flua2-nav,
   .marketing-nav-simple {
@@ -212,7 +291,6 @@ div {
 }
 
 @media (max-width: 760px) {
-  /* Site navigation must never be wider than the phone. */
   .flua2-header {
     position: relative !important;
   }
@@ -343,7 +421,6 @@ div {
   }
 }
 
-/* Very short notebook displays: avoid vertical clipping caused by 100vh sections. */
 @media (max-height: 760px) and (min-width: 761px) {
   .flua2-hero {
     min-height: auto !important;
