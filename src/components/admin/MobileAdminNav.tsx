@@ -24,10 +24,11 @@ const ITENS = [
   { id: "dashboard" as const, label: "Dashboard", alvoHeader: "Dashboard", icon: ChartPie },
 ];
 
-function idPeloPath(pathname: string): ItemId {
+function idPeloPath(pathname: string): ItemId | null {
+  if (pathname === "/inicio" || pathname === "/admin") return "inicio";
   if (pathname === "/dashboard") return "dashboard";
   if (pathname.startsWith("/vendas") || pathname === "/pedidos") return "pedidos";
-  return "inicio";
+  return null;
 }
 
 function textoElemento(elemento: Element) {
@@ -60,7 +61,7 @@ function clicarPedidoVisivel() {
 
 export function MobileAdminNav() {
   const pathname = usePathname();
-  const [ativo, setAtivo] = useState<ItemId>(() => idPeloPath(pathname));
+  const [ativo, setAtivo] = useState<ItemId | null>(() => idPeloPath(pathname));
   const painel = ROTAS_PAINEL.some(
     (rota) => pathname === rota || pathname.startsWith(`${rota}/`),
   );
