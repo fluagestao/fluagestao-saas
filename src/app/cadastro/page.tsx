@@ -123,10 +123,13 @@ export default function CadastroPage() {
     setCarregando(true);
 
     const tipoDocumento = documentoNumeros.length === 14 ? "cnpj" : "cpf";
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || window.location.origin;
+
     const { data, error } = await supabase.auth.signUp({
       email: emailLimpo,
       password: senha,
       options: {
+        emailRedirectTo: `${siteUrl}/auth/callback?next=/cadastro/sucesso`,
         data: {
           full_name: responsavelLimpo,
           store_name: nomeLojaLimpo,
