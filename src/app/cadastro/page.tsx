@@ -217,7 +217,7 @@ export default function CadastroPage() {
 
           <form onSubmit={cadastrar} className="mt-6 space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="loja" className="text-[#3F2422]">Nome da loja</Label>
+              <Label htmlFor="loja" className="text-[#3F2422]">Nome da loja <span className="text-[#A94F45]">*</span></Label>
               <div className="relative">
                 <Store className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                 <Input id="loja" value={nomeLoja} onChange={(e) => setNomeLoja(e.target.value)} placeholder="Ex.: Café com Afeto" autoComplete="organization" required className={`${campos} pl-11`} />
@@ -226,7 +226,7 @@ export default function CadastroPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="documento" className="text-[#3F2422]">CNPJ/CPF</Label>
+                <Label htmlFor="documento" className="text-[#3F2422]">CNPJ/CPF <span className="text-[#A94F45]">*</span></Label>
                 <div className="relative">
                   <FileText className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                   <Input id="documento" value={documento} onChange={(e) => setDocumento(formatarDocumento(e.target.value))} inputMode="numeric" placeholder="00.000.000/0000-00" required className={`${campos} pl-11`} />
@@ -234,7 +234,7 @@ export default function CadastroPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="whatsapp" className="text-[#3F2422]">WhatsApp</Label>
+                <Label htmlFor="whatsapp" className="text-[#3F2422]">WhatsApp <span className="text-[#A94F45]">*</span></Label>
                 <div className="relative">
                   <Phone className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                   <Input id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(formatarWhatsapp(e.target.value))} inputMode="tel" placeholder="(00) 00000-0000" autoComplete="tel" required className={`${campos} pl-11`} />
@@ -243,7 +243,7 @@ export default function CadastroPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="responsavel" className="text-[#3F2422]">Nome do responsável</Label>
+              <Label htmlFor="responsavel" className="text-[#3F2422]">Nome do responsável <span className="text-[#A94F45]">*</span></Label>
               <div className="relative">
                 <UserRound className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                 <Input id="responsavel" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} placeholder="Seu nome" autoComplete="name" required className={`${campos} pl-11`} />
@@ -251,7 +251,7 @@ export default function CadastroPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-[#3F2422]">E-mail de acesso</Label>
+              <Label htmlFor="email" className="text-[#3F2422]">E-mail de acesso <span className="text-[#A94F45]">*</span></Label>
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@empresa.com.br" autoComplete="email" required className={`${campos} pl-11`} />
@@ -260,7 +260,7 @@ export default function CadastroPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label htmlFor="senha" className="text-[#3F2422]">Senha</Label>
+                <Label htmlFor="senha" className="text-[#3F2422]">Senha <span className="text-[#A94F45]">*</span></Label>
                 <div className="relative">
                   <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                   <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder="Mínimo 6 caracteres" required className={`${campos} px-11`} />
@@ -271,7 +271,7 @@ export default function CadastroPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="confirmar" className="text-[#3F2422]">Confirmar senha</Label>
+                <Label htmlFor="confirmar" className="text-[#3F2422]">Confirmar senha <span className="text-[#A94F45]">*</span></Label>
                 <div className="relative">
                   <LockKeyhole className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
                   <Input id="confirmar" type={mostrarSenha ? "text" : "password"} value={confirmar} onChange={(e) => setConfirmar(e.target.value)} autoComplete="new-password" placeholder="Repita sua senha" required className={`${campos} pl-11`} />
