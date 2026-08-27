@@ -76,8 +76,24 @@ export default function CadastroPage() {
     setErro("");
     setMensagem("");
 
+    const nomeLojaLimpo = nomeLoja.trim();
     const documentoNumeros = somenteNumeros(documento);
     const whatsappNumeros = somenteNumeros(whatsapp);
+    const responsavelLimpo = responsavel.trim();
+    const emailLimpo = email.trim().toLowerCase();
+
+    if (
+      !nomeLojaLimpo ||
+      !documentoNumeros ||
+      !whatsappNumeros ||
+      !responsavelLimpo ||
+      !emailLimpo ||
+      !senha ||
+      !confirmar
+    ) {
+      setErro("Preencha todos os campos obrigatórios para criar sua conta.");
+      return;
+    }
 
     if (documentoNumeros.length !== 11 && documentoNumeros.length !== 14) {
       setErro("Informe um CPF ou CNPJ válido.");
@@ -86,6 +102,11 @@ export default function CadastroPage() {
 
     if (whatsappNumeros.length < 10) {
       setErro("Informe um WhatsApp válido com DDD.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLimpo)) {
+      setErro("Informe um e-mail de acesso válido.");
       return;
     }
 
@@ -103,12 +124,12 @@ export default function CadastroPage() {
 
     const tipoDocumento = documentoNumeros.length === 14 ? "cnpj" : "cpf";
     const { data, error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
+      email: emailLimpo,
       password: senha,
       options: {
         data: {
-          full_name: responsavel.trim(),
-          store_name: nomeLoja.trim(),
+          full_name: responsavelLimpo,
+          store_name: nomeLojaLimpo,
           document: documentoNumeros,
           document_type: tipoDocumento,
           phone: whatsappNumeros,
