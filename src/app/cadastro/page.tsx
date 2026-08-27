@@ -131,7 +131,7 @@ export default function CadastroPage() {
       email: emailLimpo,
       password: senha,
       options: {
-        emailRedirectTo: `${siteUrl}/cadastro/sucesso`,
+        emailRedirectTo: `${siteUrl}/auth/callback?next=/cadastro/sucesso`,
         data: {
           full_name: responsavelLimpo,
           store_name: nomeLojaLimpo,
