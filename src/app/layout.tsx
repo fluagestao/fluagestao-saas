@@ -9,6 +9,7 @@ import "./flua-hero-background.css";
 import "./flua-hero-background-fix.css";
 import "./marketing-header.css";
 import "./responsive-system.css";
+import "./home-compact.css";
 import "./mobile-admin.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
