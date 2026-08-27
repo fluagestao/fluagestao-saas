@@ -34,7 +34,6 @@ export function NovoPedidoPageClient({
           overflow: hidden !important;
         }
 
-        /* A rota de novo pedido usa o formulário como uma página centralizada. */
         body:has(.flua-novo-pedido-route)
           [data-state="open"].fixed.inset-0:not([role="dialog"]) {
           display: none !important;
@@ -43,10 +42,9 @@ export function NovoPedidoPageClient({
         body:has(.flua-novo-pedido-route) [role="dialog"] {
           position: fixed !important;
           top: 0 !important;
-          bottom: auto !important;
           left: 50% !important;
           right: auto !important;
-          inset: auto !important;
+          bottom: auto !important;
 
           width: min(1040px, calc(100vw - 64px)) !important;
           min-width: 0 !important;
@@ -57,6 +55,7 @@ export function NovoPedidoPageClient({
 
           margin: 0 !important;
           transform: translateX(-50%) !important;
+          box-sizing: border-box !important;
           border: 0 !important;
           border-radius: 0 !important;
           box-shadow: 0 0 60px rgba(70, 37, 34, 0.08) !important;
@@ -65,7 +64,6 @@ export function NovoPedidoPageClient({
           overflow-x: hidden !important;
           overflow-y: auto !important;
           z-index: 100 !important;
-          box-sizing: border-box !important;
         }
 
         body:has(.flua-novo-pedido-route) [role="dialog"] > button.absolute {
@@ -100,13 +98,8 @@ export function NovoPedidoPageClient({
 
         @media (max-width: 760px) {
           body:has(.flua-novo-pedido-route) [role="dialog"] {
-            left: 50% !important;
             width: calc(100vw - 20px) !important;
             max-width: calc(100vw - 20px) !important;
-            height: 100dvh !important;
-            min-height: 100dvh !important;
-            max-height: 100dvh !important;
-            transform: translateX(-50%) !important;
             padding: 18px 14px 32px !important;
           }
 
