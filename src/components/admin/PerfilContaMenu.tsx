@@ -110,8 +110,7 @@ export function PerfilContaMenu({
 
   async function sair() {
     await supabase.auth.signOut();
-    router.replace("/login");
-    router.refresh();
+    window.location.assign("https://www.fluagestao.com.br");
   }
 
   const plano = rotuloPlano(assinatura?.plan);
