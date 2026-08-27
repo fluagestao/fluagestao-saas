@@ -4,18 +4,33 @@ import {
   Building2,
   ChevronDown,
   CreditCard,
+  FileCheck2,
   LogOut,
   Settings,
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 
 type AssinaturaConta = {
   plan: string | null;
   status: string | null;
+};
+
+type DadosEmpresaPendencia = {
+  legal_name: string | null;
+  name: string | null;
+  document: string | null;
+  email: string | null;
+  phone: string | null;
+  postal_code: string | null;
+  street: string | null;
+  address_number: string | null;
+  district: string | null;
+  city: string | null;
+  state: string | null;
 };
 
 function rotuloPlano(plano?: string | null) {
@@ -31,6 +46,23 @@ function rotuloStatus(status?: string | null) {
   return status || "Em teste";
 }
 
+function empresaIncompleta(empresa?: DadosEmpresaPendencia | null) {
+  if (!empresa) return true;
+
+  return [
+    empresa.legal_name || empresa.name,
+    empresa.document,
+    empresa.email,
+    empresa.phone,
+    empresa.postal_code,
+    empresa.street,
+    empresa.address_number,
+    empresa.district,
+    empresa.city,
+    empresa.state,
+  ].some((valor) => !String(valor ?? "").trim());
+}
+
 export function PerfilContaMenu({
   email,
   displayName,
@@ -44,6 +76,8 @@ export function PerfilContaMenu({
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [aberto, setAberto] = useState(false);
+  const [notificacoesAbertas, setNotificacoesAbertas] = useState(false);
+  const [pendenciaDocumentos, setPendenciaDocumentos] = useState(true);
   const [assinatura, setAssinatura] = useState<AssinaturaConta | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -52,6 +86,26 @@ export function PerfilContaMenu({
     .trim()
     .charAt(0)
     .toUpperCase();
+
+  const recarregarPendencia = useCallback(
+    async (id?: string | null) => {
+      const empresaId = id ?? companyId;
+      if (!empresaId) return;
+
+      const { data: empresa } = await supabase
+        .from("companies")
+        .select(
+          "legal_name,name,document,email,phone,postal_code,street,address_number,district,city,state",
+        )
+        .eq("id", empresaId)
+        .maybeSingle();
+
+      setPendenciaDocumentos(
+        empresaIncompleta((empresa ?? null) as DadosEmpresaPendencia | null),
+      );
+    },
+    [companyId, supabase],
+  );
 
   useEffect(() => {
     let ativo = true;
@@ -75,17 +129,50 @@ export function PerfilContaMenu({
 
       const { data: empresa } = await supabase
         .from("companies")
-        .select("logo_url")
+        .select(
+          "logo_url,legal_name,name,document,email,phone,postal_code,street,address_number,district,city,state",
+        )
         .eq("id", membro.company_id)
         .maybeSingle();
 
-      if (ativo) setLogoUrl(empresa?.logo_url ?? null);
+      if (!ativo) return;
+
+      setLogoUrl(empresa?.logo_url ?? null);
+      setPendenciaDocumentos(
+        empresaIncompleta((empresa ?? null) as DadosEmpresaPendencia | null),
+      );
     })();
 
     return () => {
       ativo = false;
     };
   }, [supabase]);
+
+  useEffect(() => {
+    const botoes = Array.from(
+      document.querySelectorAll<HTMLButtonElement>(
+        'button[aria-label="Notificações"]',
+      ),
+    );
+
+    const abrirNotificacoes = () => {
+      setAberto(false);
+      setNotificacoesAbertas((valor) => !valor);
+      void recarregarPendencia();
+    };
+
+    botoes.forEach((botao) => {
+      botao.addEventListener("click", abrirNotificacoes);
+      const ponto = botao.querySelector<HTMLElement>("span");
+      if (ponto) ponto.style.display = pendenciaDocumentos ? "" : "none";
+    });
+
+    return () => {
+      botoes.forEach((botao) =>
+        botao.removeEventListener("click", abrirNotificacoes),
+      );
+    };
+  }, [pendenciaDocumentos, recarregarPendencia]);
 
   useEffect(() => {
     if (!aberto || assinatura || !companyId) return;
@@ -117,10 +204,10 @@ export function PerfilContaMenu({
   const status = rotuloStatus(assinatura?.status);
 
   const itens = [
-    { label: "Dados da empresa", icon: Building2, href: "/admin/conta/empresa" },
-    { label: "Plano e assinatura", icon: CreditCard, href: "/admin/conta/plano" },
-    { label: "Usuários", icon: Users, href: "/admin/conta/usuarios" },
-    { label: "Configurações", icon: Settings, href: "/admin/conta/configuracoes" },
+    { label: "Dados da empresa", icon: Building2, href: "/conta/empresa" },
+    { label: "Plano e assinatura", icon: CreditCard, href: "/conta/plano" },
+    { label: "Usuários", icon: Users, href: "/conta/usuarios" },
+    { label: "Configurações", icon: Settings, href: "/conta/configuracoes" },
   ];
 
   const marcaEmpresa = (tamanho: "pequena" | "grande") => {
@@ -152,7 +239,10 @@ export function PerfilContaMenu({
     <div className="relative ml-1">
       <button
         type="button"
-        onClick={() => setAberto((valor) => !valor)}
+        onClick={() => {
+          setNotificacoesAbertas(false);
+          setAberto((valor) => !valor);
+        }}
         className="flex min-w-0 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition hover:bg-[var(--cream-soft)]"
         aria-expanded={aberto}
       >
@@ -169,6 +259,44 @@ export function PerfilContaMenu({
           className={`hidden h-3.5 w-3.5 text-[var(--admin-muted)] transition-transform sm:block ${aberto ? "rotate-180" : ""}`}
         />
       </button>
+
+      {notificacoesAbertas && (
+        <div className="fixed right-4 top-[70px] z-[70] w-[330px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-lift)] md:right-[180px]">
+          <div className="border-b border-[var(--admin-border)] px-4 py-3">
+            <strong className="text-sm text-[var(--admin-ink)]">Notificações</strong>
+          </div>
+
+          {pendenciaDocumentos ? (
+            <button
+              type="button"
+              onClick={() => {
+                setNotificacoesAbertas(false);
+                router.push("/conta/empresa");
+              }}
+              className="flex w-full items-start gap-3 p-4 text-left transition hover:bg-[var(--cream-soft)]"
+            >
+              <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--cream)] text-[var(--terracotta)]">
+                <FileCheck2 className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-sm text-[var(--admin-ink)]">
+                  Complete os dados da empresa
+                </strong>
+                <span className="mt-1 block text-xs leading-5 text-[var(--admin-muted)]">
+                  Confirme seus documentos e dados cadastrais para manter sua conta completa.
+                </span>
+                <span className="mt-2 block text-xs font-semibold text-[var(--terracotta)]">
+                  Confirmar documentos →
+                </span>
+              </span>
+            </button>
+          ) : (
+            <div className="p-5 text-center text-sm text-[var(--admin-muted)]">
+              Nenhuma pendência no momento.
+            </div>
+          )}
+        </div>
+      )}
 
       {aberto && (
         <div className="absolute right-0 top-full z-50 mt-2 w-[300px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-lift)]">
