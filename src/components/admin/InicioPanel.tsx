@@ -33,7 +33,7 @@ import { saudacao, versiculoDoDia } from "@/lib/versiculos";
 import { Num } from "./shell";
 import { situacaoDoPrazo } from "./TarefasPanel";
 
-type DestinoInicio = "vendas" | "tarefas" | "cadastros" | "financeiro" | "bia" | "produtos";
+type DestinoInicio = "vendas" | "tarefas" | "cadastros" | "financeiro" | "produtos";
 
 function dataParaDate(iso: string) {
   const [a, m, d] = iso.split("-").map(Number);
