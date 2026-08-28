@@ -145,9 +145,11 @@ export function VendasPanel({
   vista: subExterna,
   onVista,
   empresaNome,
+  abrirNovoAoMontar = false,
 }: {
   produtos: ProdutoOpcao[];
   empresaNome: string;
+  abrirNovoAoMontar?: boolean;
   /** Sub-aba escolhida na lateral. Sem ela, o painel controla sozinho. */
   vista?: SubVenda;
   onVista?: (v: SubVenda) => void;
@@ -163,7 +165,9 @@ export function VendasPanel({
   const [base, setBase] = useState<Pedido[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [editando, setEditando] = useState<Pedido | "novo" | null>(null);
+  const [editando, setEditando] = useState<Pedido | "novo" | null>(
+    abrirNovoAoMontar ? "novo" : null,
+  );
   const confirmar = useConfirmar();
   const [aReceberLista, setAReceberLista] = useState<Pedido[]>([]);
   const [marcados, setMarcados] = useState<Set<string>>(new Set());

@@ -145,11 +145,13 @@ export default function AdminClient({
   displayName,
   companyName,
   initialAba = "inicio",
+  initialNovoPedido = false,
 }: {
   email: string;
   displayName: string;
   companyName: string;
   initialAba?: AbaId;
+  initialNovoPedido?: boolean;
 }) {
   const [catalogos, setCatalogos] = useState<CatalogoRow[]>([]);
   const [categorias, setCategorias] = useState<CategoriaRow[]>([]);
@@ -411,6 +413,7 @@ export default function AdminClient({
               vista={subVendas}
               onVista={setSubVendas}
               empresaNome={companyName}
+              abrirNovoAoMontar={initialNovoPedido}
               produtos={produtos.map((produto) => {
                 const categoria = categorias.find((item) => item.id === produto.categoria_id);
                 const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
