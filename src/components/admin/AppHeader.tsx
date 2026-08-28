@@ -47,14 +47,6 @@ const MENU: ItemMenu[] = [
     ],
   },
   { label: "Tarefas", href: "/tarefas" },
-  {
-    label: "BIA",
-    filhos: [
-      { label: "Simulador", href: "/bia/simulador" },
-      { label: "Conversas", href: "/bia/conversas" },
-      { label: "Ajustes", href: "/bia/ajustes" },
-    ],
-  },
 ];
 
 function itemAtivo(pathname: string, item: ItemMenu) {
