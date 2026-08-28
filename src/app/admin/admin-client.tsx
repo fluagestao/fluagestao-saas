@@ -90,14 +90,10 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
 
 const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "produtos", label: "Produtos" },
-  { id: "colecoes", label: "Coleções" },
   { id: "categorias", label: "Categorias" },
-  { id: "etiquetas", label: "Etiquetas" },
   { id: "insumos", label: "Insumos" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
-  { id: "bairros", label: "Bairros" },
-  { id: "horarios", label: "Horários" },
 ];
 
 type ItemMenu = {
