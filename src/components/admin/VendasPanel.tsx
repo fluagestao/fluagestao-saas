@@ -432,6 +432,20 @@ export function VendasPanel({
     recarregarTudo();
   }
 
+  if (abrirNovoAoMontar && editando === "novo") {
+    return (
+      <PedidoDialog
+        pedido={null}
+        produtos={produtos}
+        clientes={clientes}
+        modoPagina
+        onClienteCriado={recarregarClientes}
+        onClose={() => setEditando(null)}
+        onSaved={recarregarTudo}
+      />
+    );
+  }
+
   return (
     <section>
       <PageHeader
