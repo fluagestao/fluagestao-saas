@@ -79,6 +79,7 @@ export function PedidoDialog({
   onClose,
   onSaved,
   onClienteCriado,
+  modoPagina = false,
 }: {
   pedido: Pedido | null; // null = lançamento novo
   produtos: ProdutoOpcao[];
@@ -87,6 +88,8 @@ export function PedidoDialog({
   onSaved: () => void;
   /** Recarrega a lista de clientes do painel depois de cadastrar um aqui. */
   onClienteCriado?: () => void;
+  /** Na rota de criação, mostra o formulário como página em vez de modal. */
+  modoPagina?: boolean;
 }) {
   const [nome, setNome] = useState(pedido?.cliente_nome ?? "");
   const [whatsapp, setWhatsapp] = useState(pedido?.cliente_whatsapp ?? "");
@@ -285,14 +288,27 @@ export function PedidoDialog({
     setSalvando(false);
   }
 
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+  const conteudo = (
+    <>
+      {modoPagina ? (
+        <header className="mb-2 border-b border-[var(--cream-deep)] pb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--bronze)]">
+            Vendas
+          </p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight text-foreground">
+            {pedido ? `Pedido #${pedido.numero}` : "Novo pedido"}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Preencha os dados abaixo para registrar o pedido.
+          </p>
+        </header>
+      ) : (
         <DialogHeader>
           <DialogTitle className="text-2xl font-semibold tracking-tight">
             {pedido ? `Pedido #${pedido.numero}` : "Novo pedido"}
           </DialogTitle>
         </DialogHeader>
+      )}
 
         {/* Cliente cadastrado preenche tudo de uma vez; quem é novo, digita. */}
         <div className="flex gap-2">
@@ -735,30 +751,47 @@ export function PedidoDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Fechar
+            {modoPagina ? "Voltar aos pedidos" : "Fechar"}
           </Button>
           <Button onClick={salvar} disabled={salvando}>
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {pedido ? "Salvar" : "Lançar pedido"}
           </Button>
         </DialogFooter>
-      </DialogContent>
+    </>
+  );
 
-      {/* O botão "+" existia e não abria nada: o estado era ligado, mas este
-          diálogo nunca era renderizado. Cadastro feito aqui já entra no pedido. */}
-      {novoCliente && (
-        <ClienteDialog
-          cliente={null}
-          inicial={{ nome, whatsapp }}
-          onClose={() => setNovoCliente(false)}
-          onSaved={(id) => {
-            if (id) setClienteId(id);
-            setNovoCliente(false);
-            toast.success("Cliente cadastrado e vinculado ao pedido.");
-            onClienteCriado?.();
-          }}
-        />
-      )}
+  const cadastroCliente = novoCliente ? (
+    <ClienteDialog
+      cliente={null}
+      inicial={{ nome, whatsapp }}
+      onClose={() => setNovoCliente(false)}
+      onSaved={(id) => {
+        if (id) setClienteId(id);
+        setNovoCliente(false);
+        toast.success("Cliente cadastrado e vinculado ao pedido.");
+        onClienteCriado?.();
+      }}
+    />
+  ) : null;
+
+  if (modoPagina) {
+    return (
+      <>
+        <div className="mx-auto w-full max-w-6xl space-y-4 pb-10">
+          {conteudo}
+        </div>
+        {cadastroCliente}
+      </>
+    );
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+        {conteudo}
+      </DialogContent>
+      {cadastroCliente}
     </Dialog>
   );
 }
