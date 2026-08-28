@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 
-import { createClient } from "@/lib/supabase/server";
 import AdminClient from "@/app/admin/admin-client";
-import AutoOpenNovoPedido from "./auto-open-novo-pedido";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
@@ -36,14 +35,12 @@ export default async function NovoPedidoPage() {
     .maybeSingle();
 
   return (
-    <>
-      <AdminClient
-        email={membro.email}
-        displayName={membro.display_name}
-        companyName={empresa?.name ?? "Empresa"}
-        initialAba="vendas"
-      />
-      <AutoOpenNovoPedido />
-    </>
+    <AdminClient
+      email={membro.email}
+      displayName={membro.display_name}
+      companyName={empresa?.name ?? "Empresa"}
+      initialAba="vendas"
+      initialNovoPedido
+    />
   );
 }
