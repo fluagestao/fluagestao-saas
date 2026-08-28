@@ -40,10 +40,23 @@ export default function LoginPage() {
     if (params.get("senha") === "alterada") {
       setSucesso("Senha alterada com sucesso. Entre novamente para continuar.");
       window.history.replaceState({}, "", "/login");
+      return;
     }
 
-    if (params.get("erro") === "link-invalido") {
-      setErro("O link de recuperação expirou ou não é mais válido.");
+    const erroParam = params.get("erro");
+
+    if (erroParam === "link-invalido") {
+      setErro(
+        "O link de confirmação expirou ou já foi utilizado. Se você já confirmou seu e-mail, entre normalmente abaixo.",
+      );
+      window.history.replaceState({}, "", "/login");
+      return;
+    }
+
+    if (erroParam === "preparacao-conta") {
+      setErro(
+        "Seu e-mail foi confirmado, mas não conseguimos concluir a preparação da sua conta. Tente entrar novamente.",
+      );
       window.history.replaceState({}, "", "/login");
     }
   }, []);
