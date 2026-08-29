@@ -130,12 +130,18 @@ export default function AdminClient({
   email,
   displayName,
   companyName,
+  companyLogoUrl,
+  companyAddress,
+  companyCityState,
   initialAba = "inicio",
   initialNovoPedido = false,
 }: {
   email: string;
   displayName: string;
   companyName: string;
+  companyLogoUrl?: string | null;
+  companyAddress?: string | null;
+  companyCityState?: string | null;
   initialAba?: AbaId;
   initialNovoPedido?: boolean;
 }) {
@@ -399,7 +405,14 @@ export default function AdminClient({
           ) : aba === "dashboard" ? (
             <DashboardPanel />
           ) : aba === "calendario" ? (
-            <CalendarioEntregasPanel />
+            <CalendarioEntregasPanel
+              empresa={{
+                nome: companyName,
+                logoUrl: companyLogoUrl ?? null,
+                endereco: companyAddress ?? null,
+                cidadeUf: companyCityState ?? null,
+              }}
+            />
           ) : aba === "financeiro" ? (
             <FinanceiroPanel vista={subFin} />
           ) : aba === "cadastros" ? (

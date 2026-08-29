@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
+import { DetalhesEntregaDialog } from "@/components/admin/DetalhesEntregaDialog";
+import type { EmpresaFichaPedido } from "@/lib/ficha-pedido";
 import {
   proximasDatasComemorativas,
   type ProximaDataComemorativa,
@@ -75,7 +77,13 @@ function textoContagem(dias: number): string {
   return `Faltam ${dias} dias`;
 }
 
-function CardEntrega({ pedido }: { pedido: Pedido }) {
+function CardEntrega({
+  pedido,
+  onClick,
+}: {
+  pedido: Pedido;
+  onClick: () => void;
+}) {
   const contexto =
     pedido.tipo === "retirada"
       ? "Retirada"
@@ -86,11 +94,14 @@ function CardEntrega({ pedido }: { pedido: Pedido }) {
           : "Entrega";
 
   return (
-    <article
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        "rounded-2xl border border-black/[0.035] border-l-[3px] p-3 shadow-[0_8px_22px_rgba(75,55,50,0.035)]",
+        "w-full rounded-2xl border border-black/[0.035] border-l-[3px] p-3 text-left shadow-[0_8px_22px_rgba(75,55,50,0.035)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(75,55,50,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--terracotta)]/35",
         ESTILO_STATUS[pedido.status],
       )}
+      aria-label={`Abrir pedido #${pedido.numero} de ${pedido.cliente_nome || "cliente"}`}
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs font-semibold text-[var(--admin-ink-soft)]">
@@ -128,7 +139,7 @@ function CardEntrega({ pedido }: { pedido: Pedido }) {
           {statusLabel(pedido.status)}
         </span>
       </div>
-    </article>
+    </button>
   );
 }
 
@@ -166,7 +177,11 @@ function LembreteData({
   );
 }
 
-export function CalendarioEntregasPanel() {
+export function CalendarioEntregasPanel({
+  empresa,
+}: {
+  empresa: EmpresaFichaPedido;
+}) {
   const [inicioSemana, setInicioSemana] = useState(() =>
     inicioDaSemana(hojeISO()),
   );
@@ -174,6 +189,7 @@ export function CalendarioEntregasPanel() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarDatas, setMostrarDatas] = useState(false);
+  const [pedidoAberto, setPedidoAberto] = useState<Pedido | null>(null);
 
   const hoje = hojeISO();
   const datasEspeciais = useMemo(
@@ -385,7 +401,11 @@ export function CalendarioEntregasPanel() {
                     </div>
                   ) : pedidosDoDia.length ? (
                     pedidosDoDia.map((pedido) => (
-                      <CardEntrega key={pedido.id} pedido={pedido} />
+                      <CardEntrega
+                        key={pedido.id}
+                        pedido={pedido}
+                        onClick={() => setPedidoAberto(pedido)}
+                      />
                     ))
                   ) : (
                     <div className="grid min-h-20 place-items-center text-[var(--admin-muted)]">
@@ -410,6 +430,12 @@ export function CalendarioEntregasPanel() {
         <CalendarDays className="h-3.5 w-3.5" />
         As datas especiais são atualizadas automaticamente a cada ano.
       </p>
+
+      <DetalhesEntregaDialog
+        pedido={pedidoAberto}
+        empresa={empresa}
+        onClose={() => setPedidoAberto(null)}
+      />
     </section>
   );
 }

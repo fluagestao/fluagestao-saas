@@ -33,15 +33,30 @@ export default async function AdminPage() {
 
   const { data: empresa } = await supabase
     .from("companies")
-    .select("name")
+    .select("name, logo_url, street, address_number, complement, district, city, state")
     .eq("id", membro.company_id)
     .maybeSingle();
+
+  const enderecoEmpresa =
+    [
+      empresa?.street,
+      empresa?.address_number,
+      empresa?.complement,
+      empresa?.district,
+    ]
+      .filter(Boolean)
+      .join(", ") || null;
+  const cidadeEstadoEmpresa =
+    [empresa?.city, empresa?.state].filter(Boolean).join(" / ") || null;
 
   return (
     <AdminClient
       email={membro.email}
       displayName={membro.display_name}
       companyName={empresa?.name ?? "Empresa"}
+      companyLogoUrl={empresa?.logo_url ?? null}
+      companyAddress={enderecoEmpresa}
+      companyCityState={cidadeEstadoEmpresa}
     />
   );
 }
