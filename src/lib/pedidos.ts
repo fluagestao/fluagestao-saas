@@ -17,6 +17,7 @@ import type {
   VendaAgrupada,
 } from "@/lib/pedidos-ops.server";
 import {
+  dataLocalISO,
   normalizarPedido,
   subtotalItens,
   totalPedido,
@@ -202,6 +203,64 @@ export async function carregarResumoPedidos() {
   return (data ?? []).map((row) =>
     normalizarPedido(row as Record<string, unknown>),
   );
+}
+
+/**
+ * Total faturado por dia de um mês (YYYY-MM), para o gráfico da tela inicial.
+ *
+ * Existe separado de carregarResumoPedidos porque aquele só traz o mês corrente
+ * — o alternador "Mês passado" precisa de um período arbitrário. Agrega aqui no
+ * servidor para não trafegar o pedido inteiro só para somar totais.
+ */
+export async function carregarFaturamentoDoMes(input: { data: unknown }) {
+  const { mes } = z
+    .object({ mes: z.string().regex(/^\d{4}-\d{2}$/) })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+
+  const [ano, numeroMes] = mes.split("-").map(Number);
+  const proximo =
+    numeroMes === 12
+      ? `${ano + 1}-01-01`
+      : `${ano}-${String(numeroMes + 1).padStart(2, "0")}-01`;
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select("created_at, total")
+    .eq("company_id", companyId)
+    .neq("status", "cancelado")
+    .gte("created_at", `${mes}-01T00:00:00-03:00`)
+    .lt("created_at", `${proximo}T00:00:00-03:00`)
+    .limit(3000);
+
+  if (error) throw error;
+
+  const diasNoMes = new Date(ano, numeroMes, 0).getDate();
+  const dias = Array.from({ length: diasNoMes }, (_, i) => ({
+    dia: i + 1,
+    valor: 0,
+  }));
+
+  let total = 0;
+  let pedidos = 0;
+
+  for (const linha of data ?? []) {
+    const criadoEm = linha.created_at as string | null;
+    if (!criadoEm) continue;
+
+    // Reaproveita a conversão para o fuso de São Paulo usada no resto do app.
+    const iso = dataLocalISO(criadoEm);
+    if (!iso.startsWith(mes)) continue;
+
+    const dia = Number(iso.slice(-2));
+    const valor = Number(linha.total) || 0;
+    if (dias[dia - 1]) dias[dia - 1].valor += valor;
+    total += valor;
+    pedidos += 1;
+  }
+
+  return { mes, dias, total, pedidos, ticket: pedidos ? total / pedidos : 0 };
 }
 
 export async function salvarPedido(input: { data: unknown }) {

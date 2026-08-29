@@ -9,18 +9,44 @@
     height: 60px !important;
   }
 
+  /* Shell em coluna: o main fica com a sobra exata da altura, sem depender de
+     um "menos 60px" que precisa bater com a altura real do cabecalho (ela e
+     65px com a borda, e o desencontro empurrava o ultimo card para fora). */
+  body:has(main > section.space-y-3.pb-4)
+    div[class~="bg-[var(--admin-bg)]"][class~="min-h-screen"] {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
   body:has(main > section.space-y-3.pb-4) main {
-    height: calc(100dvh - 60px) !important;
-    max-height: calc(100dvh - 60px) !important;
+    /* flex column tambem aqui: a <section> vira item flex e recebe a altura
+       exata que sobra. Com `height: auto` no main, o `height: 100%` dela nao
+       resolvia e virava altura de conteudo — dai o estouro no rodape. */
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
     padding-top: 8px !important;
     padding-bottom: 6px !important;
-    overflow: hidden !important;
+    /* auto, nao hidden: no caso normal cabe tudo e nao aparece barra; se algum
+       card crescer, a tela rola em vez de cortar o conteudo pela metade. */
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
   }
 
   main > section.space-y-3.pb-4 {
     display: grid !important;
-    grid-template-rows: 36px 68px 320px 142px !important;
-    gap: 7px !important;
+    /* A 3a linha absorve a sobra: antes as 4 alturas eram fixas e nao somavam a
+       altura util, deixando um vazio grande no rodape. */
+    grid-template-rows: 44px 92px minmax(0, 1fr) 210px !important;
+    gap: 10px !important;
+    /* Item flex do main: pega a altura que sobra sem depender de porcentagem. */
+    flex: 1 1 auto !important;
     height: auto !important;
     min-height: 0 !important;
     padding: 0 !important;
@@ -35,13 +61,13 @@
 
   /* Saudação */
   main > section.space-y-3.pb-4 > :nth-child(1) {
-    height: 36px !important;
-    min-height: 36px !important;
+    height: 44px !important;
+    min-height: 44px !important;
     align-items: center !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(1) h1 {
-    font-size: 19px !important;
+    font-size: 23px !important;
     line-height: 1.05 !important;
   }
 
@@ -54,80 +80,87 @@
   /* KPIs */
   main > section.space-y-3.pb-4 > :nth-child(2) {
     grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 7px !important;
+    gap: 10px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(2) > article {
-    height: 68px !important;
-    min-height: 68px !important;
-    padding: 8px 11px !important;
-    gap: 9px !important;
-    border-radius: 13px !important;
+    height: 92px !important;
+    min-height: 92px !important;
+    padding: 14px 16px !important;
+    gap: 12px !important;
+    border-radius: 16px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(2) > article > span {
-    width: 30px !important;
-    height: 30px !important;
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article > span svg {
+    width: 18px !important;
+    height: 18px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(2) > article p:first-child {
-    font-size: 10px !important;
-    line-height: 1.05 !important;
+    font-size: 12px !important;
+    line-height: 1.15 !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(2) > article p:nth-child(2) {
-    font-size: 19px !important;
-    line-height: 1 !important;
+    font-size: 27px !important;
+    line-height: 1.1 !important;
   }
 
-  main > section.space-y-3.pb-4 > :nth-child(2) > article p:last-child {
-    font-size: 9px !important;
-    line-height: 1.05 !important;
+  main > section.space-y-3.pb-4 > :nth-child(2) > article p:nth-child(3) {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
   }
 
   /* Miolo: não cresce com a altura da tela; elimina os grandes vazios. */
   main > section.space-y-3.pb-4 > :nth-child(3) {
-    height: 320px !important;
-    min-height: 320px !important;
+    height: 100% !important;
+    min-height: 0 !important;
     grid-template-columns: minmax(0, 1.02fr) minmax(0, 1.02fr) minmax(350px, .96fr) !important;
     gap: 7px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > article,
   main > section.space-y-3.pb-4 > :nth-child(3) > div {
-    height: 320px !important;
+    height: 100% !important;
     min-height: 0 !important;
     overflow: hidden !important;
     border-radius: 13px !important;
   }
 
+  /* 116px, nao 78: o estado vazio de Tarefas tem icone + duas linhas e ficava
+     cortado. Com tarefas na lista o proprio corpo do card rola. */
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
     display: grid !important;
-    grid-template-rows: 78px 235px !important;
+    grid-template-rows: 116px minmax(0, 1fr) !important;
     gap: 7px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
-    height: 78px !important;
-    min-height: 78px !important;
+    height: 116px !important;
+    min-height: 116px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:last-child {
-    height: 235px !important;
-    min-height: 235px !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
 
   /* Cabeçalhos dos cards */
   main > section.space-y-3.pb-4 > :nth-child(3) article > div:first-child,
   main > section.space-y-3.pb-4 > :nth-child(4) article > div:first-child {
-    height: 30px !important;
-    min-height: 30px !important;
-    padding-inline: 11px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    padding-inline: 14px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) h3,
   main > section.space-y-3.pb-4 > :nth-child(4) h3 {
-    font-size: 12px !important;
+    font-size: 14px !important;
   }
 
   /* Linhas internas compactas, sem remover conteúdo. */
@@ -158,38 +191,38 @@
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) article .text-sm {
-    font-size: 11px !important;
+    font-size: 13px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) article .text-xs {
-    font-size: 10px !important;
+    font-size: 11.5px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) article .text-\[11px\] {
-    font-size: 9px !important;
+    font-size: 11px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) article .text-\[10px\] {
-    font-size: 8.5px !important;
+    font-size: 10px !important;
   }
 
   /* Rodapé totalmente dentro da área útil. */
   main > section.space-y-3.pb-4 > :nth-child(4) {
-    height: 142px !important;
-    min-height: 142px !important;
+    height: 100% !important;
+    min-height: 0 !important;
     grid-template-columns: minmax(0, 2.08fr) minmax(350px, .95fr) !important;
     gap: 7px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(4) > * {
-    height: 142px !important;
-    min-height: 142px !important;
+    height: 100% !important;
+    min-height: 0 !important;
     border-radius: 13px !important;
     overflow: hidden !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(4) > article > div:last-child {
-    padding: 6px 11px !important;
+    padding: 10px 14px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(4) .mb-3 {
@@ -197,13 +230,16 @@
   }
 
   main > section.space-y-3.pb-4 > :nth-child(4) .text-xl {
-    font-size: 16px !important;
-    line-height: 1 !important;
+    font-size: 22px !important;
+    line-height: 1.1 !important;
   }
 
-  main > section.space-y-3.pb-4 > :nth-child(4) .h-28 {
-    height: 72px !important;
+  main > section.space-y-3.pb-4 > :nth-child(4) .text-xs {
+    font-size: 11.5px !important;
   }
+
+  /* A área do gráfico agora se estica sozinha (flex-1) e as barras têm altura
+     em %, então não existe mais número mágico para manter sincronizado aqui. */
 
   main > section.space-y-3.pb-4 > :nth-child(4) figure {
     padding: 10px !important;
@@ -222,24 +258,22 @@
   }
 
   body:has(main > section.space-y-3.pb-4) main {
-    height: calc(100dvh - 54px) !important;
-    max-height: calc(100dvh - 54px) !important;
     padding-top: 5px !important;
     padding-bottom: 4px !important;
   }
 
   main > section.space-y-3.pb-4 {
-    grid-template-rows: 30px 60px 270px 118px !important;
-    gap: 5px !important;
+    grid-template-rows: 38px 78px minmax(0, 1fr) 186px !important;
+    gap: 7px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(1) {
-    height: 30px !important;
-    min-height: 30px !important;
+    height: 38px !important;
+    min-height: 38px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(1) h1 {
-    font-size: 17px !important;
+    font-size: 20px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(1) button {
@@ -248,45 +282,50 @@
   }
 
   main > section.space-y-3.pb-4 > :nth-child(2) > article {
-    height: 60px !important;
-    min-height: 60px !important;
-    padding: 6px 9px !important;
+    height: 78px !important;
+    min-height: 78px !important;
+    padding: 10px 13px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(2) > article > span {
+    width: 34px !important;
+    height: 34px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(2) > article p:nth-child(2) {
-    font-size: 17px !important;
+    font-size: 23px !important;
+  }
+
+  main > section.space-y-3.pb-4 > :nth-child(4) .text-xl {
+    font-size: 19px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3),
   main > section.space-y-3.pb-4 > :nth-child(3) > article,
   main > section.space-y-3.pb-4 > :nth-child(3) > div {
-    height: 270px !important;
-    min-height: 270px !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
-    grid-template-rows: 68px 197px !important;
+    grid-template-rows: 104px minmax(0, 1fr) !important;
     gap: 5px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
-    height: 68px !important;
-    min-height: 68px !important;
+    height: 104px !important;
+    min-height: 104px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:last-child {
-    height: 197px !important;
-    min-height: 197px !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(4),
   main > section.space-y-3.pb-4 > :nth-child(4) > * {
-    height: 118px !important;
-    min-height: 118px !important;
-  }
-
-  main > section.space-y-3.pb-4 > :nth-child(4) .h-28 {
-    height: 52px !important;
+    height: 100% !important;
+    min-height: 0 !important;
   }
 }
 

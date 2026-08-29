@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
-  CalendarDays,
   CircleCheck,
   CircleDollarSign,
-  Clock3,
   Package,
   Pencil,
   Plus,
@@ -15,7 +13,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatarDataLonga, hojeISO } from "@/lib/prazo";
-import { carregarResumoPedidos } from "@/lib/pedidos";
+import { carregarFaturamentoDoMes, carregarResumoPedidos } from "@/lib/pedidos";
 import {
   carregarTarefas,
   carregarVersiculo,
@@ -32,6 +30,8 @@ import {
 import { saudacao, versiculoDoDia } from "@/lib/versiculos";
 import { Num } from "./shell";
 import { situacaoDoPrazo } from "./TarefasPanel";
+
+type FaturamentoMes = Awaited<ReturnType<typeof carregarFaturamentoDoMes>>;
 
 type DestinoInicio =
   | "vendas"
@@ -91,7 +91,7 @@ function Kpi({
         <p className="mt-0.5 truncate text-2xl font-semibold tracking-[-0.03em] text-[var(--admin-ink)]">
           <Num>{valor}</Num>
         </p>
-        <p className={`mt-0.5 truncate text-[11px] ${detalheClass}`}>{nota}</p>
+        {nota && <p className={`mt-0.5 truncate text-[11px] ${detalheClass}`}>{nota}</p>}
       </div>
     </article>
   );
@@ -101,25 +101,49 @@ function CabecalhoCard({
   titulo,
   acao,
   onClick,
+  children,
 }: {
   titulo: string;
   acao?: string;
   onClick?: () => void;
+  /** Slot à direita, para controles como o alternador de mês. */
+  children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-10 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4">
+    <div className="flex min-h-10 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4">
       <h3 className="text-sm font-semibold text-[var(--admin-ink)]">{titulo}</h3>
+      {children}
       {acao && onClick && (
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-[var(--terracotta)]"
+          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-[var(--terracotta)]"
         >
           {acao} <ArrowRight className="h-3 w-3" />
         </button>
       )}
     </div>
   );
+}
+
+/** Vazio no padrão do painel: ícone + frase curta + explicação. */
+function Vazio({ titulo, descricao }: { titulo: string; descricao: string }) {
+  return (
+    <div className="flex items-start gap-3 py-3">
+      <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--admin-muted)]" strokeWidth={1.8} />
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-[var(--admin-ink)]">{titulo}</p>
+        <p className="mt-0.5 text-[11px] text-[var(--admin-muted)]">{descricao}</p>
+      </div>
+    </div>
+  );
+}
+
+/** 12345 → "12k"; 1500 → "1,5k"; 900 → "900". */
+function rotuloEixo(valor: number) {
+  if (valor >= 10000) return `${Math.round(valor / 1000)}k`;
+  if (valor >= 1000) return `${(valor / 1000).toFixed(1).replace(".", ",")}k`;
+  return String(Math.round(valor));
 }
 
 export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => void }) {
@@ -129,6 +153,10 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   const [email, setEmail] = useState("");
   const [editandoNome, setEditandoNome] = useState(false);
   const [nomeRascunho, setNomeRascunho] = useState("");
+
+  const [periodo, setPeriodo] = useState<"atual" | "anterior">("atual");
+  const [mesPassado, setMesPassado] = useState<FaturamentoMes | null>(null);
+  const [carregandoMes, setCarregandoMes] = useState(false);
 
   const hoje = hojeISO();
   const [versiculo, setVersiculo] = useState(() => versiculoDoDia(hoje));
@@ -191,25 +219,59 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
     [tarefas],
   );
 
-  const grafico = useMemo(() => {
-    const prefixo = hoje.slice(0, 8);
-    const [ano, mes] = hoje.split("-").map(Number);
+  const mesAtual = hoje.slice(0, 7);
+  const mesAnterior = useMemo(() => {
+    const [ano, mes] = mesAtual.split("-").map(Number);
+    return mes === 1 ? `${ano - 1}-12` : `${ano}-${String(mes - 1).padStart(2, "0")}`;
+  }, [mesAtual]);
+
+  // O mês corrente sai dos pedidos que já vieram; o anterior exige consulta.
+  const faturamentoAtual = useMemo(() => {
+    const [ano, mes] = mesAtual.split("-").map(Number);
     const diasNoMes = new Date(ano, mes, 0).getDate();
-    const pontos = Array.from({ length: diasNoMes }, (_, index) => ({ dia: index + 1, valor: 0 }));
+    const dias = Array.from({ length: diasNoMes }, (_, index) => ({ dia: index + 1, valor: 0 }));
 
     for (const pedido of pedidos) {
       if (pedido.status === "cancelado" || !pedido.created_at) continue;
       const data = dataLocalISO(pedido.created_at);
-      if (!data.startsWith(prefixo)) continue;
+      if (!data.startsWith(mesAtual)) continue;
       const dia = Number(data.slice(-2));
-      if (pontos[dia - 1]) pontos[dia - 1].valor += pedido.total || 0;
+      if (dias[dia - 1]) dias[dia - 1].valor += pedido.total || 0;
     }
 
-    const comValor = pontos.filter((p) => p.valor > 0);
-    const max = Math.max(...pontos.map((p) => p.valor), 1);
-    const exibidos = comValor.length > 10 ? comValor.slice(-10) : comValor;
+    return {
+      mes: mesAtual,
+      dias,
+      total: resumo.faturamentoMes,
+      pedidos: resumo.numMes,
+      ticket: resumo.ticketMedio,
+    };
+  }, [mesAtual, pedidos, resumo]);
+
+  const faturamento = periodo === "atual" ? faturamentoAtual : mesPassado;
+
+  const grafico = useMemo(() => {
+    const dias = faturamento?.dias ?? [];
+    const comValor = dias.filter((d) => d.valor > 0);
+    const exibidos = comValor.length > 12 ? comValor.slice(-12) : comValor;
+    const max = Math.max(...exibidos.map((d) => d.valor), 1);
     return { max, exibidos };
-  }, [hoje, pedidos]);
+  }, [faturamento]);
+
+  async function trocarPeriodo(novo: "atual" | "anterior") {
+    setPeriodo(novo);
+    if (novo !== "anterior" || mesPassado) return;
+
+    setCarregandoMes(true);
+    try {
+      setMesPassado(await carregarFaturamentoDoMes({ data: { mes: mesAnterior } }));
+    } catch {
+      toast.error("Não foi possível carregar o mês passado.");
+      setPeriodo("atual");
+    } finally {
+      setCarregandoMes(false);
+    }
+  }
 
   async function salvarNome() {
     const n = nomeRascunho.trim();
@@ -281,7 +343,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         <Kpi
           titulo="Faturamento do mês"
           valor={formatBRL(resumo.faturamentoMes)}
-          nota={`${resumo.numMes} pedido(s) no mês`}
+          nota=""
           icon={CircleDollarSign}
         />
         <Kpi
@@ -293,7 +355,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         <Kpi
           titulo="Entregas hoje"
           valor={String(entregasHoje.length)}
-          nota={entregasHoje.length ? "precisam sair hoje" : "nenhuma entrega"}
+          nota={entregasHoje.length ? "precisam sair hoje" : "nada pra hoje"}
           icon={Truck}
           detalheClass="text-[#2d7296]"
         />
@@ -306,11 +368,11 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[1fr_1fr_.95fr]">
-        <article className="min-h-[350px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
-          <CabecalhoCard titulo={`Entregas de hoje (${entregasHoje.length})`} acao="ver agenda" onClick={() => onIrPara("calendario")} />
-          <div className="divide-y divide-[var(--admin-border)] px-4">
+        <article className="flex min-h-[350px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+          <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
+          <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {entregasHoje.length === 0 ? (
-              <p className="py-8 text-sm text-[var(--admin-muted)]">Nenhuma entrega programada para hoje.</p>
+              <Vazio titulo="Sem entregas hoje" descricao="Nenhuma entrega programada." />
             ) : (
               entregasHoje.slice(0, 6).map((p) => (
                 <div key={p.id} className="grid grid-cols-[52px_minmax(0,1fr)_auto] gap-3 py-4">
@@ -330,11 +392,11 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <article className="min-h-[350px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+        <article className="flex min-h-[350px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
           <CabecalhoCard titulo="Próximos 7 dias" />
-          <div className="divide-y divide-[var(--admin-border)] px-4">
+          <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {proximosSete.length === 0 ? (
-              <p className="py-8 text-sm text-[var(--admin-muted)]">Nenhum pedido programado para os próximos 7 dias.</p>
+              <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." />
             ) : (
               proximosSete.map((p) => (
                 <div key={p.id} className="grid grid-cols-[46px_50px_minmax(0,1fr)_auto] items-start gap-2 py-3">
@@ -342,8 +404,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                     <p className="text-[10px] font-semibold text-[var(--terracotta)]">{diaSemanaCurto(p.data_entrega!)}</p>
                     <p className="text-lg font-semibold leading-none">{dataCurta(p.data_entrega!).slice(0, 2)}</p>
                   </div>
-                  <span className="flex items-center gap-1 text-[11px] text-[var(--admin-muted)]">
-                    <Clock3 className="h-3 w-3" /> {p.janela_entrega || "—"}
+                  <span className="flex items-center gap-1.5 text-[11px] text-[var(--admin-muted)]">
+                    <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
+                    {p.janela_entrega || "—"}
                   </span>
                   <div className="min-w-0">
                     <p className="truncate text-sm text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
@@ -357,17 +420,11 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         </article>
 
         <div className="grid gap-3">
-          <article className="overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+          <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
-            <div className="px-4 py-3">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
               {tarefasPendentes.length === 0 ? (
-                <div className="flex items-start gap-3 py-3">
-                  <CircleCheck className="mt-0.5 h-5 w-5 text-[var(--admin-muted)]" />
-                  <div>
-                    <p className="text-sm font-medium">Tudo em dia</p>
-                    <p className="text-[11px] text-[var(--admin-muted)]">Nenhuma tarefa com prazo para hoje ou amanhã.</p>
-                  </div>
-                </div>
+                <Vazio titulo="Nenhuma tarefa pendente" descricao="Sem tarefas com prazo para hoje ou amanhã." />
               ) : (
                 <div className="divide-y divide-[var(--admin-border)]">
                   {tarefasPendentes.map((t) => (
@@ -384,11 +441,11 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             </div>
           </article>
 
-          <article className="min-h-[230px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+          <article className="flex min-h-[230px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
             <CabecalhoCard titulo="Pedidos em aberto" acao="ver todos" onClick={() => onIrPara("vendas")} />
-            <div className="divide-y divide-[var(--admin-border)] px-4">
+            <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
               {abertos.length === 0 ? (
-                <p className="py-6 text-sm text-[var(--admin-muted)]">Nenhum pedido em aberto.</p>
+                <Vazio titulo="Nenhum pedido em aberto" descricao="Tudo entregue por aqui." />
               ) : (
                 abertos.slice(0, 5).map((p) => (
                   <div key={p.id} className="grid grid-cols-[minmax(0,1fr)_72px_auto] items-center gap-2 py-2.5">
@@ -407,30 +464,97 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[2.08fr_.95fr]">
-        <article className="overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
-          <CabecalhoCard titulo="Resumo do faturamento" />
-          <div className="p-4">
+        <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+          <CabecalhoCard titulo="Resumo do faturamento">
+            <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-[var(--cream-soft)] p-0.5">
+              {(
+                [
+                  ["atual", "Este mês"],
+                  ["anterior", "Mês passado"],
+                ] as const
+              ).map(([id, rotulo]) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => trocarPeriodo(id)}
+                  aria-pressed={periodo === id}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    periodo === id
+                      ? "bg-white text-[var(--admin-ink)] shadow-[var(--shadow-soft)]"
+                      : "text-[var(--admin-muted)] hover:text-[var(--wine)]"
+                  }`}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+          </CabecalhoCard>
+
+          <div className="flex min-h-0 flex-1 flex-col p-4">
             <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-              <p className="text-xl font-semibold">{formatBRL(resumo.faturamentoMes)}</p>
-              <p className="text-xs text-[var(--admin-muted)]">{resumo.numMes} pedidos · ticket {formatBRL(resumo.ticketMedio)}</p>
+              <p className="text-xl font-semibold">{formatBRL(faturamento?.total ?? 0)}</p>
+              <p className="text-xs text-[var(--admin-muted)]">
+                {faturamento?.pedidos ?? 0} pedidos · ticket {formatBRL(faturamento?.ticket ?? 0)}
+              </p>
             </div>
 
-            <div className="flex h-28 items-end gap-3 border-b border-[var(--admin-border)] px-2">
-              {grafico.exibidos.length === 0 ? (
-                <p className="self-center text-sm text-[var(--admin-muted)]">Sem faturamento registrado neste mês.</p>
-              ) : (
-                grafico.exibidos.map((p) => (
-                  <div key={p.dia} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                    <div
-                      className="w-full max-w-20 rounded-t-sm bg-[var(--terracotta)]"
-                      style={{ height: `${Math.max(5, (p.valor / grafico.max) * 86)}px` }}
-                      title={`${p.dia}: ${formatBRL(p.valor)}`}
-                    />
-                    <span className="text-[9px] text-[var(--admin-muted)]">{String(p.dia).padStart(2, "0")}/08</span>
+            {carregandoMes ? (
+              <div className="flex min-h-0 flex-1 items-center text-sm text-[var(--admin-muted)]">
+                Carregando…
+              </div>
+            ) : grafico.exibidos.length === 0 ? (
+              <div className="flex min-h-0 flex-1 items-center text-sm text-[var(--admin-muted)]">
+                Sem faturamento registrado neste mês.
+              </div>
+            ) : (
+              <div className="flex min-h-0 flex-1 items-stretch gap-2">
+                <div className="flex h-full w-8 shrink-0 flex-col justify-between pb-3.5 text-right text-[9px] leading-none text-[var(--admin-muted)]">
+                  <span>{rotuloEixo(grafico.max)}</span>
+                  <span>{rotuloEixo(grafico.max / 2)}</span>
+                  <span>0</span>
+                </div>
+
+                <div className="flex h-full min-w-0 flex-1 flex-col">
+                  {/*
+                    As barras têm altura em %, então acompanham qualquer altura
+                    que o CSS der a este bloco. Antes eram px fixos calculados no
+                    JS (86px) enquanto o home-compact.css encolhia a área para
+                    72px — a diferença vazava para cima, por cima do valor.
+                  */}
+                  <div className="relative min-h-0 flex-1">
+                    <div className="absolute inset-0 flex flex-col justify-between">
+                      <span className="border-t border-dashed border-[var(--admin-border)]" />
+                      <span className="border-t border-dashed border-[var(--admin-border)]" />
+                      <span className="border-t border-[var(--admin-border)]" />
+                    </div>
+
+                    <div className="absolute inset-0 flex items-end gap-2">
+                      {grafico.exibidos.map((p) => (
+                        <div
+                          key={p.dia}
+                          // max-w: com poucos dias no mês o flex-1 esticava uma
+                          // única barra pela largura inteira do card.
+                          className="min-w-0 max-w-[46px] flex-1 rounded-t-sm bg-[var(--terracotta)]"
+                          style={{ height: `${Math.max(2, (p.valor / grafico.max) * 100)}%` }}
+                          title={`${String(p.dia).padStart(2, "0")}: ${formatBRL(p.valor)}`}
+                        />
+                      ))}
+                    </div>
                   </div>
-                ))
-              )}
-            </div>
+
+                  <div className="mt-1 flex shrink-0 gap-2">
+                    {grafico.exibidos.map((p) => (
+                      <span
+                        key={p.dia}
+                        className="min-w-0 max-w-[46px] flex-1 truncate text-center text-[9px] leading-none text-[var(--admin-muted)]"
+                      >
+                        {String(p.dia).padStart(2, "0")}/{(faturamento?.mes ?? mesAtual).slice(5)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </article>
 
