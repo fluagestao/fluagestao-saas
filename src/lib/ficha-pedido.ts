@@ -9,6 +9,13 @@
 
 import { formatBRL, type Pedido } from "./vendas";
 
+export type EmpresaFichaPedido = {
+  nome: string;
+  logoUrl?: string | null;
+  endereco?: string | null;
+  cidadeUf?: string | null;
+};
+
 const DIAS = ["DOMINGO", "SEGUNDA", "TERÇA", "QUARTA", "QUINTA", "SEXTA", "SÁBADO"];
 
 function dataPorExtenso(iso: string | null): string {
@@ -26,8 +33,20 @@ function esc(v: string | null | undefined): string {
     .replace(/\n/g, "<br>");
 }
 
-export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
-  const empresa = esc(empresaNome.trim() || "Sua empresa");
+function escAttr(v: string | null | undefined): string {
+  return esc(v).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+export function htmlDaFicha(
+  p: Pedido,
+  empresaDados: string | EmpresaFichaPedido = "Sua empresa",
+): string {
+  const dadosEmpresa: EmpresaFichaPedido =
+    typeof empresaDados === "string"
+      ? { nome: empresaDados }
+      : empresaDados;
+  const nomeEmpresa = dadosEmpresa.nome.trim() || "Sua empresa";
+  const empresa = esc(nomeEmpresa);
   const linhas = p.itens
     .map((i) => {
       const qtd = i.qtd > 1 ? `${String(i.qtd).padStart(2, "0")} ` : "";
@@ -46,6 +65,12 @@ export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
 
   const endereco = [p.endereco, p.bairro].filter(Boolean).join(", ");
   const cartao = p.cartao_de || p.cartao_para || p.cartao_mensagem;
+  const enderecoEmpresa = [dadosEmpresa.endereco, dadosEmpresa.cidadeUf]
+    .filter(Boolean)
+    .join(" • ");
+  const marca = dadosEmpresa.logoUrl
+    ? `<img src="${escAttr(dadosEmpresa.logoUrl)}" alt="${escAttr(`Logo de ${nomeEmpresa}`)}"><span>${empresa}</span>`
+    : `<strong>${empresa}</strong><span>Gestão via Flua</span>`;
 
   return `<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8">
@@ -64,6 +89,7 @@ export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
   .sub { color: #9a8578; font-size: 11pt; }
   .marca { text-align: right; max-width: 58mm; }
   .marca strong { display: block; color: #703D3A; font-size: 12pt; }
+  .marca img { display: block; max-width: 42mm; max-height: 22mm; margin-left: auto; object-fit: contain; }
   .marca span { display: block; margin-top: 1mm; color: #9a8578; font-size: 7.5pt; }
   .campo, table { border: 1px solid #c9b9ad; border-radius: 2mm; }
   .campo { padding: 2mm 3mm; margin-top: 2.5mm; }
@@ -97,7 +123,7 @@ export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
       <h1>Ficha do pedido</h1>
       <div class="sub">#${p.numero}${p.origem === "bia" ? " • pela BIA" : p.origem === "site" ? " • pelo site" : ""}</div>
     </div>
-    <div class="marca"><strong>${empresa}</strong><span>Gestão via Flua</span></div>
+    <div class="marca">${marca}</div>
   </header>
 
   <div class="campo"><span class="rot">${p.tipo === "retirada" ? "Retirada" : "Entrega"}</span>${dataPorExtenso(p.data_entrega)}${p.janela_entrega ? ` • ${esc(p.janela_entrega)}` : ""}</div>
@@ -145,7 +171,7 @@ export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
 
   ${p.observacao ? `<div class="campo"><span class="rot">Observação</span>${esc(p.observacao)}</div>` : ""}
 
-  <div class="rodape"><span>${empresa}</span><span>Gerado pela Flua Gestão</span></div>
+  <div class="rodape"><span>${empresa}${enderecoEmpresa ? ` • ${esc(enderecoEmpresa)}` : ""}</span><span>Gerado pela Flua Gestão</span></div>
 </body></html>`;
 }
 
@@ -155,10 +181,13 @@ export function htmlDaFicha(p: Pedido, empresaNome = "Sua empresa"): string {
  * Precisa ser chamada direto do clique, sem await antes: o navegador só deixa
  * abrir janela dentro do gesto da pessoa.
  */
-export function imprimirFicha(p: Pedido, empresaNome = "Sua empresa"): boolean {
+export function imprimirFicha(
+  p: Pedido,
+  empresaDados: string | EmpresaFichaPedido = "Sua empresa",
+): boolean {
   const janela = window.open("", "_blank", "width=820,height=1000");
   if (!janela) return false;
-  janela.document.write(htmlDaFicha(p, empresaNome));
+  janela.document.write(htmlDaFicha(p, empresaDados));
   janela.document.close();
   // Espera a logo carregar, senão a impressão sai sem ela.
   janela.onload = () => janela.print();
