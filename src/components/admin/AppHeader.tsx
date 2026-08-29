@@ -40,7 +40,6 @@ const MENU: ItemMenu[] = [
     label: "Cadastros",
     filhos: [
       { label: "Produtos", href: "/cadastros/produtos" },
-      { label: "Categorias", href: "/cadastros/categorias" },
       { label: "Insumos", href: "/cadastros/insumos" },
       { label: "Clientes", href: "/cadastros/clientes" },
       { label: "Fornecedores", href: "/cadastros/fornecedores" },

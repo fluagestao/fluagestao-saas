@@ -80,7 +80,6 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
 
 const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "produtos", label: "Produtos" },
-  { id: "categorias", label: "Categorias" },
   { id: "insumos", label: "Insumos" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
