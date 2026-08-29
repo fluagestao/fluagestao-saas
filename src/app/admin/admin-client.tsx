@@ -20,6 +20,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Toaster } from "sonner";
 
 import { CadastrosPanel } from "@/components/admin/CadastrosPanel";
+import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
@@ -49,6 +50,7 @@ export type AbaId =
   | "inicio"
   | "vendas"
   | "dashboard"
+  | "calendario"
   | "tarefas"
   | "financeiro"
   | "cadastros"
@@ -118,6 +120,7 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart },
   { id: "dashboard", label: "Dashboard", icon: ChartPie },
+  { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
@@ -306,7 +309,21 @@ export default function AdminClient({
                 <Bell className="h-[18px] w-[18px]" />
                 <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
               </button>
-              <button type="button" onClick={() => setAba("tarefas")} className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Agenda">
+              <button
+                type="button"
+                onClick={() => {
+                  setAba("calendario");
+                  setExpandida(null);
+                }}
+                className={cn(
+                  "grid h-10 w-10 place-items-center rounded-xl transition",
+                  aba === "calendario"
+                    ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                    : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream)] hover:text-[var(--terracotta)]",
+                )}
+                aria-label="Calendário de entregas"
+                aria-pressed={aba === "calendario"}
+              >
                 <CalendarDays className="h-[18px] w-[18px]" />
               </button>
               <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Ajuda">
@@ -381,6 +398,8 @@ export default function AdminClient({
             <InicioPanel onIrPara={setAba} />
           ) : aba === "dashboard" ? (
             <DashboardPanel />
+          ) : aba === "calendario" ? (
+            <CalendarioEntregasPanel />
           ) : aba === "financeiro" ? (
             <FinanceiroPanel vista={subFin} />
           ) : aba === "cadastros" ? (

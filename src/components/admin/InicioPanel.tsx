@@ -33,7 +33,13 @@ import { saudacao, versiculoDoDia } from "@/lib/versiculos";
 import { Num } from "./shell";
 import { situacaoDoPrazo } from "./TarefasPanel";
 
-type DestinoInicio = "vendas" | "tarefas" | "cadastros" | "financeiro" | "produtos";
+type DestinoInicio =
+  | "vendas"
+  | "calendario"
+  | "tarefas"
+  | "cadastros"
+  | "financeiro"
+  | "produtos";
 
 function dataParaDate(iso: string) {
   const [a, m, d] = iso.split("-").map(Number);
@@ -301,7 +307,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
       <div className="grid gap-3 xl:grid-cols-[1fr_1fr_.95fr]">
         <article className="min-h-[350px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
-          <CabecalhoCard titulo={`Entregas de hoje (${entregasHoje.length})`} acao="ver agenda" onClick={() => onIrPara("vendas")} />
+          <CabecalhoCard titulo={`Entregas de hoje (${entregasHoje.length})`} acao="ver agenda" onClick={() => onIrPara("calendario")} />
           <div className="divide-y divide-[var(--admin-border)] px-4">
             {entregasHoje.length === 0 ? (
               <p className="py-8 text-sm text-[var(--admin-muted)]">Nenhuma entrega programada para hoje.</p>
