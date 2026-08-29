@@ -2,7 +2,6 @@
 
 import {
   Bell,
-  Bot,
   CalendarDays,
   ChartPie,
   CheckSquare,
@@ -20,7 +19,6 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { Toaster } from "sonner";
 
-import { BiaPanel } from "@/components/admin/BiaPanel";
 import { CadastrosPanel } from "@/components/admin/CadastrosPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
@@ -54,7 +52,6 @@ export type AbaId =
   | "tarefas"
   | "financeiro"
   | "cadastros"
-  | "bia"
   | "produtos"
   | "colecoes"
   | "categorias"
@@ -63,7 +60,6 @@ export type AbaId =
   | "horarios";
 
 export type SubFinanceiro = "entradas" | "saidas";
-export type SubBia = "simulador" | "conversas" | "ajustes";
 export type SubVendas = "pedidos" | "areceber" | "realizadas";
 export type SubCadastros =
   | "clientes"
@@ -74,12 +70,6 @@ export type SubCadastros =
 const SUB_FINANCEIRO: { id: SubFinanceiro; label: string }[] = [
   { id: "entradas", label: "Entradas" },
   { id: "saidas", label: "Saídas" },
-];
-
-const SUB_BIA: { id: SubBia; label: string }[] = [
-  { id: "simulador", label: "Simulador" },
-  { id: "conversas", label: "Conversas" },
-  { id: "ajustes", label: "Ajustes" },
 ];
 
 const SUB_VENDAS: { id: SubVendas; label: string }[] = [
@@ -121,7 +111,6 @@ const MENU: ItemMenu[] = [
     vistas: SUB_CADASTROS,
   },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
-  { id: "bia", label: "BIA", icon: Bot, vistas: SUB_BIA },
 ];
 
 const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas", "insumos", "horarios"];
@@ -133,7 +122,6 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
-  { id: "bia", label: "BIA", icon: Bot },
 ];
 
 export default function AdminClient({
@@ -159,7 +147,6 @@ export default function AdminClient({
 
   const [aba, setAba] = useState<AbaId>(initialAba);
   const [subVendas, setSubVendas] = useState<SubVendas>("pedidos");
-  const [subBia, setSubBia] = useState<SubBia>("simulador");
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
   const [subCad, setSubCad] = useState<SubCadastros>("clientes");
   const [expandida, setExpandida] = useState<AbaId | null>(null);
@@ -216,7 +203,6 @@ export default function AdminClient({
     if (item.id === "vendas") setSubVendas(subId as SubVendas);
     else if (item.id === "financeiro") setSubFin(subId as SubFinanceiro);
     else if (item.id === "cadastros") setSubCad(subId as SubCadastros);
-    else setSubBia(subId as SubBia);
     setExpandida(null);
   }
 
@@ -402,8 +388,6 @@ export default function AdminClient({
             <CadastrosPanel vista={subCad} />
           ) : aba === "tarefas" ? (
             <TarefasPanel />
-          ) : aba === "bia" ? (
-            <BiaPanel vista={subBia} />
           ) : aba === "vendas" ? (
             <VendasPanel
               vista={subVendas}
