@@ -3,6 +3,7 @@ import {
   ArrowRight,
   CircleCheck,
   CircleDollarSign,
+  Loader2,
   Package,
   Pencil,
   Plus,
@@ -248,7 +249,10 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
     };
   }, [mesAtual, pedidos, resumo]);
 
-  const faturamento = periodo === "atual" ? faturamentoAtual : mesPassado;
+  // O cache do mês passado é conferido contra mesAnterior: se o mês virar com a
+  // tela aberta, o dado guardado passa a ser de outro mês e não serve mais.
+  const mesPassadoValido = mesPassado?.mes === mesAnterior ? mesPassado : null;
+  const faturamento = periodo === "atual" ? faturamentoAtual : mesPassadoValido;
 
   const grafico = useMemo(() => {
     const dias = faturamento?.dias ?? [];
@@ -259,15 +263,21 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   }, [faturamento]);
 
   async function trocarPeriodo(novo: "atual" | "anterior") {
-    setPeriodo(novo);
-    if (novo !== "anterior" || mesPassado) return;
+    if (carregandoMes) return; // trava clique repetido enquanto a busca corre
 
+    if (novo === "atual" || mesPassadoValido) {
+      setPeriodo(novo);
+      return;
+    }
+
+    // Só troca o período depois que o dado chega. Trocar antes deixava o
+    // cabeçalho anunciando "R$ 0,00 · 0 pedidos" como se fosse resultado real.
     setCarregandoMes(true);
     try {
       setMesPassado(await carregarFaturamentoDoMes({ data: { mes: mesAnterior } }));
+      setPeriodo("anterior");
     } catch {
       toast.error("Não foi possível carregar o mês passado.");
-      setPeriodo("atual");
     } finally {
       setCarregandoMes(false);
     }
@@ -478,12 +488,16 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                   type="button"
                   onClick={() => trocarPeriodo(id)}
                   aria-pressed={periodo === id}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                  disabled={carregandoMes}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 ${
                     periodo === id
                       ? "bg-white text-[var(--admin-ink)] shadow-[var(--shadow-soft)]"
                       : "text-[var(--admin-muted)] hover:text-[var(--wine)]"
                   }`}
                 >
+                  {carregandoMes && id === "anterior" && (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  )}
                   {rotulo}
                 </button>
               ))}
@@ -498,16 +512,16 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               </p>
             </div>
 
-            {carregandoMes ? (
-              <div className="flex min-h-0 flex-1 items-center text-sm text-[var(--admin-muted)]">
-                Carregando…
-              </div>
-            ) : grafico.exibidos.length === 0 ? (
+            {grafico.exibidos.length === 0 ? (
               <div className="flex min-h-0 flex-1 items-center text-sm text-[var(--admin-muted)]">
                 Sem faturamento registrado neste mês.
               </div>
             ) : (
-              <div className="flex min-h-0 flex-1 items-stretch gap-2">
+              // O piso abaixo de 1280px é obrigatório: fora do home-compact.css
+              // nada dá altura a esta linha, e ela colapsava para ~28px. O
+              // guard max-xl importa — sem ele o piso também valeria no desktop
+              // e estouraria a linha fixa do grid.
+              <div className="flex min-h-0 flex-1 items-stretch gap-2 max-xl:min-h-[150px]">
                 <div className="flex h-full w-8 shrink-0 flex-col justify-between pb-3.5 text-right text-[9px] leading-none text-[var(--admin-muted)]">
                   <span>{rotuloEixo(grafico.max)}</span>
                   <span>{rotuloEixo(grafico.max / 2)}</span>
@@ -528,7 +542,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                       <span className="border-t border-[var(--admin-border)]" />
                     </div>
 
-                    <div className="absolute inset-0 flex items-end gap-2">
+                    <div className="absolute inset-0 flex items-end justify-center gap-2">
                       {grafico.exibidos.map((p) => (
                         <div
                           key={p.dia}
@@ -542,7 +556,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                     </div>
                   </div>
 
-                  <div className="mt-1 flex shrink-0 gap-2">
+                  <div className="mt-1 flex shrink-0 justify-center gap-2">
                     {grafico.exibidos.map((p) => (
                       <span
                         key={p.dia}

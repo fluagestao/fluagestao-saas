@@ -213,8 +213,10 @@ export async function carregarResumoPedidos() {
  * servidor para não trafegar o pedido inteiro só para somar totais.
  */
 export async function carregarFaturamentoDoMes(input: { data: unknown }) {
+  // A faixa do mês precisa entrar no regex: "2026-00"/"2026-13" passavam e
+  // viravam erro cru do Postgres na montagem da data.
   const { mes } = z
-    .object({ mes: z.string().regex(/^\d{4}-\d{2}$/) })
+    .object({ mes: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) })
     .parse(input.data);
 
   const { supabase, companyId } = await requireCompany();
@@ -232,6 +234,9 @@ export async function carregarFaturamentoDoMes(input: { data: unknown }) {
     .neq("status", "cancelado")
     .gte("created_at", `${mes}-01T00:00:00-03:00`)
     .lt("created_at", `${proximo}T00:00:00-03:00`)
+    // Sem ORDER BY o Postgres pode devolver 3000 linhas diferentes a cada
+    // chamada, e o mesmo mês exibiria totais distintos entre recarregamentos.
+    .order("created_at", { ascending: true })
     .limit(3000);
 
   if (error) throw error;
