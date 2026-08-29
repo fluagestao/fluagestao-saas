@@ -41,17 +41,17 @@ export function NovoPedidoPageClient({
 
         body:has(.flua-novo-pedido-route) [role="dialog"] {
           position: fixed !important;
-          top: 0 !important;
+          top: 82px !important;
           left: 50% !important;
           right: auto !important;
           bottom: auto !important;
 
-          width: min(1040px, calc(100vw - 64px)) !important;
+          width: min(1760px, calc(100vw - 32px)) !important;
           min-width: 0 !important;
-          max-width: 1040px !important;
-          height: 100dvh !important;
-          min-height: 100dvh !important;
-          max-height: 100dvh !important;
+          max-width: 1760px !important;
+          height: calc(100dvh - 98px) !important;
+          min-height: 0 !important;
+          max-height: calc(100dvh - 98px) !important;
 
           margin: 0 !important;
           transform: translateX(-50%) !important;
@@ -60,9 +60,9 @@ export function NovoPedidoPageClient({
           border-radius: 0 !important;
           box-shadow: 0 0 60px rgba(70, 37, 34, 0.08) !important;
           background: var(--admin-bg) !important;
-          padding: 30px 38px 56px !important;
+          padding: 18px 28px 16px !important;
           overflow-x: hidden !important;
-          overflow-y: auto !important;
+          overflow-y: hidden !important;
           z-index: 100 !important;
         }
 
@@ -98,9 +98,13 @@ export function NovoPedidoPageClient({
 
         @media (max-width: 760px) {
           body:has(.flua-novo-pedido-route) [role="dialog"] {
-            width: calc(100vw - 20px) !important;
-            max-width: calc(100vw - 20px) !important;
+            top: 74px !important;
+            width: calc(100vw - 12px) !important;
+            max-width: calc(100vw - 12px) !important;
+            height: calc(100dvh - 80px) !important;
+            max-height: calc(100dvh - 80px) !important;
             padding: 18px 14px 32px !important;
+            overflow-y: auto !important;
           }
 
           body:has(.flua-novo-pedido-route) [role="dialog"] .grid {

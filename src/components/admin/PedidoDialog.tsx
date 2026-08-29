@@ -20,6 +20,10 @@ import { carregarBairros } from "@/lib/bairros";
 import { acharBairro, calcularFrete, type Bairro } from "@/lib/frete";
 import { ClienteDialog } from "./ClientesView";
 import { BuscaAdicionar } from "./BuscaAdicionar";
+import {
+  QuickProductDialog,
+  type CategoriaRapida,
+} from "./QuickProductDialog";
 import { mensagemDeErro } from "@/lib/erros";
 import {
   STATUS_PEDIDO,
@@ -79,6 +83,8 @@ export function PedidoDialog({
   onClose,
   onSaved,
   onClienteCriado,
+  categorias = [],
+  onProdutoCriado,
   modoPagina = false,
 }: {
   pedido: Pedido | null; // null = lançamento novo
@@ -88,6 +94,10 @@ export function PedidoDialog({
   onSaved: () => void;
   /** Recarrega a lista de clientes do painel depois de cadastrar um aqui. */
   onClienteCriado?: () => void;
+  /** Categorias disponíveis para o cadastro rápido de produto. */
+  categorias?: CategoriaRapida[];
+  /** Recarrega o catálogo do painel depois do cadastro rápido. */
+  onProdutoCriado?: () => void;
   /** Na rota de criação, mostra o formulário como página em vez de modal. */
   modoPagina?: boolean;
 }) {
@@ -114,6 +124,8 @@ export function PedidoDialog({
   const [erro, setErro] = useState<string | null>(null);
   const [clienteId, setClienteId] = useState(pedido?.cliente_id ?? "");
   const [novoCliente, setNovoCliente] = useState(false);
+  const [novoProduto, setNovoProduto] = useState(false);
+  const [produtosLocais, setProdutosLocais] = useState(produtos);
   const [cep, setCep] = useState(pedido?.cep ?? "");
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [cidadeCep, setCidadeCep] = useState<string | null>(null);
@@ -150,7 +162,7 @@ export function PedidoDialog({
   // categoria (e coleção, porque há nomes repetidos entre elas).
   const gruposCatalogo = useMemo(() => {
     const mapa = new Map<string, { ordem: number; itens: ProdutoOpcao[] }>();
-    for (const p of produtos) {
+    for (const p of produtosLocais) {
       const g = mapa.get(p.grupo) ?? { ordem: p.ordemGrupo, itens: [] };
       g.itens.push(p);
       mapa.set(p.grupo, g);
@@ -161,7 +173,7 @@ export function PedidoDialog({
         nome,
         itens: g.itens.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
       }));
-  }, [produtos]);
+  }, [produtosLocais]);
 
   // Busca no ViaCEP assim que o CEP fica completo. Se falhar, não faz nada:
   // a pessoa digita o endereço à mão, como sempre fez.
@@ -218,7 +230,7 @@ export function PedidoDialog({
   }
 
   function adicionarDoCatalogo(slug: string) {
-    const p = produtos.find((x) => x.slug === slug);
+    const p = produtosLocais.find((x) => x.slug === slug);
     if (!p) return;
     setItens((prev) => [...prev, { slug: p.slug, nome: p.nome, preco: p.preco, qtd: 1 }]);
   }
@@ -369,7 +381,7 @@ export function PedidoDialog({
           )}
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2">
           <Campo label="Cliente">
             <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" />
           </Campo>
@@ -383,7 +395,7 @@ export function PedidoDialog({
         </div>
 
         {/* itens */}
-        <div className="mt-2 rounded-2xl border border-[var(--cream-deep)] p-4">
+        <div className="rounded-2xl border border-[var(--cream-deep)] p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-foreground">Itens</h3>
             <div className="flex flex-wrap items-center gap-2">
@@ -410,6 +422,16 @@ export function PedidoDialog({
                 }))}
                 onEscolher={adicionarDoCatalogo}
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                title="Cadastrar produto sem sair do pedido"
+                onClick={() => setNovoProduto(true)}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Novo produto</span>
+              </Button>
             </div>
           </div>
 
@@ -513,7 +535,7 @@ export function PedidoDialog({
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2 xl:grid-cols-4">
           <Campo label="Tipo">
             <select className={campoCls} value={tipo} onChange={(e) => setTipo(e.target.value)}>
               <option value="">—</option>
@@ -711,45 +733,45 @@ export function PedidoDialog({
         </div>
 
         {/* cartão que vai dentro da caixa */}
-        <div className="rounded-2xl border border-[var(--cream-deep)] p-4">
+        <div className="rounded-2xl border border-[var(--cream-deep)] p-2.5">
           <h3 className="text-lg font-semibold text-foreground">💌 Cartão</h3>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <div className="mt-2 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-[0.7fr_0.7fr_1.6fr]">
             <Campo label="De">
               <Input value={cartaoDe} onChange={(e) => setCartaoDe(e.target.value)} />
             </Campo>
             <Campo label="Para">
               <Input value={cartaoPara} onChange={(e) => setCartaoPara(e.target.value)} />
             </Campo>
-          </div>
-          <div className="mt-3">
-            <Campo label={`Mensagem (até ${MAX_LINHAS_CARTAO} linhas)`}>
-              <Textarea
-                rows={MAX_LINHAS_CARTAO}
-                value={cartaoMsg}
-                onChange={(e) => {
-                  // Corta na 5ª linha: é o que cabe no cartão impresso.
-                  const linhas = e.target.value.split("\n");
-                  setCartaoMsg(
-                    linhas.length > MAX_LINHAS_CARTAO
-                      ? linhas.slice(0, MAX_LINHAS_CARTAO).join("\n")
-                      : e.target.value,
-                  );
-                }}
-              />
-            </Campo>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {cartaoMsg ? cartaoMsg.split("\n").length : 0} de {MAX_LINHAS_CARTAO} linhas
-            </p>
+            <div>
+              <Campo label={`Mensagem (até ${MAX_LINHAS_CARTAO} linhas)`}>
+                <Textarea
+                  rows={2}
+                  value={cartaoMsg}
+                  onChange={(e) => {
+                    // Corta na 5ª linha: é o que cabe no cartão impresso.
+                    const linhas = e.target.value.split("\n");
+                    setCartaoMsg(
+                      linhas.length > MAX_LINHAS_CARTAO
+                        ? linhas.slice(0, MAX_LINHAS_CARTAO).join("\n")
+                        : e.target.value,
+                    );
+                  }}
+                />
+              </Campo>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {cartaoMsg ? cartaoMsg.split("\n").length : 0} de {MAX_LINHAS_CARTAO} linhas
+              </p>
+            </div>
           </div>
         </div>
 
         <Campo label="Observação">
-          <Textarea rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+          <Input value={observacao} onChange={(e) => setObservacao(e.target.value)} />
         </Campo>
 
         {erro && <p className="text-sm text-destructive">{erro}</p>}
 
-        <DialogFooter>
+        <DialogFooter className="pt-1">
           <Button variant="outline" onClick={onClose}>
             {modoPagina ? "Voltar aos pedidos" : "Fechar"}
           </Button>
@@ -775,6 +797,32 @@ export function PedidoDialog({
     />
   ) : null;
 
+  const cadastroProduto = novoProduto ? (
+    <QuickProductDialog
+      categorias={categorias}
+      produtosExistentes={produtosLocais}
+      onClose={() => setNovoProduto(false)}
+      onCategoriaCriada={onProdutoCriado}
+      onSaved={(produto) => {
+        setProdutosLocais((atuais) => [
+          ...atuais.filter((item) => item.slug !== produto.slug),
+          produto,
+        ]);
+        setItens((atuais) => [
+          ...atuais,
+          {
+            slug: produto.slug,
+            nome: produto.nome,
+            preco: produto.preco,
+            qtd: 1,
+          },
+        ]);
+        setNovoProduto(false);
+        onProdutoCriado?.();
+      }}
+    />
+  ) : null;
+
   if (modoPagina) {
     return (
       <>
@@ -782,16 +830,28 @@ export function PedidoDialog({
           {conteudo}
         </div>
         {cadastroCliente}
+        {cadastroProduto}
       </>
     );
   }
 
   return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
-        {conteudo}
-      </DialogContent>
-      {cadastroCliente}
-    </Dialog>
+    <>
+      <style jsx global>{`
+        html body [data-pedido-dialog][role="dialog"] {
+          top: calc(50% + 14px) !important;
+        }
+      `}</style>
+      <Dialog open onOpenChange={(o) => !o && onClose()}>
+        <DialogContent
+          data-pedido-dialog
+          className="!w-[calc(100vw-32px)] !max-w-[1760px] !max-h-[calc(100dvh-88px)] !overflow-hidden gap-2 px-6 py-2.5"
+        >
+          {conteudo}
+        </DialogContent>
+        {cadastroCliente}
+        {cadastroProduto}
+      </Dialog>
+    </>
   );
 }

@@ -7,6 +7,7 @@ const ROTAS_DIRETAS: Record<string, string> = {
   "Início": "/inicio",
   Dashboard: "/dashboard",
   Tarefas: "/tarefas",
+  "Follow-up": "/followup",
 
   Pedidos: "/vendas/pedidos",
   "A receber": "/vendas/a-receber",
@@ -54,6 +55,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/cadastros/horarios": { pai: "Cadastros", filho: "Horários" },
 
   "/tarefas": { filho: "Tarefas" },
+  "/followup": { filho: "Follow-up" },
 
   "/bia/simulador": { pai: "BIA", filho: "Simulador" },
   "/bia/conversas": { pai: "BIA", filho: "Conversas" },

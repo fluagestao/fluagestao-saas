@@ -37,6 +37,7 @@ import {
 import { PedidoCard, type AcoesPedido } from "./PedidoCard";
 import { VendasKanban } from "./VendasKanban";
 import { PedidoDialog, type ProdutoOpcao } from "./PedidoDialog";
+import type { CategoriaRapida } from "./QuickProductDialog";
 import { PagamentoDialog } from "./PagamentoDialog";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
@@ -146,10 +147,14 @@ export function VendasPanel({
   onVista,
   empresaNome,
   abrirNovoAoMontar = false,
+  categorias = [],
+  onCatalogoChange,
 }: {
   produtos: ProdutoOpcao[];
+  categorias?: CategoriaRapida[];
   empresaNome: string;
   abrirNovoAoMontar?: boolean;
+  onCatalogoChange?: () => void;
   /** Sub-aba escolhida na lateral. Sem ela, o painel controla sozinho. */
   vista?: SubVenda;
   onVista?: (v: SubVenda) => void;
@@ -437,9 +442,10 @@ export function VendasPanel({
       <PedidoDialog
         pedido={null}
         produtos={produtos}
+        categorias={categorias}
         clientes={clientes}
-        modoPagina
         onClienteCriado={recarregarClientes}
+        onProdutoCriado={onCatalogoChange}
         onClose={() => setEditando(null)}
         onSaved={recarregarTudo}
       />
@@ -790,8 +796,10 @@ export function VendasPanel({
         <PedidoDialog
           pedido={editando === "novo" ? null : editando}
           produtos={produtos}
+          categorias={categorias}
           clientes={clientes}
           onClienteCriado={recarregarClientes}
+          onProdutoCriado={onCatalogoChange}
           onClose={() => setEditando(null)}
           onSaved={recarregarTudo}
         />

@@ -425,6 +425,12 @@ export default function AdminClient({
               onVista={setSubVendas}
               empresaNome={companyName}
               abrirNovoAoMontar={initialNovoPedido}
+              categorias={categorias.map((categoria) => ({
+                id: categoria.id,
+                nome: categoria.nome,
+                ordem: categoria.ordem,
+              }))}
+              onCatalogoChange={recarregar}
               produtos={produtos.map((produto) => {
                 const categoria = categorias.find((item) => item.id === produto.categoria_id);
                 const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
