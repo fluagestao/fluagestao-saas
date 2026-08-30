@@ -43,7 +43,6 @@ import {
   slugFromNome,
   type CatalogoRow,
   type CategoriaRow,
-  type EtiquetaRow,
   type ImagemRow,
 } from "@/components/admin/tipos";
 
@@ -80,7 +79,6 @@ function moeda(valor: number) {
 export function NovoProdutoClient({
   categorias,
   catalogos,
-  etiquetas,
   insumos,
   companyName,
   displayName,
@@ -91,7 +89,6 @@ export function NovoProdutoClient({
 }: {
   categorias: CategoriaRow[];
   catalogos: CatalogoRow[];
-  etiquetas: EtiquetaRow[];
   insumos: InsumoRow[];
   companyName: string;
   displayName: string;
@@ -109,7 +106,6 @@ export function NovoProdutoClient({
     produtoInicial?.categoria_id ?? "",
   );
   const [categoriasAbertas, setCategoriasAbertas] = useState(false);
-  const [etiquetasAbertas, setEtiquetasAbertas] = useState(false);
   const [preco, setPreco] = useState(
     produtoInicial?.preco == null
       ? ""
@@ -118,8 +114,6 @@ export function NovoProdutoClient({
   const [precoLabel, setPrecoLabel] = useState(produtoInicial?.preco_label ?? "");
   const [serve, setServe] = useState(produtoInicial?.serve ?? "");
   const [descricao, setDescricao] = useState(produtoInicial?.observacao ?? "");
-  const [badge, setBadge] = useState(produtoInicial?.badge ?? "");
-  const [badgeCor, setBadgeCor] = useState(produtoInicial?.badge_cor ?? "");
   const [imagens, setImagens] = useState<ImagemRow[]>(
     (produtoInicial?.imagens ?? [])
       .slice()
@@ -140,7 +134,6 @@ export function NovoProdutoClient({
   const [temCusto, setTemCusto] = useState(temCustoInicial);
 
   const categoriaSelecionada = categorias.find((categoria) => categoria.id === categoriaId);
-  const etiquetaSelecionada = etiquetas.find((etiqueta) => etiqueta.nome === badge);
 
   const categoriasOrdenadas = useMemo(() => {
     const ordemCatalogos = new Map(
@@ -157,14 +150,6 @@ export function NovoProdutoClient({
       return (a.ordem ?? 0) - (b.ordem ?? 0);
     });
   }, [categorias, catalogos]);
-
-  const etiquetasDisponiveis = useMemo(
-    () =>
-      etiquetas
-        .filter((etiqueta) => etiqueta.ativo)
-        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)),
-    [etiquetas],
-  );
 
   const receberCusto = useCallback(
     ({ itens, custoTotal }: { itens: ItemComposicaoProduto[]; custoTotal: number }) => {
@@ -221,8 +206,9 @@ export function NovoProdutoClient({
           observacao: descricao.trim() || null,
           ativo: produtoInicial?.ativo ?? true,
           ordem: produtoInicial?.ordem ?? 0,
-          badge: badge.trim() || null,
-          badge_cor: badge.trim() ? badgeCor || null : null,
+          // Os controles de etiqueta foram removidos; preserve os dados existentes.
+          badge: produtoInicial?.badge ?? null,
+          badge_cor: produtoInicial?.badge_cor ?? null,
         },
       });
 
@@ -392,13 +378,12 @@ export function NovoProdutoClient({
                 </Campo>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-3">
                 <Campo label="Categoria">
                   <DropdownCampo
                     aberto={categoriasAbertas}
                     onToggle={() => {
                       setCategoriasAbertas((v) => !v);
-                      setEtiquetasAbertas(false);
                     }}
                     texto={categoriaSelecionada ? rotuloCategoria(categoriaSelecionada) : "Selecionar categoria"}
                     vazio={!categoriaSelecionada}
@@ -426,55 +411,6 @@ export function NovoProdutoClient({
                       >
                         <span className="truncate">{rotuloCategoria(categoria)}</span>
                         {categoria.id === categoriaId && (
-                          <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
-                        )}
-                      </button>
-                    ))}
-                  </DropdownCampo>
-                </Campo>
-
-                <Campo label="Etiqueta">
-                  <DropdownCampo
-                    aberto={etiquetasAbertas}
-                    onToggle={() => {
-                      setEtiquetasAbertas((v) => !v);
-                      setCategoriasAbertas(false);
-                    }}
-                    texto={badge || "Selecionar etiqueta"}
-                    vazio={!badge}
-                    cor={badge ? etiquetaSelecionada?.cor || badgeCor || "#B8893B" : undefined}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBadge("");
-                        setBadgeCor("");
-                        setEtiquetasAbertas(false);
-                      }}
-                      className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-[var(--cream-soft)]"
-                    >
-                      Sem etiqueta
-                      {!badge && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
-                    </button>
-                    {etiquetasDisponiveis.map((etiqueta) => (
-                      <button
-                        key={etiqueta.id}
-                        type="button"
-                        onClick={() => {
-                          setBadge(etiqueta.nome);
-                          setBadgeCor(etiqueta.cor || "#B8893B");
-                          setEtiquetasAbertas(false);
-                        }}
-                        className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-[var(--cream-soft)]"
-                      >
-                        <span className="flex min-w-0 items-center gap-2 truncate">
-                          <span
-                            className="h-2.5 w-2.5 shrink-0 rounded-full"
-                            style={{ backgroundColor: etiqueta.cor || "#B8893B" }}
-                          />
-                          <span className="truncate">{etiqueta.nome}</span>
-                        </span>
-                        {badge === etiqueta.nome && (
                           <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
                         )}
                       </button>
@@ -731,14 +667,12 @@ function DropdownCampo({
   onToggle,
   texto,
   vazio,
-  cor,
   children,
 }: {
   aberto: boolean;
   onToggle: () => void;
   texto: string;
   vazio?: boolean;
-  cor?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -749,12 +683,6 @@ function DropdownCampo({
         className="flex h-11 w-full items-center justify-between gap-3 rounded-xl border border-input bg-background px-3.5 text-left text-sm transition-colors hover:border-[var(--terracotta)]"
       >
         <span className={cn("flex min-w-0 items-center gap-2 truncate", vazio && "text-muted-foreground")}>
-          {cor && (
-            <span
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: cor }}
-            />
-          )}
           <span className="truncate">{texto}</span>
         </span>
         <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-[var(--cream)] text-[var(--terracotta)]">

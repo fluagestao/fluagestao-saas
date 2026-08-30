@@ -2,13 +2,11 @@ import { redirect } from "next/navigation";
 
 import { NovoProdutoClient } from "../../novo/novo-produto-client-v2";
 import { carregarCatalogoAdmin } from "@/lib/admin";
-import { listarEtiquetas } from "@/lib/etiquetas";
 import { listarComposicaoProduto, listarInsumos } from "@/lib/insumos";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CatalogoRow,
   CategoriaRow,
-  EtiquetaRow,
   ImagemRow,
 } from "@/components/admin/tipos";
 
@@ -48,10 +46,9 @@ export default async function EditarProdutoPage({
 
   if (produtoError || !produto || produto.rascunho) redirect("/produtos");
 
-  const [{ data: empresa }, catalogo, etiquetas, insumos, composicao] = await Promise.all([
+  const [{ data: empresa }, catalogo, insumos, composicao] = await Promise.all([
     supabase.from("companies").select("name").eq("id", membro.company_id).maybeSingle(),
     carregarCatalogoAdmin(),
-    listarEtiquetas(),
     listarInsumos(),
     listarComposicaoProduto({ data: { id } }),
   ]);
@@ -65,7 +62,6 @@ export default async function EditarProdutoPage({
     <NovoProdutoClient
       categorias={(catalogo.categorias ?? []) as CategoriaRow[]}
       catalogos={(catalogo.catalogos ?? []) as CatalogoRow[]}
-      etiquetas={(etiquetas ?? []) as EtiquetaRow[]}
       insumos={insumos}
       companyName={empresa?.name ?? "Empresa"}
       displayName={membro.display_name ?? "Usuário"}

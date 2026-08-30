@@ -2,13 +2,11 @@ import { redirect } from "next/navigation";
 
 import { NovoProdutoClient } from "./novo-produto-client-v2";
 import { carregarCatalogoAdmin, prepararNovoProduto } from "@/lib/admin";
-import { listarEtiquetas } from "@/lib/etiquetas";
 import { listarInsumos } from "@/lib/insumos";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CatalogoRow,
   CategoriaRow,
-  EtiquetaRow,
 } from "@/components/admin/tipos";
 
 export const dynamic = "force-dynamic";
@@ -67,14 +65,13 @@ export default async function NovoProdutoPage({
     redirect(`/admin/cadastros/produtos/novo?draft=${novo.id}`);
   }
 
-  const [{ data: empresa }, catalogo, etiquetas, insumos] = await Promise.all([
+  const [{ data: empresa }, catalogo, insumos] = await Promise.all([
     supabase
       .from("companies")
       .select("name")
       .eq("id", membro.company_id)
       .maybeSingle(),
     carregarCatalogoAdmin(),
-    listarEtiquetas(),
     listarInsumos(),
   ]);
 
@@ -82,7 +79,6 @@ export default async function NovoProdutoPage({
     <NovoProdutoClient
       categorias={(catalogo.categorias ?? []) as CategoriaRow[]}
       catalogos={(catalogo.catalogos ?? []) as CatalogoRow[]}
-      etiquetas={(etiquetas ?? []) as EtiquetaRow[]}
       insumos={insumos}
       companyName={empresa?.name ?? "Empresa"}
       displayName={membro.display_name ?? "Usuário"}
