@@ -3,16 +3,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
-  ExternalLink,
   Plus,
   Search,
-  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
 
-import { removerProduto, salvarProduto } from "@/lib/admin";
+import { removerProduto } from "@/lib/admin";
 import { formatPreco } from "@/lib/catalog";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,10 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import {
-  asPrecosExtra,
-  asStringArray,
   type CatalogoRow,
   type CategoriaRow,
   type ProdutoRow,
@@ -39,13 +33,11 @@ function LinhaProduto({
   categoriaNome,
   onEditar,
   onExcluir,
-  onVisibilidade,
 }: {
   produto: ProdutoRow;
   categoriaNome: string;
   onEditar: (p: ProdutoRow) => void;
   onExcluir: (p: ProdutoRow) => void;
-  onVisibilidade: (p: ProdutoRow, ativo: boolean) => void;
 }) {
   const capa = produto.produto_imagens
     ?.slice()
@@ -68,7 +60,6 @@ function LinhaProduto({
           {produto.preco != null
             ? formatPreco(produto.preco)
             : produto.preco_label || "sob consulta"}
-          {produto.badge && ` · ${produto.badge}`}
         </p>
         <p className="mt-0.5 truncate text-[10px] font-semibold tabular-nums text-[var(--terracotta)]">
           Código: {produto.sku}
@@ -76,14 +67,6 @@ function LinhaProduto({
       </div>
 
       <div className="ml-auto flex shrink-0 items-center gap-3">
-        <label className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs font-medium text-[var(--admin-ink-soft)]">
-          <Switch
-            checked={produto.ativo !== false}
-            onCheckedChange={(ativo) => onVisibilidade(produto, ativo)}
-          />
-          <span className="hidden sm:inline">Visível no site</span>
-        </label>
-
         <Button variant="outline" size="sm" onClick={() => onEditar(produto)}>
           Editar
         </Button>
@@ -198,36 +181,6 @@ export function ProdutosPanel({
     onChange();
   }
 
-  async function alterarVisibilidade(p: ProdutoRow, ativo: boolean) {
-    const anterior = p.ativo !== false;
-    setItens((prev) => prev.map((item) => (item.id === p.id ? { ...item, ativo } : item)));
-
-    try {
-      await salvarProduto({
-        data: {
-          id: p.id,
-          nome: p.nome,
-          categoria_id: p.categoria_id,
-          preco: p.preco,
-          preco_label: p.preco_label,
-          serve: p.serve,
-          itens: asStringArray(p.itens),
-          precos_extra: asPrecosExtra(p.precos_extra),
-          observacao: p.observacao,
-          ativo,
-          ordem: p.ordem ?? 0,
-          badge: p.badge,
-          badge_cor: p.badge_cor,
-        },
-      });
-      toast.success(ativo ? "Produto visível no site." : "Produto ocultado do site.");
-      onChange();
-    } catch {
-      setItens((prev) => prev.map((item) => (item.id === p.id ? { ...item, ativo: anterior } : item)));
-      toast.error("Não foi possível alterar a visibilidade do produto.");
-    }
-  }
-
   const filtrosAtivos = busca.trim() !== "" || filtroColecao !== "todas";
   const inicioExibido =
     itensFiltrados.length === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
@@ -241,19 +194,11 @@ export function ProdutosPanel({
             Produtos ({itensFiltrados.length}{filtrosAtivos ? ` de ${itens.length}` : ""})
           </h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Cadastre os produtos e gere uma vitrine pública automaticamente.
+            Cadastre e organize os produtos da sua empresa.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" asChild>
-            <Link href="/catalogo/gerar" target="_blank" rel="noreferrer">
-              <Sparkles className="mr-1.5 h-4 w-4 text-[var(--terracotta)]" />
-              Gerar catálogo inteligente
-              <ExternalLink className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
-
           <Button asChild>
             <Link href="/cadastros/produtos/novo">
               <Plus className="mr-1.5 h-4 w-4" /> Novo produto
@@ -350,7 +295,6 @@ export function ProdutosPanel({
                   categoriaNome={categoria?.nome ?? "Sem categoria"}
                   onEditar={onEditar}
                   onExcluir={excluir}
-                  onVisibilidade={alterarVisibilidade}
                 />
               );
             })}
