@@ -10,6 +10,7 @@ import {
   Contact,
   Home,
   Loader2,
+  MessageCircle,
   Search,
   Settings,
   ShoppingCart,
@@ -26,6 +27,7 @@ import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
 import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
 import { FinanceiroPanel } from "@/components/admin/FinanceiroPanel";
+import { FollowupPanel } from "@/components/admin/FollowupPanel";
 import { HorariosPanel } from "@/components/admin/HorariosPanel";
 import { InicioPanel } from "@/components/admin/InicioPanel";
 import { InsumosPanel } from "@/components/admin/InsumosPanel";
@@ -49,6 +51,7 @@ import { cn } from "@/lib/utils";
 export type AbaId =
   | "inicio"
   | "vendas"
+  | "followup"
   | "dashboard"
   | "calendario"
   | "tarefas"
@@ -98,6 +101,7 @@ type ItemMenu = {
 const MENU: ItemMenu[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart, vistas: SUB_VENDAS },
+  { id: "followup", label: "Follow-up", icon: MessageCircle },
   { id: "dashboard", label: "Dashboard", icon: ChartPie },
   {
     id: "financeiro",
@@ -119,6 +123,7 @@ const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas",
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart },
+  { id: "followup", label: "Follow-up", icon: MessageCircle },
   { id: "dashboard", label: "Dashboard", icon: ChartPie },
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
@@ -404,6 +409,8 @@ export default function AdminClient({
             <InicioPanel onIrPara={setAba} />
           ) : aba === "dashboard" ? (
             <DashboardPanel />
+          ) : aba === "followup" ? (
+            <FollowupPanel empresaNome={companyName} />
           ) : aba === "calendario" ? (
             <CalendarioEntregasPanel
               empresa={{
