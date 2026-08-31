@@ -287,7 +287,7 @@ function NovoLancamento({
         </label>
         <label className="block min-w-[12rem] flex-1">
           <span className="mb-1 block text-xs font-medium text-muted-foreground">
-            {tipo === "entrada" ? "De onde veio" : "O que foi"}
+            {tipo === "entrada" ? "De onde veio" : "Despesa"}
           </span>
           <Input
             value={descricao}

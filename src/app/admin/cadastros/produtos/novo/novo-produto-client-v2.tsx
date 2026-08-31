@@ -435,7 +435,6 @@ export function NovoProdutoClient({
                     inputMode="decimal"
                     value={preco}
                     onChange={(e) => setPreco(e.target.value)}
-                    placeholder="145,00"
                     className="h-11"
                   />
                 </Campo>

@@ -70,7 +70,7 @@ export default function LoginPage() {
     try {
       const supabase = createClient();
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password: senha,
       });
@@ -86,7 +86,35 @@ export default function LoginPage() {
         window.localStorage.removeItem(EMAIL_STORAGE_KEY);
       }
 
-      router.replace("/admin");
+      let destino = "/admin";
+      const userId = authData.user?.id;
+
+      if (userId) {
+        const { data: membro } = await supabase
+          .from("company_members")
+          .select("company_id, role")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (!membro) {
+          destino = "/onboarding";
+        } else if (membro.role === "owner") {
+          const { data: empresa } = await supabase
+            .from("companies")
+            .select("onboarding_completed_at")
+            .eq("id", membro.company_id)
+            .maybeSingle();
+
+          if (empresa && !empresa.onboarding_completed_at) {
+            destino = "/onboarding";
+          }
+        }
+      }
+
+      router.replace(destino);
       router.refresh();
     } catch {
       setErro("Não foi possível entrar agora. Tente novamente em instantes.");

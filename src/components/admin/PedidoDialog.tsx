@@ -64,10 +64,6 @@ function Campo({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/** 88705020 -> 88705-020 */
-/** A casa entrega em Tubarão; CEP de fora muda o frete e merece aviso. */
-const CIDADE_BASE = "Tubarão";
-
 /** Aceita "12,50" e "12.50" — o teclado do celular varia. */
 function paraNumero(v: string): number | null {
   const t = v.trim().replace(",", ".");
@@ -191,8 +187,15 @@ export function PedidoDialog({
         if (d.bairro) {
           setBairro(d.bairro);
           // Se o bairro do CEP estiver no cadastro, já traz a taxa junto.
+          // Se não estiver, o valor digitado continua sendo aceito normalmente.
           const achado = acharBairro(bairros, d.bairro);
-          if (achado) setBairroId(achado.id);
+          if (achado) {
+            setBairroId(achado.id);
+            setTaxaManual(false);
+          } else {
+            setBairroId("");
+            setTaxaManual(true);
+          }
         }
         setCidadeCep(d.localidade ?? null);
       })
@@ -201,7 +204,7 @@ export function PedidoDialog({
     return () => {
       cancelado = true;
     };
-  }, [cep]);
+  }, [cep, bairros]);
 
   // Retirada não tem endereço nem frete: os campos somem e a taxa não entra
   // no total, mesmo que tenha sido digitada antes de trocar o tipo.
@@ -547,7 +550,10 @@ export function PedidoDialog({
             <Campo label="Taxa de entrega">
               <Input
                 value={taxa}
-                onChange={(e) => setTaxa(e.target.value)}
+                onChange={(e) => {
+                  setTaxa(e.target.value);
+                  if (!freteCalc) setTaxaManual(true);
+                }}
                 placeholder="0,00"
                 disabled={!taxaManual && !!freteCalc}
               />
@@ -591,14 +597,9 @@ export function PedidoDialog({
                 )}
               </div>
               {cidadeCep && (
-                <p
-                  className={`mt-1 flex items-center gap-1 text-xs ${
-                    cidadeCep === CIDADE_BASE ? "text-muted-foreground" : "text-[var(--terracotta)]"
-                  }`}
-                >
+                <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                   <MapPin className="h-3 w-3" />
                   {cidadeCep}
-                  {cidadeCep !== CIDADE_BASE && " — fora de " + CIDADE_BASE + ", confira o frete"}
                 </p>
               )}
             </Campo>
@@ -619,7 +620,12 @@ export function PedidoDialog({
                     const b = bairros.find((x) => x.id === e.target.value);
                     // O nome vai gravado junto: o pedido antigo continua legível
                     // mesmo se o bairro sair do cadastro depois.
-                    if (b) setBairro(b.nome);
+                    if (b) {
+                      setBairro(b.nome);
+                      setTaxaManual(false);
+                    } else {
+                      setTaxaManual(true);
+                    }
                   }}
                 >
                   <option value="">Outro (digitar)</option>
@@ -636,7 +642,10 @@ export function PedidoDialog({
                 <Input
                   className={bairros.length > 0 ? "mt-2" : ""}
                   value={bairro}
-                  onChange={(e) => setBairro(e.target.value)}
+                  onChange={(e) => {
+                    setBairro(e.target.value);
+                    setTaxaManual(true);
+                  }}
                   placeholder="Nome do bairro"
                 />
               )}
@@ -771,13 +780,19 @@ export function PedidoDialog({
 
         {erro && <p className="text-sm text-destructive">{erro}</p>}
 
-        <DialogFooter className="pt-1">
+        <DialogFooter
+          className={
+            modoPagina
+              ? "pt-1"
+              : "sticky bottom-0 z-30 -mx-6 border-t border-[var(--cream-deep)] bg-background/95 px-6 py-3 backdrop-blur"
+          }
+        >
           <Button variant="outline" onClick={onClose}>
             {modoPagina ? "Voltar aos pedidos" : "Fechar"}
           </Button>
           <Button onClick={salvar} disabled={salvando}>
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {pedido ? "Salvar" : "Lançar pedido"}
+            {pedido ? "Salvar alterações" : "Salvar pedido"}
           </Button>
         </DialogFooter>
     </>
@@ -845,7 +860,7 @@ export function PedidoDialog({
       <Dialog open onOpenChange={(o) => !o && onClose()}>
         <DialogContent
           data-pedido-dialog
-          className="!w-[calc(100vw-32px)] !max-w-[1760px] !max-h-[calc(100dvh-88px)] !overflow-hidden gap-2 px-6 py-2.5"
+          className="!w-[calc(100vw-32px)] !max-w-[1760px] !max-h-[calc(100dvh-88px)] !overflow-y-auto !overflow-x-hidden gap-2 px-6 py-2.5"
         >
           {conteudo}
         </DialogContent>

@@ -1,4 +1,4 @@
-﻿import { redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
@@ -33,9 +33,13 @@ export default async function AdminPage() {
 
   const { data: empresa } = await supabase
     .from("companies")
-    .select("name, logo_url, street, address_number, complement, district, city, state")
+    .select("name, logo_url, street, address_number, complement, district, city, state, onboarding_completed_at")
     .eq("id", membro.company_id)
     .maybeSingle();
+
+  if (membro.role === "owner" && !empresa?.onboarding_completed_at) {
+    redirect("/onboarding");
+  }
 
   const enderecoEmpresa =
     [
@@ -60,4 +64,3 @@ export default async function AdminPage() {
     />
   );
 }
-
