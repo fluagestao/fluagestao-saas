@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { salvarPedido } from "@/lib/pedidos";
+import { DicaPrimeiroPedido, usePrimeiroPedidoGuia } from "./PrimeiroPedidoGuia";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { MAX_LINHAS_CARTAO } from "@/lib/pedidos-schema";
 import { formatCelular, formatCep } from "@/lib/formato";
@@ -83,7 +84,7 @@ export function PedidoDialog({
   pedido,
   produtos,
   clientes = [],
-  onClose,
+  onClose: fecharPedido,
   onSaved,
   onClienteCriado,
   categorias = [],
@@ -104,6 +105,13 @@ export function PedidoDialog({
   /** Na rota de criação, mostra o formulário como página em vez de modal. */
   modoPagina?: boolean;
 }) {
+  const guia = usePrimeiroPedidoGuia();
+  const guiado = !pedido && (guia?.ativo ?? false);
+  const [dadosConferidos, setDadosConferidos] = useState(false);
+  function onClose() {
+    if (guiado) guia?.pausar();
+    fecharPedido();
+  }
   const [nome, setNome] = useState(pedido?.cliente_nome ?? "");
   const [whatsapp, setWhatsapp] = useState(pedido?.cliente_whatsapp ?? "");
   const [itens, setItens] = useState<ItemPedido[]>(pedido?.itens ?? []);
@@ -336,7 +344,8 @@ export function PedidoDialog({
         },
       });
       onSaved();
-      onClose();
+      if (guiado) guia?.concluir();
+      fecharPedido();
     } catch (e) {
       // Mensagem crua do banco ajuda mais que "erro ao salvar".
       setErro(mensagemDeErro(e, "salvar o pedido"));
@@ -377,6 +386,12 @@ export function PedidoDialog({
             : "pedido-dialog-scroll pedido-dialog-scroll-habilitado min-h-0 w-full max-w-[1440px] self-center flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain pr-1"
         }
       >
+        {guiado && (
+          <DicaPrimeiroPedido
+            etapa={!nome.trim() ? 1 : itens.length === 0 ? 2 : !dadosConferidos ? 3 : 4}
+            onRevisar={() => setDadosConferidos(true)}
+          />
+        )}
         {/* Cliente cadastrado preenche tudo de uma vez; quem é novo, digita. */}
         <div className="flex flex-wrap gap-2">
           <BuscaAdicionar
@@ -440,7 +455,7 @@ export function PedidoDialog({
           )}
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className={`grid gap-2 sm:grid-cols-2 ${guiado && !nome.trim() ? "rounded-lg outline outline-2 outline-offset-4 outline-[var(--terracotta)]" : ""}`}>
           <Campo label="Cliente">
             <Input value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Nome" />
           </Campo>
@@ -454,7 +469,7 @@ export function PedidoDialog({
         </div>
 
         {/* itens */}
-        <div className="rounded-2xl border border-[var(--cream-deep)] p-2.5">
+        <div className={`rounded-2xl border border-[var(--cream-deep)] p-2.5 ${guiado && nome.trim() && itens.length === 0 ? "outline outline-2 outline-[var(--terracotta)]" : ""}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-foreground">Itens</h3>
             <div className="flex flex-wrap items-center gap-2">
@@ -619,7 +634,7 @@ export function PedidoDialog({
           </div>
         </div>
 
-        <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className={`grid gap-x-4 gap-y-1.5 sm:grid-cols-2 xl:grid-cols-4 ${guiado && nome.trim() && itens.length > 0 && !dadosConferidos ? "rounded-lg outline outline-2 outline-offset-4 outline-[var(--terracotta)]" : ""}`}>
           <Campo label="Tipo">
             <select className={campoCls} value={tipo} onChange={(e) => setTipo(e.target.value)}>
               <option value="">—</option>
@@ -899,7 +914,7 @@ export function PedidoDialog({
           <Button variant="outline" onClick={onClose}>
             {modoPagina ? "Voltar aos pedidos" : "Fechar"}
           </Button>
-          <Button onClick={salvar} disabled={salvando}>
+          <Button onClick={salvar} disabled={salvando} className={guiado && nome.trim() && itens.length > 0 && dadosConferidos ? "outline outline-2 outline-offset-4 outline-[var(--terracotta)]" : undefined}>
             {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {pedido ? "Salvar alterações" : "Salvar pedido"}
           </Button>

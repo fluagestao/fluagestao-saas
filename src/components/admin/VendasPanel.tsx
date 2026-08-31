@@ -60,6 +60,7 @@ import { TabelaRealizadas } from "@/components/admin/TabelaRealizadas";
 import { PedidoCard, type AcoesPedido } from "./PedidoCard";
 import { VendasKanban } from "./VendasKanban";
 import { PedidoDialog, type ProdutoOpcao } from "./PedidoDialog";
+import { usePrimeiroPedidoGuia } from "./PrimeiroPedidoGuia";
 import type { CategoriaRapida } from "./QuickProductDialog";
 import { PagamentoDialog } from "./PagamentoDialog";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
@@ -363,6 +364,11 @@ export function VendasPanel({
     window.history.replaceState({}, "", "/vendas/pedidos");
   }, [editando]);
   const confirmar = useConfirmar();
+  const guia = usePrimeiroPedidoGuia();
+  const guiaAtivo = guia?.ativo ?? false;
+  useEffect(() => {
+    if (guiaAtivo) setEditando((atual) => atual ?? "novo");
+  }, [guiaAtivo]);
   const [aReceberLista, setAReceberLista] = useState<Pedido[]>([]);
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
   const [dataRecebimento, setDataRecebimento] = useState(() => hojeISO());
@@ -1170,7 +1176,7 @@ export function VendasPanel({
           clientes={clientes}
           onClienteCriado={recarregarClientes}
           onProdutoCriado={onCatalogoChange}
-          onClose={() => setEditando(null)}
+          onClose={() => { setEditando(null); }}
           onSaved={recarregarTudo}
         />
       )}

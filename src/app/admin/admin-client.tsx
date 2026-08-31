@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Bell,
   CalendarDays,
   ChartPie,
   CheckSquare,
@@ -58,6 +57,10 @@ import {
   type ProdutoRow,
 } from "@/components/admin/tipos";
 import { VendasPanel } from "@/components/admin/VendasPanel";
+import {
+  ContinuarPrimeiroPedido,
+  PrimeiroPedidoProvider,
+} from "@/components/admin/PrimeiroPedidoGuia";
 import { carregarCatalogoAdmin } from "@/lib/admin";
 import { DIAS_PARA_AVISAR, type Assinatura } from "@/lib/assinatura-tipos";
 import { cn } from "@/lib/utils";
@@ -383,6 +386,7 @@ export default function AdminClient({
 
   return (
     <ConfirmProvider>
+      <PrimeiroPedidoProvider key={`${email}:${companyName}`} escopo={`${email}:${companyName}`} abrirAutomaticamente={!initialNovoPedido} onIniciar={() => { setAba("vendas"); setSubVendas("pedidos"); setExpandida(null); }}>
       <Toaster position="bottom-right" richColors />
       <div data-flua-painel className="min-h-screen bg-[var(--admin-bg)] text-foreground">
         {/* Faixa do teste. Fica ACIMA do header sticky de propósito: ela some
@@ -753,6 +757,7 @@ export default function AdminClient({
         </header>
 
         <main className="mx-auto min-w-0 max-w-[1680px] px-4 py-5 sm:px-6 lg:py-6 xl:px-8">
+          <ContinuarPrimeiroPedido />
           {erro && (
             <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
           )}
@@ -884,6 +889,7 @@ export default function AdminClient({
           />
         )}
       </div>
+      </PrimeiroPedidoProvider>
     </ConfirmProvider>
   );
 }

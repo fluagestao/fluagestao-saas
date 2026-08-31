@@ -20,8 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cadastrar as criarConta } from "@/lib/auth-acoes";
-import { avaliarSenha, mensagemSenha, MIN_SENHA, ROTULO_FORCA } from "@/lib/senha";
+import { createClient } from "@/lib/supabase/client";
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
@@ -58,51 +57,31 @@ function formatarWhatsapp(valor: string) {
     .replace(/(\d{5})(\d)/, "$1-$2");
 }
 
-/* Mensagem unica para qualquer falha de cadastro.
-   Dizer "este e-mail ja possui cadastro" confirma para um estranho que aquela
-   pessoa e cliente da Flua. Quem realmente ja tem conta descobre pelo caminho
-   certo: tenta entrar, ou usa o esqueci minha senha. */
-const ERRO_CADASTRO_GENERICO =
-  "Não foi possível concluir o cadastro com esses dados. Se você já tem conta, entre ou use “Esqueci minha senha”.";
+function mensagemDuplicidade(emailExiste: boolean, documentoExiste: boolean) {
+  if (emailExiste && documentoExiste) {
+    return "Este CPF/CNPJ e este e-mail já possuem cadastro na Flua.";
+  }
+  if (documentoExiste) {
+    return "Este CPF/CNPJ já possui cadastro na Flua.";
+  }
+  return "Este e-mail já possui cadastro na Flua.";
+}
 
 function mensagemAuth(mensagem: string) {
   const normalizada = mensagem.toLowerCase();
-  // Erros de formato ajudam e nao vazam nada; o resto vira mensagem unica para
-  // nunca devolver texto cru do Postgres ou do Supabase para a tela.
-  if (normalizada.includes("password")) {
-    return "A senha não atende aos requisitos mínimos.";
+  if (
+    normalizada.includes("already registered") ||
+    normalizada.includes("already exists") ||
+    normalizada.includes("user already")
+  ) {
+    return "Este e-mail já possui cadastro na Flua.";
   }
-  if (normalizada.includes("invalid") && normalizada.includes("email")) {
-    return "Confira o e-mail digitado.";
-  }
-  return ERRO_CADASTRO_GENERICO;
-}
-
-/** Barra de força: mostra o que falta enquanto a pessoa digita, em vez de
-    reprovar só no envio. */
-function BarraForca({ senha, email }: { senha: string; email: string }) {
-  const forca = avaliarSenha(senha, email.trim().toLowerCase());
-  const cores = ["bg-destructive", "bg-destructive", "bg-[#B8893B]", "bg-[#B8893B]", "bg-[#4A6B4A]"];
-
-  return (
-    <div className="mt-1 space-y-1">
-      <div className="flex gap-1" aria-hidden>
-        {[0, 1, 2, 3].map((i) => (
-          <span
-            key={i}
-            className={`h-1 flex-1 rounded-full ${i < forca.nivel ? cores[forca.nivel] : "bg-[#D9C6B2]/50"}`}
-          />
-        ))}
-      </div>
-      <p className={`text-[11px] ${forca.valida ? "text-[#4A6B4A]" : "text-[#74745B]"}`}>
-        {forca.valida ? ROTULO_FORCA[forca.nivel] : (mensagemSenha(forca) ?? "")}
-      </p>
-    </div>
-  );
+  return mensagem;
 }
 
 export default function CadastroPage() {
   const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
 
   const [nomeLoja, setNomeLoja] = useState("");
   const [documento, setDocumento] = useState("");
@@ -114,7 +93,6 @@ export default function CadastroPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
-  const [aceito, setAceito] = useState(false);
   const [cadastroConcluido, setCadastroConcluido] = useState(false);
   const [emailConfirmacao, setEmailConfirmacao] = useState("");
 
@@ -156,9 +134,8 @@ export default function CadastroPage() {
       return;
     }
 
-    const forca = avaliarSenha(senha, emailLimpo);
-    if (!forca.valida) {
-      setErro(mensagemSenha(forca) ?? "A senha não atende aos requisitos.");
+    if (senha.length < 6) {
+      setErro("A senha precisa ter pelo menos 6 caracteres.");
       return;
     }
 
@@ -167,41 +144,91 @@ export default function CadastroPage() {
       return;
     }
 
-    if (!aceito) {
-      setErro("Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.");
-      return;
-    }
-
     setCarregando(true);
 
     try {
-      /* Tudo passa pela acao de servidor: e la que a tentativa e contada, a
-         senha e revalidada e o abuso e registrado. Do navegador direto, nada
-         disso teria onde acontecer. A consulta previa de disponibilidade saiu
-         de vez — era ela que virava oraculo de enumeracao. */
-      const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.fluagestao.com.br";
+      const { data: disponibilidade, error: disponibilidadeError } = await supabase
+        .rpc("check_signup_availability", {
+          p_email: emailLimpo,
+          p_document: documentoNumeros,
+        })
+        .single();
 
-      const r = await criarConta({
-        data: {
-          email: emailLimpo,
-          senha,
-          nome: responsavelLimpo,
-          loja: nomeLojaLimpo,
-          documento: documentoNumeros,
-          telefone: whatsappNumeros,
-          origem: siteUrl,
-          aceite_termos: aceito,
-        },
-      });
-
-      if (!r.ok) {
-        setErro(r.mensagem ?? "Não foi possível concluir o cadastro agora.");
+      if (disponibilidadeError) {
+        setErro("Não foi possível validar seus dados agora. Tente novamente.");
         return;
       }
 
-      if (r.destino) {
-        router.replace(r.destino);
+      const disponibilidadeValidada = disponibilidade as {
+        email_exists?: boolean;
+        document_exists?: boolean;
+      } | null;
+      const emailExiste = Boolean(disponibilidadeValidada?.email_exists);
+      const documentoExiste = Boolean(disponibilidadeValidada?.document_exists);
+
+      if (emailExiste || documentoExiste) {
+        setErro(mensagemDuplicidade(emailExiste, documentoExiste));
+        return;
+      }
+
+      const tipoDocumento = documentoNumeros.length === 14 ? "cnpj" : "cpf";
+      const siteUrl =
+        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
+        "https://www.fluagestao.com.br";
+
+      const { data, error } = await supabase.auth.signUp({
+        email: emailLimpo,
+        password: senha,
+        options: {
+          emailRedirectTo: `${siteUrl}/auth/callback?next=/cadastro/sucesso`,
+          data: {
+            full_name: responsavelLimpo,
+            store_name: nomeLojaLimpo,
+            document: documentoNumeros,
+            document_type: tipoDocumento,
+            phone: whatsappNumeros,
+          },
+        },
+      });
+
+      if (error) {
+        setErro(mensagemAuth(error.message));
+        return;
+      }
+
+      if (
+        data.user &&
+        Array.isArray(data.user.identities) &&
+        data.user.identities.length === 0
+      ) {
+        setErro("Este e-mail já possui cadastro na Flua.");
+        return;
+      }
+
+      if (data.session) {
+        const { error: onboardingError } = await supabase.rpc("complete_onboarding", {
+          p_full_name: responsavelLimpo,
+          p_cpf: tipoDocumento === "cpf" ? documentoNumeros : "",
+          p_store_name: nomeLojaLimpo,
+          p_document_type: tipoDocumento,
+          p_document: documentoNumeros,
+          p_email: emailLimpo,
+          p_phone: whatsappNumeros,
+          p_postal_code: null,
+          p_street: null,
+          p_address_number: null,
+          p_complement: null,
+          p_district: null,
+          p_city: null,
+          p_state: null,
+        });
+
+        if (onboardingError) {
+          setErro(mensagemAuth(onboardingError.message));
+          return;
+        }
+
+        router.replace("/inicio?onboarding=1");
         router.refresh();
         return;
       }
@@ -297,15 +324,15 @@ export default function CadastroPage() {
             </div>
           ) : (
             <>
-              <div className="mt-[clamp(.2rem,.8dvh,1rem)] xl:mt-0">
+              <div className="mt-[clamp(.2rem,.8dvh,1rem)] text-center xl:mt-0">
                 <span className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#A94F45]">
                   Criar conta
                 </span>
-                <h2 className="mt-[clamp(.15rem,.6dvh,.5rem)] text-[clamp(1.45rem,4dvh,2.05rem)] font-semibold leading-tight tracking-[-0.045em] text-[#2C2421]">
-                  Comece seu teste grátis
+                <h2 className="mt-[clamp(.15rem,.6dvh,.5rem)] text-center text-[clamp(1.45rem,4dvh,2.05rem)] font-semibold leading-tight tracking-[-0.045em] text-[#2C2421]">
+                  Teste grátis por 30 dias
                 </h2>
                 <p className="mt-[clamp(.15rem,.6dvh,.5rem)] text-[clamp(.7rem,1.5dvh,.875rem)] leading-5 text-[#703D3A]/60">
-                  Cadastre sua loja e crie o acesso principal à Flua Gestão.
+                  Cadastre sua loja e use todos os recursos da Flua gratuitamente por 30 dias.
                 </p>
               </div>
 
@@ -356,8 +383,7 @@ export default function CadastroPage() {
                     <Label htmlFor="senha" className={label}>Senha <span className="text-[#A94F45]">*</span></Label>
                     <div className="relative">
                       <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
-                      <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder={`Mínimo ${MIN_SENHA} caracteres`} required className={`${campos} px-9`} />
-                      {senha && <BarraForca senha={senha} email={email} />}
+                      <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder="Mínimo 6 caracteres" required className={`${campos} px-9`} />
                       <button type="button" onClick={() => setMostrarSenha((valor) => !valor)} className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#74745B] hover:bg-[#D9C6B2]/30" aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}>
                         {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -377,36 +403,6 @@ export default function CadastroPage() {
                     {erro}
                   </p>
                 )}
-
-                <label className="flex cursor-pointer items-start gap-2.5 text-left text-[clamp(.62rem,1.35dvh,.75rem)] leading-snug text-[#703D3A]/80">
-                  <input
-                    type="checkbox"
-                    checked={aceito}
-                    onChange={(e) => setAceito(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[#A94F45]"
-                  />
-                  <span>
-                    Li e concordo com os{" "}
-                    <Link
-                      href="/documentos/termos-de-uso"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-[#A94F45] underline underline-offset-2 hover:text-[#703D3A]"
-                    >
-                      Termos de Uso
-                    </Link>{" "}
-                    e a{" "}
-                    <Link
-                      href="/documentos/termos-de-uso/privacidade"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-semibold text-[#A94F45] underline underline-offset-2 hover:text-[#703D3A]"
-                    >
-                      Política de Privacidade
-                    </Link>
-                    .
-                  </span>
-                </label>
 
                 <Button type="submit" disabled={carregando} className="h-[clamp(2.35rem,5.8dvh,3rem)] w-full rounded-xl bg-[#A94F45] text-[clamp(.75rem,1.6dvh,.875rem)] font-semibold text-white shadow-[0_12px_28px_rgba(169,79,69,0.2)] hover:bg-[#703D3A]">
                   {carregando ? (
