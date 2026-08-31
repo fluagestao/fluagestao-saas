@@ -52,9 +52,11 @@ export async function GET(request: NextRequest) {
     if (!error) {
       const empresaPreparada = await prepararEmpresa(supabase);
       const redirectUrl = request.nextUrl.clone();
-      redirectUrl.pathname = empresaPreparada ? "/cadastro/sucesso" : "/login";
+      redirectUrl.pathname = empresaPreparada ? "/admin" : "/login";
       redirectUrl.search = "";
-      if (!empresaPreparada) {
+      if (empresaPreparada) {
+        redirectUrl.searchParams.set("onboarding", "1");
+      } else {
         redirectUrl.searchParams.set("erro", "preparacao-conta");
       }
       return NextResponse.redirect(redirectUrl);

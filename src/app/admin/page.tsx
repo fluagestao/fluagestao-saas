@@ -28,7 +28,7 @@ export default async function AdminPage() {
     .maybeSingle();
 
   if (membroError || !membro) {
-    redirect("/onboarding");
+    redirect("/login?erro=preparacao-conta");
   }
 
   const { data: empresa } = await supabase
@@ -36,10 +36,6 @@ export default async function AdminPage() {
     .select("name, logo_url, street, address_number, complement, district, city, state, onboarding_completed_at")
     .eq("id", membro.company_id)
     .maybeSingle();
-
-  if (membro.role === "owner" && !empresa?.onboarding_completed_at) {
-    redirect("/onboarding");
-  }
 
   const enderecoEmpresa =
     [
