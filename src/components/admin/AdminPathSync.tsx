@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ROTAS_DIRETAS: Record<string, string> = {
   "Início": "/inicio",
-  Dashboard: "/dashboard",
+  Relatórios: "/dashboard",
   Tarefas: "/tarefas",
   "Follow-up": "/followup",
 
@@ -38,8 +38,9 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/vendas/pedidos": { pai: "Vendas", filho: "Pedidos" },
   "/vendas/a-receber": { pai: "Vendas", filho: "A receber" },
   "/vendas/realizadas": { pai: "Vendas", filho: "Realizadas" },
+  "/followup": { pai: "Vendas", filho: "Follow-up" },
 
-  "/dashboard": { filho: "Dashboard" },
+  "/dashboard": { filho: "Relatórios" },
 
   "/financeiro/entradas": { pai: "Financeiro", filho: "Entradas" },
   "/financeiro/saidas": { pai: "Financeiro", filho: "Saídas" },
@@ -55,13 +56,11 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/cadastros/horarios": { pai: "Cadastros", filho: "Horários" },
 
   "/tarefas": { filho: "Tarefas" },
-  "/followup": { filho: "Follow-up" },
 
   "/bia/simulador": { pai: "BIA", filho: "Simulador" },
   "/bia/conversas": { pai: "BIA", filho: "Conversas" },
   "/bia/ajustes": { pai: "BIA", filho: "Ajustes" },
 
-  // Compatibilidade durante a transição das URLs antigas.
   "/pedidos": { pai: "Vendas", filho: "Pedidos" },
   "/a-receber": { pai: "Vendas", filho: "A receber" },
   "/realizadas": { pai: "Vendas", filho: "Realizadas" },
