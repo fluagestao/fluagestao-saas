@@ -61,8 +61,6 @@ function Pizza({
       {dados.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{vazio}</p>
       ) : (
-        // Empilhado: com três cartões lado a lado não há largura pra gráfico e
-        // legenda na mesma linha, e o nome da categoria acabava espremido.
         <div className="mt-2 flex flex-col items-center gap-3">
           <div className="h-40 w-40 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
@@ -83,7 +81,6 @@ function Pizza({
                     <Cell
                       key={d.chave}
                       fill={CORES[i % CORES.length]}
-                      // A fatia escolhida fica sólida; as outras recuam.
                       opacity={selecionado && selecionado !== d.chave ? 0.35 : 1}
                       style={{ cursor: "pointer", outline: "none" }}
                     />
@@ -201,7 +198,7 @@ export function DashboardPanel() {
   return (
     <section>
       <PageHeader
-        titulo="Dashboard"
+        titulo="Relatórios"
         descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta todo pedido do período, menos os cancelados."
         acoes={
           <>
@@ -215,7 +212,6 @@ export function DashboardPanel() {
         }
       />
 
-      {/* filtro por coleção */}
       {dados && dados.colecoes.length > 0 && (
         <div className="mb-4 flex flex-wrap gap-2">
           <button
@@ -289,7 +285,6 @@ export function DashboardPanel() {
             />
           </div>
 
-          {/* mais vendidos, separando cesta de adicional */}
           <div className="mt-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-semibold text-foreground">Mais vendidos</h3>
