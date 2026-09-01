@@ -434,20 +434,28 @@ export async function receberEmLote(input: { data: unknown }) {
 }
 
 export async function carregarRealizadas(input: { data: unknown }) {
-  const data = z.object({ de: DATA, ate: DATA }).parse(input.data);
+  const data = z
+    .object({
+      de: z.union([DATA, z.literal("")]).default(""),
+      ate: z.union([DATA, z.literal("")]).default(""),
+    })
+    .parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
-  const { data: pedidos, error } = await supabase
+  let query = supabase
     .from("pedidos")
     .select("*")
     .eq("company_id", companyId)
     .eq("status", "entregue")
     .not("entregue_em", "is", null)
-    .gte("entregue_em", `${data.de}T00:00:00-03:00`)
-    .lte("entregue_em", `${data.ate}T23:59:59.999-03:00`)
     .order("entregue_em", { ascending: false })
     .order("numero", { ascending: false })
-    .limit(500);
+    .limit(1000);
+
+  if (data.de) query = query.gte("entregue_em", `${data.de}T00:00:00-03:00`);
+  if (data.ate) query = query.lte("entregue_em", `${data.ate}T23:59:59.999-03:00`);
+
+  const { data: pedidos, error } = await query;
 
   if (error) throw error;
   return (pedidos ?? []).map((row) =>
