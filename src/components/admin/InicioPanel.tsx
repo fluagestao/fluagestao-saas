@@ -132,18 +132,20 @@ function Vazio({
   titulo,
   descricao,
   icon: Icon = CircleCheck,
+  destaque = false,
 }: {
   titulo: string;
   descricao: string;
   icon?: typeof CircleCheck;
+  destaque?: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-4 text-center">
-      <span className="grid h-10 w-10 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
-        <Icon className="h-5 w-5" strokeWidth={1.7} />
+    <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 py-4 text-center">
+      <span className={`grid place-items-center rounded-full bg-[#fbefec] text-[#b65346] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
+        <Icon className={destaque ? "h-6 w-6" : "h-5 w-5"} strokeWidth={1.7} />
       </span>
-      <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">{titulo}</p>
-      <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--admin-muted)]">{descricao}</p>
+      <p className={`font-semibold text-[var(--admin-ink)] ${destaque ? "mt-4 text-base" : "mt-3 text-sm"}`}>{titulo}</p>
+      <p className={`mt-1 max-w-sm leading-relaxed text-[var(--admin-muted)] ${destaque ? "text-sm" : "text-xs"}`}>{descricao}</p>
     </div>
   );
 }
@@ -397,9 +399,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
         <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
           <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
-          <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
+          <div className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${entregasHoje.length === 0 ? "flex" : ""}`}>
             {entregasHoje.length === 0 ? (
-              <Vazio titulo="Sem entregas hoje" descricao="Nenhuma entrega programada." icon={CalendarDays} />
+              <Vazio titulo="Sem entregas hoje" descricao="Nenhuma entrega programada." icon={CalendarDays} destaque />
             ) : (
               entregasHoje.slice(0, 6).map((p) => (
                 <div key={p.id} className="grid grid-cols-[52px_minmax(0,1fr)_auto] gap-3 py-4">
@@ -421,9 +423,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
         <article className="flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
           <CabecalhoCard titulo="Próximos 7 dias" />
-          <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
+          <div className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${proximosSete.length === 0 ? "flex" : ""}`}>
             {proximosSete.length === 0 ? (
-              <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." icon={CalendarDays} />
+              <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." icon={CalendarDays} destaque />
             ) : (
               proximosSete.map((p) => (
                 <div key={p.id} className="grid grid-cols-[46px_50px_minmax(0,1fr)_auto] items-start gap-2 py-3">
