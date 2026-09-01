@@ -427,11 +427,11 @@ export function PedidoDialog({
                 onClick={() => setAvulso({ nome: "", qtd: "1", valor: "" })}
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Item avulso
+                Produto avulso
               </Button>
               <BuscaAdicionar
                 className="w-[15rem]"
-                placeholder="+ adicionar do catálogo"
+                placeholder="Adicionar produto cadastrado"
                 buscaPlaceholder="Buscar produto…"
                 vazio="Nenhum produto com esse nome."
                 grupos={gruposCatalogo.map((g) => ({
