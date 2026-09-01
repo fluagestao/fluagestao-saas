@@ -15,7 +15,6 @@ import "./mobile-admin.css";
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
-import { OnboardingPrompt } from "@/components/admin/OnboardingPrompt";
 import { MarketingHeader } from "@/components/MarketingHeader";
 
 const geistSans = Geist({
@@ -84,7 +83,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AdminPathSync />
         <NovoPedidoRouteBridge />
         <MarketingHeader />
-        <OnboardingPrompt />
         {children}
         <MobileAdminNav />
       </body>
