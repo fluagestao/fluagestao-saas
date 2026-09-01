@@ -337,7 +337,9 @@ export function PedidoDialog({
         className={
           modoPagina
             ? "space-y-4"
-            : "pedido-dialog-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1"
+            : `pedido-dialog-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden pr-1 ${
+                pedido ? "overflow-y-auto" : "overflow-y-hidden"
+              }`
         }
       >
         {/* Cliente cadastrado preenche tudo de uma vez; quem é novo, digita. */}
