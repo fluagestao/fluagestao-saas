@@ -492,7 +492,7 @@ export function PedidoDialog({
           {itens.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">Nenhum item ainda.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
+            <ul className="pedido-itens-lista mt-2 max-h-24 space-y-2 overflow-y-auto pr-1">
               {itens.map((it, idx) => (
                 <li
                   key={`${it.slug ?? it.nome}-${idx}`}
