@@ -11,10 +11,10 @@ export async function carregarMovimentos(input: { data: unknown }) {
   const { de, ate } = z.object({ de: DATA, ate: DATA }).parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
-  const [movRes, pedRes, fornRes] = await Promise.all([
+  const [movRes, pedRes, fornRes, tiposRes] = await Promise.all([
     supabase
       .from("movimentos")
-      .select("id, pedido_id, tipo, data, valor, descricao, fornecedor")
+      .select("id, pedido_id, tipo, data, valor, descricao, fornecedor, tipo_despesa_id")
       .eq("company_id", companyId)
       .gte("data", de)
       .lte("data", ate)
@@ -32,11 +32,17 @@ export async function carregarMovimentos(input: { data: unknown }) {
       .eq("company_id", companyId)
       .eq("ativo", true)
       .order("nome"),
+    supabase
+      .from("tipos_despesa")
+      .select("id, nome")
+      .eq("company_id", companyId)
+      .order("nome"),
   ]);
 
   if (movRes.error) throw movRes.error;
   if (pedRes.error) throw pedRes.error;
   if (fornRes.error) throw fornRes.error;
+  if (tiposRes.error) throw tiposRes.error;
 
   const numeroPorPedido = new Map(
     (pedRes.data ?? []).map((pedido) => [
@@ -44,15 +50,20 @@ export async function carregarMovimentos(input: { data: unknown }) {
       Number(pedido.numero ?? 0),
     ]),
   );
+  const nomeTipoPorId = new Map(
+    (tiposRes.data ?? []).map((tipo) => [tipo.id, tipo.nome]),
+  );
 
   const movimentos: Movimento[] = (movRes.data ?? []).map((m) => ({
-    // Mantém entradas de pedido protegidas da edição/exclusão manual no painel.
     id: m.pedido_id ? `pedido:${m.pedido_id}` : m.id,
     tipo: m.tipo as "entrada" | "saida",
     data: m.data,
     valor: Number(m.valor ?? 0),
     descricao: m.descricao,
     fornecedor: m.fornecedor,
+    tipo_despesa: m.tipo_despesa_id
+      ? (nomeTipoPorId.get(m.tipo_despesa_id) ?? null)
+      : null,
     pedido_numero: m.pedido_id
       ? (numeroPorPedido.get(m.pedido_id) ?? null)
       : null,
@@ -64,8 +75,6 @@ export async function carregarMovimentos(input: { data: unknown }) {
     if (f.nome?.trim()) fornecedores.add(f.nome.trim());
   }
 
-  // Só movimentos manuais alimentam a lista de fornecedores.
-  // Em entradas de pedido, "fornecedor" guarda a forma de pagamento (Pix, cartão...).
   for (const m of movRes.data ?? []) {
     if (!m.pedido_id && m.fornecedor?.trim()) {
       fornecedores.add(m.fornecedor.trim());
@@ -77,7 +86,31 @@ export async function carregarMovimentos(input: { data: unknown }) {
     fornecedores: [...fornecedores].sort((a, b) =>
       a.localeCompare(b, "pt-BR"),
     ),
+    tiposDespesa: (tiposRes.data ?? []).map((tipo) => ({
+      id: tipo.id,
+      nome: tipo.nome,
+    })),
   };
+}
+
+export async function criarTipoDespesa(input: { data: unknown }) {
+  const { nome } = z
+    .object({ nome: z.string().trim().min(1).max(80) })
+    .parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("tipos_despesa")
+    .insert({ company_id: companyId, nome })
+    .select("id, nome")
+    .single();
+
+  if (error?.code === "23505") {
+    throw new Error("Este tipo de despesa já está cadastrado.");
+  }
+  if (error) throw error;
+
+  return { id: data.id, nome: data.nome };
 }
 
 export async function salvarMovimento(input: { data: unknown }) {
@@ -89,6 +122,7 @@ export async function salvarMovimento(input: { data: unknown }) {
       valor: z.number().positive().max(1_000_000),
       descricao: z.string().trim().min(1).max(200),
       fornecedor: z.string().trim().max(120).nullable().default(null),
+      tipo_despesa_id: z.string().uuid().nullable().default(null),
     })
     .parse(input.data);
 
@@ -100,6 +134,7 @@ export async function salvarMovimento(input: { data: unknown }) {
     valor: data.valor,
     descricao: data.descricao,
     fornecedor: data.fornecedor,
+    tipo_despesa_id: data.tipo === "saida" ? data.tipo_despesa_id : null,
   };
 
   if (data.id) {
