@@ -413,10 +413,7 @@ export function PedidoDialog({
         </div>
 
         {/* itens */}
-        <div
-          className="rounded-2xl border border-[var(--cream-deep)] p-2.5 transition-[width]"
-          style={{ width: cartaoHabilitado ? "100%" : "min(410px, 100%)" }}
-        >
+        <div className="rounded-2xl border border-[var(--cream-deep)] p-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-foreground">Itens</h3>
             <div className="flex flex-wrap items-center gap-2">
@@ -760,7 +757,10 @@ export function PedidoDialog({
         </div>
 
         {/* cartão que vai dentro da caixa */}
-        <div className="rounded-2xl border border-[var(--cream-deep)] p-2.5">
+        <div
+          className="rounded-2xl border border-[var(--cream-deep)] p-2.5 transition-[width]"
+          style={{ width: cartaoHabilitado ? "100%" : "min(410px, 100%)" }}
+        >
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-foreground">💌 Tem cartão?</h3>
