@@ -344,8 +344,8 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
         open={Boolean(pedidoSelecionado)}
         onOpenChange={(aberto) => !aberto && setPedidoSelecionado(null)}
       >
-        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-4xl gap-3 overflow-hidden rounded-2xl border-[var(--admin-border)] p-5">
-          <DialogHeader>
+        <DialogContent className="bottom-4 left-4 right-4 top-4 max-h-none w-auto max-w-none translate-x-0 translate-y-0 gap-3 overflow-x-hidden overflow-y-auto rounded-2xl border-[var(--admin-border)] p-4 sm:bottom-auto sm:left-1/2 sm:right-auto sm:top-1/2 sm:max-h-[calc(100dvh-2rem)] sm:w-[calc(100vw-2rem)] sm:max-w-4xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:p-5">
+          <DialogHeader className="pr-6 text-left">
             <DialogTitle>Mensagem de pedido de avaliação</DialogTitle>
             <DialogDescription>
               Escolha o contexto, personalize o modelo e confira a mensagem antes de abrir o WhatsApp.
@@ -356,12 +356,12 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
             value={tipoMensagem}
             onValueChange={(valor) => setTipoMensagem(valor as TipoMensagemAvaliacao)}
           >
-            <TabsList className="grid h-auto w-full grid-cols-2 rounded-xl bg-[var(--cream-soft)] p-1">
-              <TabsTrigger value="presente" className="gap-2 rounded-lg py-2.5">
+            <TabsList className="grid h-auto w-full min-w-0 grid-cols-2 rounded-xl bg-[var(--cream-soft)] p-1">
+              <TabsTrigger value="presente" className="min-w-0 gap-1.5 whitespace-normal rounded-lg px-2 py-2.5 text-center text-xs leading-tight sm:gap-2 sm:text-sm">
                 <Gift className="h-4 w-4" />
                 Presente ou surpresa
               </TabsTrigger>
-              <TabsTrigger value="consumo_proprio" className="gap-2 rounded-lg py-2.5">
+              <TabsTrigger value="consumo_proprio" className="min-w-0 gap-1.5 whitespace-normal rounded-lg px-2 py-2.5 text-center text-xs leading-tight sm:gap-2 sm:text-sm">
                 <ShoppingBag className="h-4 w-4" />
                 Consumo próprio
               </TabsTrigger>
@@ -405,7 +405,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                 </div>
 
                 {pedidoSelecionado && (
-                  <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-3">
+                  <div className="max-h-[30dvh] overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-3 sm:max-h-none">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--terracotta)]">
                       Prévia para {pedidoSelecionado.cliente_nome || "o cliente"}
                     </p>
@@ -418,13 +418,13 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
             ))}
           </Tabs>
 
-          <DialogFooter>
+          <DialogFooter className="pt-1">
             <Button
               type="button"
               variant="outline"
               onClick={() => void salvarModelos()}
               disabled={salvandoModelos}
-              className="rounded-full"
+              className="w-full rounded-full sm:w-auto"
             >
               <Save className="mr-2 h-4 w-4" />
               {salvandoModelos ? "Salvando…" : "Salvar modelos"}
@@ -433,7 +433,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
               type="button"
               onClick={enviarAvaliacao}
               disabled={!modelos[tipoMensagem].trim()}
-              className="rounded-full bg-[var(--whatsapp)] text-white hover:opacity-90"
+              className="w-full rounded-full bg-[var(--whatsapp)] text-white hover:opacity-90 sm:w-auto"
             >
               <Send className="mr-2 h-4 w-4" />
               Abrir no WhatsApp
