@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 
@@ -18,29 +17,6 @@ export function NovoPedidoPageClient({
   clientes: ClienteComHistorico[];
 }) {
   const router = useRouter();
-
-  useEffect(() => {
-    function bloquearRolagemDaTela(event: Event) {
-      const alvo = event.target;
-
-      // Quando houver muitos dados, somente as listas internas podem rolar.
-      if (
-        alvo instanceof Element &&
-        alvo.closest(".pedido-itens-lista, .busca-adicionar-lista")
-      ) {
-        return;
-      }
-      event.preventDefault();
-    }
-
-    document.addEventListener("wheel", bloquearRolagemDaTela, { passive: false });
-    document.addEventListener("touchmove", bloquearRolagemDaTela, { passive: false });
-
-    return () => {
-      document.removeEventListener("wheel", bloquearRolagemDaTela);
-      document.removeEventListener("touchmove", bloquearRolagemDaTela);
-    };
-  }, []);
 
   function voltar() {
     router.replace("/vendas/pedidos");
@@ -139,8 +115,18 @@ export function NovoPedidoPageClient({
             grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
             align-content: start !important;
             gap: 6px 10px !important;
+            width: 100% !important;
+            max-width: 1440px !important;
+            margin-inline: auto !important;
             overflow: hidden !important;
             padding-right: 0 !important;
+          }
+
+          body:has(.flua-novo-pedido-route)
+            [role="dialog"]
+            .pedido-dialog-scroll.pedido-dialog-scroll-habilitado {
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
           }
 
           body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(1) {
