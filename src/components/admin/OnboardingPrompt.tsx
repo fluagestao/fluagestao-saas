@@ -107,7 +107,7 @@ export function OnboardingPrompt() {
   const [form, setForm] = useState<Form>(inicial);
 
   useEffect(() => {
-    if (!pathname.startsWith("/admin")) {
+    if (!pathname.startsWith("/admin") && !pathname.startsWith("/inicio")) {
       setPendente(false);
       setAberto(false);
       return;
@@ -360,7 +360,7 @@ export function OnboardingPrompt() {
       setPendente(false);
       setAberto(false);
       limparParametroOnboarding();
-      router.replace("/admin");
+      router.replace("/inicio");
       router.refresh();
     } catch (error) {
       setErro(mensagemErro(error, "Não foi possível concluir o cadastro agora."));
@@ -369,7 +369,7 @@ export function OnboardingPrompt() {
     }
   }
 
-  if (!pathname.startsWith("/admin") || !pendente) return null;
+  if ((!pathname.startsWith("/admin") && !pathname.startsWith("/inicio")) || !pendente) return null;
 
   const campo =
     "h-11 rounded-xl border-[#D9C6B2]/80 bg-white text-[#3F2422] shadow-sm focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/15";
