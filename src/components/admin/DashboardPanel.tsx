@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { hojeISO } from "@/lib/prazo";
 import { carregarDashboard } from "@/lib/pedidos";
@@ -19,6 +18,21 @@ const CORES = [
   "#7A6A5E",
   "#B5322B",
   "#8C6A4A",
+];
+
+const MESES = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
 ];
 
 function mesDe(iso: string) {
@@ -178,6 +192,11 @@ export function DashboardPanel() {
   const [formaSel, setFormaSel] = useState<string | null>(null);
 
   const periodo = useMemo(() => mesDe(`${mes}-01`), [mes]);
+  const [anoSelecionado, mesSelecionado] = mes.split("-");
+  const anos = useMemo(() => {
+    const atual = Number(hojeISO().slice(0, 4));
+    return Array.from({ length: 6 }, (_, indice) => String(atual - indice));
+  }, []);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -201,14 +220,36 @@ export function DashboardPanel() {
         titulo="Relatórios"
         descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta todo pedido do período, menos os cancelados."
         acoes={
-          <>
-            <Input
-              type="month"
-              value={mes}
-              onChange={(e) => setMes(e.target.value)}
-              className="h-9 w-[10rem]"
-            />
-          </>
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Mês
+              <select
+                value={mesSelecionado}
+                onChange={(e) => setMes(`${anoSelecionado}-${e.target.value}`)}
+                className="h-9 min-w-36 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+              >
+                {MESES.map((nome, indice) => (
+                  <option key={nome} value={String(indice + 1).padStart(2, "0")}>
+                    {nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Ano
+              <select
+                value={anoSelecionado}
+                onChange={(e) => setMes(`${e.target.value}-${mesSelecionado}`)}
+                className="h-9 min-w-28 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+              >
+                {anos.map((ano) => (
+                  <option key={ano} value={ano}>
+                    {ano}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         }
       />
 
