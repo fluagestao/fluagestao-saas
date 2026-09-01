@@ -41,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataCurta, formatarDataLonga, hojeISO, somarDias } from "@/lib/prazo";
 import { carregarPedidosDoCliente, removerCliente, salvarCliente } from "@/lib/pedidos";
+import { carregarCidadeCliente, salvarCidadeCliente } from "@/lib/clientes-cidade";
 import type { Cliente, ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { formatBRL, statusCor, statusLabel, whatsappDoCliente, type Pedido } from "@/lib/vendas";
 import { formatCelular, formatCep } from "@/lib/formato";
@@ -581,6 +582,7 @@ export function ClienteDialog({
   const [email, setEmail] = useState(c?.email ?? "");
   const [documento, setDocumento] = useState(c?.documento ?? "");
   const [cep, setCep] = useState(c?.cep ?? "");
+  const [cidade, setCidade] = useState("");
   const [endereco, setEndereco] = useState(c?.endereco ?? "");
   const [bairro, setBairro] = useState(c?.bairro ?? "");
   const [referencia, setReferencia] = useState(c?.referencia ?? "");
@@ -589,16 +591,44 @@ export function ClienteDialog({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  /** Mesmo comportamento do pedido: CEP completo puxa rua e bairro. */
+  useEffect(() => {
+    let ativo = true;
+    if (!c?.id) {
+      setCidade("");
+      return () => {
+        ativo = false;
+      };
+    }
+
+    carregarCidadeCliente({ data: { id: c.id } })
+      .then((r) => {
+        if (ativo) setCidade(r.cidade ?? "");
+      })
+      .catch(() => {
+        if (ativo) setCidade("");
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [c?.id]);
+
+  /** Mesmo comportamento do pedido: CEP completo puxa rua, bairro e cidade. */
   async function buscarCep(valor: string) {
     const d = valor.replace(/\D/g, "");
     if (d.length !== 8) return;
     try {
       const r = await fetch(`https://viacep.com.br/ws/${d}/json/`);
-      const j = (await r.json()) as { erro?: boolean; logradouro?: string; bairro?: string };
+      const j = (await r.json()) as {
+        erro?: boolean;
+        logradouro?: string;
+        bairro?: string;
+        localidade?: string;
+      };
       if (j.erro) return;
       if (j.logradouro) setEndereco(j.logradouro);
       if (j.bairro) setBairro(j.bairro);
+      if (j.localidade) setCidade(j.localidade);
     } catch {
       /* sem rede: digita à mão */
     }
@@ -627,6 +657,9 @@ export function ClienteDialog({
           observacao: observacao.trim() || null,
           ativo: true,
         },
+      });
+      await salvarCidadeCliente({
+        data: { id: r.id, cidade: cidade.trim() || null },
       });
       toast.success(c ? "Cliente atualizado." : `"${nome.trim()}" cadastrado.`);
       onSaved(r.id);
@@ -689,6 +722,7 @@ export function ClienteDialog({
               }}
             />,
           )}
+          {campo("Cidade", <Input value={cidade} onChange={(e) => setCidade(e.target.value)} />)}
           {campo(
             "Endereço",
             <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} />,
