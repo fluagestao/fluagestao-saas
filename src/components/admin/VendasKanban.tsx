@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -30,7 +30,7 @@ const JANELA_ENTREGUE_MS = 24 * 60 * 60 * 1000;
 
 type PedidoComEntrega = Pedido & { entregue_em?: string | null };
 
-function saiuDoQuadroDepoisDe24h(pedido: Pedido, agora = Date.now()) {
+function saiuDoQuadroDepoisDe24h(pedido: Pedido, agora: number) {
   if (pedido.status !== "entregue") return false;
 
   const entregueEm = (pedido as PedidoComEntrega).entregue_em;
@@ -134,6 +134,13 @@ export function VendasKanban({
   onMover: (pedido: Pedido, status: StatusPedido) => void;
 }) {
   const [arrastando, setArrastando] = useState<Pedido | null>(null);
+  const [agora, setAgora] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setAgora(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
   // Precisa mover 6px pra começar a arrastar — senão um clique vira arrasto.
   const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
 
@@ -164,7 +171,7 @@ export function VendasKanban({
               status={status}
               pedidos={ordenarPorEntrega(
                 pedidos.filter(
-                  (p) => p.status === status && !saiuDoQuadroDepoisDe24h(p),
+                  (p) => p.status === status && !saiuDoQuadroDepoisDe24h(p, agora),
                 ),
               )}
               acoes={acoes}
