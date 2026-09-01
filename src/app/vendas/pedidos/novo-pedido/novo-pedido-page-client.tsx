@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Toaster } from "sonner";
 
@@ -18,6 +19,24 @@ export function NovoPedidoPageClient({
 }) {
   const router = useRouter();
 
+  useEffect(() => {
+    function bloquearRolagemDaTela(event: Event) {
+      const alvo = event.target;
+
+      // Quando houver muitos itens, somente a lista interna pode rolar.
+      if (alvo instanceof Element && alvo.closest(".pedido-itens-lista")) return;
+      event.preventDefault();
+    }
+
+    document.addEventListener("wheel", bloquearRolagemDaTela, { passive: false });
+    document.addEventListener("touchmove", bloquearRolagemDaTela, { passive: false });
+
+    return () => {
+      document.removeEventListener("wheel", bloquearRolagemDaTela);
+      document.removeEventListener("touchmove", bloquearRolagemDaTela);
+    };
+  }, []);
+
   function voltar() {
     router.replace("/vendas/pedidos");
     router.refresh();
@@ -29,9 +48,13 @@ export function NovoPedidoPageClient({
       <Toaster position="bottom-right" richColors />
 
       <style jsx global>{`
+        html:has(.flua-novo-pedido-route),
         body:has(.flua-novo-pedido-route) {
+          height: 100dvh !important;
+          max-height: 100dvh !important;
           background: var(--admin-bg) !important;
           overflow: hidden !important;
+          overscroll-behavior: none !important;
         }
 
         body:has(.flua-novo-pedido-route)
@@ -63,6 +86,7 @@ export function NovoPedidoPageClient({
           padding: 18px 28px 16px !important;
           overflow-x: hidden !important;
           overflow-y: hidden !important;
+          overscroll-behavior: none !important;
           z-index: 100 !important;
         }
 
@@ -151,7 +175,7 @@ export function NovoPedidoPageClient({
 
           body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-itens-lista {
             max-height: 76px !important;
-            overflow-y: auto !important;
+            overflow-y: hidden !important;
           }
         }
 
