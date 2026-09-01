@@ -30,6 +30,7 @@ import { FollowupPanel } from "@/components/admin/FollowupPanel";
 import { HorariosPanel } from "@/components/admin/HorariosPanel";
 import { InicioPanel } from "@/components/admin/InicioPanel";
 import { InsumosPanel } from "@/components/admin/InsumosPanel";
+import { OnboardingPrompt } from "@/components/admin/OnboardingPrompt";
 import { PerfilContaMenu } from "@/components/admin/PerfilContaMenu";
 import { ProdutoDialog } from "@/components/admin/ProdutoDialog";
 import { ProdutosPanel } from "@/components/admin/ProdutosPanel";
@@ -229,6 +230,7 @@ export default function AdminClient({
   return (
     <ConfirmProvider>
       <Toaster position="bottom-right" richColors />
+      <OnboardingPrompt />
 
       <div className="min-h-screen bg-[var(--admin-bg)] text-foreground">
         <header className="sticky top-0 z-40 border-b border-[var(--admin-border)] bg-white/96 shadow-[0_6px_24px_rgba(112,61,58,0.04)] backdrop-blur-xl">
