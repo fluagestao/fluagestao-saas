@@ -128,6 +128,55 @@ function SeletorPeriodo({
   );
 }
 
+type PeriodoRealizadas = "tudo" | "ultimo_mes" | "ultima_semana" | "hoje";
+
+function SeletorPeriodoRealizadas({
+  periodo,
+  de,
+  ate,
+  onSelecionar,
+}: {
+  periodo: PeriodoRealizadas;
+  de: string;
+  ate: string;
+  onSelecionar: (periodo: PeriodoRealizadas) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        Período
+        <select
+          value={periodo}
+          onChange={(e) => onSelecionar(e.target.value as PeriodoRealizadas)}
+          className="h-9 min-w-52 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+        >
+          <option value="tudo">Tudo</option>
+          <option value="ultimo_mes">Último mês</option>
+          <option value="ultima_semana">Última semana</option>
+          <option value="hoje">Hoje</option>
+        </select>
+      </label>
+
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        De
+        {de ? (
+          <Input type="date" value={de} readOnly className="h-9 w-[9.5rem]" />
+        ) : (
+          <Input value="Desde o início" readOnly className="h-9 w-[9.5rem]" />
+        )}
+      </label>
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        Até
+        {ate ? (
+          <Input type="date" value={ate} readOnly className="h-9 w-[9.5rem]" />
+        ) : (
+          <Input value="Hoje" readOnly className="h-9 w-[9.5rem]" />
+        )}
+      </label>
+    </div>
+  );
+}
+
 function Card({ titulo, valor, nota }: { titulo: string; valor: string; nota?: string }) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
@@ -182,8 +231,9 @@ export function VendasPanel({
   const irPara = onVista ?? setSubInterna;
   const [pagando, setPagando] = useState<Pedido | null>(null);
   const [clientes, setClientes] = useState<ClienteComHistorico[]>([]);
-  const [realDe, setRealDe] = useState(() => hojeISO());
-  const [realAte, setRealAte] = useState(() => hojeISO());
+  const [periodoRealizadas, setPeriodoRealizadas] = useState<PeriodoRealizadas>("tudo");
+  const [realDe, setRealDe] = useState("");
+  const [realAte, setRealAte] = useState("");
   // A cobrança abre sem filtro: quer ver tudo que está em aberto.
   const [recDe, setRecDe] = useState("");
   const [recAte, setRecAte] = useState("");
@@ -324,6 +374,26 @@ export function VendasPanel({
     if (sub === "realizadas") buscarRealizadas();
   }, [sub, buscarRealizadas]);
 
+  function selecionarPeriodoRealizadas(periodo: PeriodoRealizadas) {
+    const hoje = hojeISO();
+    setPeriodoRealizadas(periodo);
+
+    if (periodo === "tudo") {
+      setRealDe("");
+      setRealAte("");
+      return;
+    }
+
+    setRealAte(hoje);
+    setRealDe(
+      periodo === "hoje"
+        ? hoje
+        : periodo === "ultima_semana"
+          ? somarDias(hoje, -6)
+          : somarDias(hoje, -29),
+    );
+  }
+
   /** Registrar pagamento abre o diálogo; desfazer é direto. */
   async function receber(p: Pedido) {
     if (!p.recebido_em) {
@@ -447,7 +517,7 @@ export function VendasPanel({
           sub === "areceber"
             ? "Quem ainda não pagou, de qualquer mês. Os já entregues vêm primeiro."
             : sub === "realizadas"
-              ? "Vendas concluídas — entregues e pagas — de um dia."
+              ? "Histórico das vendas concluídas — entregues e pagas."
               : "Pedidos do site entram sozinhos. Os que chegam por telefone ou Instagram, lance aqui."
         }
       />
@@ -671,13 +741,11 @@ export function VendasPanel({
       {/* vendas realizadas do dia */}
       {sub === "realizadas" && (
         <div className="mt-4">
-          <SeletorPeriodo
+          <SeletorPeriodoRealizadas
+            periodo={periodoRealizadas}
             de={realDe}
             ate={realAte}
-            onMudar={(d, a) => {
-              setRealDe(d);
-              setRealAte(a);
-            }}
+            onSelecionar={selecionarPeriodoRealizadas}
           />
 
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
