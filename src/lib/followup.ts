@@ -3,6 +3,10 @@
 import { z } from "zod";
 
 import { requireCompany } from "@/lib/company-context.server";
+import {
+  MODELOS_AVALIACAO_PADRAO,
+  type ModelosAvaliacao,
+} from "@/lib/followup-mensagens";
 import type { PedidoFollowup } from "@/lib/followup-ops.server";
 import { hojeISO, somarDias } from "@/lib/prazo";
 
@@ -93,6 +97,44 @@ export async function marcarAvaliacaoPedida(input: { data: unknown }) {
     .update({ avaliacao_pedida_em: pedida ? new Date().toISOString() : null })
     .eq("id", id)
     .eq("company_id", companyId);
+
+  if (error) throw error;
+  return { ok: true as const };
+}
+
+const modelosSchema = z.object({
+  presente: z.string().trim().min(1).max(2000),
+  consumo_proprio: z.string().trim().min(1).max(2000),
+});
+
+export async function carregarModelosAvaliacao(): Promise<ModelosAvaliacao> {
+  const { supabase, companyId } = await requireCompany();
+  const { data, error } = await supabase
+    .from("followup_review_templates")
+    .select("presente, consumo_proprio")
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return MODELOS_AVALIACAO_PADRAO;
+
+  return modelosSchema.parse(data);
+}
+
+export async function salvarModelosAvaliacao(input: { data: unknown }) {
+  const modelos = modelosSchema.parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const { error } = await supabase
+    .from("followup_review_templates")
+    .upsert(
+      {
+        company_id: companyId,
+        ...modelos,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "company_id" },
+    );
 
   if (error) throw error;
   return { ok: true as const };
