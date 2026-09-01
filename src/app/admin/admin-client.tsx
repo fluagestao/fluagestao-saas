@@ -10,7 +10,6 @@ import {
   Contact,
   Home,
   Loader2,
-  MessageCircle,
   Search,
   Settings,
   ShoppingCart,
@@ -65,7 +64,7 @@ export type AbaId =
   | "horarios";
 
 export type SubFinanceiro = "entradas" | "saidas";
-export type SubVendas = "pedidos" | "areceber" | "realizadas";
+export type SubVendas = "pedidos" | "areceber" | "realizadas" | "followup";
 export type SubCadastros =
   | "clientes"
   | "fornecedores"
@@ -81,6 +80,7 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
   { id: "pedidos", label: "Pedidos" },
   { id: "areceber", label: "A receber" },
   { id: "realizadas", label: "Realizadas" },
+  { id: "followup", label: "Follow-up" },
 ];
 
 const SUB_CADASTROS: { id: string; label: string }[] = [
@@ -101,8 +101,7 @@ type ItemMenu = {
 const MENU: ItemMenu[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart, vistas: SUB_VENDAS },
-  { id: "followup", label: "Follow-up", icon: MessageCircle },
-  { id: "dashboard", label: "Dashboard", icon: ChartPie },
+  { id: "dashboard", label: "Relatórios", icon: ChartPie },
   {
     id: "financeiro",
     label: "Financeiro",
@@ -123,8 +122,7 @@ const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas",
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart },
-  { id: "followup", label: "Follow-up", icon: MessageCircle },
-  { id: "dashboard", label: "Dashboard", icon: ChartPie },
+  { id: "dashboard", label: "Relatórios", icon: ChartPie },
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "cadastros", label: "Cadastros", icon: Contact },
@@ -159,7 +157,9 @@ export default function AdminClient({
   const [editando, setEditando] = useState<ProdutoRow | "novo" | null>(null);
 
   const [aba, setAba] = useState<AbaId>(initialAba);
-  const [subVendas, setSubVendas] = useState<SubVendas>("pedidos");
+  const [subVendas, setSubVendas] = useState<SubVendas>(
+    initialAba === "followup" ? "followup" : "pedidos",
+  );
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
   const [subCad, setSubCad] = useState<SubCadastros>("clientes");
   const [expandida, setExpandida] = useState<AbaId | null>(null);
@@ -196,6 +196,7 @@ export default function AdminClient({
     if (item.id === "cadastros") {
       return aba === "cadastros" || DO_CATALOGO.includes(aba);
     }
+    if (item.id === "vendas" && aba === "followup") return true;
     return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
   }
 
@@ -370,6 +371,30 @@ export default function AdminClient({
             ))}
           </nav>
 
+          {(aba === "vendas" || aba === "followup") && (
+            <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SUB_VENDAS.map((sub) => (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => {
+                    setAba("vendas");
+                    setSubVendas(sub.id);
+                  }}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                    (aba === "followup" && sub.id === "followup") ||
+                      (aba === "vendas" && subVendas === sub.id)
+                      ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                      : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+                  )}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </nav>
+          )}
+
           {(aba === "cadastros" || DO_CATALOGO.includes(aba)) && (
             <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SUB_CADASTROS.map((sub) => {
@@ -427,35 +452,39 @@ export default function AdminClient({
           ) : aba === "tarefas" ? (
             <TarefasPanel />
           ) : aba === "vendas" ? (
-            <VendasPanel
-              vista={subVendas}
-              onVista={setSubVendas}
-              empresaNome={companyName}
-              abrirNovoAoMontar={initialNovoPedido}
-              categorias={categorias.map((categoria) => ({
-                id: categoria.id,
-                nome: categoria.nome,
-                ordem: categoria.ordem,
-              }))}
-              onCatalogoChange={recarregar}
-              produtos={produtos.map((produto) => {
-                const categoria = categorias.find((item) => item.id === produto.categoria_id);
-                const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
+            subVendas === "followup" ? (
+              <FollowupPanel empresaNome={companyName} />
+            ) : (
+              <VendasPanel
+                vista={subVendas}
+                onVista={setSubVendas}
+                empresaNome={companyName}
+                abrirNovoAoMontar={initialNovoPedido}
+                categorias={categorias.map((categoria) => ({
+                  id: categoria.id,
+                  nome: categoria.nome,
+                  ordem: categoria.ordem,
+                }))}
+                onCatalogoChange={recarregar}
+                produtos={produtos.map((produto) => {
+                  const categoria = categorias.find((item) => item.id === produto.categoria_id);
+                  const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
 
-                return {
-                  slug: produto.slug,
-                  nome: produto.nome,
-                  preco: produto.preco,
-                  precos_extra: asPrecosExtra(produto.precos_extra),
-                  grupo: categoria
-                    ? catalogo
-                      ? `${categoria.nome} · ${catalogo.nome}`
-                      : categoria.nome
-                    : "Sem categoria",
-                  ordemGrupo: (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
-                };
-              })}
-            />
+                  return {
+                    slug: produto.slug,
+                    nome: produto.nome,
+                    preco: produto.preco,
+                    precos_extra: asPrecosExtra(produto.precos_extra),
+                    grupo: categoria
+                      ? catalogo
+                        ? `${categoria.nome} · ${catalogo.nome}`
+                        : categoria.nome
+                      : "Sem categoria",
+                    ordemGrupo: (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
+                  };
+                })}
+              />
+            )
           ) : aba === "produtos" ? (
             <ProdutosPanel
               produtos={produtos}
