@@ -344,7 +344,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
         open={Boolean(pedidoSelecionado)}
         onOpenChange={(aberto) => !aberto && setPedidoSelecionado(null)}
       >
-        <DialogContent className="max-w-2xl gap-5 rounded-2xl border-[var(--admin-border)]">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-4xl gap-3 overflow-hidden rounded-2xl border-[var(--admin-border)] p-5">
           <DialogHeader>
             <DialogTitle>Mensagem de pedido de avaliação</DialogTitle>
             <DialogDescription>
@@ -368,7 +368,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
             </TabsList>
 
             {(["presente", "consumo_proprio"] as const).map((tipo) => (
-              <TabsContent key={tipo} value={tipo} className="mt-5 space-y-4">
+              <TabsContent key={tipo} value={tipo} className="mt-3 space-y-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label htmlFor={`modelo-${tipo}`}>Modelo da mensagem</Label>
@@ -381,8 +381,8 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                     value={modelos[tipo]}
                     onChange={(e) => setModelos((atuais) => ({ ...atuais, [tipo]: e.target.value }))}
                     maxLength={2000}
-                    rows={9}
-                    className="resize-y rounded-xl border-[var(--admin-border)] bg-white leading-relaxed"
+                    rows={6}
+                    className="h-[clamp(8rem,22dvh,11rem)] resize-none rounded-xl border-[var(--admin-border)] bg-white text-sm leading-relaxed"
                   />
                 </div>
 
@@ -405,11 +405,11 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                 </div>
 
                 {pedidoSelecionado && (
-                  <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-4">
+                  <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-3">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--terracotta)]">
                       Prévia para {pedidoSelecionado.cliente_nome || "o cliente"}
                     </p>
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--admin-ink-soft)]">
+                    <p className="whitespace-pre-wrap text-xs leading-snug text-[var(--admin-ink-soft)]">
                       {aplicarModeloAvaliacao(modelos[tipo], pedidoSelecionado, empresaNome)}
                     </p>
                   </div>
