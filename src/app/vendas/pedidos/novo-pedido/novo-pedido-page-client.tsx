@@ -23,8 +23,13 @@ export function NovoPedidoPageClient({
     function bloquearRolagemDaTela(event: Event) {
       const alvo = event.target;
 
-      // Quando houver muitos itens, somente a lista interna pode rolar.
-      if (alvo instanceof Element && alvo.closest(".pedido-itens-lista")) return;
+      // Quando houver muitos dados, somente as listas internas podem rolar.
+      if (
+        alvo instanceof Element &&
+        alvo.closest(".pedido-itens-lista, .busca-adicionar-lista")
+      ) {
+        return;
+      }
       event.preventDefault();
     }
 
