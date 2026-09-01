@@ -356,12 +356,12 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
             value={tipoMensagem}
             onValueChange={(valor) => setTipoMensagem(valor as TipoMensagemAvaliacao)}
           >
-            <TabsList className="grid h-auto w-full min-w-0 grid-cols-2 rounded-xl bg-[var(--cream-soft)] p-1">
-              <TabsTrigger value="presente" className="min-w-0 gap-1.5 whitespace-normal rounded-lg px-2 py-2.5 text-center text-xs leading-tight sm:gap-2 sm:text-sm">
+            <TabsList className="grid h-auto w-full min-w-0 grid-cols-2 gap-1 rounded-xl bg-transparent p-0">
+              <TabsTrigger value="presente" className="min-w-0 gap-1.5 whitespace-normal rounded-xl border border-transparent bg-[#f7e5e1] px-2 py-2.5 text-center text-xs leading-tight text-[var(--wine)] opacity-45 shadow-none transition-all hover:opacity-70 data-[state=active]:border-[var(--wine)] data-[state=active]:bg-[var(--wine)] data-[state=active]:text-white data-[state=active]:opacity-100 data-[state=active]:shadow-sm sm:gap-2 sm:text-sm">
                 <Gift className="h-4 w-4" />
                 Presente ou surpresa
               </TabsTrigger>
-              <TabsTrigger value="consumo_proprio" className="min-w-0 gap-1.5 whitespace-normal rounded-lg px-2 py-2.5 text-center text-xs leading-tight sm:gap-2 sm:text-sm">
+              <TabsTrigger value="consumo_proprio" className="min-w-0 gap-1.5 whitespace-normal rounded-xl border border-transparent bg-[#f7e5e1] px-2 py-2.5 text-center text-xs leading-tight text-[var(--wine)] opacity-45 shadow-none transition-all hover:opacity-70 data-[state=active]:border-[var(--wine)] data-[state=active]:bg-[var(--wine)] data-[state=active]:text-white data-[state=active]:opacity-100 data-[state=active]:shadow-sm sm:gap-2 sm:text-sm">
                 <ShoppingBag className="h-4 w-4" />
                 Consumo próprio
               </TabsTrigger>
