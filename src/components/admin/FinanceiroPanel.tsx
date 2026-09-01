@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Plus, Trash2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,17 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataLonga, hojeISO, somarDias } from "@/lib/prazo";
-import { carregarMovimentos, removerMovimento, salvarMovimento } from "@/lib/financeiro";
+import {
+  carregarMovimentos,
+  criarTipoDespesa,
+  removerMovimento,
+  salvarMovimento,
+} from "@/lib/financeiro";
 import { porDia, resumoDoCaixa, type Movimento } from "@/lib/caixa";
 import { formatBRL } from "@/lib/vendas";
 import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
+
+type TipoDespesa = { id: string; nome: string };
 
 function paraNumero(v: string): number {
   const n = Number(v.replace(/[^\d,.-]/g, "").replace(",", "."));
@@ -27,6 +34,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   const [ate, setAte] = useState(() => hojeISO());
   const [movimentos, setMovimentos] = useState<Movimento[]>([]);
   const [fornecedores, setFornecedores] = useState<string[]>([]);
+  const [tiposDespesa, setTiposDespesa] = useState<TipoDespesa[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const confirmar = useConfirmar();
@@ -38,6 +46,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
       const d = await carregarMovimentos({ data: { de, ate } });
       setMovimentos(d.movimentos as Movimento[]);
       setFornecedores(d.fornecedores);
+      setTiposDespesa(d.tiposDespesa as TipoDespesa[]);
     } catch (e) {
       setErro(mensagemDeErro(e, "carregar o financeiro"));
     }
@@ -81,7 +90,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         descricao={
           tipo === "entrada"
             ? "Todo pedido marcado como pago entra aqui sozinho. Use o campo abaixo só para dinheiro que não veio de um pedido."
-            : "Compra, conta, retirada. Quatro campos e pronto."
+            : "Compra, conta, retirada. Informe a descrição, o tipo de despesa e o fornecedor."
         }
       />
 
@@ -131,7 +140,12 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         />
       </div>
 
-      <NovoLancamento tipo={tipo} fornecedores={fornecedores} onSalvo={recarregar} />
+      <NovoLancamento
+        tipo={tipo}
+        fornecedores={fornecedores}
+        tiposDespesa={tiposDespesa}
+        onSalvo={recarregar}
+      />
 
       {carregando && <Carregando />}
       {erro && (
@@ -172,8 +186,10 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-foreground">{m.descricao}</p>
-                  {m.fornecedor && (
-                    <p className="truncate text-xs text-muted-foreground">{m.fornecedor}</p>
+                  {(m.tipo_despesa || m.fornecedor) && (
+                    <p className="truncate text-xs text-muted-foreground">
+                      {[m.tipo_despesa, m.fornecedor].filter(Boolean).join(" · ")}
+                    </p>
                   )}
                 </div>
                 <Num className="shrink-0 font-medium text-foreground">{formatBRL(m.valor)}</Num>
@@ -223,19 +239,51 @@ function Cartao({
 function NovoLancamento({
   tipo,
   fornecedores,
+  tiposDespesa,
   onSalvo,
 }: {
   tipo: "entrada" | "saida";
   fornecedores: string[];
+  tiposDespesa: TipoDespesa[];
   onSalvo: () => void;
 }) {
   const [data, setData] = useState(() => hojeISO());
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [fornecedor, setFornecedor] = useState("");
+  const [tipoDespesaId, setTipoDespesaId] = useState("");
+  const [opcoesDespesa, setOpcoesDespesa] = useState<TipoDespesa[]>(tiposDespesa);
+  const [cadastrandoTipo, setCadastrandoTipo] = useState(false);
+  const [novoTipo, setNovoTipo] = useState("");
+  const [salvandoTipo, setSalvandoTipo] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
+  useEffect(() => {
+    setOpcoesDespesa(tiposDespesa);
+  }, [tiposDespesa]);
+
   const podeSalvar = paraNumero(valor) > 0 && descricao.trim().length > 0;
+
+  async function cadastrarTipoDespesa() {
+    const nome = novoTipo.trim();
+    if (!nome || salvandoTipo) return;
+
+    setSalvandoTipo(true);
+    try {
+      const criado = await criarTipoDespesa({ data: { nome } });
+      setOpcoesDespesa((atuais) =>
+        [...atuais, criado].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+      );
+      setTipoDespesaId(criado.id);
+      setNovoTipo("");
+      setCadastrandoTipo(false);
+      toast.success("Tipo de despesa cadastrado.");
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "cadastrar o tipo de despesa"));
+    } finally {
+      setSalvandoTipo(false);
+    }
+  }
 
   async function salvar() {
     if (!podeSalvar || salvando) return;
@@ -248,11 +296,14 @@ function NovoLancamento({
           valor: paraNumero(valor),
           descricao: descricao.trim(),
           fornecedor: fornecedor.trim() || null,
+          tipo_despesa_id: tipo === "saida" ? tipoDespesaId || null : null,
         },
       });
       toast.success(tipo === "entrada" ? "Entrada lançada." : "Saída lançada.");
       setValor("");
       setDescricao("");
+      setFornecedor("");
+      setTipoDespesaId("");
       document.getElementById("campo-valor")?.focus();
       onSalvo();
     } catch (e) {
@@ -287,7 +338,7 @@ function NovoLancamento({
         </label>
         <label className="block min-w-[12rem] flex-1">
           <span className="mb-1 block text-xs font-medium text-muted-foreground">
-            {tipo === "entrada" ? "De onde veio" : "Despesa"}
+            {tipo === "entrada" ? "De onde veio" : "Descrição"}
           </span>
           <Input
             value={descricao}
@@ -297,6 +348,37 @@ function NovoLancamento({
             className="h-10"
           />
         </label>
+
+        {tipo === "saida" && (
+          <div className="block min-w-[12rem]">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Despesa</span>
+            <div className="flex h-10 overflow-hidden rounded-md border border-input bg-background shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
+              <select
+                value={tipoDespesaId}
+                onChange={(e) => setTipoDespesaId(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
+                aria-label="Tipo de despesa"
+              >
+                <option value="">Selecione</option>
+                {opcoesDespesa.map((opcao) => (
+                  <option key={opcao.id} value={opcao.id}>
+                    {opcao.nome}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setCadastrandoTipo((valorAtual) => !valorAtual)}
+                className="grid w-10 shrink-0 place-items-center border-l border-input text-[var(--terracotta)] transition hover:bg-[var(--cream)]"
+                aria-label="Cadastrar tipo de despesa"
+                title="Cadastrar tipo de despesa"
+              >
+                {cadastrandoTipo ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+        )}
+
         {tipo === "saida" && (
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-muted-foreground">Fornecedor</span>
@@ -304,7 +386,7 @@ function NovoLancamento({
               value={fornecedor}
               onChange={(e) => setFornecedor(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && salvar()}
-              placeholder="Angeloni"
+              placeholder=""
               list="fornecedores-usados"
               className="h-10 w-40"
             />
@@ -315,11 +397,38 @@ function NovoLancamento({
             </datalist>
           </label>
         )}
+
         <Button onClick={salvar} disabled={!podeSalvar || salvando} className="h-10">
           <Plus className="mr-1 h-4 w-4" />
           Lançar
         </Button>
       </div>
+
+      {tipo === "saida" && cadastrandoTipo && (
+        <div className="mt-2 ml-auto flex max-w-md items-center gap-2 rounded-xl bg-[var(--cream-soft)] p-2">
+          <Input
+            value={novoTipo}
+            onChange={(e) => setNovoTipo(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void cadastrarTipoDespesa();
+              }
+            }}
+            placeholder="Ex.: Insumos, salários, gasolina"
+            autoFocus
+            className="h-9"
+          />
+          <Button
+            type="button"
+            onClick={cadastrarTipoDespesa}
+            disabled={!novoTipo.trim() || salvandoTipo}
+            className="h-9 shrink-0"
+          >
+            Salvar
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
