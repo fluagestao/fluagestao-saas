@@ -347,7 +347,7 @@ export function PedidoDialog({
           <BuscaAdicionar
             className="flex-1"
             placeholder={
-              clientes.find((c) => c.id === clienteId)?.nome ?? "buscar cliente cadastrado"
+              clientes.find((c) => c.id === clienteId)?.nome ?? "Busque aqui seu cliente cadastrado"
             }
             buscaPlaceholder="Nome ou WhatsApp…"
             vazio="Nenhum cliente com esse nome."
