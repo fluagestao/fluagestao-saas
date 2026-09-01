@@ -395,7 +395,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         />
       </div>
 
-      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
+      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
         <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
           <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
           <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
@@ -420,7 +420,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <article className="flex min-h-[350px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+        <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
           <CabecalhoCard titulo="Próximos 7 dias" />
           <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {proximosSete.length === 0 ? (
@@ -447,7 +447,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <div className="grid content-start gap-4 lg:col-span-2 xl:col-span-1">
+        <div className="grid content-start gap-4 md:col-span-2 xl:col-span-1">
           <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
