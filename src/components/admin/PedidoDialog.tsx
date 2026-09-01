@@ -386,7 +386,7 @@ export function PedidoDialog({
             title="Cadastrar cliente"
             onClick={() => setNovoCliente(true)}
           >
-            <Plus className="h-4 w-4" />
+            Cadastre um novo
           </Button>
           {clienteId && (
             <Button
