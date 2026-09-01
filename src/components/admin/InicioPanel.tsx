@@ -30,7 +30,6 @@ import {
 } from "@/lib/vendas";
 import { saudacao, versiculoDoDia } from "@/lib/versiculos";
 import { Num } from "./shell";
-import { situacaoDoPrazo } from "./TarefasPanel";
 
 type FaturamentoMes = Awaited<ReturnType<typeof carregarFaturamentoDoMes>>;
 
@@ -216,7 +215,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   }, [abertos, hoje]);
 
   const tarefasPendentes = useMemo(
-    () => tarefas.filter((t) => !t.feita && situacaoDoPrazo(t) !== null).slice(0, 5),
+    () => tarefas.filter((t) => !t.feita).slice(0, 5),
     [tarefas],
   );
 
@@ -434,7 +433,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
               {tarefasPendentes.length === 0 ? (
-                <Vazio titulo="Nenhuma tarefa pendente" descricao="Sem tarefas com prazo para hoje ou amanhã." />
+                <Vazio titulo="Nenhuma tarefa pendente" descricao="As tarefas adicionadas aparecem aqui." />
               ) : (
                 <div className="divide-y divide-[var(--admin-border)]">
                   {tarefasPendentes.map((t) => (
