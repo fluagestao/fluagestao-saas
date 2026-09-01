@@ -213,7 +213,11 @@ export function InsumosPanel() {
     if (!ok) return;
 
     try {
-      await removerInsumo({ data: { id: item.id } });
+      const resultado = await removerInsumo({ data: { id: item.id } });
+      if (!resultado.ok) {
+        toast.warning(resultado.motivo, { duration: 7000 });
+        return;
+      }
       toast.success("Insumo excluído.");
       await carregar();
     } catch (e) {
