@@ -97,6 +97,7 @@ export function OnboardingPrompt() {
 
   const [pendente, setPendente] = useState(false);
   const [aberto, setAberto] = useState(false);
+  const [forcarOnboarding, setForcarOnboarding] = useState(false);
   const [carregando, setCarregando] = useState(false);
   const [salvando, setSalvando] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
@@ -110,8 +111,16 @@ export function OnboardingPrompt() {
     if (!pathname.startsWith("/admin") && !pathname.startsWith("/inicio")) {
       setPendente(false);
       setAberto(false);
+      setForcarOnboarding(false);
       return;
     }
+
+    const deveAbrir =
+      typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("onboarding") === "1";
+
+    setForcarOnboarding(deveAbrir);
+    if (deveAbrir) setAberto(true);
 
     let ativo = true;
     setCarregando(true);
@@ -120,9 +129,14 @@ export function OnboardingPrompt() {
       try {
         const { data: userData, error: userError } = await supabase.auth.getUser();
         const user = userData.user;
-        if (!ativo || userError || !user) return;
 
-        const { data: membro } = await supabase
+        if (!ativo) return;
+        if (userError || !user) {
+          setErro("Não foi possível validar sua sessão. Atualize a página e tente novamente.");
+          return;
+        }
+
+        const { data: membro, error: membroError } = await supabase
           .from("company_members")
           .select("company_id, role, display_name")
           .eq("user_id", user.id)
@@ -131,9 +145,18 @@ export function OnboardingPrompt() {
           .limit(1)
           .maybeSingle();
 
-        if (!ativo || !membro || membro.role !== "owner") return;
+        if (!ativo) return;
+        if (membroError) {
+          setErro(mensagemErro(membroError, "Não foi possível localizar sua empresa."));
+          return;
+        }
+        if (!membro || membro.role !== "owner") {
+          setForcarOnboarding(false);
+          setAberto(false);
+          return;
+        }
 
-        const [{ data: perfil }, { data: empresa }] = await Promise.all([
+        const [perfilResult, empresaResult] = await Promise.all([
           supabase
             .from("profiles")
             .select("full_name, cpf, phone")
@@ -148,8 +171,29 @@ export function OnboardingPrompt() {
             .maybeSingle(),
         ]);
 
-        if (!ativo || !empresa || empresa.onboarding_completed_at) {
+        if (!ativo) return;
+
+        if (perfilResult.error) {
+          setErro(mensagemErro(perfilResult.error, "Não foi possível carregar seus dados."));
+          return;
+        }
+        if (empresaResult.error) {
+          setErro(mensagemErro(empresaResult.error, "Não foi possível carregar os dados da empresa."));
+          return;
+        }
+
+        const perfil = perfilResult.data;
+        const empresa = empresaResult.data;
+
+        if (!empresa) {
+          setErro("Não foi possível localizar os dados da sua empresa.");
+          return;
+        }
+
+        if (empresa.onboarding_completed_at) {
           setPendente(false);
+          setForcarOnboarding(false);
+          setAberto(false);
           return;
         }
 
@@ -174,7 +218,12 @@ export function OnboardingPrompt() {
             perfil?.full_name ??
             membro.display_name ??
             (typeof metadata.full_name === "string" ? metadata.full_name : ""),
-          cpf: perfil?.cpf ? formatarCpf(perfil.cpf) : "",
+          cpf:
+            perfil?.cpf
+              ? formatarCpf(perfil.cpf)
+              : tipoDocumento === "cpf" && documento
+                ? formatarCpf(documento)
+                : "",
           empresa:
             empresa.name ??
             (typeof metadata.store_name === "string" ? metadata.store_name : ""),
@@ -190,11 +239,13 @@ export function OnboardingPrompt() {
           estado: empresa.state ?? "",
         });
         setPendente(true);
+        setErro("");
 
-        const deveAbrir =
-          typeof window !== "undefined" &&
-          new URLSearchParams(window.location.search).get("onboarding") === "1";
         if (deveAbrir) setAberto(true);
+      } catch (error) {
+        if (ativo) {
+          setErro(mensagemErro(error, "Não foi possível carregar o onboarding."));
+        }
       } finally {
         if (ativo) setCarregando(false);
       }
@@ -219,6 +270,7 @@ export function OnboardingPrompt() {
 
   function fechar() {
     setAberto(false);
+    setForcarOnboarding(false);
     setErro("");
     limparParametroOnboarding();
   }
@@ -359,6 +411,7 @@ export function OnboardingPrompt() {
 
       setPendente(false);
       setAberto(false);
+      setForcarOnboarding(false);
       limparParametroOnboarding();
       router.replace("/inicio");
       router.refresh();
@@ -369,37 +422,40 @@ export function OnboardingPrompt() {
     }
   }
 
-  if ((!pathname.startsWith("/admin") && !pathname.startsWith("/inicio")) || !pendente) return null;
+  const rotaPainel = pathname.startsWith("/admin") || pathname.startsWith("/inicio");
+  if (!rotaPainel || (!pendente && !forcarOnboarding)) return null;
 
   const campo =
     "h-11 rounded-xl border-[#D9C6B2]/80 bg-white text-[#3F2422] shadow-sm focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/15";
 
   return (
     <>
-      <div className="fixed left-1/2 top-[82px] z-[55] w-[calc(100%-24px)] max-w-3xl -translate-x-1/2 rounded-2xl border border-[#D9C6B2] bg-white/95 px-4 py-3 shadow-[0_16px_44px_rgba(112,61,58,0.16)] backdrop-blur sm:px-5">
-        <div className="flex items-center gap-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#F7F1E8] text-[#A94F45]">
-            {carregando ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <BellRing className="h-4 w-4" />
-            )}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-[#3F2422]">Finalize o cadastro da sua empresa</p>
-            <p className="hidden text-xs text-[#703D3A]/65 sm:block">
-              Você já pode usar a Flua. Complete os dados quando puder.
-            </p>
+      {pendente && (
+        <div className="fixed left-1/2 top-[82px] z-[55] w-[calc(100%-24px)] max-w-3xl -translate-x-1/2 rounded-2xl border border-[#D9C6B2] bg-white/95 px-4 py-3 shadow-[0_16px_44px_rgba(112,61,58,0.16)] backdrop-blur sm:px-5">
+          <div className="flex items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#F7F1E8] text-[#A94F45]">
+              {carregando ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <BellRing className="h-4 w-4" />
+              )}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-[#3F2422]">Finalize o cadastro da sua empresa</p>
+              <p className="hidden text-xs text-[#703D3A]/65 sm:block">
+                Você já pode usar a Flua. Complete os dados quando puder.
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={() => setAberto(true)}
+              className="h-9 shrink-0 rounded-xl bg-[#A94F45] px-4 text-xs font-semibold text-white hover:bg-[#703D3A]"
+            >
+              Finalizar cadastro
+            </Button>
           </div>
-          <Button
-            type="button"
-            onClick={() => setAberto(true)}
-            className="h-9 shrink-0 rounded-xl bg-[#A94F45] px-4 text-xs font-semibold text-white hover:bg-[#703D3A]"
-          >
-            Finalizar cadastro
-          </Button>
         </div>
-      </div>
+      )}
 
       {aberto && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#2C2421]/45 p-3 backdrop-blur-[2px] sm:p-6">
@@ -523,9 +579,9 @@ export function OnboardingPrompt() {
                 <Button type="button" variant="outline" onClick={fechar} className="h-11 rounded-xl border-[#D9C6B2] bg-white px-5 text-[#703D3A]">
                   Fazer depois
                 </Button>
-                <Button type="submit" disabled={salvando} className="h-11 rounded-xl bg-[#A94F45] px-5 font-semibold text-white hover:bg-[#703D3A]">
-                  {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {salvando ? "Salvando..." : "Concluir cadastro"}
+                <Button type="submit" disabled={salvando || carregando} className="h-11 rounded-xl bg-[#A94F45] px-5 font-semibold text-white hover:bg-[#703D3A]">
+                  {(salvando || carregando) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {salvando ? "Salvando..." : carregando ? "Carregando..." : "Concluir cadastro"}
                 </Button>
               </div>
             </form>
