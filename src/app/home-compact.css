@@ -33,10 +33,9 @@
     min-height: 0 !important;
     padding-top: 8px !important;
     padding-bottom: 6px !important;
-    /* auto, nao hidden: no caso normal cabe tudo e nao aparece barra; se algum
-       card crescer, a tela rola em vez de cortar o conteudo pela metade. */
     overflow-x: hidden !important;
-    overflow-y: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior: none !important;
   }
 
   main > section.space-y-3.pb-4 {
@@ -51,7 +50,7 @@
     min-height: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
-    overflow: visible !important;
+    overflow: hidden !important;
   }
 
   main > section.space-y-3.pb-4 > * {
