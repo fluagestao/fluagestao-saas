@@ -21,7 +21,7 @@ type ItemId = "inicio" | "pedidos" | "dashboard";
 const ITENS = [
   { id: "inicio" as const, label: "Início", alvoHeader: "Início", icon: Home },
   { id: "pedidos" as const, label: "Pedidos", alvoHeader: "Vendas", icon: ShoppingBag },
-  { id: "dashboard" as const, label: "Dashboard", alvoHeader: "Dashboard", icon: ChartPie },
+  { id: "dashboard" as const, label: "Relatórios", alvoHeader: "Relatórios", icon: ChartPie },
 ];
 
 function idPeloPath(pathname: string): ItemId | null {
