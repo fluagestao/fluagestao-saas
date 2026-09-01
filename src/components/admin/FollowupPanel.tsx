@@ -289,9 +289,9 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
           lista.map((pedido) => (
             <article
               key={pedido.id}
-              className="flex min-w-0 flex-wrap items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-white px-4 py-3 shadow-[var(--shadow-soft)]"
+              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-2xl border border-[var(--admin-border)] bg-white px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap sm:gap-3"
             >
-              <div className="min-w-[180px] flex-1">
+              <div className="col-span-2 min-w-0 sm:col-auto sm:min-w-[180px] sm:flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[var(--admin-ink)]">
                   {pedido.cliente_nome?.trim() || "Cliente sem nome"}
                   {pedido.compras > 1 && (
@@ -305,14 +305,14 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                 </p>
               </div>
 
-              <span className="text-xs text-[var(--admin-muted)]">
+              <span className="col-start-1 row-start-2 whitespace-nowrap text-xs text-[var(--admin-muted)] sm:col-auto sm:row-auto">
                 {rotuloDeQuando(dataDaEntrega(pedido))}
               </span>
 
               <button
                 type="button"
                 onClick={() => pedirAvaliacao(pedido)}
-                className="inline-flex h-10 items-center gap-2 rounded-full bg-[var(--wine)] px-4 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+                className="col-start-1 row-start-3 inline-flex h-10 w-full min-w-0 items-center justify-center gap-2 rounded-full bg-[var(--wine)] px-3 text-sm font-semibold text-white transition-opacity hover:opacity-90 sm:col-auto sm:row-auto sm:w-auto sm:px-4"
               >
                 <MessageCircle className="h-4 w-4" />
                 {pedido.avaliacao_pedida_em ? "Chamar de novo" : "Pedir avaliação"}
@@ -327,7 +327,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                     : "Marcar como já chamado, sem enviar"
                 }
                 className={cn(
-                  "grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors",
+                  "col-start-2 row-start-3 grid h-9 w-9 shrink-0 place-items-center rounded-full border transition-colors sm:col-auto sm:row-auto",
                   pedido.avaliacao_pedida_em
                     ? "border-[var(--whatsapp)] bg-[var(--whatsapp)] text-white"
                     : "border-[var(--admin-border)] text-[var(--admin-ink-soft)] hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]",
