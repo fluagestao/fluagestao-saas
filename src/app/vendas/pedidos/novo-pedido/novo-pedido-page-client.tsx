@@ -96,6 +96,65 @@ export function NovoPedidoPageClient({
           max-width: 100% !important;
         }
 
+        @media (min-width: 761px) {
+          body:has(.flua-novo-pedido-route) [role="dialog"] {
+            padding: 10px 22px 10px !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"]::before {
+            margin-bottom: 3px !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll {
+            display: grid !important;
+            grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+            align-content: start !important;
+            gap: 6px 10px !important;
+            overflow: hidden !important;
+            padding-right: 0 !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(1) {
+            grid-column: span 4;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(2) {
+            grid-column: span 8;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(3),
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(4) {
+            grid-column: 1 / -1;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(5) {
+            grid-column: span 9;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(6) {
+            grid-column: span 3;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll > :nth-child(n + 7) {
+            grid-column: 1 / -1;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll input,
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll select {
+            height: 36px !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-dialog-scroll textarea {
+            min-height: 52px !important;
+            height: 52px !important;
+          }
+
+          body:has(.flua-novo-pedido-route) [role="dialog"] .pedido-itens-lista {
+            max-height: 76px !important;
+            overflow-y: auto !important;
+          }
+        }
+
         @media (max-width: 760px) {
           body:has(.flua-novo-pedido-route) [role="dialog"] {
             top: 74px !important;
