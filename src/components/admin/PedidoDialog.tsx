@@ -414,9 +414,8 @@ export function PedidoDialog({
 
         {/* itens */}
         <div
-          className={`rounded-2xl border border-[var(--cream-deep)] p-2.5 transition-[width] ${
-            cartaoHabilitado ? "w-full" : "w-full sm:w-[410px]"
-          }`}
+          className="rounded-2xl border border-[var(--cream-deep)] p-2.5 transition-[width]"
+          style={{ width: cartaoHabilitado ? "100%" : "min(410px, 100%)" }}
         >
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-foreground">Itens</h3>
