@@ -758,11 +758,15 @@ export function PedidoDialog({
           </Campo>
         </div>
 
-        {/* cartão que vai dentro da caixa */}
         <div
-          className="rounded-2xl border border-[var(--cream-deep)] p-2.5 transition-[width]"
-          style={{ width: cartaoHabilitado ? "100%" : "min(410px, 100%)" }}
+          className={
+            cartaoHabilitado
+              ? "space-y-2"
+              : "grid items-end gap-2 sm:grid-cols-[minmax(0,410px)_minmax(0,1fr)]"
+          }
         >
+          {/* cartão que vai dentro da caixa */}
+          <div className="w-full rounded-2xl border border-[var(--cream-deep)] p-2.5">
           <div className="flex items-center justify-between gap-3">
             <div>
               <h3 className="text-lg font-semibold text-foreground">💌 Tem cartão?</h3>
@@ -806,11 +810,12 @@ export function PedidoDialog({
               </div>
             </div>
           )}
-        </div>
+          </div>
 
-        <Campo label="Observação">
-          <Input value={observacao} onChange={(e) => setObservacao(e.target.value)} />
-        </Campo>
+          <Campo label="Observação">
+            <Input value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+          </Campo>
+        </div>
 
         {erro && <p className="text-sm text-destructive">{erro}</p>}
       </div>
