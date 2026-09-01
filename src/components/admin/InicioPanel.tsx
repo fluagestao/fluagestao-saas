@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
+  CalendarDays,
   CircleCheck,
   CircleDollarSign,
   Loader2,
@@ -83,16 +84,16 @@ function Kpi({
   detalheClass?: string;
 }) {
   return (
-    <article className="flex min-h-[92px] min-w-0 items-start gap-3 rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[var(--shadow-soft)]">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#fbefec] text-[var(--terracotta)]">
-        <Icon className="h-4 w-4" strokeWidth={1.9} />
+    <article className="flex min-h-[132px] min-w-0 items-center gap-4 rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_8px_28px_rgba(112,61,58,0.06)]">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
+        <Icon className="h-6 w-6" strokeWidth={1.8} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-xs text-[var(--admin-muted)]">{titulo}</p>
-        <p className="mt-0.5 truncate text-2xl font-semibold tracking-[-0.03em] text-[var(--admin-ink)]">
+        <p className="truncate text-[15px] font-semibold leading-tight text-[var(--admin-ink-soft)]">{titulo}</p>
+        <p className="mt-1 truncate text-[clamp(1.75rem,2.3vw,2.25rem)] font-bold leading-none tracking-[-0.04em] text-[var(--admin-ink)]">
           <Num>{valor}</Num>
         </p>
-        {nota && <p className={`mt-0.5 truncate text-[11px] ${detalheClass}`}>{nota}</p>}
+        {nota && <p className={`mt-2 truncate text-sm ${detalheClass}`}>{nota}</p>}
       </div>
     </article>
   );
@@ -111,16 +112,16 @@ function CabecalhoCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-10 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4">
-      <h3 className="text-sm font-semibold text-[var(--admin-ink)]">{titulo}</h3>
+    <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-5">
+      <h3 className="text-xl font-semibold tracking-[-0.02em] text-[var(--admin-ink)]">{titulo}</h3>
       {children}
       {acao && onClick && (
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-[var(--terracotta)]"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-[#b65346] transition-colors hover:bg-[#fbefec]"
         >
-          {acao} <ArrowRight className="h-3 w-3" />
+          {acao} <ArrowRight className="h-4 w-4" />
         </button>
       )}
     </div>
@@ -128,14 +129,22 @@ function CabecalhoCard({
 }
 
 /** Vazio no padrão do painel: ícone + frase curta + explicação. */
-function Vazio({ titulo, descricao }: { titulo: string; descricao: string }) {
+function Vazio({
+  titulo,
+  descricao,
+  icon: Icon = CircleCheck,
+}: {
+  titulo: string;
+  descricao: string;
+  icon?: typeof CircleCheck;
+}) {
   return (
-    <div className="flex items-start gap-3 py-3">
-      <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-[var(--admin-muted)]" strokeWidth={1.8} />
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-[var(--admin-ink)]">{titulo}</p>
-        <p className="mt-0.5 text-[11px] text-[var(--admin-muted)]">{descricao}</p>
-      </div>
+    <div className="flex min-h-[210px] flex-1 flex-col items-center justify-center px-6 py-8 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
+        <Icon className="h-6 w-6" strokeWidth={1.7} />
+      </span>
+      <p className="mt-4 text-base font-semibold text-[var(--admin-ink)]">{titulo}</p>
+      <p className="mt-1 max-w-xs text-sm leading-relaxed text-[var(--admin-muted)]">{descricao}</p>
     </div>
   );
 }
@@ -256,11 +265,20 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
   const grafico = useMemo(() => {
     const dias = faturamento?.dias ?? [];
-    const comValor = dias.filter((d) => d.valor > 0);
-    const exibidos = comValor.length > 12 ? comValor.slice(-12) : comValor;
-    const max = Math.max(...exibidos.map((d) => d.valor), 1);
-    return { max, exibidos };
+    const max = Math.max(...dias.map((d) => d.valor), 1);
+    return { max, exibidos: dias };
   }, [faturamento]);
+
+  const pontosLinha = useMemo(() => {
+    const divisor = Math.max(grafico.exibidos.length - 1, 1);
+    return grafico.exibidos
+      .map((p, index) => {
+        const x = (index / divisor) * 100;
+        const y = 36 - (p.valor / grafico.max) * 32;
+        return `${x.toFixed(2)},${y.toFixed(2)}`;
+      })
+      .join(" ");
+  }, [grafico]);
 
   async function trocarPeriodo(novo: "atual" | "anterior") {
     if (carregandoMes) return; // trava clique repetido enquanto a busca corre
@@ -310,9 +328,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   }
 
   return (
-    <section className="space-y-3 pb-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+    <section className="space-y-5 pb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           {editandoNome ? (
             <div className="flex items-center gap-2">
               <Input
@@ -325,7 +343,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <Button size="sm" onClick={salvarNome}>Salvar</Button>
             </div>
           ) : (
-            <h1 className="flex items-center gap-2 text-2xl font-medium tracking-[-0.025em] text-[var(--admin-ink)]">
+            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-[-0.035em] text-[var(--admin-ink)] sm:text-4xl">
               {saudacao()}{primeiro && `, ${primeiro}`}!
               <button
                 type="button"
@@ -340,16 +358,16 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               </button>
             </h1>
           )}
-          <span className="text-xs text-[var(--admin-muted)]">{formatarDataLonga(hoje)}</span>
+          <span className="mt-2 flex items-center gap-2 text-sm text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
         </div>
 
-        <Button onClick={novoPedido} className="h-10 shrink-0 rounded-xl px-5">
+        <Button onClick={novoPedido} className="h-12 w-full shrink-0 rounded-xl bg-[#b65346] px-6 text-base font-semibold shadow-[0_8px_22px_rgba(182,83,70,0.22)] hover:bg-[#a8493e] sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo pedido
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           titulo="Faturamento do mês"
           valor={formatBRL(resumo.faturamentoMes)}
@@ -377,12 +395,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         />
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[1fr_1fr_.95fr]">
-        <article className="flex min-h-[350px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+      <div className="grid items-start gap-4 lg:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
+        <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
           <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
           <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {entregasHoje.length === 0 ? (
-              <Vazio titulo="Sem entregas hoje" descricao="Nenhuma entrega programada." />
+              <Vazio titulo="Sem entregas hoje" descricao="Nenhuma entrega programada." icon={CalendarDays} />
             ) : (
               entregasHoje.slice(0, 6).map((p) => (
                 <div key={p.id} className="grid grid-cols-[52px_minmax(0,1fr)_auto] gap-3 py-4">
@@ -406,7 +424,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           <CabecalhoCard titulo="Próximos 7 dias" />
           <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {proximosSete.length === 0 ? (
-              <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." />
+              <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." icon={CalendarDays} />
             ) : (
               proximosSete.map((p) => (
                 <div key={p.id} className="grid grid-cols-[46px_50px_minmax(0,1fr)_auto] items-start gap-2 py-3">
@@ -429,8 +447,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <div className="grid gap-3">
-          <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+        <div className="grid content-start gap-4 lg:col-span-2 xl:col-span-1">
+          <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
               {tarefasPendentes.length === 0 ? (
@@ -451,7 +469,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             </div>
           </article>
 
-          <article className="flex min-h-[230px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+          <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
             <CabecalhoCard titulo="Pedidos em aberto" acao="ver todos" onClick={() => onIrPara("vendas")} />
             <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
               {abertos.length === 0 ? (
@@ -473,8 +491,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         </div>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[2.08fr_.95fr]">
-        <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-soft)]">
+      <div className="grid gap-4 xl:grid-cols-[2.08fr_.95fr]">
+        <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
           <CabecalhoCard titulo="Resumo do faturamento">
             <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-[var(--cream-soft)] p-0.5">
               {(
@@ -512,59 +530,78 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               </p>
             </div>
 
-            {grafico.exibidos.length === 0 ? (
-              <div className="flex min-h-0 flex-1 items-center text-sm text-[var(--admin-muted)]">
-                Sem faturamento registrado neste mês.
+            {grafico.exibidos.every((p) => p.valor === 0) ? (
+              <div className="flex min-h-[190px] flex-1 flex-col items-center justify-center text-center">
+                <span className="grid h-11 w-11 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
+                  <CircleDollarSign className="h-5 w-5" strokeWidth={1.8} />
+                </span>
+                <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">
+                  Sem faturamento registrado neste mês
+                </p>
+                <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                  O gráfico será atualizado conforme os pedidos forem registrados.
+                </p>
               </div>
             ) : (
-              // O piso abaixo de 1280px é obrigatório: fora do home-compact.css
-              // nada dá altura a esta linha, e ela colapsava para ~28px. O
-              // guard max-xl importa — sem ele o piso também valeria no desktop
-              // e estouraria a linha fixa do grid.
-              <div className="flex min-h-0 flex-1 items-stretch gap-2 max-xl:min-h-[150px]">
-                <div className="flex h-full w-8 shrink-0 flex-col justify-between pb-3.5 text-right text-[9px] leading-none text-[var(--admin-muted)]">
+              <div className="grid min-h-[210px] flex-1 grid-cols-[44px_minmax(0,1fr)] gap-3">
+                <div className="flex flex-col justify-between pb-6 text-right text-xs text-[var(--admin-muted)]">
                   <span>{rotuloEixo(grafico.max)}</span>
                   <span>{rotuloEixo(grafico.max / 2)}</span>
                   <span>0</span>
                 </div>
-
-                <div className="flex h-full min-w-0 flex-1 flex-col">
-                  {/*
-                    As barras têm altura em %, então acompanham qualquer altura
-                    que o CSS der a este bloco. Antes eram px fixos calculados no
-                    JS (86px) enquanto o home-compact.css encolhia a área para
-                    72px — a diferença vazava para cima, por cima do valor.
-                  */}
-                  <div className="relative min-h-0 flex-1">
-                    <div className="absolute inset-0 flex flex-col justify-between">
+                <div className="flex min-w-0 flex-col">
+                  <div className="relative min-h-[170px] flex-1">
+                    <div className="absolute inset-0 flex flex-col justify-between pb-1">
                       <span className="border-t border-dashed border-[var(--admin-border)]" />
                       <span className="border-t border-dashed border-[var(--admin-border)]" />
                       <span className="border-t border-[var(--admin-border)]" />
                     </div>
-
-                    <div className="absolute inset-0 flex items-end justify-center gap-2">
-                      {grafico.exibidos.map((p) => (
-                        <div
-                          key={p.dia}
-                          // max-w: com poucos dias no mês o flex-1 esticava uma
-                          // única barra pela largura inteira do card.
-                          className="min-w-0 max-w-[46px] flex-1 rounded-t-sm bg-[var(--terracotta)]"
-                          style={{ height: `${Math.max(2, (p.valor / grafico.max) * 100)}%` }}
-                          title={`${String(p.dia).padStart(2, "0")}: ${formatBRL(p.valor)}`}
-                        />
-                      ))}
-                    </div>
+                    <svg
+                      viewBox="0 0 100 40"
+                      preserveAspectRatio="none"
+                      role="img"
+                      aria-label="Faturamento diário do período selecionado"
+                      className="absolute inset-0 h-full w-full overflow-visible"
+                    >
+                      <polyline
+                        points={pontosLinha}
+                        fill="none"
+                        stroke="#b65346"
+                        strokeWidth="1.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        vectorEffect="non-scaling-stroke"
+                      />
+                      {grafico.exibidos.map((p, index) => {
+                        const divisor = Math.max(grafico.exibidos.length - 1, 1);
+                        const x = (index / divisor) * 100;
+                        const y = 36 - (p.valor / grafico.max) * 32;
+                        return p.valor > 0 ? (
+                          <circle
+                            key={p.dia}
+                            cx={x}
+                            cy={y}
+                            r="1.25"
+                            fill="#fff"
+                            stroke="#b65346"
+                            strokeWidth="1.2"
+                            vectorEffect="non-scaling-stroke"
+                          >
+                            <title>{String(p.dia).padStart(2, "0")}: {formatBRL(p.valor)}</title>
+                          </circle>
+                        ) : null;
+                      })}
+                    </svg>
                   </div>
-
-                  <div className="mt-1 flex shrink-0 justify-center gap-2">
-                    {grafico.exibidos.map((p) => (
-                      <span
-                        key={p.dia}
-                        className="min-w-0 max-w-[46px] flex-1 truncate text-center text-[9px] leading-none text-[var(--admin-muted)]"
-                      >
-                        {String(p.dia).padStart(2, "0")}/{(faturamento?.mes ?? mesAtual).slice(5)}
-                      </span>
-                    ))}
+                  <div className="mt-2 flex justify-between text-[11px] text-[var(--admin-muted)]">
+                    {[0, 7, 14, 21, grafico.exibidos.length - 1]
+                      .filter((dia, index, lista) => dia >= 0 && dia < grafico.exibidos.length && lista.indexOf(dia) === index)
+                      .map((index) => (
+                        <span key={index}>
+                          {String(grafico.exibidos[index].dia).padStart(2, "0")}/
+                          {(faturamento?.mes ?? mesAtual).slice(5)}
+                        </span>
+                      ))}
                   </div>
                 </div>
               </div>
@@ -572,9 +609,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <figure className="rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[var(--shadow-soft)]">
-          <blockquote className="text-xs leading-relaxed text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
-          <figcaption className="mt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--terracotta)]">{versiculo.referencia}</figcaption>
+        <figure className="flex min-h-[180px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-6 shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
+          <blockquote className="text-base leading-relaxed text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
+          <figcaption className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#b65346]">{versiculo.referencia}</figcaption>
         </figure>
       </div>
     </section>
