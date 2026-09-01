@@ -78,7 +78,7 @@ export function BuscaAdicionar({
           }}
         >
           <CommandInput placeholder={buscaPlaceholder} />
-          <CommandList>
+          <CommandList className="busca-adicionar-lista max-h-72 overflow-y-scroll overscroll-contain [scrollbar-gutter:stable]">
             <CommandEmpty>{vazio}</CommandEmpty>
             {grupos.map((g) => (
               <CommandGroup key={g.nome} heading={g.nome}>
