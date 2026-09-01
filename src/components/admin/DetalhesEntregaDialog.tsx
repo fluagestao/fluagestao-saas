@@ -94,7 +94,10 @@ export function DetalhesEntregaDialog({
   const endereco = [pedido.endereco, pedido.bairro].filter(Boolean).join(", ") || "Não informado";
   const whatsappCliente = whatsappDoCliente(pedido.cliente_whatsapp);
   const whatsappRecebedor = whatsappDoCliente(pedido.destinatario_whatsapp);
-  const temCartao = Boolean(pedido.cartao_de || pedido.cartao_para || pedido.cartao_mensagem);
+  const temCartao = Boolean(
+    pedido.cartao_habilitado !== false &&
+    (pedido.cartao_de || pedido.cartao_para || pedido.cartao_mensagem),
+  );
 
   const abrirFicha = () => {
     if (!imprimirFicha(pedido, empresa)) {

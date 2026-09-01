@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { salvarPedido } from "@/lib/pedidos";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { MAX_LINHAS_CARTAO } from "@/lib/pedidos-schema";
@@ -131,6 +132,12 @@ export function PedidoDialog({
   const [cartaoDe, setCartaoDe] = useState(pedido?.cartao_de ?? "");
   const [cartaoPara, setCartaoPara] = useState(pedido?.cartao_para ?? "");
   const [cartaoMsg, setCartaoMsg] = useState(pedido?.cartao_mensagem ?? "");
+  const [cartaoHabilitado, setCartaoHabilitado] = useState(
+    pedido
+      ? pedido.cartao_habilitado ??
+          Boolean(pedido.cartao_de || pedido.cartao_para || pedido.cartao_mensagem)
+      : false,
+  );
   // Item fora do catálogo: nome e valor, direto. O antigo montava por insumos e
   // saiu junto com a precificação — isto aqui não depende dela.
   const [avulso, setAvulso] = useState<{ nome: string; qtd: string; valor: string } | null>(null);
@@ -289,6 +296,7 @@ export function PedidoDialog({
           observacao: observacao.trim() || null,
           cep: cep.trim() || null,
           referencia: referencia.trim() || null,
+          cartao_habilitado: cartaoHabilitado,
           cartao_de: cartaoDe.trim() || null,
           cartao_para: cartaoPara.trim() || null,
           cartao_mensagem: cartaoMsg.trim() || null,
@@ -750,35 +758,49 @@ export function PedidoDialog({
 
         {/* cartão que vai dentro da caixa */}
         <div className="rounded-2xl border border-[var(--cream-deep)] p-2.5">
-          <h3 className="text-lg font-semibold text-foreground">💌 Cartão</h3>
-          <div className="mt-2 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-[0.7fr_0.7fr_1.6fr]">
-            <Campo label="De">
-              <Input value={cartaoDe} onChange={(e) => setCartaoDe(e.target.value)} />
-            </Campo>
-            <Campo label="Para">
-              <Input value={cartaoPara} onChange={(e) => setCartaoPara(e.target.value)} />
-            </Campo>
+          <div className="flex items-center justify-between gap-3">
             <div>
-              <Campo label={`Mensagem (até ${MAX_LINHAS_CARTAO} linhas)`}>
-                <Textarea
-                  rows={2}
-                  value={cartaoMsg}
-                  onChange={(e) => {
-                    // Corta na 5ª linha: é o que cabe no cartão impresso.
-                    const linhas = e.target.value.split("\n");
-                    setCartaoMsg(
-                      linhas.length > MAX_LINHAS_CARTAO
-                        ? linhas.slice(0, MAX_LINHAS_CARTAO).join("\n")
-                        : e.target.value,
-                    );
-                  }}
-                />
-              </Campo>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {cartaoMsg ? cartaoMsg.split("\n").length : 0} de {MAX_LINHAS_CARTAO} linhas
+              <h3 className="text-lg font-semibold text-foreground">💌 Tem cartão?</h3>
+              <p className="text-xs text-muted-foreground">
+                {cartaoHabilitado ? "Preencha os dados do cartão." : "Ative para adicionar um cartão ao pedido."}
               </p>
             </div>
+            <Switch
+              checked={cartaoHabilitado}
+              onCheckedChange={setCartaoHabilitado}
+              aria-label="Habilitar cartão no pedido"
+            />
           </div>
+          {cartaoHabilitado && (
+            <div className="mt-2 grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-[0.7fr_0.7fr_1.6fr]">
+              <Campo label="De">
+                <Input value={cartaoDe} onChange={(e) => setCartaoDe(e.target.value)} />
+              </Campo>
+              <Campo label="Para">
+                <Input value={cartaoPara} onChange={(e) => setCartaoPara(e.target.value)} />
+              </Campo>
+              <div>
+                <Campo label={`Mensagem (até ${MAX_LINHAS_CARTAO} linhas)`}>
+                  <Textarea
+                    rows={2}
+                    value={cartaoMsg}
+                    onChange={(e) => {
+                      // Corta na 5ª linha: é o que cabe no cartão impresso.
+                      const linhas = e.target.value.split("\n");
+                      setCartaoMsg(
+                        linhas.length > MAX_LINHAS_CARTAO
+                          ? linhas.slice(0, MAX_LINHAS_CARTAO).join("\n")
+                          : e.target.value,
+                      );
+                    }}
+                  />
+                </Campo>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {cartaoMsg ? cartaoMsg.split("\n").length : 0} de {MAX_LINHAS_CARTAO} linhas
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <Campo label="Observação">

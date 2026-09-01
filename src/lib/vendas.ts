@@ -47,6 +47,7 @@ export type Pedido = {
   // Usados na mensagem de confirmação enviada ao cliente.
   cep?: string | null;
   referencia?: string | null;
+  cartao_habilitado?: boolean;
   cartao_de?: string | null;
   cartao_para?: string | null;
   cartao_mensagem?: string | null;
@@ -317,7 +318,10 @@ export function mensagemConfirmacao(pedido: Pedido): string {
     partes.push("", "📝 *Observação*", pedido.observacao.trim());
   }
 
-  if (pedido.cartao_de || pedido.cartao_para || pedido.cartao_mensagem) {
+  if (
+    pedido.cartao_habilitado !== false &&
+    (pedido.cartao_de || pedido.cartao_para || pedido.cartao_mensagem)
+  ) {
     partes.push("", "💌 *Cartão*");
     if (pedido.cartao_de) partes.push(`De: ${pedido.cartao_de}`);
     if (pedido.cartao_para) partes.push(`Para: ${pedido.cartao_para}`);

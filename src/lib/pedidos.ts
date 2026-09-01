@@ -304,6 +304,7 @@ export async function salvarPedido(input: { data: unknown }) {
     destinatario_nome: data.destinatario_nome,
     destinatario_whatsapp: data.destinatario_whatsapp,
     bairro_id: data.tipo === "retirada" ? null : (data.bairro_id ?? null),
+    cartao_habilitado: data.cartao_habilitado,
     cartao_de: data.cartao_de,
     cartao_para: data.cartao_para,
     cartao_mensagem: data.cartao_mensagem,

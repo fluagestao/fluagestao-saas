@@ -83,6 +83,7 @@ export const pedidoManualSchema = z.object({
   cep: z.string().max(12).nullable(),
   referencia: z.string().max(160).nullable(),
   recebido_em: z.string().regex(DATA_ISO).nullable().default(null),
+  cartao_habilitado: z.boolean().default(false),
   cartao_de: z.string().max(120).nullable(),
   cartao_para: z.string().max(120).nullable(),
   // O cartão é impresso e vai dentro da caixa: cabem 5 linhas.

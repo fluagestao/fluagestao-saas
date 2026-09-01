@@ -435,7 +435,7 @@ function DetalhePedido({ pedido: p, onClose }: { pedido: Pedido; onClose: () => 
           {linha("Quem recebe", p.destinatario_nome)}
           {linha("Contato de quem recebe", p.destinatario_whatsapp)}
           {linha("Pagamento", p.forma_pagamento)}
-          {linha("Cartão", p.cartao_mensagem)}
+          {p.cartao_habilitado !== false && linha("Cartão", p.cartao_mensagem)}
           {linha("Observação", p.observacao)}
         </div>
 

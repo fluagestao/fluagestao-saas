@@ -64,7 +64,9 @@ export function htmlDaFicha(
         : "";
 
   const endereco = [p.endereco, p.bairro].filter(Boolean).join(", ");
-  const cartao = p.cartao_de || p.cartao_para || p.cartao_mensagem;
+  const cartao =
+    p.cartao_habilitado !== false &&
+    (p.cartao_de || p.cartao_para || p.cartao_mensagem);
   const enderecoEmpresa = [dadosEmpresa.endereco, dadosEmpresa.cidadeUf]
     .filter(Boolean)
     .join(" • ");
