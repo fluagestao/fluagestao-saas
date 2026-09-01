@@ -178,18 +178,26 @@ export function PedidoDialog({
       }));
   }, [produtosLocais]);
 
-  // Busca no ViaCEP assim que o CEP fica completo. Se falhar, não faz nada:
-  // a pessoa digita o endereço à mão, como sempre fez.
+  // Busca no servidor da Flua assim que o CEP fica completo. O servidor usa
+  // ViaCEP com BrasilAPI como reserva, evitando falhas de CORS no navegador.
   useEffect(() => {
     const digitos = cep.replace(/\D/g, "");
     if (digitos.length !== 8 || digitos === cepBuscado.current) return;
     cepBuscado.current = digitos;
     let cancelado = false;
     setBuscandoCep(true);
-    fetch(`https://viacep.com.br/ws/${digitos}/json/`)
-      .then((r) => r.json())
-      .then((d: { erro?: boolean; logradouro?: string; bairro?: string; localidade?: string }) => {
-        if (cancelado || d.erro) return;
+    fetch(`/api/cep/${digitos}`)
+      .then(async (r) => {
+        if (!r.ok) throw new Error("CEP não encontrado");
+        return (await r.json()) as {
+          logradouro?: string;
+          bairro?: string;
+          cidade?: string;
+          uf?: string;
+        };
+      })
+      .then((d) => {
+        if (cancelado) return;
         if (d.logradouro) setEndereco(d.logradouro);
         if (d.bairro) {
           setBairro(d.bairro);
@@ -204,7 +212,7 @@ export function PedidoDialog({
             setTaxaManual(true);
           }
         }
-        setCidadeCep(d.localidade ?? null);
+        setCidadeCep([d.cidade, d.uf].filter(Boolean).join("/") || null);
       })
       .catch(() => {})
       .finally(() => !cancelado && setBuscandoCep(false));
