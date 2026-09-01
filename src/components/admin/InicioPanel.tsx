@@ -84,16 +84,16 @@ function Kpi({
   detalheClass?: string;
 }) {
   return (
-    <article className="flex min-h-[132px] min-w-0 items-center gap-4 rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_8px_28px_rgba(112,61,58,0.06)]">
-      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
-        <Icon className="h-6 w-6" strokeWidth={1.8} />
+    <article className="flex min-h-[104px] min-w-0 items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
+        <Icon className="h-5 w-5" strokeWidth={1.8} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-[15px] font-semibold leading-tight text-[var(--admin-ink-soft)]">{titulo}</p>
-        <p className="mt-1 truncate text-[clamp(1.75rem,2.3vw,2.25rem)] font-bold leading-none tracking-[-0.04em] text-[var(--admin-ink)]">
+        <p className="truncate text-sm font-medium leading-tight text-[var(--admin-ink-soft)]">{titulo}</p>
+        <p className="mt-1 truncate text-[clamp(1.65rem,2vw,2rem)] font-bold leading-none tracking-[-0.04em] text-[var(--admin-ink)]">
           <Num>{valor}</Num>
         </p>
-        {nota && <p className={`mt-2 truncate text-sm ${detalheClass}`}>{nota}</p>}
+        {nota && <p className={`mt-1.5 truncate text-xs ${detalheClass}`}>{nota}</p>}
       </div>
     </article>
   );
@@ -112,8 +112,8 @@ function CabecalhoCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-5">
-      <h3 className="text-xl font-semibold tracking-[-0.02em] text-[var(--admin-ink)]">{titulo}</h3>
+    <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4">
+      <h3 className="text-lg font-semibold tracking-[-0.02em] text-[var(--admin-ink)]">{titulo}</h3>
       {children}
       {acao && onClick && (
         <button
@@ -139,12 +139,12 @@ function Vazio({
   icon?: typeof CircleCheck;
 }) {
   return (
-    <div className="flex min-h-[210px] flex-1 flex-col items-center justify-center px-6 py-8 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
-        <Icon className="h-6 w-6" strokeWidth={1.7} />
+    <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-4 text-center">
+      <span className="grid h-10 w-10 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
+        <Icon className="h-5 w-5" strokeWidth={1.7} />
       </span>
-      <p className="mt-4 text-base font-semibold text-[var(--admin-ink)]">{titulo}</p>
-      <p className="mt-1 max-w-xs text-sm leading-relaxed text-[var(--admin-muted)]">{descricao}</p>
+      <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">{titulo}</p>
+      <p className="mt-1 max-w-xs text-xs leading-relaxed text-[var(--admin-muted)]">{descricao}</p>
     </div>
   );
 }
@@ -328,8 +328,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   }
 
   return (
-    <section className="space-y-5 pb-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="space-y-3 pb-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           {editandoNome ? (
             <div className="flex items-center gap-2">
@@ -343,7 +343,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <Button size="sm" onClick={salvarNome}>Salvar</Button>
             </div>
           ) : (
-            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-[-0.035em] text-[var(--admin-ink)] sm:text-4xl">
+            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-[-0.035em] text-[var(--admin-ink)] sm:text-[28px]">
               {saudacao()}{primeiro && `, ${primeiro}`}!
               <button
                 type="button"
@@ -358,16 +358,16 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               </button>
             </h1>
           )}
-          <span className="mt-2 flex items-center gap-2 text-sm text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
+          <span className="mt-1.5 flex items-center gap-2 text-xs text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
         </div>
 
-        <Button onClick={novoPedido} className="h-12 w-full shrink-0 rounded-xl bg-[#b65346] px-6 text-base font-semibold shadow-[0_8px_22px_rgba(182,83,70,0.22)] hover:bg-[#a8493e] sm:w-auto">
+        <Button onClick={novoPedido} className="h-11 w-full shrink-0 rounded-xl bg-[#b65346] px-6 text-sm font-semibold shadow-[0_7px_18px_rgba(182,83,70,0.18)] hover:bg-[#a8493e] sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo pedido
         </Button>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           titulo="Faturamento do mês"
           valor={formatBRL(resumo.faturamentoMes)}
@@ -395,8 +395,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         />
       </div>
 
-      <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
-        <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
+      <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
+        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
           <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
           <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {entregasHoje.length === 0 ? (
@@ -420,7 +420,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
+        <article className="flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
           <CabecalhoCard titulo="Próximos 7 dias" />
           <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
             {proximosSete.length === 0 ? (
@@ -447,8 +447,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <div className="grid content-start gap-4 md:col-span-2 xl:col-span-1">
-          <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
+        <div className="grid content-stretch gap-3 md:col-span-2 xl:col-span-1">
+          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
               {tarefasPendentes.length === 0 ? (
@@ -469,7 +469,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             </div>
           </article>
 
-          <article className="flex flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
+          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
             <CabecalhoCard titulo="Pedidos em aberto" acao="ver todos" onClick={() => onIrPara("vendas")} />
             <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
               {abertos.length === 0 ? (
@@ -491,8 +491,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[2.08fr_.95fr]">
-        <article className="flex min-h-[300px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
+      <div className="grid gap-3 xl:grid-cols-[2.08fr_.95fr]">
+        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
           <CabecalhoCard titulo="Resumo do faturamento">
             <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-[var(--cream-soft)] p-0.5">
               {(
@@ -522,96 +522,89 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             </div>
           </CabecalhoCard>
 
-          <div className="flex min-h-0 flex-1 flex-col p-4">
-            <div className="mb-3 flex flex-wrap items-baseline gap-x-5 gap-y-1">
-              <p className="text-xl font-semibold">{formatBRL(faturamento?.total ?? 0)}</p>
-              <p className="text-xs text-[var(--admin-muted)]">
+          <div className="grid min-h-0 flex-1 gap-4 p-4 md:grid-cols-[minmax(190px,.72fr)_minmax(0,1.4fr)]">
+            <div className="min-w-0">
+              <p className="text-2xl font-bold tracking-[-0.03em] text-[var(--admin-ink)]">
+                {formatBRL(faturamento?.total ?? 0)}
+              </p>
+              <p className="mt-1 text-xs text-[var(--admin-muted)]">
                 {faturamento?.pedidos ?? 0} pedidos · ticket {formatBRL(faturamento?.ticket ?? 0)}
               </p>
+              {grafico.exibidos.every((p) => p.valor === 0) && (
+                <p className="mt-5 text-xs text-[var(--admin-muted)]">
+                  Sem faturamento registrado neste mês.
+                </p>
+              )}
             </div>
 
-            {grafico.exibidos.every((p) => p.valor === 0) ? (
-              <div className="flex min-h-[190px] flex-1 flex-col items-center justify-center text-center">
-                <span className="grid h-11 w-11 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
-                  <CircleDollarSign className="h-5 w-5" strokeWidth={1.8} />
-                </span>
-                <p className="mt-3 text-sm font-semibold text-[var(--admin-ink)]">
-                  Sem faturamento registrado neste mês
-                </p>
-                <p className="mt-1 text-sm text-[var(--admin-muted)]">
-                  O gráfico será atualizado conforme os pedidos forem registrados.
-                </p>
+            <div className="grid min-h-[105px] grid-cols-[38px_minmax(0,1fr)] gap-2">
+              <div className="flex flex-col justify-between pb-5 text-right text-[10px] text-[var(--admin-muted)]">
+                <span>{rotuloEixo(grafico.max)}</span>
+                <span>{rotuloEixo(grafico.max / 2)}</span>
+                <span>0</span>
               </div>
-            ) : (
-              <div className="grid min-h-[210px] flex-1 grid-cols-[44px_minmax(0,1fr)] gap-3">
-                <div className="flex flex-col justify-between pb-6 text-right text-xs text-[var(--admin-muted)]">
-                  <span>{rotuloEixo(grafico.max)}</span>
-                  <span>{rotuloEixo(grafico.max / 2)}</span>
-                  <span>0</span>
+              <div className="flex min-w-0 flex-col">
+                <div className="relative min-h-[82px] flex-1">
+                  <div className="absolute inset-0 flex flex-col justify-between pb-1">
+                    <span className="border-t border-dashed border-[var(--admin-border)]" />
+                    <span className="border-t border-dashed border-[var(--admin-border)]" />
+                    <span className="border-t border-[var(--admin-border)]" />
+                  </div>
+                  <svg
+                    viewBox="0 0 100 40"
+                    preserveAspectRatio="none"
+                    role="img"
+                    aria-label="Faturamento diário do período selecionado"
+                    className="absolute inset-0 h-full w-full overflow-visible"
+                  >
+                    <polyline
+                      points={pontosLinha}
+                      fill="none"
+                      stroke="#b65346"
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    {grafico.exibidos.map((p, index) => {
+                      const divisor = Math.max(grafico.exibidos.length - 1, 1);
+                      const x = (index / divisor) * 100;
+                      const y = 36 - (p.valor / grafico.max) * 32;
+                      return (
+                        <circle
+                          key={p.dia}
+                          cx={x}
+                          cy={y}
+                          r="0.8"
+                          fill="#fff"
+                          stroke="#b65346"
+                          strokeWidth="1"
+                          vectorEffect="non-scaling-stroke"
+                        >
+                          <title>{String(p.dia).padStart(2, "0")}: {formatBRL(p.valor)}</title>
+                        </circle>
+                      );
+                    })}
+                  </svg>
                 </div>
-                <div className="flex min-w-0 flex-col">
-                  <div className="relative min-h-[170px] flex-1">
-                    <div className="absolute inset-0 flex flex-col justify-between pb-1">
-                      <span className="border-t border-dashed border-[var(--admin-border)]" />
-                      <span className="border-t border-dashed border-[var(--admin-border)]" />
-                      <span className="border-t border-[var(--admin-border)]" />
-                    </div>
-                    <svg
-                      viewBox="0 0 100 40"
-                      preserveAspectRatio="none"
-                      role="img"
-                      aria-label="Faturamento diário do período selecionado"
-                      className="absolute inset-0 h-full w-full overflow-visible"
-                    >
-                      <polyline
-                        points={pontosLinha}
-                        fill="none"
-                        stroke="#b65346"
-                        strokeWidth="1.4"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        vectorEffect="non-scaling-stroke"
-                      />
-                      {grafico.exibidos.map((p, index) => {
-                        const divisor = Math.max(grafico.exibidos.length - 1, 1);
-                        const x = (index / divisor) * 100;
-                        const y = 36 - (p.valor / grafico.max) * 32;
-                        return p.valor > 0 ? (
-                          <circle
-                            key={p.dia}
-                            cx={x}
-                            cy={y}
-                            r="1.25"
-                            fill="#fff"
-                            stroke="#b65346"
-                            strokeWidth="1.2"
-                            vectorEffect="non-scaling-stroke"
-                          >
-                            <title>{String(p.dia).padStart(2, "0")}: {formatBRL(p.valor)}</title>
-                          </circle>
-                        ) : null;
-                      })}
-                    </svg>
-                  </div>
-                  <div className="mt-2 flex justify-between text-[11px] text-[var(--admin-muted)]">
-                    {[0, 7, 14, 21, grafico.exibidos.length - 1]
-                      .filter((dia, index, lista) => dia >= 0 && dia < grafico.exibidos.length && lista.indexOf(dia) === index)
-                      .map((index) => (
-                        <span key={index}>
-                          {String(grafico.exibidos[index].dia).padStart(2, "0")}/
-                          {(faturamento?.mes ?? mesAtual).slice(5)}
-                        </span>
-                      ))}
-                  </div>
+                <div className="mt-1 flex justify-between text-[9px] text-[var(--admin-muted)]">
+                  {[0, 7, 14, 21, grafico.exibidos.length - 1]
+                    .filter((dia, index, lista) => dia >= 0 && dia < grafico.exibidos.length && lista.indexOf(dia) === index)
+                    .map((index) => (
+                      <span key={index}>
+                        {String(grafico.exibidos[index].dia).padStart(2, "0")}/
+                        {(faturamento?.mes ?? mesAtual).slice(5)}
+                      </span>
+                    ))}
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </article>
 
-        <figure className="flex min-h-[180px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-6 shadow-[0_8px_28px_rgba(112,61,58,0.05)]">
-          <blockquote className="text-base leading-relaxed text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
-          <figcaption className="mt-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#b65346]">{versiculo.referencia}</figcaption>
+        <figure className="flex min-h-[150px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+          <blockquote className="text-sm leading-relaxed text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
+          <figcaption className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b65346]">{versiculo.referencia}</figcaption>
         </figure>
       </div>
     </section>
