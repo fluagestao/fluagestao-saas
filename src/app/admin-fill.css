@@ -57,46 +57,14 @@ div[class~="bg-[var(--admin-bg)]"] > main form {
   max-width: 100%;
 }
 
-/* Home do painel: segue o grid nativo e nunca e ampliada/reduzida artificialmente. */
+/* Home do painel: o componente controla seu próprio grid responsivo. */
 main > section:has(button[aria-label="Mudar meu nome"]) {
   width: 100% !important;
+  min-width: 0 !important;
   height: auto !important;
   min-height: 0 !important;
   margin: 0 !important;
-  display: block !important;
   transform: none !important;
-  transform-origin: initial !important;
-}
-
-main > section:has(button[aria-label="Mudar meu nome"]) > :not(:first-child) {
-  margin-top: 1rem !important;
-  margin-block-start: 1rem !important;
-}
-
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(1),
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > div,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) > aside,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4),
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > article,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child,
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(5) > div {
-  min-height: 0 !important;
-  height: auto !important;
-}
-
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) article {
-  padding: clamp(0.85rem, 1.5vw, 1rem) !important;
-}
-
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) article:first-child > div:nth-of-type(2) {
-  height: clamp(12rem, 24vw, 16rem) !important;
-  min-height: 0 !important;
-}
-
-main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > div:last-child {
-  display: grid;
-  grid-template-rows: none !important;
 }
 
 /* Header sempre acessivel; somente o header direto do shell. */
@@ -128,14 +96,6 @@ main [data-slot="table-container"] {
     display: flex !important;
   }
 
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2),
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  }
 }
 
 /* Desktop medio: busca global some antes de disputar espaco com menu e perfil. */
@@ -144,32 +104,10 @@ main [data-slot="table-container"] {
     display: none !important;
   }
 
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) {
-    grid-template-columns: minmax(0, 1.75fr) minmax(260px, 0.72fr) !important;
-  }
-
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
 
 /* Monitores grandes */
 @media (min-width: 1536px) {
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) {
-    grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.72fr) !important;
-  }
-
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-  }
-
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.95fr) minmax(280px, 0.72fr) !important;
-  }
 }
 
 /* Tablet/celular: os paineis empilham e a pagina rola naturalmente. */
@@ -179,11 +117,6 @@ main [data-slot="table-container"] {
     padding-bottom: 2rem !important;
   }
 
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2),
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3),
-  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
 }
 
 /* Telas baixas: mantem tamanho legivel e libera scroll vertical. */
