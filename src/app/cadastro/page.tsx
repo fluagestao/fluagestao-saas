@@ -159,8 +159,12 @@ export default function CadastroPage() {
         return;
       }
 
-      const emailExiste = Boolean(disponibilidade?.email_exists);
-      const documentoExiste = Boolean(disponibilidade?.document_exists);
+      const disponibilidadeValidada = disponibilidade as {
+        email_exists?: boolean;
+        document_exists?: boolean;
+      } | null;
+      const emailExiste = Boolean(disponibilidadeValidada?.email_exists);
+      const documentoExiste = Boolean(disponibilidadeValidada?.document_exists);
 
       if (emailExiste || documentoExiste) {
         setErro(mensagemDuplicidade(emailExiste, documentoExiste));
