@@ -325,6 +325,13 @@ export function PedidoDialog({
         </DialogHeader>
       )}
 
+      <div
+        className={
+          modoPagina
+            ? "space-y-4"
+            : "pedido-dialog-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden overflow-y-auto pr-1"
+        }
+      >
         {/* Cliente cadastrado preenche tudo de uma vez; quem é novo, digita. */}
         <div className="flex gap-2">
           <BuscaAdicionar
@@ -779,12 +786,13 @@ export function PedidoDialog({
         </Campo>
 
         {erro && <p className="text-sm text-destructive">{erro}</p>}
+      </div>
 
         <DialogFooter
           className={
             modoPagina
               ? "pt-1"
-              : "sticky bottom-0 z-30 -mx-6 border-t border-[var(--cream-deep)] bg-background/95 px-6 py-3 backdrop-blur"
+              : "z-30 -mx-6 shrink-0 border-t border-[var(--cream-deep)] bg-background px-6 py-3"
           }
         >
           <Button variant="outline" onClick={onClose}>
@@ -860,7 +868,7 @@ export function PedidoDialog({
       <Dialog open onOpenChange={(o) => !o && onClose()}>
         <DialogContent
           data-pedido-dialog
-          className="!w-[calc(100vw-32px)] !max-w-[1760px] !max-h-[calc(100dvh-88px)] !overflow-y-auto !overflow-x-hidden gap-2 px-6 py-2.5"
+          className="!flex !h-[calc(100dvh-88px)] !w-[calc(100vw-32px)] !max-h-[calc(100dvh-88px)] !max-w-[1760px] !min-h-0 !flex-col !overflow-hidden gap-2 px-6 py-2.5"
         >
           {conteudo}
         </DialogContent>
