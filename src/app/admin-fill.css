@@ -163,3 +163,56 @@ main:has(input[placeholder="Buscar insumo"]) > section {
     min-height: 38px;
   }
 }
+
+
+/* Dashboard inicial compacto: reproduz o mockup em uma única tela no desktop. */
+@media (min-width: 1280px) and (min-height: 700px) {
+  div[class~="bg-[var(--admin-bg)]"] > main:has(button[aria-label="Mudar meu nome"]) {
+    box-sizing: border-box;
+    height: calc(100dvh - 74px) !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    overflow: hidden !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) {
+    display: grid !important;
+    height: 100% !important;
+    grid-template-rows: auto 104px minmax(0, 1fr) 178px;
+    gap: 12px;
+    overflow: hidden !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > * {
+    min-height: 0 !important;
+    margin-top: 0 !important;
+    margin-block-start: 0 !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(2) {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(300px, 0.95fr) !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) > article,
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) > div {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(3) > div {
+    grid-template-rows: minmax(0, 0.42fr) minmax(0, 1fr);
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) {
+    grid-template-columns: minmax(0, 2.08fr) minmax(280px, 0.95fr) !important;
+  }
+
+  main > section:has(button[aria-label="Mudar meu nome"]) > div:nth-of-type(4) > * {
+    min-height: 0 !important;
+    height: 100% !important;
+  }
+}
