@@ -32,9 +32,14 @@ type Supabase = Contexto["supabase"];
 const idSchema = z.object({ id: z.string().uuid() });
 const DATA = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const DATA_OPC = DATA.nullable().default(null);
+const JANELA_ENTREGUE_MS = 24 * 60 * 60 * 1000;
 
 function sanitizarBusca(busca: string) {
   return busca.replace(/[,()'"\\%]/g, " ").trim();
+}
+
+function limiteEntregueISO(agora = new Date()) {
+  return new Date(agora.getTime() - JANELA_ENTREGUE_MS).toISOString();
 }
 
 async function resolverTaxa(
@@ -157,6 +162,10 @@ async function buscarPedidos(
     query = query.eq("status", filtro.status);
   }
 
+  if (filtro.status === "entregue") {
+    query = query.gte("entregue_em", limiteEntregueISO());
+  }
+
   const busca = filtro.busca ? sanitizarBusca(filtro.busca) : "";
   if (busca) {
     query = query.or(
@@ -188,13 +197,14 @@ export async function carregarResumoPedidos() {
   const ano = agora.getFullYear();
   const mes = String(agora.getMonth() + 1).padStart(2, "0");
   const inicioMes = `${ano}-${mes}-01`;
+  const limiteEntregue = limiteEntregueISO(agora);
 
   const { data, error } = await supabase
     .from("pedidos")
     .select("*")
     .eq("company_id", companyId)
     .or(
-      `created_at.gte.${inicioMes}T00:00:00-03:00,status.in.(novo,producao,pronto)`,
+      `created_at.gte.${inicioMes}T00:00:00-03:00,status.in.(novo,producao,pronto),and(status.eq.entregue,entregue_em.gte.${limiteEntregue})`,
     )
     .order("created_at", { ascending: false })
     .limit(500);
@@ -431,10 +441,10 @@ export async function carregarRealizadas(input: { data: unknown }) {
     .select("*")
     .eq("company_id", companyId)
     .eq("status", "entregue")
-    .not("recebido_em", "is", null)
-    .gte("data_entrega", data.de)
-    .lte("data_entrega", data.ate)
-    .order("data_entrega", { ascending: false })
+    .not("entregue_em", "is", null)
+    .gte("entregue_em", `${data.de}T00:00:00-03:00`)
+    .lte("entregue_em", `${data.ate}T23:59:59.999-03:00`)
+    .order("entregue_em", { ascending: false })
     .order("numero", { ascending: false })
     .limit(500);
 
