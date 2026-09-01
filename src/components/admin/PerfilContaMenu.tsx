@@ -8,6 +8,7 @@ import {
   LogOut,
   Settings,
   Users,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -63,10 +64,22 @@ function empresaIncompleta(empresa?: DadosEmpresaPendencia | null) {
   ].some((valor) => !String(valor ?? "").trim());
 }
 
+function consumirSinalPrimeiroAcesso() {
+  if (typeof window === "undefined") return false;
+
+  const url = new URL(window.location.href);
+  if (url.searchParams.get("onboarding") !== "1") return false;
+
+  url.searchParams.delete("onboarding");
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+  return true;
+}
+
 export function PerfilContaMenu({
   email,
   displayName,
   companyName,
+  onUsuarios,
 }: {
   email: string;
   displayName: string;
@@ -137,10 +150,17 @@ export function PerfilContaMenu({
 
       if (!ativo) return;
 
-      setLogoUrl(empresa?.logo_url ?? null);
-      setPendenciaDocumentos(
-        empresaIncompleta((empresa ?? null) as DadosEmpresaPendencia | null),
+      const pendente = empresaIncompleta(
+        (empresa ?? null) as DadosEmpresaPendencia | null,
       );
+
+      setLogoUrl(empresa?.logo_url ?? null);
+      setPendenciaDocumentos(pendente);
+
+      if (pendente && consumirSinalPrimeiroAcesso()) {
+        setAberto(false);
+        setNotificacoesAbertas(true);
+      }
     })();
 
     return () => {
@@ -262,8 +282,16 @@ export function PerfilContaMenu({
 
       {notificacoesAbertas && (
         <div className="fixed right-4 top-[70px] z-[70] w-[330px] overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-lift)] md:right-[180px]">
-          <div className="border-b border-[var(--admin-border)] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-4 py-3">
             <strong className="text-sm text-[var(--admin-ink)]">Notificações</strong>
+            <button
+              type="button"
+              onClick={() => setNotificacoesAbertas(false)}
+              className="grid h-7 w-7 place-items-center rounded-lg text-[var(--admin-muted)] transition hover:bg-[var(--cream)] hover:text-[var(--wine)]"
+              aria-label="Fechar notificações"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
 
           {pendenciaDocumentos ? (
@@ -321,6 +349,10 @@ export function PerfilContaMenu({
                 type="button"
                 onClick={() => {
                   setAberto(false);
+                  if (item.label === "Usuários" && onUsuarios) {
+                    onUsuarios();
+                    return;
+                  }
                   router.push(item.href);
                 }}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream-soft)] hover:text-[var(--wine)]"
