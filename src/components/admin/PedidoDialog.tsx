@@ -336,9 +336,11 @@ export function PedidoDialog({
       <div
         className={
           modoPagina
-            ? "space-y-4"
-            : `pedido-dialog-scroll min-h-0 flex-1 space-y-2 overflow-x-hidden pr-1 ${
-                pedido ? "overflow-y-auto" : "overflow-y-hidden"
+            ? "mx-auto w-full max-w-[1440px] space-y-4"
+            : `pedido-dialog-scroll min-h-0 w-full max-w-[1440px] self-center flex-1 space-y-2 overflow-x-hidden pr-1 ${
+                pedido || cartaoHabilitado
+                  ? "pedido-dialog-scroll-habilitado overflow-y-auto overscroll-contain"
+                  : "overflow-y-hidden"
               }`
         }
       >
