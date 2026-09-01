@@ -7,6 +7,7 @@ export type Movimento = {
   valor: number;
   descricao: string;
   fornecedor: string | null;
+  tipo_despesa: string | null;
   /** Entrada que veio de um pedido pago — não existe na tabela, é derivada. */
   pedido_numero?: number | null;
 };
