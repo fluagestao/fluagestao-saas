@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 import {
   formatBRL,
   ordenarPorEntrega,
-  saiuDoQuadro,
   statusCor,
   statusLabel,
   type Pedido,
@@ -27,6 +26,21 @@ import { PedidoCard, type AcoesPedido } from "./PedidoCard";
 
 /** Cancelado fica fora: é exceção, não etapa do fluxo. */
 const COLUNAS: StatusPedido[] = ["novo", "producao", "pronto", "entregue"];
+const JANELA_ENTREGUE_MS = 24 * 60 * 60 * 1000;
+
+type PedidoComEntrega = Pedido & { entregue_em?: string | null };
+
+function saiuDoQuadroDepoisDe24h(pedido: Pedido, agora = Date.now()) {
+  if (pedido.status !== "entregue") return false;
+
+  const entregueEm = (pedido as PedidoComEntrega).entregue_em;
+  if (!entregueEm) return false;
+
+  const instante = Date.parse(entregueEm);
+  if (!Number.isFinite(instante)) return false;
+
+  return agora - instante >= JANELA_ENTREGUE_MS;
+}
 
 function CardArrastavel({
   pedido,
@@ -97,7 +111,7 @@ function Coluna({
         {pedidos.length === 0 && (
           <p className="rounded-xl border border-dashed border-[var(--cream-deep)] px-3 py-6 text-center text-xs text-muted-foreground">
             {status === "entregue"
-              ? "Entregue e pago sai daqui no dia seguinte"
+              ? "Pedidos entregues permanecem aqui por 24 horas"
               : "Arraste um pedido para cá"}
           </p>
         )}
@@ -148,9 +162,10 @@ export function VendasKanban({
             <Coluna
               key={status}
               status={status}
-              // Entregue e pago fica até o fim do dia; depois vira histórico.
               pedidos={ordenarPorEntrega(
-                pedidos.filter((p) => p.status === status && !saiuDoQuadro(p)),
+                pedidos.filter(
+                  (p) => p.status === status && !saiuDoQuadroDepoisDe24h(p),
+                ),
               )}
               acoes={acoes}
               onAbrir={acoes.editar}
