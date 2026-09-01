@@ -143,7 +143,11 @@ export async function removerInsumo(input: ActionInput<unknown>) {
     .eq("insumo_id", id);
   if (usoError) throw usoError;
   if ((count ?? 0) > 0) {
-    throw new Error("Este insumo está sendo usado em um ou mais produtos. Remova-o da composição antes de excluir.");
+    return {
+      ok: false as const,
+      motivo:
+        "Este insumo está sendo usado em um ou mais produtos. Remova-o da composição dos produtos antes de excluir.",
+    };
   }
 
   const { error } = await supabase
@@ -153,7 +157,7 @@ export async function removerInsumo(input: ActionInput<unknown>) {
     .eq("company_id", companyId);
   if (error) throw error;
 
-  return { ok: true };
+  return { ok: true as const };
 }
 
 export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
