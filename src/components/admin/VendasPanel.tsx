@@ -222,6 +222,16 @@ export function VendasPanel({
   const [editando, setEditando] = useState<Pedido | "novo" | null>(
     abrirNovoAoMontar ? "novo" : null,
   );
+
+  // /vendas/pedidos/novo-pedido e so o gatilho que abre o editor. Se ela ficar
+  // na barra depois que o editor fecha, todo refresh reabre o "Novo pedido" —
+  // era exatamente o que acontecia. Ao fechar, a URL volta para a lista, sem
+  // criar entrada no historico (replaceState, para o Voltar seguir util).
+  useEffect(() => {
+    if (editando) return;
+    if (!window.location.pathname.startsWith("/vendas/pedidos/novo-pedido")) return;
+    window.history.replaceState({}, "", "/vendas/pedidos");
+  }, [editando]);
   const confirmar = useConfirmar();
   const [aReceberLista, setAReceberLista] = useState<Pedido[]>([]);
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
