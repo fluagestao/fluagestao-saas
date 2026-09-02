@@ -76,6 +76,9 @@ function moeda(valor: number) {
   }).format(valor || 0);
 }
 
+const TODAS_COLECOES = "__todas__";
+const SEM_COLECAO = "__sem__";
+
 export function NovoProdutoClient({
   categorias,
   catalogos,
@@ -106,6 +109,15 @@ export function NovoProdutoClient({
     produtoInicial?.categoria_id ?? "",
   );
   const [categoriasAbertas, setCategoriasAbertas] = useState(false);
+  /* Colecao NAO e campo do produto: ela vive na categoria (categorias.catalogo_id).
+     Este seletor filtra as categorias em cascata — assim o produto nunca fica
+     numa colecao que contradiz a categoria dele. Ao abrir para editar, comeca
+     na colecao da categoria que ja esta escolhida. */
+  const [filtroColecao, setFiltroColecao] = useState<string>(() => {
+    const categoria = categorias.find((c) => c.id === produtoInicial?.categoria_id);
+    return categoria?.catalogo_id ?? TODAS_COLECOES;
+  });
+  const [colecoesAbertas, setColecoesAbertas] = useState(false);
   const [preco, setPreco] = useState(
     produtoInicial?.preco == null
       ? ""
@@ -150,6 +162,12 @@ export function NovoProdutoClient({
       return (a.ordem ?? 0) - (b.ordem ?? 0);
     });
   }, [categorias, catalogos]);
+
+  const categoriasVisiveis = useMemo(() => {
+    if (filtroColecao === TODAS_COLECOES) return categoriasOrdenadas;
+    if (filtroColecao === SEM_COLECAO) return categoriasOrdenadas.filter((c) => !c.catalogo_id);
+    return categoriasOrdenadas.filter((c) => c.catalogo_id === filtroColecao);
+  }, [categoriasOrdenadas, filtroColecao]);
 
   const receberCusto = useCallback(
     ({ itens, custoTotal }: { itens: ItemComposicaoProduto[]; custoTotal: number }) => {
@@ -378,7 +396,55 @@ export function NovoProdutoClient({
                 </Campo>
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid gap-3 md:grid-cols-2">
+                <Campo label="Coleção">
+                  <DropdownCampo
+                    aberto={colecoesAbertas}
+                    onToggle={() => setColecoesAbertas((v) => !v)}
+                    texto={
+                      filtroColecao === TODAS_COLECOES
+                        ? "Todas as coleções"
+                        : filtroColecao === SEM_COLECAO
+                          ? "Sem coleção"
+                          : (catalogos.find((c) => c.id === filtroColecao)?.nome ?? "Todas as coleções")
+                    }
+                    vazio={filtroColecao === TODAS_COLECOES}
+                  >
+                    {[
+                      { id: TODAS_COLECOES, nome: "Todas as coleções" },
+                      ...catalogos
+                        .slice()
+                        .sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+                        .map((c) => ({ id: c.id, nome: c.nome })),
+                      { id: SEM_COLECAO, nome: "Sem coleção" },
+                    ].map((opcao) => (
+                      <button
+                        key={opcao.id}
+                        type="button"
+                        onClick={() => {
+                          setFiltroColecao(opcao.id);
+                          setColecoesAbertas(false);
+                          // A categoria escolhida pode nao pertencer a colecao
+                          // nova. Manter seria deixar os dois campos dizendo
+                          // coisas diferentes na tela.
+                          const atual = categorias.find((c) => c.id === categoriaId);
+                          const cabe =
+                            !atual ||
+                            opcao.id === TODAS_COLECOES ||
+                            (opcao.id === SEM_COLECAO ? !atual.catalogo_id : atual.catalogo_id === opcao.id);
+                          if (!cabe) setCategoriaId("");
+                        }}
+                        className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm hover:bg-[var(--cream-soft)]"
+                      >
+                        <span className="truncate">{opcao.nome}</span>
+                        {opcao.id === filtroColecao && (
+                          <Check className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
+                        )}
+                      </button>
+                    ))}
+                  </DropdownCampo>
+                </Campo>
+
                 <Campo label="Categoria">
                   <DropdownCampo
                     aberto={categoriasAbertas}
@@ -399,7 +465,7 @@ export function NovoProdutoClient({
                       Sem categoria
                       {!categoriaId && <Check className="h-4 w-4 text-[var(--terracotta)]" />}
                     </button>
-                    {categoriasOrdenadas.map((categoria) => (
+                    {categoriasVisiveis.map((categoria) => (
                       <button
                         key={categoria.id}
                         type="button"

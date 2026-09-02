@@ -3,12 +3,14 @@ import { Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { removerCatalogo, salvarCatalogo } from "@/lib/admin";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CORES_DESTAQUE, type CatalogoRow, type CategoriaRow } from "./tipos";
+import type { CatalogoRow, CategoriaRow } from "./tipos";
 import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
+/* A cor da colecao saiu da tela: ela nunca chegou a ser usada em lugar nenhum
+   (a cor que aparece no catalogo publico e a da CATEGORIA). A coluna continua
+   no banco com este valor para as novas — voltar e so trazer o seletor. */
 const COR_PADRAO = "#B8893B";
 
 export function ColecoesPanel({
@@ -22,7 +24,6 @@ export function ColecoesPanel({
 }) {
   const [nome, setNome] = useState("");
   const [subtitulo, setSubtitulo] = useState("");
-  const [cor, setCor] = useState(COR_PADRAO);
   const [busca, setBusca] = useState("");
   const [salvando, setSalvando] = useState(false);
   const confirmar = useConfirmar();
@@ -66,14 +67,13 @@ export function ColecoesPanel({
           nome: nomeLimpo,
           ordem: catalogos.length,
           ativo: true,
-          cor,
+          cor: COR_PADRAO,
           subtitulo: subtitulo.trim() || null,
         },
       });
       toast.success(`Coleção "${nomeLimpo}" criada.`);
       setNome("");
       setSubtitulo("");
-      setCor(COR_PADRAO);
       onChange();
     } finally {
       setSalvando(false);
@@ -134,25 +134,6 @@ export function ColecoesPanel({
             className="h-11"
           />
 
-          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2">
-            {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
-              <button
-                key={item.nome}
-                type="button"
-                onClick={() => setCor(item.valor)}
-                title={item.nome}
-                aria-label={`Cor ${item.nome}`}
-                className={cn(
-                  "h-6 w-6 rounded-full border transition-transform hover:scale-110",
-                  cor === item.valor
-                    ? "ring-2 ring-foreground ring-offset-1"
-                    : "border-[var(--cream-deep)]",
-                )}
-                style={{ backgroundColor: item.valor }}
-              />
-            ))}
-          </div>
-
           <Button onClick={criarColecao} disabled={salvando || !nome.trim()} className="h-11">
             <Plus className="mr-1.5 h-4 w-4" /> Adicionar coleção
           </Button>
@@ -185,7 +166,7 @@ export function ColecoesPanel({
             return (
               <article
                 key={colecao.id}
-                className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 lg:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_auto_auto] lg:items-center"
+                className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 lg:grid-cols-[minmax(220px,1.2fr)_minmax(220px,1fr)_auto] lg:items-center"
               >
                 <div className="min-w-0">
                   <Input
@@ -210,25 +191,6 @@ export function ColecoesPanel({
                   placeholder="Descrição curta (opcional)"
                   className="h-10 text-sm"
                 />
-
-                <div className="flex items-center gap-1.5">
-                  {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
-                    <button
-                      key={item.nome}
-                      type="button"
-                      onClick={() => atualizarColecao(colecao, { cor: item.valor })}
-                      title={item.nome}
-                      aria-label={`Cor ${item.nome}`}
-                      className={cn(
-                        "h-6 w-6 rounded-full border transition-transform hover:scale-110",
-                        (colecao.cor || COR_PADRAO) === item.valor
-                          ? "ring-2 ring-foreground ring-offset-1"
-                          : "border-[var(--cream-deep)]",
-                      )}
-                      style={{ backgroundColor: item.valor }}
-                    />
-                  ))}
-                </div>
 
                 {/* O "Visível" saiu da tela: ele so controla o que aparece no
                     catalogo publico do site, que ainda nao esta em uso, e dentro

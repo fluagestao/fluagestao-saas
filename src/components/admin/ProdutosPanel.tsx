@@ -2,8 +2,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   FileSpreadsheet,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Search,
   Trash2,
@@ -27,7 +25,9 @@ import {
 } from "./tipos";
 import { useConfirmar } from "./shell";
 
-const ITENS_POR_PAGINA = 7;
+/* Chave dos que nao tem colecao/categoria. Nao e id de nada: e o balde onde
+   caem os produtos soltos, sempre no fim da lista. */
+const SEM = "__sem__";
 
 function LinhaProduto({
   produto,
@@ -99,7 +99,6 @@ export function ProdutosPanel({
   const confirmar = useConfirmar();
   const [busca, setBusca] = useState("");
   const [filtroColecao, setFiltroColecao] = useState("todas");
-  const [pagina, setPagina] = useState(1);
 
   useEffect(() => {
     setItens(produtos);
@@ -153,20 +152,61 @@ export function ProdutosPanel({
     });
   }, [itens, categorias, busca, filtroColecao]);
 
-  const totalPaginas = Math.max(1, Math.ceil(itensFiltrados.length / ITENS_POR_PAGINA));
+  /* Produtos agrupados por colecao e, dentro dela, por categoria.
+     A colecao nao vive no produto: ela vem da categoria (categorias.catalogo_id).
+     Por isso o caminho e sempre produto -> categoria -> colecao. */
+  const grupos = useMemo(() => {
+    const porColecao = new Map<string, Map<string, ProdutoRow[]>>();
 
-  const itensPagina = useMemo(() => {
-    const inicio = (pagina - 1) * ITENS_POR_PAGINA;
-    return itensFiltrados.slice(inicio, inicio + ITENS_POR_PAGINA);
-  }, [itensFiltrados, pagina]);
+    for (const produto of itensFiltrados) {
+      const categoria = categorias.find((item) => item.id === produto.categoria_id);
+      const colecaoId = categoria?.catalogo_id ?? SEM;
+      const categoriaId = categoria?.id ?? SEM;
 
-  useEffect(() => {
-    setPagina(1);
-  }, [busca, filtroColecao]);
+      if (!porColecao.has(colecaoId)) porColecao.set(colecaoId, new Map());
+      const daColecao = porColecao.get(colecaoId)!;
+      if (!daColecao.has(categoriaId)) daColecao.set(categoriaId, []);
+      daColecao.get(categoriaId)!.push(produto);
+    }
 
-  useEffect(() => {
-    if (pagina > totalPaginas) setPagina(totalPaginas);
-  }, [pagina, totalPaginas]);
+    // Sem colecao/categoria vai para o fim, na ordem definida no cadastro.
+    const ordemColecao = (id: string) =>
+      id === SEM ? Number.MAX_SAFE_INTEGER : (catalogos.find((c) => c.id === id)?.ordem ?? 999);
+    const ordemCategoria = (id: string) =>
+      id === SEM ? Number.MAX_SAFE_INTEGER : (categorias.find((c) => c.id === id)?.ordem ?? 999);
+
+    return [...porColecao.entries()]
+      .sort((a, b) => ordemColecao(a[0]) - ordemColecao(b[0]))
+      .map(([colecaoId, daColecao]) => {
+        const listaCategorias = [...daColecao.entries()]
+          .sort((a, b) => ordemCategoria(a[0]) - ordemCategoria(b[0]))
+          .map(([categoriaId, produtos]) => ({
+            id: categoriaId,
+            nome:
+              categoriaId === SEM
+                ? "Sem categoria"
+                : (categorias.find((c) => c.id === categoriaId)?.nome ?? "Sem categoria"),
+            produtos,
+          }));
+
+        const soSoltos =
+          colecaoId === SEM && listaCategorias.length === 1 && listaCategorias[0].id === SEM;
+
+        return {
+          id: colecaoId,
+          // Quando o produto nao tem nem colecao nem categoria, um cabecalho so
+          // ja diz tudo — dois empilhados seriam ruido.
+          nome: soSoltos
+            ? "Sem categoria e coleção"
+            : colecaoId === SEM
+              ? "Sem coleção"
+              : (catalogos.find((c) => c.id === colecaoId)?.nome ?? "Sem coleção"),
+          semSubtitulos: soSoltos,
+          categorias: listaCategorias,
+          total: listaCategorias.reduce((n, c) => n + c.produtos.length, 0),
+        };
+      });
+  }, [itensFiltrados, categorias, catalogos]);
 
   async function excluir(p: ProdutoRow) {
     const ok = await confirmar({
@@ -183,9 +223,6 @@ export function ProdutosPanel({
   }
 
   const filtrosAtivos = busca.trim() !== "" || filtroColecao !== "todas";
-  const inicioExibido =
-    itensFiltrados.length === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
-  const fimExibido = Math.min(pagina * ITENS_POR_PAGINA, itensFiltrados.length);
 
   return (
     <section data-tela-cheia>
@@ -272,7 +309,6 @@ export function ProdutosPanel({
             onClick={() => {
               setBusca("");
               setFiltroColecao("todas");
-              setPagina(1);
             }}
             className="h-11"
           >
@@ -292,70 +328,48 @@ export function ProdutosPanel({
         </div>
       ) : (
         <>
-          <div className="mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-            {itensPagina.map((p) => {
-              const categoria = categorias.find((item) => item.id === p.categoria_id);
-              return (
-                <LinhaProduto
-                  key={p.id}
-                  produto={p}
-                  categoriaNome={categoria?.nome ?? "Sem categoria"}
-                  onEditar={onEditar}
-                  onExcluir={excluir}
-                />
-              );
-            })}
+          <div className="mt-5 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+            {grupos.map((grupo) => (
+              <section key={grupo.id}>
+                <header className="sticky top-0 z-10 flex items-baseline gap-2 bg-[var(--admin-bg)] pb-1.5">
+                  <h3 className="text-xs font-bold uppercase tracking-[0.1em] text-[var(--bronze)]">
+                    {grupo.nome}
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground">{grupo.total}</span>
+                </header>
+
+                <div className="space-y-3">
+                  {grupo.categorias.map((categoria) => (
+                    <div key={categoria.id}>
+                      {!grupo.semSubtitulos && (
+                        <p className="mb-1.5 text-[11px] font-semibold text-muted-foreground">
+                          {categoria.nome}
+                          <span className="ml-1.5 font-normal">{categoria.produtos.length}</span>
+                        </p>
+                      )}
+                      <div className="space-y-2">
+                        {categoria.produtos.map((p) => (
+                          <LinhaProduto
+                            key={p.id}
+                            produto={p}
+                            categoriaNome={categoria.nome}
+                            onEditar={onEditar}
+                            onExcluir={excluir}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
 
-          <div className="mt-0.5 flex h-10 items-center justify-between gap-4">
+          <div className="mt-0.5 flex h-10 items-center gap-4">
             <p className="text-xs text-muted-foreground">
-              Exibindo {inicioExibido}–{fimExibido} de {itensFiltrados.length} produtos
+              {itensFiltrados.length} {itensFiltrados.length === 1 ? "produto" : "produtos"}
+              {grupos.length > 1 ? ` em ${grupos.length} coleções` : ""}
             </p>
-
-            <div className="flex items-center gap-1.5">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
-                disabled={pagina === 1}
-                className="h-8 px-2.5"
-                aria-label="Página anterior"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-
-              {Array.from({ length: totalPaginas }, (_, index) => index + 1).map(
-                (numero) => (
-                  <button
-                    key={numero}
-                    type="button"
-                    onClick={() => setPagina(numero)}
-                    className={`grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
-                      pagina === numero
-                        ? "bg-[var(--terracotta)] text-white"
-                        : "border border-[var(--cream-deep)] bg-white text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]"
-                    }`}
-                  >
-                    {numero}
-                  </button>
-                ),
-              )}
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setPagina((atual) => Math.min(totalPaginas, atual + 1))
-                }
-                disabled={pagina === totalPaginas}
-                className="h-8 px-2.5"
-                aria-label="Próxima página"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
         </>
       )}
