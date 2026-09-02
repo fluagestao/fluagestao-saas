@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Download, Plus, Trash2, X } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Check, Download, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,10 @@ import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataLonga, hojeISO, somarDias } from "@/lib/prazo";
 import {
   carregarMovimentos,
+  carregarSaldoAcumulado,
+  carregarConfigFinanceiro,
+  conferirMovimento,
+  salvarConfigFinanceiro,
   criarTipoDespesa,
   criarTipoReceita,
   removerMovimento,
@@ -55,6 +59,8 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   // O mesmo dialogo serve para criar e para editar: salvarMovimento ja aceita
   // um id, so nao havia tela que usasse isso.
   const [editando, setEditando] = useState<Movimento | null>(null);
+  const [saldo, setSaldo] = useState(0);
+  const [saldoAberto, setSaldoAberto] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const confirmar = useConfirmar();
@@ -69,6 +75,9 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
       setTiposDespesa(d.tiposDespesa as TipoDespesa[]);
       setTiposReceita(d.tiposReceita as TipoDespesa[]);
       setAReceber(d.aReceber);
+      // Saldo acumulado: e o unico numero que bate com o extrato, porque o
+      // "sobrou" do periodo ignora tudo que veio antes dele.
+      setSaldo((await carregarSaldoAcumulado({ data: { ate } })).saldo);
     } catch (e) {
       setErro(mensagemDeErro(e, "carregar o financeiro"));
     }
@@ -82,6 +91,22 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   const resumo = useMemo(() => resumoDoCaixa(movimentos), [movimentos]);
   const daAba = useMemo(() => movimentos.filter((m) => m.tipo === tipo), [movimentos, tipo]);
   const dias = useMemo(() => porDia(daAba), [daAba]);
+
+  async function conferir(m: Movimento) {
+    const marcado = Boolean(m.conferido_em);
+    // Otimista: o circulo pinta na hora e volta sozinho se o banco recusar.
+    setMovimentos((atuais) =>
+      atuais.map((x) =>
+        x.id === m.id ? { ...x, conferido_em: marcado ? null : hojeISO() } : x,
+      ),
+    );
+    try {
+      await conferirMovimento({ data: { id: m.id, conferido: !marcado } });
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "marcar o lançamento"));
+      recarregar();
+    }
+  }
 
   async function excluir(m: Movimento) {
     if (m.id.startsWith("pedido:")) {
@@ -164,10 +189,12 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         <Cartao rotulo="Entrou" valor={resumo.entradas} cor="var(--whatsapp)" />
         <Cartao rotulo="Saiu" valor={resumo.saidas} cor="var(--terracotta)" />
         <Cartao
-          rotulo="Sobrou"
-          valor={resumo.saldo}
-          cor={resumo.saldo < 0 ? "var(--terracotta)" : "var(--bronze)"}
+          rotulo="Saldo"
+          valor={saldo}
+          cor={saldo < 0 ? "var(--terracotta)" : "var(--bronze)"}
           destaque
+          nota={`no período: ${resumo.saldo >= 0 ? "+" : ""}${formatBRL(resumo.saldo)}`}
+          onEditar={() => setSaldoAberto(true)}
         />
         {/* Fora do periodo de proposito: e o que esta em aberto hoje, nao o que
             ficou em aberto naquele mes. */}
@@ -253,6 +280,19 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
           Baixar CSV
         </button>
       </div>
+
+      {daAba.length > 0 && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {daAba.filter((m) => m.conferido_em).length} de {daAba.length} conferidos com o
+          extrato
+        </p>
+      )}
+
+      <DialogoSaldoInicial
+        aberto={saldoAberto}
+        onFechar={() => setSaldoAberto(false)}
+        onSalvo={recarregar}
+      />
 
       <DialogoLancamento
         tipo={tipo}
@@ -351,6 +391,24 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                 <Num className="shrink-0 font-medium text-foreground">{formatBRL(m.valor)}</Num>
                 <button
                   type="button"
+                  onClick={() => conferir(m)}
+                  title={
+                    m.conferido_em
+                      ? `Conferido em ${m.conferido_em}. Clique para desmarcar.`
+                      : "Marcar como conferido com o extrato"
+                  }
+                  aria-pressed={Boolean(m.conferido_em)}
+                  className={cn(
+                    "grid h-7 w-7 shrink-0 place-items-center rounded-full border transition-colors",
+                    m.conferido_em
+                      ? "border-[var(--whatsapp)] bg-[var(--whatsapp)] text-white"
+                      : "border-[var(--cream-deep)] text-foreground/25 hover:text-foreground/60",
+                  )}
+                >
+                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                </button>
+                <button
+                  type="button"
                   aria-label="Excluir"
                   onClick={() => excluir(m)}
                   className="shrink-0 rounded-full p-1.5 text-foreground/30 hover:text-destructive"
@@ -371,11 +429,15 @@ function Cartao({
   valor,
   cor,
   destaque,
+  nota,
+  onEditar,
 }: {
   rotulo: string;
   valor: number;
   cor: string;
   destaque?: boolean;
+  nota?: string;
+  onEditar?: () => void;
 }) {
   return (
     <div
@@ -384,10 +446,24 @@ function Cartao({
         destaque && "ring-1 ring-[var(--cream-deep)]",
       )}
     >
-      <p className="text-xs uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
+        {onEditar && (
+          <button
+            type="button"
+            onClick={onEditar}
+            aria-label="Ajustar saldo inicial"
+            title="Ajustar saldo inicial"
+            className="rounded-full p-1 text-foreground/30 transition-colors hover:text-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
       <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: cor }}>
         {formatBRL(valor)}
       </p>
+      {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
     </div>
   );
 }
@@ -650,4 +726,108 @@ function mesPassado(): { de: string; ate: string } {
   const mm = String(mesAnterior).padStart(2, "0");
   const ultimo = new Date(Date.UTC(anoAnterior, mesAnterior, 0)).getUTCDate();
   return { de: `${anoAnterior}-${mm}-01`, ate: `${anoAnterior}-${mm}-${ultimo}` };
+}
+
+/**
+ * Saldo inicial: de onde a conta comeca.
+ *
+ * Sem ele, "sobrou" e sempre entradas menos saidas do periodo, e o numero
+ * nunca bate com o extrato porque ignora tudo que veio antes. Dois campos, uma
+ * vez na vida.
+ */
+function DialogoSaldoInicial({
+  aberto,
+  onFechar,
+  onSalvo,
+}: {
+  aberto: boolean;
+  onFechar: () => void;
+  onSalvo: () => void;
+}) {
+  const [valor, setValor] = useState("");
+  const [data, setData] = useState(() => hojeISO());
+  const [carregando, setCarregando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (!aberto) return;
+    setCarregando(true);
+    carregarConfigFinanceiro()
+      .then((c) => {
+        setValor(c.saldo_inicial ? String(c.saldo_inicial).replace(".", ",") : "");
+        setData(c.saldo_inicial_em ?? hojeISO());
+      })
+      .catch((e) => toast.error(mensagemDeErro(e, "carregar o saldo inicial")))
+      .finally(() => setCarregando(false));
+  }, [aberto]);
+
+  async function salvar() {
+    if (salvando) return;
+    setSalvando(true);
+    try {
+      await salvarConfigFinanceiro({
+        data: { saldo_inicial: paraNumero(valor), saldo_inicial_em: data },
+      });
+      toast.success("Saldo inicial salvo.");
+      onSalvo();
+      onFechar();
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "salvar o saldo inicial"));
+    }
+    setSalvando(false);
+  }
+
+  return (
+    <Dialog open={aberto} onOpenChange={(estado) => !estado && onFechar()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="pr-6 text-left">
+          <DialogTitle>Saldo inicial</DialogTitle>
+          <DialogDescription>
+            Quanto havia em caixa antes de você começar a lançar aqui. É daqui que o saldo
+            parte — sem isso, ele nunca bate com o extrato.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">
+              Havia em caixa
+            </span>
+            <Input
+              autoFocus
+              inputMode="decimal"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder="0,00"
+              disabled={carregando}
+              className="h-10"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Em</span>
+            <DatePickerField
+              value={data}
+              onChange={setData}
+              ariaLabel="Data do saldo inicial"
+              className="h-10 w-full"
+            />
+          </label>
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          Lançamentos anteriores a essa data não são somados de novo — presume-se que já
+          estão dentro do valor informado.
+        </p>
+
+        <DialogFooter className="pt-1">
+          <Button variant="outline" onClick={onFechar} className="rounded-full">
+            Cancelar
+          </Button>
+          <Button onClick={salvar} disabled={salvando || carregando} className="rounded-full">
+            {salvando ? "Salvando…" : "Salvar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
