@@ -83,8 +83,8 @@ function Kpi({
   detalheClass?: string;
 }) {
   return (
-    <article className="flex min-h-[104px] min-w-0 items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#fbefec] text-[#b65346]">
+    <article className="flex min-h-[104px] min-w-0 items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[var(--shadow-panel)]">
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)]">
         <Icon className="h-5 w-5" strokeWidth={1.8} />
       </span>
       <div className="min-w-0">
@@ -118,7 +118,7 @@ function CabecalhoCard({
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-[#b65346] transition-colors hover:bg-[#fbefec]"
+          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-[var(--coral)] transition-colors hover:bg-[var(--peach)]"
         >
           {acao} <ArrowRight className="h-4 w-4" />
         </button>
@@ -141,7 +141,7 @@ function Vazio({
 }) {
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 py-4 text-center">
-      <span className={`grid place-items-center rounded-full bg-[#fbefec] text-[#b65346] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
+      <span className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
         <Icon className={destaque ? "h-6 w-6" : "h-5 w-5"} strokeWidth={1.7} />
       </span>
       <p className={`font-semibold text-[var(--admin-ink)] ${destaque ? "mt-4 text-base" : "mt-3 text-sm"}`}>{titulo}</p>
@@ -362,7 +362,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           <span className="mt-1.5 flex items-center gap-2 text-xs text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
         </div>
 
-        <Button onClick={novoPedido} className="h-11 w-full shrink-0 rounded-xl bg-[#b65346] px-6 text-sm font-semibold shadow-[0_7px_18px_rgba(182,83,70,0.18)] hover:bg-[#a8493e] sm:w-auto">
+        <Button onClick={novoPedido} className="h-11 w-full shrink-0 rounded-xl bg-[var(--coral)] px-6 text-sm font-semibold shadow-[0_7px_18px_rgba(182,83,70,0.18)] hover:bg-[var(--coral-hover)] sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo pedido
         </Button>
@@ -397,7 +397,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       </div>
 
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
-        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
           <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
           <div className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${entregasHoje.length === 0 ? "flex" : ""}`}>
             {entregasHoje.length === 0 ? (
@@ -421,7 +421,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <article className="flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+        <article className="flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
           <CabecalhoCard titulo="Próximos 7 dias" />
           <div className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${proximosSete.length === 0 ? "flex" : ""}`}>
             {proximosSete.length === 0 ? (
@@ -449,7 +449,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         </article>
 
         <div className="grid content-stretch gap-3 md:col-span-2 xl:col-span-1">
-          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
               {tarefasPendentes.length === 0 ? (
@@ -470,7 +470,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             </div>
           </article>
 
-          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
             <CabecalhoCard titulo="Pedidos em aberto" acao="ver todos" onClick={() => onIrPara("vendas")} />
             <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
               {abertos.length === 0 ? (
@@ -493,7 +493,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[2.08fr_.95fr]">
-        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
           <CabecalhoCard titulo="Resumo do faturamento">
             <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-[var(--cream-soft)] p-0.5">
               {(
@@ -561,7 +561,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                     <polyline
                       points={pontosLinha}
                       fill="none"
-                      stroke="#b65346"
+                      stroke="var(--coral)"
                       strokeWidth="1.4"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -578,7 +578,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                           cy={y}
                           r="0.8"
                           fill="#fff"
-                          stroke="#b65346"
+                          stroke="var(--coral)"
                           strokeWidth="1"
                           vectorEffect="non-scaling-stroke"
                         >
@@ -603,9 +603,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <figure className="flex min-h-[150px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[0_6px_20px_rgba(112,61,58,0.045)]">
+        <figure className="flex min-h-[150px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[var(--shadow-panel)]">
           <blockquote className="text-sm leading-relaxed text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
-          <figcaption className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#b65346]">{versiculo.referencia}</figcaption>
+          <figcaption className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">{versiculo.referencia}</figcaption>
         </figure>
       </div>
     </section>

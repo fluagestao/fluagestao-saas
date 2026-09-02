@@ -79,7 +79,7 @@ function Kpi({
 }) {
   return (
     <article className="flex min-h-[92px] min-w-0 items-start gap-3 rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[var(--shadow-soft)]">
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#fbefec] text-[var(--terracotta)]">
+      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--peach)] text-[var(--terracotta)]">
         <Icon className="h-4 w-4" strokeWidth={1.9} />
       </span>
       <div className="min-w-0">

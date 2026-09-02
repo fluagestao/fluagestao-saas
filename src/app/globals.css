@@ -75,9 +75,78 @@
   --whatsapp: #25d366;
   --whatsapp-foreground: #ffffff;
 
+  /* Coral do painel. Convive com --terracotta (#a94f45) de propósito: este é o
+     tom das ações do admin (CTA, links, ícones), aquele é o da marca no site.
+     Estava hardcoded em sete lugares; unificar os dois é decisão de marca. */
+  --coral: #b65346;
+  --coral-hover: #a8493e;
+  /* Fundo pêssego dos ícones e estados suaves — antes hardcoded como #fbefec. */
+  --peach: #fbefec;
+
   --shadow-soft: 0 8px 30px rgb(112 61 58 / 0.055);
   --shadow-lift: 0 18px 50px rgb(112 61 58 / 0.14);
   --shadow-card: 0 16px 44px rgb(112 61 58 / 0.075);
+  /* Sombra dos cards do dashboard: estava inline e repetida sete vezes. */
+  --shadow-panel: 0 6px 20px rgb(112 61 58 / 0.045);
+
+  /* --------------------------------------------------------------------
+     Escala tipográfica do painel
+
+     Cinco degraus. Antes não existia escala nenhuma — só a font-family — e
+     cada componente escolhia o tamanho na mão, o que produziu dez tamanhos
+     diferentes na tela Início (incluindo 9px, 10px e 11px convivendo).
+
+     Os valores são redefinidos em home-compact.css para a versão que cabe
+     num viewport só. Por isso os componentes usam as classes .t-*, nunca um
+     tamanho literal: o degrau é o mesmo, quem muda é o contexto.
+     -------------------------------------------------------------------- */
+  --text-hero: 1.75rem; /* 28px — números-herói */
+  --text-greeting: 1.75rem; /* 28px — saudação; degrau próprio porque a linha dela é curta */
+  --text-title: 1.0625rem; /* 17px — título de módulo */
+  --text-item: 0.9375rem; /* 15px — item de lista (cliente, pedido) */
+  --text-body: 0.875rem; /* 14px — corpo */
+  --text-support: 0.75rem; /* 12px — legenda, nota, badge */
+}
+
+/* Degraus da escala. Definidos depois do import do Tailwind para vencerem as
+   utilities text-* por ordem de fonte, sem precisar de !important. */
+.t-hero {
+  font-size: var(--text-hero);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.t-greeting {
+  font-size: var(--text-greeting);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+}
+
+.t-title {
+  font-size: var(--text-title);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.t-item {
+  font-size: var(--text-item);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.t-body {
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.t-support {
+  font-size: var(--text-support);
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 * {
