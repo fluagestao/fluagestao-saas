@@ -1,38 +1,222 @@
 "use client";
 
 import {
+  ArrowLeft,
   ArrowRight,
+  BookOpen,
   Check,
+  ChevronDown,
+  ChevronUp,
   Circle,
-  LayoutDashboard,
+  CircleDollarSign,
+  ClipboardCheck,
+  Contact,
   Loader2,
   PackagePlus,
+  Pause,
+  Play,
+  ReceiptText,
+  Send,
+  Settings,
   ShoppingBag,
   Sparkles,
-  X,
+  Truck,
   type LucideIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { Switch } from "@/components/ui/switch";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+
+type EtapaId =
+  | "empresa"
+  | "insumos"
+  | "custos"
+  | "produto"
+  | "cliente"
+  | "pedido"
+  | "financeiro"
+  | "entregas"
+  | "followup";
+
+type Etapa = {
+  id: EtapaId;
+  titulo: string;
+  resumo: string;
+  orientacoes: string[];
+  destino: string;
+  acao: string;
+  icon: LucideIcon;
+};
 
 type Progresso = {
   companyId: string;
   introducaoConcluida: boolean;
-  logoAdicionada: boolean;
-  primeiroProduto: boolean;
-  primeiroPedido: boolean;
+  habilitado: boolean;
+  concluidas: EtapaId[];
+  puladas: EtapaId[];
 };
 
-type AcaoId = "pedido" | "produto" | "painel";
+const ETAPAS: Etapa[] = [
+  {
+    id: "empresa",
+    titulo: "Configure sua empresa",
+    resumo: "Deixe os dados e a identidade da sua empresa prontos.",
+    orientacoes: [
+      "Confira o nome, endereço e contatos da empresa.",
+      "Adicione sua logo para personalizar o sistema e os documentos.",
+      "Você poderá alterar essas informações novamente quando quiser.",
+    ],
+    destino: "/admin/conta/empresa?guiaEtapa=empresa",
+    acao: "Abrir configurações",
+    icon: Settings,
+  },
+  {
+    id: "insumos",
+    titulo: "Cadastre seus insumos",
+    resumo: "Registre tudo o que é usado para montar os produtos.",
+    orientacoes: [
+      "Insumos podem ser alimentos, embalagens, laços, caixas e outros materiais.",
+      "Escolha a unidade correta: unidade, kg, grama, litro ou pacote.",
+      "Informe sempre o custo unitário; ele será usado no cálculo do produto.",
+    ],
+    destino: "/insumos?guiaEtapa=insumos",
+    acao: "Cadastrar insumo",
+    icon: PackagePlus,
+  },
+  {
+    id: "custos",
+    titulo: "Entenda o cálculo de custos",
+    resumo: "Aprenda como o Flua calcula o custo de cada produto.",
+    orientacoes: [
+      "Adicione os insumos utilizados e informe a quantidade consumida.",
+      "Exemplo: se 1 kg custa R$ 100 e você usa 250 g, o custo será R$ 25.",
+      "O custo total é atualizado automaticamente conforme a composição.",
+    ],
+    destino: "/cadastros/produtos/novo?guiaEtapa=custos",
+    acao: "Ver cálculo no produto",
+    icon: CircleDollarSign,
+  },
+  {
+    id: "produto",
+    titulo: "Cadastre seu produto",
+    resumo: "Prepare o catálogo usado nos pedidos e nas vendas.",
+    orientacoes: [
+      "Informe nome, categoria, preço de venda e uma boa imagem.",
+      "Monte a composição com os insumos para conhecer o custo real.",
+      "Salve o produto para encontrá-lo rapidamente nos próximos pedidos.",
+    ],
+    destino: "/cadastros/produtos/novo?guiaEtapa=produto",
+    acao: "Cadastrar produto",
+    icon: ReceiptText,
+  },
+  {
+    id: "cliente",
+    titulo: "Cadastre um cliente",
+    resumo: "Salve os dados para não digitá-los em cada venda.",
+    orientacoes: [
+      "Cadastre o nome e o WhatsApp principal do cliente.",
+      "O endereço pode ser preenchido automaticamente a partir do CEP.",
+      "Depois, basta buscar o cliente ao abrir um novo pedido.",
+    ],
+    destino: "/admin?guiaEtapa=cliente",
+    acao: "Abrir clientes",
+    icon: Contact,
+  },
+  {
+    id: "pedido",
+    titulo: "Crie seu primeiro pedido",
+    resumo: "Registre cliente, produtos, entrega e pagamento.",
+    orientacoes: [
+      "Selecione um cliente cadastrado ou cadastre um novo na hora.",
+      "Adicione produtos cadastrados ou um produto avulso.",
+      "Complete entrega, pagamento e cartão antes de salvar.",
+    ],
+    destino: "/vendas/pedidos/novo-pedido?guiaEtapa=pedido",
+    acao: "Criar pedido",
+    icon: ShoppingBag,
+  },
+  {
+    id: "financeiro",
+    titulo: "Entenda o financeiro",
+    resumo: "Acompanhe entradas, valores a receber e despesas.",
+    orientacoes: [
+      "Pedidos pagos aparecem automaticamente entre as entradas.",
+      "Pedidos ainda não pagos ficam disponíveis em A receber.",
+      "Use Saídas para registrar fornecedores e despesas do negócio.",
+    ],
+    destino: "/admin?guiaEtapa=financeiro",
+    acao: "Abrir financeiro",
+    icon: CircleDollarSign,
+  },
+  {
+    id: "entregas",
+    titulo: "Organize as entregas",
+    resumo: "Veja o que precisa ser entregue hoje e nos próximos dias.",
+    orientacoes: [
+      "A agenda usa a data e o horário informados em cada pedido.",
+      "Atualize o status do pedido conforme ele avança.",
+      "Assim você acompanha produção, retirada e entrega sem se perder.",
+    ],
+    destino: "/admin?guiaEtapa=entregas",
+    acao: "Abrir agenda",
+    icon: Truck,
+  },
+  {
+    id: "followup",
+    titulo: "Use o Follow-up",
+    resumo: "Peça avaliações depois que o pedido for entregue.",
+    orientacoes: [
+      "Pedidos entregues aparecem automaticamente nesta área.",
+      "Você pode revisar a mensagem antes de abrir o WhatsApp.",
+      "Depois do envio, marque o cliente como já chamado.",
+    ],
+    destino: "/followup?guiaEtapa=followup",
+    acao: "Abrir Follow-up",
+    icon: Send,
+  },
+];
 
-const ROTA_LOGO = "/admin/conta/empresa";
-const ROTA_PRODUTO = "/cadastros/produtos/novo";
-const ROTA_PEDIDO = "/vendas/pedidos/novo-pedido";
+const ETAPAS_IDS = new Set<EtapaId>(ETAPAS.map((etapa) => etapa.id));
+const ROTAS_DO_SISTEMA = [
+  "/admin",
+  "/inicio",
+  "/insumos",
+  "/produtos",
+  "/cadastros",
+  "/vendas",
+  "/financeiro",
+  "/followup",
+  "/dashboard",
+  "/tarefas",
+  "/clientes",
+];
 
-function mensagemErro(error: unknown, fallback: string) {
+function idsValidos(valor: unknown): EtapaId[] {
+  if (!Array.isArray(valor)) return [];
+  return valor.filter(
+    (item): item is EtapaId =>
+      typeof item === "string" && ETAPAS_IDS.has(item as EtapaId),
+  );
+}
+
+function textoElemento(elemento: Element) {
+  return (elemento.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+function clicarNoHeader(rotulo: string) {
+  const header = document.querySelector("header");
+  const botao = header
+    ? Array.from(header.querySelectorAll<HTMLButtonElement>("button")).find(
+        (item) => textoElemento(item) === rotulo,
+      )
+    : null;
+  botao?.click();
+}
+
+function mensagemErro(error: unknown) {
   if (
     error &&
     typeof error === "object" &&
@@ -41,286 +225,146 @@ function mensagemErro(error: unknown, fallback: string) {
   ) {
     return error.message;
   }
-  return fallback;
-}
-
-function AcaoCard({
-  id,
-  titulo,
-  descricao,
-  rotulo,
-  icon: Icon,
-  destaque = false,
-  acionando,
-  onClick,
-}: {
-  id: AcaoId;
-  titulo: string;
-  descricao: string;
-  rotulo: string;
-  icon: LucideIcon;
-  destaque?: boolean;
-  acionando: AcaoId | null;
-  onClick: (id: AcaoId) => void;
-}) {
-  const carregando = acionando === id;
-
-  return (
-    <button
-      type="button"
-      onClick={() => onClick(id)}
-      disabled={Boolean(acionando)}
-      className={cn(
-        "group flex min-h-48 flex-col rounded-[24px] border p-5 text-left transition-all disabled:cursor-wait disabled:opacity-70",
-        destaque
-          ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white shadow-[0_18px_45px_rgba(179,79,68,0.22)] hover:-translate-y-0.5 hover:bg-[var(--wine)]"
-          : "border-[var(--admin-border)] bg-white text-foreground shadow-[0_12px_35px_rgba(112,61,58,0.07)] hover:-translate-y-0.5 hover:border-[var(--terracotta)]",
-      )}
-      aria-busy={carregando}
-    >
-      <span
-        className={cn(
-          "mb-5 inline-flex h-11 w-11 items-center justify-center rounded-2xl",
-          destaque
-            ? "bg-white/15 text-white"
-            : "bg-[var(--cream)] text-[var(--terracotta)]",
-        )}
-      >
-        <Icon className="h-5 w-5" />
-      </span>
-      <span className="text-base font-bold">{titulo}</span>
-      <span
-        className={cn(
-          "mt-1.5 text-sm leading-5",
-          destaque ? "text-white/80" : "text-[var(--admin-muted)]",
-        )}
-      >
-        {descricao}
-      </span>
-      <span className="mt-auto flex items-center gap-2 pt-5 text-sm font-bold">
-        {carregando ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            {rotulo}
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </>
-        )}
-      </span>
-    </button>
-  );
-}
-
-function Checklist({
-  progresso,
-  compacto = false,
-  onNavigate,
-}: {
-  progresso: Progresso;
-  compacto?: boolean;
-  onNavigate: (destino: string) => void;
-}) {
-  const itens = [
-    { label: "Empresa configurada", concluido: true, destino: null },
-    {
-      label: "Logo adicionada",
-      concluido: progresso.logoAdicionada,
-      destino: ROTA_LOGO,
-    },
-    {
-      label: "Primeiro produto cadastrado",
-      concluido: progresso.primeiroProduto,
-      destino: ROTA_PRODUTO,
-    },
-    {
-      label: "Primeiro pedido criado",
-      concluido: progresso.primeiroPedido,
-      destino: ROTA_PEDIDO,
-    },
-  ];
-  const concluidos = itens.filter((item) => item.concluido).length;
-  const percentual = (concluidos / itens.length) * 100;
-
-  return (
-    <section
-      className={cn(
-        "rounded-[22px] border border-[var(--admin-border)] bg-[var(--cream-soft)]",
-        compacto ? "p-4 shadow-[var(--shadow-lift)]" : "p-5",
-      )}
-      aria-label="Checklist de configuração"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-bold text-foreground">
-            {compacto ? "Primeiros passos" : "Sua empresa no Flua"}
-          </p>
-          <p className="mt-0.5 text-xs text-[var(--admin-muted)]">
-            {concluidos} de {itens.length} concluídos
-          </p>
-        </div>
-        <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[var(--terracotta)]">
-          {Math.round(percentual)}%
-        </span>
-      </div>
-
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white">
-        <div
-          className="h-full rounded-full bg-[var(--terracotta)] transition-[width] duration-500"
-          style={{ width: `${percentual}%` }}
-        />
-      </div>
-
-      <div className={cn("mt-3 grid gap-1.5", !compacto && "sm:grid-cols-2")}>
-        {itens.map((item) => {
-          const Icon = item.concluido ? Check : Circle;
-          const destino = item.destino;
-          const conteudo = (
-            <>
-              <span
-                className={cn(
-                  "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full",
-                  item.concluido
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-white text-[var(--admin-muted)]",
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </span>
-              <span
-                className={cn(
-                  "min-w-0 flex-1 text-sm font-medium",
-                  item.concluido
-                    ? "text-[var(--admin-ink-soft)]"
-                    : "text-foreground",
-                )}
-              >
-                {item.label}
-              </span>
-              {!item.concluido && destino && (
-                <ArrowRight className="h-3.5 w-3.5 text-[var(--terracotta)]" />
-              )}
-            </>
-          );
-
-          if (!item.concluido && destino) {
-            return (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => onNavigate(destino)}
-                className="flex items-center gap-2 rounded-xl px-2 py-2 text-left transition-colors hover:bg-white"
-              >
-                {conteudo}
-              </button>
-            );
-          }
-
-          return (
-            <div
-              key={item.label}
-              className="flex items-center gap-2 rounded-xl px-2 py-2"
-            >
-              {conteudo}
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
+  return "Não foi possível atualizar o Guia do Flua.";
 }
 
 export function OnboardingPrompt() {
   const pathname = usePathname();
+  const dentroDoSistema = ROTAS_DO_SISTEMA.some(
+    (rota) => pathname === rota || pathname.startsWith(`${rota}/`),
+  );
   const [progresso, setProgresso] = useState<Progresso | null>(null);
-  const [aberto, setAberto] = useState(false);
-  const [forcarOnboarding, setForcarOnboarding] = useState(false);
+  const [boasVindas, setBoasVindas] = useState(false);
+  const [expandido, setExpandido] = useState(true);
+  const [etapaAberta, setEtapaAberta] = useState<EtapaId | null>(null);
   const [carregando, setCarregando] = useState(true);
-  const [acionando, setAcionando] = useState<AcaoId | null>(null);
+  const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!dentroDoSistema) {
+      setCarregando(false);
+      return;
+    }
+
+    const parametro = new URLSearchParams(window.location.search).get(
+      "guiaEtapa",
+    ) as EtapaId | null;
+    if (parametro && ETAPAS_IDS.has(parametro)) {
+      setEtapaAberta(parametro);
+      setExpandido(true);
+    }
+
+    const recolhido =
+      window.localStorage.getItem("flua-guia-recolhido") === "1";
+    if (!parametro) setExpandido(!recolhido);
+
     let ativo = true;
     const supabase = createClient();
-    const forcar =
-      new URLSearchParams(window.location.search).get("onboarding") === "1";
-
-    setForcarOnboarding(forcar);
 
     void (async () => {
       try {
         const { data: userData, error: userError } =
           await supabase.auth.getUser();
-        const user = userData.user;
-        if (userError || !user) {
-          throw new Error("Não foi possível validar sua sessão.");
-        }
+        if (userError || !userData.user) return;
 
         const { data: membro, error: membroError } = await supabase
           .from("company_members")
           .select("company_id, role")
-          .eq("user_id", user.id)
+          .eq("user_id", userData.user.id)
           .eq("status", "active")
           .order("created_at", { ascending: true })
           .limit(1)
           .maybeSingle();
 
         if (membroError) throw membroError;
-        if (!membro || membro.role !== "owner") {
-          if (ativo) {
-            setAberto(false);
-            setProgresso(null);
-          }
-          return;
+        if (!membro || membro.role !== "owner") return;
+
+        const [empresa, insumo, produto, cliente, pedido, movimento, followup] =
+          await Promise.all([
+            supabase
+              .from("companies")
+              .select(
+                "id, logo_url, onboarding_completed_at, guide_enabled, guide_completed_steps, guide_skipped_steps",
+              )
+              .eq("id", membro.company_id)
+              .maybeSingle(),
+            supabase
+              .from("insumos")
+              .select("id")
+              .eq("company_id", membro.company_id)
+              .limit(1),
+            supabase
+              .from("produtos")
+              .select("id")
+              .eq("company_id", membro.company_id)
+              .eq("rascunho", false)
+              .limit(1),
+            supabase
+              .from("clientes")
+              .select("id")
+              .eq("company_id", membro.company_id)
+              .limit(1),
+            supabase
+              .from("pedidos")
+              .select("id, data_entrega")
+              .eq("company_id", membro.company_id)
+              .limit(1),
+            supabase
+              .from("movimentos")
+              .select("id")
+              .eq("company_id", membro.company_id)
+              .limit(1),
+            supabase
+              .from("pedidos")
+              .select("id")
+              .eq("company_id", membro.company_id)
+              .not("avaliacao_pedida_em", "is", null)
+              .limit(1),
+          ]);
+
+        const resultadoComErro = [
+          empresa,
+          insumo,
+          produto,
+          cliente,
+          pedido,
+          movimento,
+          followup,
+        ].find((resultado) => resultado.error);
+        if (resultadoComErro?.error) throw resultadoComErro.error;
+        if (!empresa.data) return;
+
+        const concluidas = new Set<EtapaId>(
+          idsValidos(empresa.data.guide_completed_steps),
+        );
+        if (empresa.data.logo_url) concluidas.add("empresa");
+        if (insumo.data?.length) concluidas.add("insumos");
+        if (produto.data?.length) {
+          concluidas.add("custos");
+          concluidas.add("produto");
         }
-
-        const [empresaResult, produtoResult, pedidoResult] = await Promise.all([
-          supabase
-            .from("companies")
-            .select("id, logo_url, onboarding_completed_at")
-            .eq("id", membro.company_id)
-            .maybeSingle(),
-          supabase
-            .from("produtos")
-            .select("id")
-            .eq("company_id", membro.company_id)
-            .eq("rascunho", false)
-            .limit(1),
-          supabase
-            .from("pedidos")
-            .select("id")
-            .eq("company_id", membro.company_id)
-            .limit(1),
-        ]);
-
-        if (empresaResult.error) throw empresaResult.error;
-        if (produtoResult.error) throw produtoResult.error;
-        if (pedidoResult.error) throw pedidoResult.error;
-        if (!empresaResult.data) {
-          throw new Error("Não foi possível localizar sua empresa.");
-        }
-
-        const novoProgresso: Progresso = {
-          companyId: empresaResult.data.id,
-          introducaoConcluida: Boolean(
-            empresaResult.data.onboarding_completed_at,
-          ),
-          logoAdicionada: Boolean(empresaResult.data.logo_url),
-          primeiroProduto: Boolean(produtoResult.data?.length),
-          primeiroPedido: Boolean(pedidoResult.data?.length),
-        };
+        if (cliente.data?.length) concluidas.add("cliente");
+        if (pedido.data?.length) concluidas.add("pedido");
+        if (movimento.data?.length) concluidas.add("financeiro");
+        if (pedido.data?.some((item) => item.data_entrega))
+          concluidas.add("entregas");
+        if (followup.data?.length) concluidas.add("followup");
 
         if (!ativo) return;
-        setProgresso(novoProgresso);
-        setAberto(forcar || !novoProgresso.introducaoConcluida);
+        const introducaoConcluida = Boolean(
+          empresa.data.onboarding_completed_at,
+        );
+        setProgresso({
+          companyId: empresa.data.id,
+          introducaoConcluida,
+          habilitado: empresa.data.guide_enabled !== false,
+          concluidas: Array.from(concluidas),
+          puladas: idsValidos(empresa.data.guide_skipped_steps),
+        });
+        setBoasVindas(!introducaoConcluida);
       } catch (error) {
-        if (ativo) {
-          setErro(
-            mensagemErro(
-              error,
-              "Não foi possível carregar os primeiros passos.",
-            ),
-          );
-        }
+        if (ativo) setErro(mensagemErro(error));
       } finally {
         if (ativo) setCarregando(false);
       }
@@ -329,179 +373,382 @@ export function OnboardingPrompt() {
     return () => {
       ativo = false;
     };
+  }, [dentroDoSistema, pathname]);
+
+  useEffect(() => {
+    if (pathname !== "/admin") return;
+    const etapa = new URLSearchParams(window.location.search).get("guiaEtapa");
+    if (etapa === "cliente") {
+      window.setTimeout(() => {
+        clicarNoHeader("Cadastros");
+        window.setTimeout(() => clicarNoHeader("Clientes"), 80);
+      }, 120);
+    } else if (etapa === "financeiro") {
+      window.setTimeout(() => {
+        clicarNoHeader("Financeiro");
+        window.setTimeout(() => clicarNoHeader("Entradas"), 80);
+      }, 120);
+    } else if (etapa === "entregas") {
+      window.setTimeout(() => {
+        const agenda = document.querySelector<HTMLButtonElement>(
+          'button[aria-label="Agenda"]',
+        );
+        agenda?.click();
+      }, 120);
+    }
   }, [pathname]);
 
-  const todosConcluidos = useMemo(
+  const contabilizadas = useMemo(
     () =>
-      Boolean(
-        progresso?.logoAdicionada &&
-          progresso?.primeiroProduto &&
-          progresso?.primeiroPedido,
-      ),
+      new Set([
+        ...(progresso?.concluidas ?? []),
+        ...(progresso?.puladas ?? []),
+      ]),
     [progresso],
   );
+  const percentual = Math.round((contabilizadas.size / ETAPAS.length) * 100);
+  const etapa = ETAPAS.find((item) => item.id === etapaAberta) ?? null;
+  const EtapaIcon = etapa?.icon;
 
-  function limparParametroOnboarding() {
-    const url = new URL(window.location.href);
-    if (!url.searchParams.has("onboarding")) return;
-    url.searchParams.delete("onboarding");
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${url.pathname}${url.search}${url.hash}`,
-    );
-    setForcarOnboarding(false);
-  }
-
-  async function concluirIntroducao(destino?: string) {
-    if (!progresso) return;
+  async function atualizarEmpresa(
+    alteracoes: Record<string, boolean | string[] | string>,
+  ) {
+    if (!progresso) return false;
+    setSalvando(true);
     setErro(null);
-
-    const supabase = createClient();
-    const { error } = await supabase
+    const { error } = await createClient()
       .from("companies")
-      .update({ onboarding_completed_at: new Date().toISOString() })
+      .update(alteracoes)
       .eq("id", progresso.companyId);
-
+    setSalvando(false);
     if (error) {
-      setErro(
-        mensagemErro(error, "Não foi possível salvar seu primeiro acesso."),
-      );
+      setErro(mensagemErro(error));
+      return false;
+    }
+    return true;
+  }
+
+  async function iniciarGuia(habilitado: boolean) {
+    if (!progresso) return;
+    const agora = new Date().toISOString();
+    if (
+      !(await atualizarEmpresa({
+        onboarding_completed_at: agora,
+        guide_enabled: habilitado,
+      }))
+    )
       return;
+    setProgresso({
+      ...progresso,
+      introducaoConcluida: true,
+      habilitado,
+    });
+    setBoasVindas(false);
+    setExpandido(habilitado);
+  }
+
+  async function alternarGuia(habilitado: boolean) {
+    if (
+      !progresso ||
+      !(await atualizarEmpresa({ guide_enabled: habilitado }))
+    )
+      return;
+    setProgresso({ ...progresso, habilitado });
+    if (habilitado) {
+      setExpandido(true);
+      window.localStorage.removeItem("flua-guia-recolhido");
     }
-
-    setProgresso((atual) =>
-      atual ? { ...atual, introducaoConcluida: true } : atual,
-    );
-    setAberto(false);
-    limparParametroOnboarding();
-    if (destino) window.location.assign(destino);
   }
 
-  async function escolherAcao(id: AcaoId) {
-    setAcionando(id);
-    const destino =
-      id === "pedido"
-        ? ROTA_PEDIDO
-        : id === "produto"
-          ? ROTA_PRODUTO
-          : undefined;
-    await concluirIntroducao(destino);
-    setAcionando(null);
+  async function registrarEtapa(id: EtapaId, pulada: boolean) {
+    if (!progresso) return;
+    const concluidas = pulada
+      ? progresso.concluidas.filter((item) => item !== id)
+      : Array.from(new Set([...progresso.concluidas, id]));
+    const puladas = pulada
+      ? Array.from(new Set([...progresso.puladas, id]))
+      : progresso.puladas.filter((item) => item !== id);
+    if (
+      !(await atualizarEmpresa({
+        guide_completed_steps: concluidas,
+        guide_skipped_steps: puladas,
+      }))
+    )
+      return;
+    setProgresso({ ...progresso, concluidas, puladas });
+    setEtapaAberta(null);
   }
 
-  function navegar(destino: string) {
-    window.location.assign(destino);
+  function recolher() {
+    setExpandido(false);
+    window.localStorage.setItem("flua-guia-recolhido", "1");
   }
 
-  if (carregando || !progresso) {
-    if (!carregando && forcarOnboarding && erro) {
-      return (
-        <div className="fixed bottom-6 right-6 z-[70] max-w-sm rounded-2xl border border-red-200 bg-white p-4 text-sm text-red-700 shadow-[var(--shadow-lift)]">
-          {erro}
-        </div>
-      );
-    }
-    return null;
+  function abrir() {
+    setExpandido(true);
+    window.localStorage.removeItem("flua-guia-recolhido");
   }
 
-  const mostrarChecklistCompacto =
-    progresso.introducaoConcluida &&
-    !todosConcluidos &&
-    !aberto &&
-    (pathname === "/admin" || pathname === "/inicio");
+  if (!dentroDoSistema || carregando || !progresso) return null;
 
   return (
     <>
-      {aberto && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#2b2421]/55 p-3 backdrop-blur-sm sm:p-6">
+      {boasVindas && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b2421]/55 p-4 backdrop-blur-sm">
           <section
+            className="w-full max-w-2xl rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_30px_90px_rgba(43,36,33,0.3)] sm:p-8"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="onboarding-title"
-            className="max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl overflow-y-auto rounded-[30px] border border-white/70 bg-[var(--admin-bg)] p-5 shadow-[0_30px_90px_rgba(43,36,33,0.28)] sm:max-h-[calc(100dvh-3rem)] sm:p-8"
+            aria-labelledby="guia-boas-vindas"
           >
-            <div className="flex items-start justify-between gap-5">
-              <div className="max-w-2xl">
-                <span className="inline-flex items-center gap-2 rounded-full bg-[var(--cream)] px-3 py-1.5 text-xs font-bold text-[var(--terracotta)]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Primeiros passos
-                </span>
-                <h1
-                  id="onboarding-title"
-                  className="mt-4 text-2xl font-bold tracking-tight text-foreground sm:text-3xl"
-                >
-                  Vamos colocar o Flua em movimento
-                </h1>
-                <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)] sm:text-base">
-                  Escolha seu próximo passo. O Flua acompanha o restante
-                  automaticamente.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => void concluirIntroducao()}
-                disabled={Boolean(acionando)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)] transition-colors hover:text-[var(--wine)] disabled:opacity-60"
-                aria-label="Fechar primeiros passos"
-              >
-                <X className="h-4 w-4" />
-              </button>
+            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--cream)] px-3 py-1.5 text-xs font-bold text-[var(--terracotta)]">
+              <Sparkles className="h-3.5 w-3.5" /> Guia do Flua
+            </span>
+            <h1
+              id="guia-boas-vindas"
+              className="mt-4 text-2xl font-bold sm:text-3xl"
+            >
+              Vamos preparar seu Flua juntos
+            </h1>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--admin-muted)] sm:text-base">
+              Um passo a passo curto vai ajudar você a configurar a empresa,
+              calcular custos, cadastrar produtos e registrar sua primeira venda.
+            </p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {["Aprenda fazendo", "Continue quando quiser", "Pule qualquer etapa"].map(
+                (texto) => (
+                  <div
+                    key={texto}
+                    className="flex items-center gap-2 rounded-2xl bg-[var(--cream-soft)] p-3 text-sm font-semibold"
+                  >
+                    <Check className="h-4 w-4 text-[var(--terracotta)]" />
+                    {texto}
+                  </div>
+                ),
+              )}
             </div>
-
-            <div className="mt-7 grid gap-3 md:grid-cols-3">
-              <AcaoCard
-                id="pedido"
-                titulo="Criar o primeiro pedido"
-                descricao="Registre uma venda e já organize cliente, entrega e pagamento."
-                rotulo="Criar pedido"
-                icon={ShoppingBag}
-                destaque
-                acionando={acionando}
-                onClick={(id) => void escolherAcao(id)}
-              />
-              <AcaoCard
-                id="produto"
-                titulo="Cadastrar produto"
-                descricao="Adicione o que você vende para agilizar os próximos pedidos."
-                rotulo="Cadastrar produto"
-                icon={PackagePlus}
-                acionando={acionando}
-                onClick={(id) => void escolherAcao(id)}
-              />
-              <AcaoCard
-                id="painel"
-                titulo="Explorar o painel"
-                descricao="Conheça a visão geral, agenda, tarefas e indicadores do negócio."
-                rotulo="Explorar agora"
-                icon={LayoutDashboard}
-                acionando={acionando}
-                onClick={(id) => void escolherAcao(id)}
-              />
-            </div>
-
             {erro && (
-              <p
-                className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-                role="alert"
-              >
+              <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
                 {erro}
               </p>
             )}
-
-            <div className="mt-5">
-              <Checklist
-                progresso={progresso}
-                onNavigate={(destino) => void concluirIntroducao(destino)}
-              />
+            <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => void iniciarGuia(false)}
+                disabled={salvando}
+                className="h-11 rounded-xl border border-[var(--admin-border)] px-5 text-sm font-bold text-[var(--admin-ink-soft)]"
+              >
+                Explorar sozinho
+              </button>
+              <button
+                type="button"
+                onClick={() => void iniciarGuia(true)}
+                disabled={salvando}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--terracotta)] px-5 text-sm font-bold text-white hover:bg-[var(--wine)]"
+              >
+                {salvando ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+                Começar meu guia
+              </button>
             </div>
           </section>
         </div>
       )}
 
-      {mostrarChecklistCompacto && (
-        <aside className="fixed bottom-20 right-4 z-50 w-[calc(100%-2rem)] max-w-sm lg:bottom-6 lg:right-6">
-          <Checklist progresso={progresso} compacto onNavigate={navegar} />
+      {!boasVindas && !expandido && (
+        <button
+          type="button"
+          onClick={abrir}
+          className="fixed bottom-20 right-3 z-[65] inline-flex h-12 items-center gap-2 rounded-full bg-[var(--terracotta)] px-4 text-sm font-bold text-white shadow-[0_14px_35px_rgba(126,55,49,0.32)] lg:bottom-6 lg:right-6"
+        >
+          <BookOpen className="h-4 w-4" /> Guia do Flua
+          <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
+            {percentual}%
+          </span>
+        </button>
+      )}
+
+      {!boasVindas && expandido && (
+        <aside className="fixed bottom-20 right-3 z-[65] flex max-h-[min(680px,calc(100dvh-7rem))] w-[calc(100%-1.5rem)] max-w-[370px] flex-col overflow-hidden rounded-[24px] border border-[var(--admin-border)] bg-white shadow-[0_24px_70px_rgba(58,34,31,0.22)] lg:bottom-6 lg:right-6">
+          <header className="bg-[var(--terracotta)] p-4 text-white">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="flex items-center gap-2 font-bold">
+                  <BookOpen className="h-4 w-4" /> Guia do Flua
+                </p>
+                <p className="mt-1 text-xs text-white/75">
+                  Aprenda uma etapa de cada vez.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={recolher}
+                className="grid h-8 w-8 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+                aria-label="Recolher Guia do Flua"
+              >
+                <ChevronDown className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/20">
+                <div
+                  className="h-full rounded-full bg-white transition-[width]"
+                  style={{ width: `${percentual}%` }}
+                />
+              </div>
+              <span className="text-xs font-bold">{percentual}%</span>
+            </div>
+          </header>
+
+          <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-4 py-3">
+            <div>
+              <p className="text-sm font-bold">
+                Guia {progresso.habilitado ? "ativado" : "pausado"}
+              </p>
+              <p className="text-[11px] text-[var(--admin-muted)]">
+                Seu progresso fica salvo.
+              </p>
+            </div>
+            <Switch
+              checked={progresso.habilitado}
+              onCheckedChange={(valor) => void alternarGuia(valor)}
+              disabled={salvando}
+              aria-label="Ativar ou pausar Guia do Flua"
+            />
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {!progresso.habilitado ? (
+              <div className="flex flex-col items-center px-5 py-8 text-center">
+                <Pause className="h-8 w-8 text-[var(--terracotta)]" />
+                <p className="mt-3 font-bold">Guia pausado</p>
+                <p className="mt-1 text-sm leading-5 text-[var(--admin-muted)]">
+                  Ative quando quiser continuar do ponto em que parou.
+                </p>
+              </div>
+            ) : etapa && EtapaIcon ? (
+              <div className="p-1">
+                <button
+                  type="button"
+                  onClick={() => setEtapaAberta(null)}
+                  className="flex items-center gap-1.5 text-xs font-bold text-[var(--terracotta)]"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Voltar ao checklist
+                </button>
+                <div className="mt-4 flex items-start gap-3">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--cream)] text-[var(--terracotta)]">
+                    <EtapaIcon className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <h2 className="font-bold">{etapa.titulo}</h2>
+                    <p className="mt-1 text-xs leading-5 text-[var(--admin-muted)]">
+                      {etapa.resumo}
+                    </p>
+                  </div>
+                </div>
+                <ol className="mt-4 space-y-2.5">
+                  {etapa.orientacoes.map((orientacao, index) => (
+                    <li
+                      key={orientacao}
+                      className="flex gap-2.5 rounded-xl bg-[var(--cream-soft)] p-3 text-xs leading-5"
+                    >
+                      <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white font-bold text-[var(--terracotta)]">
+                        {index + 1}
+                      </span>
+                      {orientacao}
+                    </li>
+                  ))}
+                </ol>
+                <button
+                  type="button"
+                  onClick={() => window.location.assign(etapa.destino)}
+                  className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[var(--terracotta)] text-sm font-bold text-white"
+                >
+                  {etapa.acao} <ArrowRight className="h-4 w-4" />
+                </button>
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void registrarEtapa(etapa.id, true)}
+                    disabled={salvando}
+                    className="h-9 rounded-xl border border-[var(--admin-border)] text-xs font-bold text-[var(--admin-muted)]"
+                  >
+                    Pular por agora
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void registrarEtapa(etapa.id, false)}
+                    disabled={salvando}
+                    className="h-9 rounded-xl border border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700"
+                  >
+                    Marcar concluído
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {ETAPAS.map((item) => {
+                  const concluida = progresso.concluidas.includes(item.id);
+                  const pulada = progresso.puladas.includes(item.id);
+                  const Icon = concluida ? Check : pulada ? ChevronUp : Circle;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setEtapaAberta(item.id)}
+                      className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-colors hover:bg-[var(--cream-soft)]"
+                    >
+                      <span
+                        className={cn(
+                          "grid h-7 w-7 shrink-0 place-items-center rounded-full",
+                          concluida
+                            ? "bg-emerald-100 text-emerald-700"
+                            : pulada
+                              ? "bg-zinc-100 text-zinc-500"
+                              : "bg-[var(--cream)] text-[var(--terracotta)]",
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={cn(
+                            "block text-sm font-semibold",
+                            (concluida || pulada) &&
+                              "text-[var(--admin-muted)]",
+                          )}
+                        >
+                          {item.titulo}
+                        </span>
+                        {pulada && (
+                          <span className="text-[10px] text-[var(--admin-muted)]">
+                            Pulada — pode refazer
+                          </span>
+                        )}
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 text-[var(--admin-muted)]" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {erro && (
+              <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
+                {erro}
+              </p>
+            )}
+          </div>
+
+          {percentual === 100 && progresso.habilitado && !etapa && (
+            <div className="border-t border-[var(--admin-border)] bg-emerald-50 px-4 py-3 text-center text-xs font-bold text-emerald-700">
+              <ClipboardCheck className="mr-1.5 inline h-4 w-4" /> Você já
+              conhece o essencial do Flua!
+            </div>
+          )}
         </aside>
       )}
     </>
