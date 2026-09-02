@@ -27,13 +27,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { contarFollowupVencendo } from "@/lib/followup";
 import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
 import { CustoPanel } from "@/components/admin/CustoPanel";
+import { SinoNotificacoes } from "@/components/admin/SinoNotificacoes";
 import { PrevisaoCaixaPanel } from "@/components/admin/PrevisaoCaixaPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
@@ -206,9 +206,6 @@ export default function AdminClient({
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Sino: quantos follow-ups estao no dia de chamar ou em atraso. Consulta
-  // enxuta e uma vez por abertura do painel — o numero nao muda a cada minuto.
-  const [followupVencendo, setFollowupVencendo] = useState(0);
   const [editando, setEditando] = useState<ProdutoRow | "novo" | null>(null);
 
   const [aba, setAba] = useState<AbaId>(initialAba);
@@ -256,12 +253,6 @@ export default function AdminClient({
     if (item.id === "vendas" && aba === "followup") return true;
     return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
   }
-
-  useEffect(() => {
-    contarFollowupVencendo()
-      .then(setFollowupVencendo)
-      .catch(() => setFollowupVencendo(0));
-  }, []);
 
   function selecionarSub(item: ItemMenu, subId: string) {
     if (item.id === "cadastros" && DO_CATALOGO.includes(subId as AbaId)) {
@@ -424,37 +415,12 @@ export default function AdminClient({
                 e usado nas paginas de conta. Este e o cabecalho do painel. */}
             <TooltipProvider delayDuration={250}>
               <div className="hidden items-center gap-1 md:flex">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAba("followup");
-                        setExpandida(null);
-                      }}
-                      className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-                      aria-label={
-                        followupVencendo
-                          ? `${followupVencendo} follow-up(s) para chamar`
-                          : "Nenhum follow-up para chamar"
-                      }
-                    >
-                      <Bell className="h-[18px] w-[18px]" />
-                      {/* A bolinha so acende quando ha algo: antes ela ficava
-                          acesa sempre, e um aviso que nunca apaga nao avisa. */}
-                      {followupVencendo > 0 && (
-                        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--terracotta)] px-1 text-[10px] font-bold text-white ring-2 ring-white">
-                          {followupVencendo > 9 ? "9+" : followupVencendo}
-                        </span>
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {followupVencendo
-                      ? `${followupVencendo} cliente(s) esperando o pedido de avaliação`
-                      : "Nenhum follow-up para chamar agora"}
-                  </TooltipContent>
-                </Tooltip>
+                <SinoNotificacoes
+                  onIrPara={(destino) => {
+                    setExpandida(null);
+                    window.location.assign(destino);
+                  }}
+                />
 
                 <Tooltip>
                   <TooltipTrigger asChild>

@@ -16,6 +16,12 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { Toaster, toast } from "sonner";
 
+import { Switch } from "@/components/ui/switch";
+import {
+  carregarConfigNotificacoes,
+  salvarConfigNotificacoes,
+} from "@/lib/notificacoes";
+import { CATALOGO_AVISOS, type TipoAviso } from "@/lib/notificacoes-tipos";
 import { ConfirmProvider } from "@/components/admin/shell";
 import { UsuariosView } from "@/components/admin/UsuariosView";
 import { createClient } from "@/lib/supabase/client";
@@ -124,6 +130,85 @@ const TITULOS: Record<ContaSecao, { titulo: string; descricao: string }> = {
     descricao: "Defina as preferências gerais do ambiente da sua empresa.",
   },
 };
+
+/**
+ * Quais avisos aparecem no sino.
+ *
+ * Guarda so o que esta desligado: tipo novo nasce ligado, e adicionar um aviso
+ * depois nao exige mexer na configuracao de ninguem.
+ */
+function AvisosConfig() {
+  const [desligados, setDesligados] = useState<TipoAviso[]>([]);
+  const [carregando, setCarregando] = useState(true);
+
+  useEffect(() => {
+    carregarConfigNotificacoes()
+      .then(setDesligados)
+      .catch(() => setDesligados([]))
+      .finally(() => setCarregando(false));
+  }, []);
+
+  async function alternar(tipo: TipoAviso) {
+    const proximo = desligados.includes(tipo)
+      ? desligados.filter((t) => t !== tipo)
+      : [...desligados, tipo];
+    setDesligados(proximo);
+    try {
+      await salvarConfigNotificacoes({ data: { desligados: proximo } });
+    } catch {
+      toast.error("Não consegui salvar a preferência.");
+      setDesligados(desligados);
+    }
+  }
+
+  const familias = ["operacao", "dinheiro", "relacionamento", "tarefas"] as const;
+  const rotuloFamilia: Record<(typeof familias)[number], string> = {
+    operacao: "Operação",
+    dinheiro: "Dinheiro",
+    relacionamento: "Relacionamento",
+    tarefas: "Tarefas",
+  };
+
+  return (
+    <div className="rounded-2xl border border-[var(--admin-border)] bg-white p-5 sm:p-6 xl:col-span-2">
+      <p className="text-sm font-semibold text-[var(--admin-ink)]">Avisos do sino</p>
+      <p className="mt-0.5 text-xs text-[var(--admin-muted)]">
+        Desligue o que não quiser ver. Nada aqui é histórico: o aviso aparece enquanto o
+        motivo existe e some sozinho quando ele acaba.
+      </p>
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {familias.map((familia) => {
+          const itens = CATALOGO_AVISOS.filter((a) => a.familia === familia);
+          if (!itens.length) return null;
+          return (
+            <div key={familia}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.1em] text-[var(--bronze)]">
+                {rotuloFamilia[familia]}
+              </p>
+              <ul className="space-y-2">
+                {itens.map((item) => (
+                  <li key={item.tipo} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm text-[var(--admin-ink)]">{item.rotulo}</p>
+                      <p className="text-xs text-[var(--admin-muted)]">{item.ajuda}</p>
+                    </div>
+                    <Switch
+                      checked={!desligados.includes(item.tipo)}
+                      disabled={carregando}
+                      onCheckedChange={() => alternar(item.tipo)}
+                      aria-label={item.rotulo}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function ContaPageClient({
   secao,
@@ -573,7 +658,8 @@ export function ContaPageClient({
                 </div>
               ) : (
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-                  <div className="rounded-2xl border border-[var(--admin-border)] bg-white p-5 sm:p-6">
+                  <AvisosConfig />
+                  <div className="rounded-2xl border border-[var(--admin-border)] bg-white p-5 sm:p-6 xl:col-span-2">
                     <label>
                       <span className="mb-1.5 block text-xs font-semibold text-[var(--admin-ink-soft)]">Fuso horário da empresa</span>
                       <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="h-11 w-full rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm outline-none focus:border-[var(--terracotta)]">
