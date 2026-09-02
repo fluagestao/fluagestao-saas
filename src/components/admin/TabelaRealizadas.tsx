@@ -124,10 +124,10 @@ export function TabelaRealizadas({
               <th className="t-support w-24 px-2 py-2.5 text-left text-[var(--admin-muted)]">
                 Forma
               </th>
-              <th className="t-support w-28 px-3 py-2.5 text-right text-[var(--admin-muted)]">
+              <th className="t-support w-32 px-3 py-2.5 text-right text-[var(--admin-muted)]">
                 Valor
               </th>
-              <th className="t-support w-36 px-3 py-2.5 text-right text-[var(--admin-muted)]">
+              <th className="t-support w-48 px-3 py-2.5 text-right text-[var(--admin-muted)]">
                 Ações
               </th>
             </tr>
@@ -159,7 +159,7 @@ export function TabelaRealizadas({
                 <td className="t-body truncate px-2 py-2.5 text-[var(--admin-muted)]">
                   {p.recebido_em ? p.forma_pagamento || "—" : "—"}
                 </td>
-                <td className="t-item px-3 py-2.5 text-right tabular-nums text-foreground">
+                <td className="t-item whitespace-nowrap px-3 py-2.5 text-right tabular-nums text-foreground">
                   {formatBRL(p.total)}
                 </td>
                 <td className="px-3 py-2.5">
@@ -168,9 +168,9 @@ export function TabelaRealizadas({
                       type="button"
                       title="Abrir o pedido completo"
                       onClick={() => acoes.editar(p)}
-                      className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--admin-border)] px-2.5 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
+                      className="t-support inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--admin-border)] px-2 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
                     >
-                      <Pencil className="h-3.5 w-3.5" />
+                      <Pencil className="h-3.5 w-3.5 shrink-0" />
                       Abrir
                     </button>
                     {acoes.receber && (
@@ -182,7 +182,7 @@ export function TabelaRealizadas({
                             : "Registrar o recebimento deste pedido"
                         }
                         onClick={() => acoes.receber!(p)}
-                        className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--admin-border)] px-2.5 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
+                        className="t-support inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border border-[var(--admin-border)] px-2 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
                       >
                         {p.recebido_em ? (
                           <>
@@ -212,7 +212,7 @@ export function TabelaRealizadas({
                   <span className="text-destructive"> · falta {formatBRL(total - recebido)}</span>
                 )}
               </td>
-              <td className="t-item px-3 py-3 text-right tabular-nums text-foreground">
+              <td className="t-item whitespace-nowrap px-3 py-3 text-right tabular-nums text-foreground">
                 {formatBRL(total)}
               </td>
               <td />
