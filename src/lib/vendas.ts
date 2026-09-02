@@ -299,7 +299,7 @@ export function mensagemConfirmacao(pedido: Pedido): string {
   // Vai logo antes do endereço: a confirmação é reenviada ao motorista, e ele
   // precisa de quem procurar e pra quem ligar antes de saber onde é.
   if (!retirada && (pedido.destinatario_nome || pedido.destinatario_whatsapp)) {
-    partes.push("", "🙋 *Quem recebe*");
+    partes.push("", "🙋 *Presenteado*");
     if (pedido.destinatario_nome) partes.push(pedido.destinatario_nome);
     if (pedido.destinatario_whatsapp) partes.push(pedido.destinatario_whatsapp);
   }
