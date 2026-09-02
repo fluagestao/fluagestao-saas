@@ -428,20 +428,20 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." icon={CalendarDays} destaque />
             ) : (
               proximosSete.map((p) => (
-                <div key={p.id} className="grid grid-cols-[46px_50px_minmax(0,1fr)_auto] items-start gap-2 py-3">
+                <div key={p.id} className="grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4">
                   <div>
-                    <p className="text-[10px] font-semibold text-[var(--terracotta)]">{diaSemanaCurto(p.data_entrega!)}</p>
-                    <p className="text-lg font-semibold leading-none">{dataCurta(p.data_entrega!).slice(0, 2)}</p>
+                    <p className="text-xs font-bold text-[var(--terracotta)]">{diaSemanaCurto(p.data_entrega!)}</p>
+                    <p className="text-2xl font-bold leading-none text-[var(--admin-ink)]">{dataCurta(p.data_entrega!).slice(0, 2)}</p>
                   </div>
-                  <span className="flex items-center gap-1.5 text-[11px] text-[var(--admin-muted)]">
+                  <span className="flex items-center gap-2 text-sm font-medium text-[var(--admin-muted)]">
                     <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
                     {p.janela_entrega || "—"}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
-                    <p className="truncate text-[11px] text-[var(--admin-muted)]">{itensResumo(p)}</p>
+                    <p className="truncate text-base font-semibold text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
+                    <p className="mt-0.5 truncate text-sm text-[var(--admin-muted)]">{itensResumo(p)}</p>
                   </div>
-                  <span className="text-xs text-[var(--admin-muted)]">{formatBRL(p.total)}</span>
+                  <span className="text-sm font-semibold text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</span>
                 </div>
               ))
             )}
