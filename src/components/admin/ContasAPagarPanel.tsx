@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, Check, Pencil, Plus, Repeat, Trash2 } from "lucide-react";
+import { CalendarClock, Check, Download, Pencil, Plus, Repeat, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -66,6 +66,63 @@ const ETIQUETA: Record<Estado, { texto: string; classe: string } | null> = {
  * Fica fora de Pagamentos de propósito. Compromisso não é caixa — só vira
  * quando é pago, e nesse momento nasce o movimento.
  */
+/** Campo de CSV: aspas dobradas e o campo inteiro entre aspas. */
+function celula(valor: string) {
+  return `"${valor.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Sai a lista que esta na tela, no periodo escolhido. Separador ponto e
+ * virgula, virgula decimal e BOM: e o que o Excel em portugues abre somando e
+ * sem quebrar acento.
+ */
+function baixarCsv(contas: ContaAPagar[], hoje: string, de: string, ate: string) {
+  const rotulo: Record<Estado, string> = {
+    paga: "paga",
+    a_vencer: "a vencer",
+    hoje: "vence hoje",
+    vencida: "vencida",
+  };
+
+  const linhas = [
+    [
+      "Vencimento",
+      "Descrição",
+      "Situação",
+      "Valor",
+      "Tipo de despesa",
+      "Fornecedor",
+      "Parcela",
+      "Repetição",
+      "Pago em",
+      "Observação",
+    ],
+    ...contas.map((c) => [
+      c.vencimento,
+      c.descricao,
+      rotulo[estadoDaConta(c, hoje)],
+      c.valor.toFixed(2).replace(".", ","),
+      c.tipo_despesa ?? "",
+      c.fornecedor ?? "",
+      c.parcelas > 1 ? `${c.parcela}/${c.parcelas}` : "",
+      c.recorrencia === "mensal" ? "mensal" : "",
+      c.pago_em ?? "",
+      c.observacao ?? "",
+    ]),
+  ];
+
+  const csv = linhas.map((l) => l.map(celula).join(";")).join("\r\n");
+  const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `a-pagar-${de}-a-${ate}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function ContasAPagarPanel() {
   const hoje = hojeISO();
   const [de, setDe] = useState(() => `${hoje.slice(0, 8)}01`);
@@ -177,6 +234,16 @@ export function ContasAPagarPanel() {
         <DatePickerField value={de} onChange={setDe} ariaLabel="Data inicial" className="h-9 w-[10.5rem]" />
         <span className="text-sm text-muted-foreground">até</span>
         <DatePickerField value={ate} onChange={setAte} ariaLabel="Data final" className="h-9 w-[10.5rem]" />
+
+        <button
+          type="button"
+          onClick={() => baixarCsv(contas, hoje, de, ate)}
+          disabled={contas.length === 0}
+          className="t-support ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Baixar CSV
+        </button>
       </div>
 
       {carregando ? (
