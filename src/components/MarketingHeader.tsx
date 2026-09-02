@@ -10,6 +10,7 @@ export function MarketingHeader() {
     pathname === "/" ||
     pathname === "/nosso-saas" ||
     pathname === "/a-flua" ||
+    pathname === "/como-funciona" ||
     pathname.startsWith("/funcionalidades/");
 
   if (!visible) return null;
@@ -33,7 +34,7 @@ export function MarketingHeader() {
           <Link href="/#contato">CONTATO</Link>
           <Link href="/catalogo">MINHA LOJA</Link>
           <Link href="/#documentos">DOCUMENTOS</Link>
-          <Link href="/login">PORTAL</Link>
+          <Link href="/como-funciona" aria-current={pathname === "/como-funciona" ? "page" : undefined}>COMO FUNCIONA</Link>
         </nav>
 
         <div className="marketing-global-actions">
