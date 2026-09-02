@@ -1,14 +1,27 @@
 "use client";
 
-import { Download, TriangleAlert } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Calculator, Download, Pencil, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { carregarMargemProdutos, type MargemProduto } from "@/lib/custo";
 import { mensagemDeErro } from "@/lib/erros";
+import { listarInsumos, type InsumoRow } from "@/lib/insumos";
 import { hojeISO } from "@/lib/prazo";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/vendas";
+import { ProdutoInsumosEditor } from "./ProdutoInsumosEditor";
 import { Carregando, EstadoVazio, Num, PageHeader, ValorCarregando } from "./shell";
+
+type Filtro = "vendidos" | "sem_custo" | "todos";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -42,6 +55,9 @@ export function CustoPanel() {
   );
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState<Filtro>("vendidos");
+  const [insumos, setInsumos] = useState<InsumoRow[]>([]);
+  const [editando, setEditando] = useState<MargemProduto | null>(null);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -58,14 +74,28 @@ export function CustoPanel() {
     recarregar();
   }, [recarregar]);
 
+  // Os insumos nao dependem do mes: carrega uma vez e serve todos os dialogos.
+  useEffect(() => {
+    listarInsumos()
+      .then(setInsumos)
+      .catch(() => setInsumos([]));
+  }, []);
+
+  const visiveis = useMemo(() => {
+    const lista = dados?.produtos ?? [];
+    if (filtro === "vendidos") return lista.filter((p) => p.qtd > 0);
+    if (filtro === "sem_custo") return lista.filter((p) => p.custo == null);
+    return lista;
+  }, [dados, filtro]);
+
   const anos = [Number(hoje.slice(0, 4)), Number(hoje.slice(0, 4)) - 1];
 
   function baixarCsv() {
-    if (!dados?.produtos.length) return;
+    if (!visiveis.length) return;
     const campo = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const linhas = [
       ["Produto", "Categoria", "Coleção", "Vendidos", "Preço", "Custo", "Receita", "Lucro", "Margem"],
-      ...dados.produtos.map((p) => [
+      ...visiveis.map((p) => [
         p.nome,
         p.categoria ?? "",
         p.colecao ?? "",
@@ -150,19 +180,55 @@ export function CustoPanel() {
         // Sem esse aviso, a margem do topo parece valer para tudo e nao vale.
         <div className="mt-3 flex items-start gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">
           <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-[var(--bronze)]" />
-          <p className="t-support text-muted-foreground">
-            {dados.semComposicao} produto(s) venderam sem composição de insumos cadastrada e
-            ficam fora da margem acima. Cadastre os insumos deles em Cadastros → Produtos para
-            a conta fechar.
-          </p>
+          <div className="min-w-0 flex-1">
+            <p className="t-support text-muted-foreground">
+              {dados.semComposicao} produto(s) venderam sem custo cadastrado e ficam fora da
+              margem acima. Lance o custo deles aqui mesmo para a conta fechar.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setFiltro("sem_custo")}
+            className="h-8 shrink-0 rounded-lg"
+          >
+            Ver só esses
+          </Button>
         </div>
       )}
+
+      {/* Filtro: a tela serve para ler a margem do mes E para fechar os custos
+          que faltam. Sem isso, produto que nunca vendeu nao aparece — e e
+          justamente nele que costuma faltar custo. */}
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        {(
+          [
+            ["vendidos", `Vendidos no mês${dados ? ` (${dados.produtos.filter((p) => p.qtd > 0).length})` : ""}`],
+            ["sem_custo", `Sem custo${dados ? ` (${dados.semCustoTotal})` : ""}`],
+            ["todos", `Todos${dados ? ` (${dados.totalProdutos})` : ""}`],
+          ] as [Filtro, string][]
+        ).map(([id, rotulo]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setFiltro(id)}
+            className={cn(
+              "t-support h-8 rounded-full border px-3 font-medium transition-colors",
+              filtro === id
+                ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
+                : "border-[var(--cream-deep)] bg-card text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+            )}
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
 
       <div className="mt-3 flex justify-end">
         <button
           type="button"
           onClick={baixarCsv}
-          disabled={!dados?.produtos.length}
+          disabled={!visiveis.length}
           className="t-support inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50"
         >
           <Download className="h-3.5 w-3.5" />
@@ -172,25 +238,78 @@ export function CustoPanel() {
 
       {carregando ? (
         <Carregando texto="cruzando custo e venda…" />
-      ) : !dados?.produtos.length ? (
+      ) : !visiveis.length ? (
         <EstadoVazio
-          titulo="Nenhum produto vendido no mês"
-          descricao="A conta usa os pedidos do mês com produto do catálogo. Item avulso, digitado à mão no pedido, não entra."
+          titulo={
+            filtro === "sem_custo"
+              ? "Todo produto já tem custo cadastrado"
+              : filtro === "vendidos"
+                ? "Nenhum produto vendido no mês"
+                : "Nenhum produto cadastrado"
+          }
+          descricao={
+            filtro === "vendidos"
+              ? "A conta usa os pedidos do mês com produto do catálogo. Item avulso, digitado à mão no pedido, não entra."
+              : "Cadastre produtos em Cadastros → Produtos."
+          }
         />
       ) : (
         <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-          {dados.produtos.map((p) => (
-            <Linha key={p.slug} produto={p} />
+          {visiveis.map((p) => (
+            <Linha key={p.slug} produto={p} onEditar={() => setEditando(p)} />
           ))}
         </ul>
       )}
+
+      <Dialog
+        open={editando !== null}
+        onOpenChange={(estado) => {
+          if (!estado) {
+            setEditando(null);
+            // O editor salva sozinho; recarrega para a margem refletir na hora.
+            recarregar();
+          }
+        }}
+      >
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader className="pr-6 text-left">
+            <DialogTitle>Custo do produto</DialogTitle>
+            <DialogDescription>
+              Lance os insumos e as quantidades usados em <strong>{editando?.nome}</strong>. O
+              custo é a soma deles, e a margem sai do preço de venda.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editando && (
+            <ProdutoInsumosEditor produtoId={editando.id} insumos={insumos} autoSave />
+          )}
+
+          <DialogFooter className="pt-1">
+            <Button
+              onClick={() => {
+                setEditando(null);
+                recarregar();
+              }}
+            >
+              Pronto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
 
-function Linha({ produto: p }: { produto: MargemProduto }) {
+function Linha({ produto: p, onEditar }: { produto: MargemProduto; onEditar: () => void }) {
+  const semCusto = p.custo == null;
   return (
-    <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl border border-[var(--admin-border)] bg-card px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap">
+    <li
+      onClick={onEditar}
+      className={cn(
+        "grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--terracotta)] sm:flex sm:flex-wrap",
+        semCusto ? "border-[var(--cream-deep)] bg-[var(--cream-soft)]" : "border-[var(--admin-border)]",
+      )}
+    >
       <div className="min-w-0 sm:min-w-[14rem] sm:flex-1">
         <p className="t-item truncate text-foreground">{p.nome}</p>
         <p className="t-support truncate text-muted-foreground">
@@ -227,6 +346,20 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
       <div className="w-20 text-right">
         <p className="t-support text-muted-foreground">margem</p>
         <p className={cn("t-item tabular-nums", corDaMargem(p.margem))}>{porcento(p.margem)}</p>
+      </div>
+
+      <div className="shrink-0 pl-1">
+        {semCusto ? (
+          <span className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--peach)] px-2.5 font-semibold text-[var(--coral)]">
+            <Calculator className="h-3.5 w-3.5" />
+            Lançar custo
+          </span>
+        ) : (
+          <span className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-muted-foreground">
+            <Pencil className="h-3.5 w-3.5" />
+            Editar
+          </span>
+        )}
       </div>
     </li>
   );

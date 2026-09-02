@@ -8,6 +8,8 @@ import { dataLocalISO } from "@/lib/vendas";
 const MES = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
 
 export type MargemProduto = {
+  /** Necessário para abrir o custo do produto direto daqui. */
+  id: string;
   slug: string;
   nome: string;
   categoria: string | null;
@@ -107,6 +109,7 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
   for (const p of produtosRes.data ?? []) {
     const categoria = p.categoria_id ? categorias.get(p.categoria_id as string) : undefined;
     porSlug.set(p.slug as string, {
+      id: p.id as string,
       slug: p.slug as string,
       nome: p.nome as string,
       categoria: (categoria?.nome as string) ?? null,
@@ -139,7 +142,8 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     }
   }
 
-  const vendidos = [...porSlug.values()].filter((p) => p.qtd > 0);
+  const todos = [...porSlug.values()];
+  const vendidos = todos.filter((p) => p.qtd > 0);
   for (const p of vendidos) {
     if (p.custo == null) continue;
     p.custoTotal = p.custo * p.qtd;
@@ -147,7 +151,15 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     p.margem = p.receita > 0 ? p.lucro / p.receita : null;
   }
 
-  vendidos.sort((a, b) => (b.lucro ?? -Infinity) - (a.lucro ?? -Infinity));
+  /* Vendidos primeiro, por lucro; depois os que nao venderam, por nome. A tela
+     e usada para duas coisas — ler a margem do mes e fechar os custos que
+     faltam — e essa ordem serve as duas sem precisar de duas listas. */
+  todos.sort((a, b) => {
+    if (a.qtd > 0 && b.qtd > 0) return (b.lucro ?? -Infinity) - (a.lucro ?? -Infinity);
+    if (a.qtd > 0) return -1;
+    if (b.qtd > 0) return 1;
+    return a.nome.localeCompare(b.nome, "pt-BR");
+  });
 
   const comCusto = vendidos.filter((p) => p.custo != null);
   const receita = vendidos.reduce((t, p) => t + p.receita, 0);
@@ -156,12 +168,15 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
 
   return {
     mes,
-    produtos: vendidos,
+    produtos: todos,
     receita,
     custoTotal,
     lucro: receitaComCusto - custoTotal,
     margem: receitaComCusto > 0 ? (receitaComCusto - custoTotal) / receitaComCusto : null,
-    /** Quantos venderam sem composição: a margem acima ignora esses. */
+    /** Quantos venderam sem custo cadastrado: a margem acima ignora esses. */
     semComposicao: vendidos.length - comCusto.length,
+    /** Total de produtos sem custo, tenham vendido ou não. */
+    semCustoTotal: todos.filter((p) => p.custo == null).length,
+    totalProdutos: todos.length,
   };
 }

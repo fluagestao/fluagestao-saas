@@ -535,30 +535,22 @@ export function NovoProdutoClient({
                 />
               </Campo>
 
-              <div className="flex items-center justify-between gap-4 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3">
-                <div>
+              {/* O custo saiu daqui: ele vive na tela de Custo, que lista todos
+                  os produtos e mostra quem ainda esta sem. Montar custo e um
+                  trabalho em lote; cadastro de produto e um trabalho unitario. */}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3">
+                <div className="min-w-0">
                   <p className="text-sm font-semibold">Custo do produto</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Lance os insumos e quantidades usados para calcular o custo.
+                    Os insumos e quantidades agora ficam na tela de Custo, junto com a margem.
                   </p>
                 </div>
-
-                <div className="flex items-center gap-3">
-                  {temCusto && (
-                    <span className="text-sm font-bold text-[var(--wine)]">{moeda(custoSalvo)}</span>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setCustoPronto(false);
-                      setCustoAberto(true);
-                    }}
-                  >
+                <Button type="button" variant="outline" asChild>
+                  <a href="/custo">
                     <Calculator className="mr-1.5 h-4 w-4" />
-                    {temCusto ? "Editar custo" : "Lançar custo"}
-                  </Button>
-                </div>
+                    Abrir Custo
+                  </a>
+                </Button>
               </div>
 
               {erro && (
@@ -642,67 +634,6 @@ export function NovoProdutoClient({
         </div>
       </main>
 
-      {custoAberto && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]">
-          <div className="flex min-h-[560px] w-full max-w-4xl flex-col rounded-3xl border border-[var(--admin-border)] bg-white p-7 shadow-[0_30px_80px_rgba(56,35,32,0.25)]">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--terracotta)]">
-                  Custo do produto
-                </p>
-                <h2 className="mt-1 text-2xl font-semibold">Lançar custo</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Pesquise os insumos, selecione e informe a quantidade utilizada.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setCustoAberto(false)}
-                className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-[var(--cream-soft)]"
-                aria-label="Fechar"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="min-h-0 flex-1">
-              <ProdutoInsumosEditor
-                produtoId={draft.id}
-                insumos={insumos}
-                autoSave={false}
-                onChange={receberCusto}
-              />
-            </div>
-
-            <div className="mt-6 flex items-center justify-between gap-4 border-t border-[var(--admin-border)] pt-4">
-              <div>
-                <p className="text-xs text-muted-foreground">Custo calculado</p>
-                <p className="text-xl font-bold text-[var(--wine)]">{moeda(custoAtual)}</p>
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setCustoAberto(false)}
-                  disabled={salvandoCusto}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={salvarCusto}
-                  disabled={!custoPronto || salvandoCusto}
-                >
-                  {salvandoCusto && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
-                  Salvar custo
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
