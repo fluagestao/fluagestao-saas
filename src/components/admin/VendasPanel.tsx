@@ -138,6 +138,9 @@ function SeletorPeriodoRealizadas({
   onSelecionar,
   onDe,
   onAte,
+  forma,
+  formas,
+  onForma,
 }: {
   periodo: PeriodoRealizadas;
   de: string;
@@ -145,6 +148,9 @@ function SeletorPeriodoRealizadas({
   onSelecionar: (periodo: PeriodoRealizadas) => void;
   onDe: (valor: string) => void;
   onAte: (valor: string) => void;
+  forma: string;
+  formas: string[];
+  onForma: (valor: string) => void;
 }) {
   const livre = periodo === "escolher";
   return (
@@ -195,6 +201,23 @@ function SeletorPeriodoRealizadas({
         ) : (
           <Input value="Hoje" readOnly className="h-9 w-[9.5rem]" />
         )}
+      </label>
+
+      <label className="grid gap-1 text-sm text-muted-foreground">
+        Pagamento
+        <select
+          value={forma}
+          onChange={(e) => onForma(e.target.value)}
+          className="h-9 min-w-44 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+        >
+          <option value="todas">Todas as formas</option>
+          <option value="aberto">Só as a receber</option>
+          {formas.map((f) => (
+            <option key={f} value={f}>
+              {f}
+            </option>
+          ))}
+        </select>
       </label>
     </div>
   );
@@ -267,6 +290,9 @@ export function VendasPanel({
   // Abre em "escolher" com as datas vazias: mostra tudo e os campos ja aceitam
   // digitacao, sem precisar trocar o seletor antes.
   const [periodoRealizadas, setPeriodoRealizadas] = useState<PeriodoRealizadas>("escolher");
+  // "todas" | "aberto" | a forma exata. Fica ao lado do periodo porque e
+  // filtro, e o total do topo tem que concordar com a tabela.
+  const [formaRealizadas, setFormaRealizadas] = useState("todas");
   const [realDe, setRealDe] = useState("");
   const [realAte, setRealAte] = useState("");
   // A cobrança abre sem filtro: quer ver tudo que está em aberto.
@@ -408,6 +434,26 @@ export function VendasPanel({
   useEffect(() => {
     if (sub === "realizadas") buscarRealizadas();
   }, [sub, buscarRealizadas]);
+
+  // As opcoes saem do que existe no periodo: nao adianta oferecer "Cortesia"
+  // se nenhuma venda do recorte foi cortesia.
+  const formasRealizadas = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          realizadas
+            .filter((p) => p.recebido_em && p.forma_pagamento)
+            .map((p) => p.forma_pagamento as string),
+        ),
+      ).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [realizadas],
+  );
+
+  const realizadasFiltradas = useMemo(() => {
+    if (formaRealizadas === "todas") return realizadas;
+    if (formaRealizadas === "aberto") return realizadas.filter((p) => !p.recebido_em);
+    return realizadas.filter((p) => p.recebido_em && p.forma_pagamento === formaRealizadas);
+  }, [realizadas, formaRealizadas]);
 
   function selecionarPeriodoRealizadas(periodo: PeriodoRealizadas) {
     const hoje = hojeISO();
@@ -795,6 +841,9 @@ export function VendasPanel({
             onSelecionar={selecionarPeriodoRealizadas}
             onDe={setRealDe}
             onAte={setRealAte}
+            forma={formaRealizadas}
+            formas={formasRealizadas}
+            onForma={setFormaRealizadas}
           />
 
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
@@ -803,30 +852,30 @@ export function VendasPanel({
                 Vendido no período
               </p>
               <p className="text-2xl font-semibold tabular-nums text-foreground">
-                <Num>{formatBRL(realizadas.reduce((t, p) => t + p.total, 0))}</Num>
+                <Num>{formatBRL(realizadasFiltradas.reduce((t, p) => t + p.total, 0))}</Num>
               </p>
-              <p className="text-xs text-muted-foreground">{realizadas.length} venda(s)</p>
+              <p className="text-xs text-muted-foreground">{realizadasFiltradas.length} venda(s)</p>
             </div>
           </div>
 
           {carregandoRealizadas && <Carregando />}
 
-          {!carregandoRealizadas && realizadas.length === 0 && (
+          {!carregandoRealizadas && realizadasFiltradas.length === 0 && (
             <EstadoVazio
               titulo="Nenhuma venda concluída no período"
               descricao="Entra aqui o pedido que foi entregue e pago. Se faltar um, confira se o recebimento foi registrado."
             />
           )}
 
-          {realizadas.length > 0 && (
+          {realizadasFiltradas.length > 0 && (
             <div className="mt-3">
-              <TabelaRealizadas pedidos={realizadas} acoes={acoes} />
+              <TabelaRealizadas pedidos={realizadasFiltradas} acoes={acoes} />
             </div>
           )}
 
           {/* Celular: seis colunas nao cabem, entao a lista segue em cards. */}
           <div className="mt-3 space-y-3 md:hidden">
-            {realizadas.map((p) => (
+            {realizadasFiltradas.map((p) => (
               <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
             ))}
           </div>
