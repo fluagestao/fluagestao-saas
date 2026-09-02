@@ -131,6 +131,32 @@ function SeletorPeriodo({
 
 type PeriodoRealizadas = "escolher" | "tudo" | "ultimo_mes" | "ultima_semana" | "hoje";
 
+/** Cartao de indicador do topo de Vendas realizadas. */
+function IndicadorVenda({
+  rotulo,
+  valor,
+  nota,
+  cor,
+}: {
+  rotulo: string;
+  valor: string;
+  nota: string;
+  cor?: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+      <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
+      <p
+        className="mt-1 t-hero tabular-nums"
+        style={{ color: cor ?? "var(--admin-ink)" }}
+      >
+        <Num>{valor}</Num>
+      </p>
+      <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>
+    </div>
+  );
+}
+
 function SeletorPeriodoRealizadas({
   periodo,
   de,
@@ -454,6 +480,39 @@ export function VendasPanel({
     if (formaRealizadas === "aberto") return realizadas.filter((p) => !p.recebido_em);
     return realizadas.filter((p) => p.recebido_em && p.forma_pagamento === formaRealizadas);
   }, [realizadas, formaRealizadas]);
+
+  /**
+   * Indicadores do periodo. Saem todos da mesma lista que a tabela mostra,
+   * entao respeitam o filtro de forma de pagamento e nao brigam com o rodape.
+   */
+  const indicadores = useMemo(() => {
+    const total = realizadasFiltradas.reduce((t, p) => t + p.total, 0);
+    const pagos = realizadasFiltradas.filter((p) => p.recebido_em);
+    const recebido = pagos.reduce((t, p) => t + p.total, 0);
+
+    // Quanto tempo o dinheiro leva para entrar depois da entrega. E o numero
+    // que diz se vale apertar a cobranca — media so dos que ja pagaram.
+    const prazos = pagos
+      .map((p) => {
+        if (!p.entregue_em || !p.recebido_em) return null;
+        const entrega = new Date(p.entregue_em).getTime();
+        const [a, m, d] = p.recebido_em.split("-").map(Number);
+        return Math.round((Date.UTC(a, m - 1, d) - entrega) / 86_400_000);
+      })
+      .filter((dias): dias is number => dias != null && dias >= 0);
+
+    return {
+      total,
+      recebido,
+      aReceber: total - recebido,
+      emAberto: realizadasFiltradas.length - pagos.length,
+      ticket: realizadasFiltradas.length ? total / realizadasFiltradas.length : 0,
+      prazoMedio: prazos.length
+        ? Math.round(prazos.reduce((t, d) => t + d, 0) / prazos.length)
+        : null,
+    };
+  }, [realizadasFiltradas]);
+
 
   function selecionarPeriodoRealizadas(periodo: PeriodoRealizadas) {
     const hoje = hojeISO();
@@ -846,16 +905,37 @@ export function VendasPanel({
             onForma={setFormaRealizadas}
           />
 
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-            <div className="ml-auto text-right">
-              <p className="text-xs uppercase tracking-[0.14em] text-[var(--bronze)]">
-                Vendido no período
-              </p>
-              <p className="text-2xl font-semibold tabular-nums text-foreground">
-                <Num>{formatBRL(realizadasFiltradas.reduce((t, p) => t + p.total, 0))}</Num>
-              </p>
-              <p className="text-xs text-muted-foreground">{realizadasFiltradas.length} venda(s)</p>
-            </div>
+          {/* A faixa era um valor sozinho encostado na direita, com o resto
+              vazio. Os quatro indicadores saem da mesma lista da tabela. */}
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            <IndicadorVenda
+              rotulo="Vendido no período"
+              valor={formatBRL(indicadores.total)}
+              nota={`${realizadasFiltradas.length} venda(s)`}
+            />
+            <IndicadorVenda
+              rotulo="Recebido"
+              valor={formatBRL(indicadores.recebido)}
+              nota={
+                indicadores.prazoMedio == null
+                  ? "nada recebido ainda"
+                  : indicadores.prazoMedio === 0
+                    ? "entra no dia da entrega"
+                    : `entra ${indicadores.prazoMedio} dia(s) após a entrega, em média`
+              }
+              cor="var(--whatsapp)"
+            />
+            <IndicadorVenda
+              rotulo="A receber"
+              valor={formatBRL(indicadores.aReceber)}
+              nota={`${indicadores.emAberto} entrega(s) sem pagamento`}
+              cor={indicadores.aReceber > 0 ? "var(--destructive)" : undefined}
+            />
+            <IndicadorVenda
+              rotulo="Ticket médio"
+              valor={formatBRL(indicadores.ticket)}
+              nota="por venda no período"
+            />
           </div>
 
           {carregandoRealizadas && <Carregando />}
