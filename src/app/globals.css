@@ -113,7 +113,10 @@
      tamanho literal: o degrau é o mesmo, quem muda é o contexto.
      -------------------------------------------------------------------- */
   --text-hero: 1.65rem; /* 26.4px — números-herói; mantém o mesmo tamanho que o clamp antigo dava no celular, onde o card do KPI é estreito */
-  --text-greeting: 1.75rem; /* 28px — saudação; degrau próprio porque a linha dela é curta */
+  /* Cormorant tem altura-de-x baixa: no mesmo tamanho em px ela parece menor
+     que a Geist. Por isso o degrau da saudação subiu junto com a troca de
+     família — o tamanho ótico é que ficou igual, não o número. */
+  --text-greeting: 2.125rem; /* 34px — saudação em serifada; degrau próprio porque a linha dela é curta */
   --text-title: 1.0625rem; /* 17px — título de módulo */
   --text-item: 0.9375rem; /* 15px — item de lista (cliente, pedido) */
   --text-body: 0.875rem; /* 14px — corpo */
@@ -131,11 +134,16 @@
     letter-spacing: -0.03em;
   }
 
+  /* A serifada da marca, a mesma dos títulos do site. O painel inteiro era
+     Geist: a saudação é a única frase humana da tela e falava com a mesma voz
+     de um cabeçalho de tabela. Tracking quase neutro porque serifada apertada
+     fecha os contornos. */
   .t-greeting {
+    font-family: var(--font-flua-serif), Georgia, "Times New Roman", serif;
     font-size: var(--text-greeting);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
-    letter-spacing: -0.035em;
+    letter-spacing: -0.01em;
   }
 
   .t-title {

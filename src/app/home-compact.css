@@ -43,7 +43,7 @@
        menores, para a tela caber em um viewport. Os componentes nao mudam —
        continuam usando .t-*; aqui so o valor do degrau e redefinido. */
     --text-hero: 1.6875rem; /* 27px */
-    --text-greeting: 1.4375rem; /* 23px */
+    --text-greeting: 1.75rem; /* 28px — serifada, ver nota em globals.css */
     --text-title: 0.875rem; /* 14px */
     --text-item: 0.8125rem; /* 13px */
     --text-body: 0.78125rem; /* 12.5px */
@@ -221,7 +221,7 @@
   main > section.space-y-3.pb-4 {
     /* Telas baixas: so os dois degraus grandes encolhem. */
     --text-hero: 1.4375rem; /* 23px */
-    --text-greeting: 1.25rem; /* 20px */
+    --text-greeting: 1.5rem; /* 24px — serifada, ver nota em globals.css */
 
     grid-template-rows: 38px 78px minmax(0, 1fr) 186px !important;
     gap: 7px !important;

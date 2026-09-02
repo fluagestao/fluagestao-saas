@@ -491,34 +491,44 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
     <section className="space-y-3 pb-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          {editandoNome ? (
-            <div className="flex items-center gap-2">
-              <Input
-                autoFocus
-                value={nomeRascunho}
-                onChange={(e) => setNomeRascunho(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && salvarNome()}
-                className="h-9 w-52 bg-white"
-              />
-              <Button size="sm" onClick={salvarNome}>Salvar</Button>
-            </div>
-          ) : (
-            <h1 className="t-greeting flex items-center gap-2 text-[var(--admin-ink)]">
-              {saudacao()}{primeiro && `, ${primeiro}`}!
-              <button
-                type="button"
-                aria-label="Mudar meu nome"
-                onClick={() => {
-                  setNomeRascunho(nome ?? "");
-                  setEditandoNome(true);
-                }}
-                className="text-[var(--admin-muted)] hover:text-[var(--terracotta)]"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-            </h1>
-          )}
-          <span className="t-support mt-1.5 flex items-center gap-2 text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
+          {/* Saudacao e data na MESMA linha, alinhadas pela base. Antes eram duas
+              linhas e a de baixo comecava com um icone de calendario, entao as
+              bordas esquerdas nao batiam — era dai que vinha o desalinho. E
+              alinhamento por baseline, nao por centro: com dois tamanhos tao
+              diferentes, centralizar sempre deixa o menor flutuando. */}
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            {editandoNome ? (
+              <div className="flex items-center gap-2 self-center">
+                <Input
+                  autoFocus
+                  value={nomeRascunho}
+                  onChange={(e) => setNomeRascunho(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && salvarNome()}
+                  className="h-9 w-52 bg-white"
+                />
+                <Button size="sm" onClick={salvarNome}>Salvar</Button>
+              </div>
+            ) : (
+              <h1 className="t-greeting flex items-baseline gap-2 text-[var(--admin-ink)]">
+                {saudacao()}{primeiro && `, ${primeiro}`}!
+                <button
+                  type="button"
+                  aria-label="Mudar meu nome"
+                  onClick={() => {
+                    setNomeRascunho(nome ?? "");
+                    setEditandoNome(true);
+                  }}
+                  className="self-center text-[var(--admin-muted)] hover:text-[var(--terracotta)]"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </h1>
+            )}
+            <span aria-hidden className="t-support text-[var(--cream-deep)]">•</span>
+            <span className="t-support uppercase tracking-[0.12em] text-[var(--admin-muted)]">
+              {formatarDataLonga(hoje)}
+            </span>
+          </div>
         </div>
 
         <Button onClick={novoPedido} className="t-item h-11 w-full shrink-0 rounded-xl bg-[var(--coral)] px-6 shadow-[var(--shadow-cta)] hover:bg-[var(--coral-hover)] sm:w-auto">
