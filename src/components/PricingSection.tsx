@@ -2,6 +2,9 @@
 
 const WHATSAPP_NUMBER = "5548996510100";
 
+/* Mensagem sem preco de proposito: ela abre editavel no WhatsApp, entao um
+   valor escrito ali e um numero que a pessoa pode alterar antes de enviar. O
+   preco fica so nos cards, com uma fonte de verdade. */
 function whatsappLink(message: string) {
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
@@ -51,7 +54,9 @@ export default function PricingSection() {
             </div>
 
             <a
-              href={whatsappLink("Tenho interesse na OPÇÃO 1 - SITE, podemos conversar?")}
+              href={whatsappLink(
+                "Oi! Quero o site da Flua para o meu catálogo, seguindo com os pedidos no WhatsApp. Como começamos?",
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flua2-btn flua2-btn-wine flua2-investment-button"
@@ -103,7 +108,9 @@ export default function PricingSection() {
             </div>
 
             <a
-              href={whatsappLink("Tenho interesse na OPÇÃO 2 - SITE + SISTEMA, podemos conversar?")}
+              href={whatsappLink(
+                "Oi! Quero o site e o sistema da Flua integrados — o catálogo vendendo e os pedidos organizados. Como começamos?",
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flua2-btn flua2-btn-wine flua2-investment-button"
@@ -149,7 +156,9 @@ export default function PricingSection() {
             </div>
 
             <a
-              href={whatsappLink("Tenho interesse na OPÇÃO 3 - SISTEMA, podemos conversar?")}
+              href={whatsappLink(
+                "Oi! Quero o sistema da Flua para organizar pedidos, produção e financeiro. Como começamos?",
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flua2-btn flua2-btn-wine flua2-investment-button"
