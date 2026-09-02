@@ -27,6 +27,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { Switch } from "@/components/ui/switch";
+import { atualizarGuiaFlua } from "@/lib/guia-flua";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -414,18 +415,20 @@ export function OnboardingPrompt() {
   const EtapaIcon = etapa?.icon;
 
   async function atualizarEmpresa(
-    alteracoes: Record<string, boolean | string[] | string>,
+    alteracoes: {
+      habilitado?: boolean;
+      introducaoConcluida?: boolean;
+      concluidas?: EtapaId[];
+      puladas?: EtapaId[];
+    },
   ) {
     if (!progresso) return false;
     setSalvando(true);
     setErro(null);
-    const { error } = await createClient()
-      .from("companies")
-      .update(alteracoes)
-      .eq("id", progresso.companyId);
+    const resultado = await atualizarGuiaFlua({ data: alteracoes });
     setSalvando(false);
-    if (error) {
-      setErro(mensagemErro(error));
+    if (!resultado.ok) {
+      setErro(resultado.mensagem);
       return false;
     }
     return true;
@@ -433,11 +436,10 @@ export function OnboardingPrompt() {
 
   async function iniciarGuia(habilitado: boolean) {
     if (!progresso) return;
-    const agora = new Date().toISOString();
     if (
       !(await atualizarEmpresa({
-        onboarding_completed_at: agora,
-        guide_enabled: habilitado,
+        introducaoConcluida: true,
+        habilitado,
       }))
     )
       return;
@@ -453,7 +455,7 @@ export function OnboardingPrompt() {
   async function alternarGuia(habilitado: boolean) {
     if (
       !progresso ||
-      !(await atualizarEmpresa({ guide_enabled: habilitado }))
+      !(await atualizarEmpresa({ habilitado }))
     )
       return;
     setProgresso({ ...progresso, habilitado });
@@ -473,8 +475,8 @@ export function OnboardingPrompt() {
       : progresso.puladas.filter((item) => item !== id);
     if (
       !(await atualizarEmpresa({
-        guide_completed_steps: concluidas,
-        guide_skipped_steps: puladas,
+        concluidas,
+        puladas,
       }))
     )
       return;
