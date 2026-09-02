@@ -6,7 +6,11 @@ import { usePathname } from "next/navigation";
 
 export function MarketingHeader() {
   const pathname = usePathname();
-  const visible = pathname === "/" || pathname === "/nosso-saas" || pathname.startsWith("/funcionalidades/");
+  const visible =
+    pathname === "/" ||
+    pathname === "/nosso-saas" ||
+    pathname === "/a-flua" ||
+    pathname.startsWith("/funcionalidades/");
 
   if (!visible) return null;
 
