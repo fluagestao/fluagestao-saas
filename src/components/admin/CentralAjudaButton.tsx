@@ -3,6 +3,13 @@
 import { BookOpen, CircleHelp, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 function abrirGuia(modo: "checklist" | "revisar") {
   window.dispatchEvent(
     new CustomEvent("flua:abrir-guia", { detail: { modo } }),
@@ -34,15 +41,23 @@ export function CentralAjudaButton() {
 
   return (
     <div ref={containerRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setAberto((atual) => !atual)}
-        className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-        aria-label="Central de ajuda"
-        aria-expanded={aberto}
-      >
-        <CircleHelp className="h-[18px] w-[18px]" />
-      </button>
+      {/* Provider proprio: este botao tambem e usado fora do AppHeader. */}
+      <TooltipProvider delayDuration={250}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={() => setAberto((atual) => !atual)}
+              className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+              aria-label="Central de ajuda"
+              aria-expanded={aberto}
+            >
+              <CircleHelp className="h-[18px] w-[18px]" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Central de ajuda e Guia do Flua</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {aberto && (
         <div className="absolute right-0 top-full z-[80] mt-2 w-64 rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[var(--shadow-lift)]">

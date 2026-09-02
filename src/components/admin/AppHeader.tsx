@@ -11,6 +11,12 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PerfilContaMenu } from "@/components/admin/PerfilContaMenu";
 import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { cn } from "@/lib/utils";
@@ -150,19 +156,41 @@ export function AppHeader({
           </label>
         </div>
 
-        <div className="hidden items-center gap-1 md:flex">
-          <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Notificações">
-            <Bell className="h-[18px] w-[18px]" />
-            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
-          </button>
-          <Link href="/tarefas" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Agenda">
-            <CalendarDays className="h-[18px] w-[18px]" />
-          </Link>
-          <CentralAjudaButton />
-          <Link href="/conta/configuracoes" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
-            <Settings className="h-[18px] w-[18px]" />
-          </Link>
-        </div>
+        {/* Os quatro icones so tinham aria-label: quem enxerga nao descobria
+            para que servem. O balao no hover conta, sem ocupar espaco fixo. */}
+        <TooltipProvider delayDuration={250}>
+          <div className="hidden items-center gap-1 md:flex">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Notificações">
+                  <Bell className="h-[18px] w-[18px]" />
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Avisos e lembretes do sistema</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/tarefas" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Agenda">
+                  <CalendarDays className="h-[18px] w-[18px]" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Agenda: suas tarefas e prazos</TooltipContent>
+            </Tooltip>
+
+            <CentralAjudaButton />
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/conta/configuracoes" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
+                  <Settings className="h-[18px] w-[18px]" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>Configurações da conta e da empresa</TooltipContent>
+            </Tooltip>
+          </div>
+        </TooltipProvider>
 
         <PerfilContaMenu email={email} displayName={displayName} companyName={companyName} />
       </div>
