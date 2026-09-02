@@ -14,7 +14,7 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Realizadas: "/vendas/realizadas",
 
   Recebimentos: "/financeiro/entradas",
-  Saídas: "/financeiro/saidas",
+  Pagamentos: "/financeiro/saidas",
 
   Produtos: "/cadastros/produtos",
   Coleções: "/cadastros/colecoes",
@@ -23,6 +23,7 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Insumos: "/cadastros/insumos",
   Clientes: "/cadastros/clientes",
   Fornecedores: "/cadastros/fornecedores",
+  "Categorias financeiras": "/cadastros/financeiro",
   Bairros: "/cadastros/bairros",
   Horários: "/cadastros/horarios",
 
@@ -43,7 +44,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/dashboard": { filho: "Relatórios" },
 
   "/financeiro/entradas": { pai: "Financeiro", filho: "Recebimentos" },
-  "/financeiro/saidas": { pai: "Financeiro", filho: "Saídas" },
+  "/financeiro/saidas": { pai: "Financeiro", filho: "Pagamentos" },
 
   "/cadastros/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/cadastros/colecoes": { pai: "Cadastros", filho: "Coleções" },
@@ -52,6 +53,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/cadastros/insumos": { pai: "Cadastros", filho: "Insumos" },
   "/cadastros/clientes": { pai: "Cadastros", filho: "Clientes" },
   "/cadastros/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
+  "/cadastros/financeiro": { pai: "Cadastros", filho: "Categorias financeiras" },
   "/cadastros/bairros": { pai: "Cadastros", filho: "Bairros" },
   "/cadastros/horarios": { pai: "Cadastros", filho: "Horários" },
 
@@ -65,7 +67,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/a-receber": { pai: "Vendas", filho: "A receber" },
   "/realizadas": { pai: "Vendas", filho: "Realizadas" },
   "/entradas": { pai: "Financeiro", filho: "Recebimentos" },
-  "/saidas": { pai: "Financeiro", filho: "Saídas" },
+  "/saidas": { pai: "Financeiro", filho: "Pagamentos" },
   "/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/colecoes": { pai: "Cadastros", filho: "Coleções" },
   "/categorias": { pai: "Cadastros", filho: "Categorias" },

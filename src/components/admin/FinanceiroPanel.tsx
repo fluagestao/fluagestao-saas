@@ -119,7 +119,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${tipo === "entrada" ? "recebimentos" : "saidas"}-${de}-a-${ate}.csv`;
+    a.download = `${tipo === "entrada" ? "recebimentos" : "pagamentos"}-${de}-a-${ate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -140,7 +140,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   return (
     <section>
       <PageHeader
-        titulo={tipo === "entrada" ? "Recebimentos" : "Saídas"}
+        titulo={tipo === "entrada" ? "Recebimentos" : "Pagamentos"}
         descricao={
           tipo === "entrada"
             ? "Todo pedido marcado como pago entra aqui sozinho, com a forma de pagamento. Use o campo abaixo só para dinheiro que não veio de um pedido."
@@ -425,7 +425,7 @@ function NovoLancamento({
           tipo_receita_id: ehEntrada ? tipoDespesaId || null : null,
         },
       });
-      toast.success(tipo === "entrada" ? "Entrada lançada." : "Saída lançada.");
+      toast.success(tipo === "entrada" ? "Recebimento lançado." : "Pagamento lançado.");
       setValor("");
       setDescricao("");
       setFornecedor("");

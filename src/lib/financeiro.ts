@@ -187,6 +187,97 @@ export async function criarTipoReceita(input: { data: unknown }) {
   return { id: data.id, nome: data.nome };
 }
 
+/** As duas listas de categoria, para a tela de cadastro. */
+export async function carregarCategoriasFinanceiras() {
+  const { supabase, companyId } = await requireCompany();
+
+  const [despesasRes, receitasRes] = await Promise.all([
+    supabase
+      .from("tipos_despesa")
+      .select("id, nome")
+      .eq("company_id", companyId)
+      .order("nome"),
+    supabase
+      .from("tipos_receita")
+      .select("id, nome")
+      .eq("company_id", companyId)
+      .order("nome"),
+  ]);
+
+  if (despesasRes.error) throw despesasRes.error;
+  if (receitasRes.error) throw receitasRes.error;
+
+  return {
+    despesas: despesasRes.data ?? [],
+    receitas: receitasRes.data ?? [],
+  };
+}
+
+const categoriaSchema = z.object({
+  id: z.string().uuid(),
+  nome: z.string().trim().min(1).max(80),
+  lado: z.enum(["despesa", "receita"]),
+});
+
+/** O lado decide a tabela: as duas tem a mesma forma e o mesmo indice unico. */
+function tabelaDoLado(lado: "despesa" | "receita") {
+  return lado === "receita" ? "tipos_receita" : "tipos_despesa";
+}
+
+export async function renomearCategoriaFinanceira(input: { data: unknown }) {
+  const { id, nome, lado } = categoriaSchema.parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const { error } = await supabase
+    .from(tabelaDoLado(lado))
+    .update({ nome })
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error?.code === "23505") {
+    throw new Error("Já existe uma categoria com esse nome.");
+  }
+  if (error) throw error;
+  return { ok: true as const };
+}
+
+export async function excluirCategoriaFinanceira(input: { data: unknown }) {
+  const { id, lado } = categoriaSchema.omit({ nome: true }).parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  // Os lancamentos que usavam a categoria nao somem: a coluna em movimentos e
+  // "on delete set null", entao eles ficam sem categoria e continuam no caixa.
+  const { error } = await supabase
+    .from(tabelaDoLado(lado))
+    .delete()
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error) throw error;
+  return { ok: true as const };
+}
+
+/** Quantos lancamentos usam cada categoria. A tela avisa antes de excluir. */
+export async function contarUsoCategorias() {
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("movimentos")
+    .select("tipo_despesa_id, tipo_receita_id")
+    .eq("company_id", companyId)
+    .limit(5000);
+
+  if (error) throw error;
+
+  const uso: Record<string, number> = {};
+  for (const linha of data ?? []) {
+    for (const id of [linha.tipo_despesa_id, linha.tipo_receita_id]) {
+      if (id) uso[id as string] = (uso[id as string] ?? 0) + 1;
+    }
+  }
+  return uso;
+}
+
 export async function salvarMovimento(input: { data: unknown }) {
   const data = z
     .object({

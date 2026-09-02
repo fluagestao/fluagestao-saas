@@ -29,6 +29,7 @@ import { contarFollowupVencendo } from "@/lib/followup";
 import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
+import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
 import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
@@ -65,6 +66,7 @@ export type AbaId =
   | "cadastros"
   | "produtos"
   | "colecoes"
+  | "cadastro-financeiro"
   | "categorias"
   | "etiquetas"
   | "insumos"
@@ -80,7 +82,7 @@ export type SubCadastros =
 
 const SUB_FINANCEIRO: { id: SubFinanceiro; label: string }[] = [
   { id: "entradas", label: "Recebimentos" },
-  { id: "saidas", label: "Saídas" },
+  { id: "saidas", label: "Pagamentos" },
 ];
 
 const SUB_VENDAS: { id: SubVendas; label: string }[] = [
@@ -100,6 +102,10 @@ const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "insumos", label: "Insumos" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
+  // "Categorias financeiras" e nao "Financeiro": o AdminPathSync acha a tela
+  // pelo texto do botao, e "Financeiro" ja e o menu de topo — os dois
+  // colidiriam e o clique abriria o menu errado.
+  { id: "cadastro-financeiro", label: "Categorias financeiras" },
 ];
 
 type ItemMenu = {
@@ -129,7 +135,15 @@ const MENU: ItemMenu[] = [
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
 ];
 
-const DO_CATALOGO: AbaId[] = ["produtos", "colecoes", "categorias", "etiquetas", "insumos", "horarios"];
+const DO_CATALOGO: AbaId[] = [
+  "produtos",
+  "colecoes",
+  "categorias",
+  "etiquetas",
+  "insumos",
+  "horarios",
+  "cadastro-financeiro",
+];
 
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
@@ -556,6 +570,14 @@ export default function AdminClient({
               onNovo={() => setEditando("novo")}
               onEditar={(produto) => setEditando(produto)}
               onChange={recarregar}
+            />
+          ) : aba === "cadastro-financeiro" ? (
+            <CategoriasFinanceirasPanel
+              onIrPara={(destino) => {
+                setAba("financeiro");
+                setSubFin(destino);
+                setExpandida(null);
+              }}
             />
           ) : aba === "colecoes" ? (
             <ColecoesPanel catalogos={catalogos} categorias={categorias} onChange={recarregar} />

@@ -40,7 +40,7 @@ const MENU: ItemMenu[] = [
     label: "Financeiro",
     filhos: [
       { label: "Recebimentos", href: "/financeiro/entradas" },
-      { label: "Saídas", href: "/financeiro/saidas" },
+      { label: "Pagamentos", href: "/financeiro/saidas" },
     ],
   },
   {
@@ -55,6 +55,7 @@ const MENU: ItemMenu[] = [
       { label: "Insumos", href: "/cadastros/insumos" },
       { label: "Clientes", href: "/cadastros/clientes" },
       { label: "Fornecedores", href: "/cadastros/fornecedores" },
+      { label: "Categorias financeiras", href: "/cadastros/financeiro" },
     ],
   },
   { label: "Tarefas", href: "/tarefas" },
