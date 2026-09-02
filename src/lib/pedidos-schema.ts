@@ -98,7 +98,13 @@ export const pedidoManualSchema = z.object({
 export type PedidoManualInput = z.infer<typeof pedidoManualSchema>;
 
 export const filtroPedidosSchema = z.object({
-  status: z.enum(["todos", "novo", "producao", "pronto", "entregue", "cancelado"]).default("todos"),
+  /* "nao_entregue" agrupa novo + producao + pronto: e a fila de trabalho do
+     dia, o filtro que a tela de Pedidos abre por padrao. Precisa existir AQUI
+     tambem — a tela manda esse valor para o servidor, e um enum que nao o
+     conhece derruba o carregamento inteiro. */
+  status: z
+    .enum(["todos", "nao_entregue", "novo", "producao", "pronto", "entregue", "cancelado"])
+    .default("todos"),
   busca: z.string().max(80).optional(),
   limite: z.number().int().min(1).max(100).default(25),
   offset: z.number().int().min(0).default(0),

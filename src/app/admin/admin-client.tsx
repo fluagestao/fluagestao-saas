@@ -453,7 +453,14 @@ export default function AdminClient({
 
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
+                    <button
+                      type="button"
+                      /* Navegacao completa, e nao setAba: /conta e outra arvore
+                         de paginas (com o AppHeader), nao uma aba do painel. */
+                      onClick={() => window.location.assign("/conta/configuracoes")}
+                      className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                      aria-label="Configurações"
+                    >
                       <Settings className="h-[18px] w-[18px]" />
                     </button>
                   </TooltipTrigger>

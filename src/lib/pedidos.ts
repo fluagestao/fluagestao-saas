@@ -143,7 +143,9 @@ async function buscarPedidos(
   companyId: string,
   filtro: FiltroPedidos,
 ): Promise<{ pedidos: Pedido[]; total: number }> {
-  const porEntrega = ["todos", "novo", "producao", "pronto"].includes(
+  const NAO_ENTREGUES = ["novo", "producao", "pronto"];
+
+  const porEntrega = ["todos", "nao_entregue", ...NAO_ENTREGUES].includes(
     filtro.status,
   );
 
@@ -158,7 +160,9 @@ async function buscarPedidos(
 
   query = query.range(filtro.offset, filtro.offset + filtro.limite - 1);
 
-  if (filtro.status !== "todos") {
+  if (filtro.status === "nao_entregue") {
+    query = query.in("status", NAO_ENTREGUES);
+  } else if (filtro.status !== "todos") {
     query = query.eq("status", filtro.status);
   }
 

@@ -800,12 +800,6 @@ export function VendasPanel({
         </p>
       )}
 
-      {erro && (
-        <p className="mt-4 rounded-xl bg-[var(--cream)] px-3 py-2 text-sm text-destructive">
-          {erro}
-        </p>
-      )}
-
       {/* a receber: entregues sem pagamento primeiro, que é o que se cobra */}
       {sub === "areceber" && (
         <div className="mt-4 flex min-h-0 flex-1 flex-col">
