@@ -6,6 +6,7 @@ import {
   ChevronUp,
   Download,
   Pencil,
+  RotateCcw,
   Undo2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -204,14 +205,16 @@ export function TabelaRealizadas({
 
   return (
     <div className="hidden md:block">
-      <div className="mb-3 flex items-center justify-end gap-3">
+      <div className="mb-3 flex items-center justify-end gap-2">
         {ordem && (
           <button
             type="button"
             onClick={() => setOrdem(null)}
-            className="t-support text-[var(--admin-muted)] transition-colors hover:text-foreground"
+            title="Voltar à ordem que a tela usa ao abrir: entrega mais recente primeiro"
+            className="t-support inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--admin-border)] bg-card px-3 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
           >
-            Voltar à ordem padrão
+            <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+            Ordem padrão
           </button>
         )}
         <button
