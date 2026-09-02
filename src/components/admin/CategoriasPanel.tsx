@@ -287,14 +287,6 @@ export function CategoriasPanel({
                   Adicionais
                 </label>
 
-                <label className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs text-muted-foreground">
-                  <Switch
-                    checked={categoria.ativa}
-                    onCheckedChange={(ativa) => atualizarCategoria(categoria, { ativa })}
-                  />
-                  {categoria.ativa ? "Visível" : "Oculta"}
-                </label>
-
                 <Button variant="ghost" size="icon" onClick={() => excluirCategoria(categoria)}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>

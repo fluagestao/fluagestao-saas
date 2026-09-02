@@ -6,7 +6,6 @@ import { removerCatalogo, salvarCatalogo } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { CORES_DESTAQUE, type CatalogoRow, type CategoriaRow } from "./tipos";
 import { EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
@@ -231,15 +230,12 @@ export function ColecoesPanel({
                   ))}
                 </div>
 
+                {/* O "Visível" saiu da tela: ele so controla o que aparece no
+                    catalogo publico do site, que ainda nao esta em uso, e dentro
+                    do painel nao muda nada. A coluna continua no banco e as
+                    novas colecoes continuam nascendo visiveis — voltar e so
+                    trazer o Switch de volta aqui. */}
                 <div className="flex items-center justify-end gap-2">
-                  <label className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs text-muted-foreground">
-                    <Switch
-                      checked={colecao.ativo}
-                      onCheckedChange={(ativo) => atualizarColecao(colecao, { ativo })}
-                    />
-                    {colecao.ativo ? "Visível" : "Oculta"}
-                  </label>
-
                   <Button variant="ghost" size="icon" onClick={() => excluirColecao(colecao)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
