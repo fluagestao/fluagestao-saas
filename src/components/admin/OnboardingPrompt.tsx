@@ -362,6 +362,9 @@ export function OnboardingPrompt() {
           concluidas: Array.from(concluidas),
           puladas: idsValidos(empresa.data.guide_skipped_steps),
         });
+        if (empresa.data.guide_enabled === false && !parametro) {
+          setExpandido(false);
+        }
         setBoasVindas(!introducaoConcluida);
       } catch (error) {
         if (ativo) setErro(mensagemErro(error));
