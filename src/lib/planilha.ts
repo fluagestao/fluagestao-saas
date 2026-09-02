@@ -75,7 +75,10 @@ export function lerCsv(texto: string): Tabela {
       continue;
     }
 
-    if (ch === '"') {
+    // Aspa so abre campo quando e o primeiro caractere dele. No meio ("5\" de
+    // altura") e caractere literal — tratar como abertura fazia o parser
+    // engolir todas as linhas seguintes ate o fim do arquivo, em silencio.
+    if (ch === '"' && campo === "") {
       dentroDeAspas = true;
     } else if (ch === separador) {
       linha.push(campo);
@@ -95,7 +98,14 @@ export function lerCsv(texto: string): Tabela {
     linhas.push(linha);
   }
 
-  return linhas.filter((l) => l.some((c) => c.trim() !== ""));
+  return marcarVazias(linhas);
+}
+
+/* Linha vazia nao e descartada: vira [] e mantem o lugar. Descartar aqui fazia
+   o "#" da previa apontar para a linha errada assim que houvesse um buraco no
+   meio do arquivo — e esse numero e o que a pessoa usa para achar a linha. */
+function marcarVazias(linhas: Tabela): Tabela {
+  return linhas.map((l) => (l.some((c) => c.trim() !== "") ? l : []));
 }
 
 /** CSV com BOM e ponto-e-vírgula: abre em colunas no Excel pt-BR e no Sheets. */
@@ -235,6 +245,12 @@ export async function lerXlsx(buffer: ArrayBuffer): Promise<Tabela> {
   const linhas: Tabela = [];
 
   for (const row of Array.from(abaXml.getElementsByTagName("row"))) {
+    // O Excel omite do XML as linhas totalmente vazias. Sem olhar o `r` da
+    // row, dados nas linhas 2, 3 e 5 virariam 1, 2 e 3 na previa.
+    const numeroLinha = Number(row.getAttribute("r") ?? 0);
+    if (numeroLinha > 0) {
+      while (linhas.length < numeroLinha - 1) linhas.push([]);
+    }
     const celulas: string[] = [];
     for (const c of Array.from(row.getElementsByTagName("c"))) {
       const ref = c.getAttribute("r") ?? "";
@@ -245,6 +261,10 @@ export async function lerXlsx(buffer: ArrayBuffer): Promise<Tabela> {
         valor = compartilhadas[Number(textoDoNo(c.getElementsByTagName("v")[0] ?? null))] ?? "";
       } else if (tipo === "inlineStr") {
         valor = Array.from(c.getElementsByTagName("t")).map((t) => t.textContent ?? "").join("");
+      } else if (tipo === "e") {
+        // #N/D, #VALOR!: valor calculado que e um erro. Vazio faz a linha cair
+        // na validacao de campo obrigatorio, em vez de virar cadastro.
+        valor = "";
       } else if (tipo === "b") {
         valor = textoDoNo(c.getElementsByTagName("v")[0] ?? null) === "1" ? "sim" : "não";
       } else {
@@ -256,7 +276,7 @@ export async function lerXlsx(buffer: ArrayBuffer): Promise<Tabela> {
     linhas.push(celulas);
   }
 
-  return linhas.filter((l) => l.some((c) => c.trim() !== ""));
+  return marcarVazias(linhas);
 }
 
 /* --------------------------------------------------------------- Entrada */

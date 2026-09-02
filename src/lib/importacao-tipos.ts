@@ -215,6 +215,8 @@ export type ResultadoImportacao = {
   criados: number;
   pulados: number;
   comErro: number;
+  /** Registros criados, mas o lote não fechou: não há como desfazer. */
+  loteIncompleto?: boolean;
 };
 
 export type LoteImportacao = {

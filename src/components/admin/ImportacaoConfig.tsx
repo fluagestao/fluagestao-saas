@@ -66,10 +66,30 @@ function mapearLinhas(
   const cabecalhos = tabela[0].map(normalizarCabecalho);
   const indice = new Map<string, number>();
 
+  /* Duas passadas: primeiro o nome exato da coluna, depois os apelidos. Numa
+     passada so, um arquivo com [Nome; Telefone; WhatsApp] casava "whatsapp"
+     com a coluna Telefone (alias, mais a esquerda) e importava o fixo como
+     WhatsApp do cliente — que e justamente a chave de deduplicacao.
+     `usados` impede que duas chaves disputem a mesma coluna. */
+  const usados = new Set<number>();
+
   for (const coluna of def.colunas) {
-    const aceitos = [coluna.rotulo, coluna.chave, ...(coluna.aliases ?? [])].map(normalizarCabecalho);
-    const pos = cabecalhos.findIndex((c) => aceitos.includes(c));
-    if (pos >= 0) indice.set(coluna.chave, pos);
+    const exatos = [coluna.rotulo, coluna.chave].map(normalizarCabecalho);
+    const pos = cabecalhos.findIndex((c, i) => !usados.has(i) && exatos.includes(c));
+    if (pos >= 0) {
+      indice.set(coluna.chave, pos);
+      usados.add(pos);
+    }
+  }
+
+  for (const coluna of def.colunas) {
+    if (indice.has(coluna.chave)) continue;
+    const apelidos = (coluna.aliases ?? []).map(normalizarCabecalho);
+    const pos = cabecalhos.findIndex((c, i) => !usados.has(i) && apelidos.includes(c));
+    if (pos >= 0) {
+      indice.set(coluna.chave, pos);
+      usados.add(pos);
+    }
   }
 
   const faltando = def.colunas.filter((c) => c.obrigatoria && !indice.has(c.chave));
@@ -104,6 +124,10 @@ export function ImportacaoConfig() {
   const [historico, setHistorico] = useState<LoteImportacao[]>([]);
   const [desfazendo, setDesfazendo] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  /* Corrida: a leitura leva centenas de ms e os botoes de entidade nao ficam
+     travados. Sem este token, trocar de aba no meio fazia a resposta antiga
+     repovoar a tela com a previa da entidade anterior. */
+  const requisicaoRef = useRef(0);
   const raizRef = useRef<HTMLDivElement>(null);
   const confirmar = useConfirmar();
 
@@ -137,6 +161,7 @@ export function ImportacaoConfig() {
   }
 
   function trocarEntidade(nova: EntidadeImportacao) {
+    requisicaoRef.current += 1;
     setEntidade(nova);
     limpar();
   }
@@ -149,6 +174,8 @@ export function ImportacaoConfig() {
 
   async function aoEscolherArquivo(arquivo: File | null) {
     if (!arquivo) return;
+    const requisicao = ++requisicaoRef.current;
+    const daEntidade = entidade;
     setLendo(true);
     setPrevia(null);
     setErros([]);
@@ -160,9 +187,11 @@ export function ImportacaoConfig() {
         limpar();
         return;
       }
+      const resultado = await previewImportacao({ data: { entidade: daEntidade, linhas: mapeado.linhas } });
+      if (requisicao !== requisicaoRef.current || daEntidade !== entidade) return;
       setNomeArquivo(arquivo.name);
       setLinhas(mapeado.linhas);
-      setPrevia(await previewImportacao({ data: { entidade, linhas: mapeado.linhas } }));
+      setPrevia(resultado);
     } catch (e) {
       toast.error(mensagemDeErro(e, "ler a planilha"), { duration: 8000 });
       limpar();
@@ -189,8 +218,15 @@ export function ImportacaoConfig() {
       if (r.pulados) partes.push(`${r.pulados} ${r.pulados === 1 ? "pulado" : "pulados"}`);
       if (r.comErro) partes.push(`${r.comErro} com erro`);
       toast.success(`Importação concluída: ${partes.join(" · ")}.`, { duration: 8000 });
+      if (r.loteIncompleto) {
+        toast.warning(
+          "Os registros foram criados, mas não consegui registrar este lote — ele não vai aparecer no histórico e não dá para desfazer em massa.",
+          { duration: 12000 },
+        );
+      }
       setPrevia(null);
       setLinhas([]);
+      setNomeArquivo(null);
       if (inputRef.current) inputRef.current.value = "";
       await carregarHistorico();
     } catch (e) {
@@ -253,6 +289,7 @@ export function ImportacaoConfig() {
             key={e}
             type="button"
             onClick={() => trocarEntidade(e)}
+            disabled={lendo || confirmando}
             className={`h-10 rounded-xl border text-sm font-semibold transition-colors ${
               entidade === e
                 ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
@@ -299,7 +336,14 @@ export function ImportacaoConfig() {
           type="file"
           accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           className="hidden"
-          onChange={(e) => aoEscolherArquivo(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const arquivo = e.target.files?.[0] ?? null;
+            // Zera o input aqui: sem isso, escolher o mesmo arquivo de novo
+            // (depois de corrigir no Excel) nao dispara change nenhum, e a
+            // previa antiga continuava valendo.
+            e.target.value = "";
+            aoEscolherArquivo(arquivo);
+          }}
         />
         <Button onClick={() => inputRef.current?.click()} disabled={lendo} className="h-10 rounded-xl">
           {lendo ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Upload className="mr-1.5 h-4 w-4" />}

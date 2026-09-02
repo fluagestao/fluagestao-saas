@@ -54,6 +54,11 @@ function paraNumero(valor: string | undefined): number | null {
   let normalizado = bruto;
   const temVirgula = bruto.includes(",");
   const temPonto = bruto.includes(".");
+  // Grupos de 3 sem decimal ("1.500", "1.234.000") sao separador de milhar.
+  // Sem esta regra, Number("1.500") = 1.5 e a cesta de R$ 1.500 entrava por
+  // R$ 1,50 — passando por toda a validacao, porque 1.5 e um numero valido.
+  const soMilhar = (texto: string, sep: string) =>
+    new RegExp(`^\\d{1,3}(\\${sep}\\d{3})+$`).test(texto);
   if (temVirgula && temPonto) {
     // O ultimo separador que aparece e o decimal; o outro e de milhar.
     normalizado =
@@ -61,7 +66,9 @@ function paraNumero(valor: string | undefined): number | null {
         ? bruto.replace(/\./g, "").replace(",", ".")
         : bruto.replace(/,/g, "");
   } else if (temVirgula) {
-    normalizado = bruto.replace(",", ".");
+    normalizado = soMilhar(bruto, ",") ? bruto.replace(/,/g, "") : bruto.replace(",", ".");
+  } else if (temPonto && soMilhar(bruto, ".")) {
+    normalizado = bruto.replace(/\./g, "");
   }
   const n = Number(normalizado);
   return Number.isFinite(n) ? n : Number.NaN;
@@ -119,7 +126,7 @@ function data(valor: string | undefined): string | null | "invalida" {
   let ano: number, mes: number, dia: number;
   // Numero de serie do Excel (dias desde 30/12/1899): e o que chega quando a
   // celula foi formatada como data e o arquivo veio em XLSX.
-  if (/^\d{4,6}$/.test(t) && Number(t) > 1000 && Number(t) < 80000) {
+  if (/^\d{5,6}$/.test(t) && Number(t) >= 10000 && Number(t) < 80000) {
     const serial = new Date(Date.UTC(1899, 11, 30) + Number(t) * 86400000);
     ano = serial.getUTCFullYear();
     mes = serial.getUTCMonth() + 1;
@@ -163,14 +170,25 @@ function documento(valor: string | undefined): { valor: string | null; erro?: st
   return { valor: d, aviso };
 }
 
-function whatsapp(valor: string | undefined): { digitos: string; formatado: string } | { erro: string } {
+/** Digitos canonicos do numero: sem pontuacao e sem o 55 do pais. */
+function digitosWhats(valor: string | null | undefined): string {
   let d = (valor ?? "").replace(/\D/g, "");
   if (d.length > 11 && d.startsWith("55")) d = d.slice(2);
+  return d;
+}
+
+function whatsapp(valor: string | undefined): { digitos: string; formatado: string } | { erro: string } {
+  const d = digitosWhats(valor);
   if (d.length < 10 || d.length > 11) {
     return { erro: d ? `WhatsApp com ${d.length} dígitos — precisa ter 10 ou 11 com DDD` : "WhatsApp em branco" };
   }
   return { digitos: d, formatado: formatCelular(d) };
 }
+
+/* Teto do PostgREST e 1000 linhas por resposta. Os conjuntos de "ja existe"
+   precisam da base INTEIRA: truncar faz a previa mentir e o erro so aparecer
+   na gravacao. 20 mil cobre com folga qualquer cesteira. */
+const TETO_DEDUP = 20000;
 
 /** Consulta .in() em fatias: mil uuids numa URL só estouram o limite. */
 function fatias<T>(itens: T[], tamanho = 100): T[][] {
@@ -234,7 +252,7 @@ function mostrar(valores: Record<string, string | number | boolean | null | unde
 
 async function analisarInsumos(linhas: Record<string, string>[], { db, companyId }: Contexto): Promise<Analise> {
   const [existentesRes, fornecedoresRes] = await Promise.all([
-    db.from("insumos").select("nome").eq("company_id", companyId),
+    db.from("insumos").select("nome").eq("company_id", companyId).limit(TETO_DEDUP),
     db.from("fornecedores").select("id, nome").eq("company_id", companyId),
   ]);
   if (existentesRes.error) throw existentesRes.error;
@@ -342,7 +360,7 @@ function numero_ou(valor: string | undefined, padrao: number): number | null {
 
 async function analisarFornecedores(linhas: Record<string, string>[], { db, companyId }: Contexto): Promise<Analise> {
   const [existentesRes, tiposRes] = await Promise.all([
-    db.from("fornecedores").select("nome, documento").eq("company_id", companyId),
+    db.from("fornecedores").select("nome, documento").eq("company_id", companyId).limit(TETO_DEDUP),
     db.from("tipos_fornecedor").select("id, nome").eq("company_id", companyId),
   ]);
   if (existentesRes.error) throw existentesRes.error;
@@ -427,10 +445,17 @@ async function analisarFornecedores(linhas: Record<string, string>[], { db, comp
 /* ----------------------------------------------------------- clientes */
 
 async function analisarClientes(linhas: Record<string, string>[], { db, companyId }: Contexto): Promise<Analise> {
-  const { data: existentes, error } = await db.from("clientes").select("whatsapp").eq("company_id", companyId);
+  const { data: existentes, error } = await db
+    .from("clientes")
+    .select("whatsapp")
+    .eq("company_id", companyId)
+    .limit(TETO_DEDUP);
   if (error) throw error;
 
-  const numeros = new Set((existentes ?? []).map((c) => (c.whatsapp ?? "").replace(/\D/g, "")).filter(Boolean));
+  // Mesma normalizacao dos dois lados: um cliente gravado como "+55 48 9..."
+  // pelo site tem 13 digitos e nao casava com os 11 da planilha — a mesma
+  // pessoa entrava duas vezes.
+  const numeros = new Set((existentes ?? []).map((c) => digitosWhats(c.whatsapp)).filter(Boolean));
   const vistos = new Map<string, number>();
 
   const previa: LinhaPrevia[] = [];
@@ -508,7 +533,7 @@ async function analisarClientes(linhas: Record<string, string>[], { db, companyI
 
 async function analisarProdutos(linhas: Record<string, string>[], { db, companyId }: Contexto): Promise<Analise> {
   const [produtosRes, categoriasRes] = await Promise.all([
-    db.from("produtos").select("nome, slug, categoria_id, ordem").eq("company_id", companyId),
+    db.from("produtos").select("nome, slug, categoria_id, ordem").eq("company_id", companyId).limit(TETO_DEDUP),
     db.from("categorias").select("id, nome").eq("company_id", companyId),
   ]);
   if (produtosRes.error) throw produtosRes.error;
@@ -620,6 +645,24 @@ export async function confirmarImportacao(input: { data: unknown }): Promise<Res
   const { supabase, companyId } = await requireCompany();
   const { previa, preparadas } = await analisar(entidade, linhas, { db: supabase, companyId });
 
+  /* O lote nasce ANTES de qualquer registro. Se nao der para registra-lo, nada
+     e gravado — importar sem poder desfazer e pior do que nao importar. */
+  const { data: lote, error: loteError } = await supabase
+    .from("importacoes")
+    .insert({
+      company_id: companyId,
+      entidade,
+      arquivo: arquivo ?? null,
+      total_linhas: linhas.length,
+      criados: 0,
+      pulados: 0,
+      com_erro: 0,
+      registros_criados: [],
+    })
+    .select("id")
+    .single();
+  if (loteError || !lote) throw loteError ?? new Error("Não consegui registrar a importação.");
+
   const criados: string[] = [];
   const errosGravacao: LinhaPrevia[] = [];
 
@@ -657,23 +700,29 @@ export async function confirmarImportacao(input: { data: unknown }): Promise<Res
   const pulados = previa.filter((l) => l.status === "existe" || l.status === "exemplo").length;
   const erros = [...errosAnalise, ...errosGravacao].sort((a, b) => a.numero - b.numero);
 
-  const { data: lote, error: loteError } = await supabase
+  /* Fechamento do lote. Aqui NAO se lanca: os registros ja existem, e derrubar
+     a action faria a tela dizer que nada foi importado. Se o fechamento falhar,
+     o aviso vai junto do resultado. */
+  const { error: fecharError } = await supabase
     .from("importacoes")
-    .insert({
-      company_id: companyId,
-      entidade,
-      arquivo: arquivo ?? null,
-      total_linhas: linhas.length,
+    .update({
       criados: criados.length,
       pulados,
       com_erro: erros.length,
       registros_criados: criados,
     })
-    .select("id")
-    .single();
-  if (loteError) throw loteError;
+    .eq("id", lote.id)
+    .eq("company_id", companyId);
 
-  return { id: lote.id as string, criados: criados.length, pulados, comErro: erros.length, erros };
+  return {
+    id: lote.id as string,
+    criados: criados.length,
+    pulados,
+    comErro: erros.length,
+    erros,
+    // A tela avisa que este lote nao tem como ser desfeito.
+    loteIncompleto: Boolean(fecharError) && criados.length > 0,
+  };
 }
 
 export async function listarImportacoes(): Promise<LoteImportacao[]> {
@@ -712,13 +761,19 @@ async function emUso(db: Db, companyId: string, entidade: EntidadeImportacao, id
       break;
     case "produtos":
       await coletar("produto_insumos", "produto_id");
+      // Produto com foto e produto que a pessoa ja trabalhou. Alem disso, o
+      // delete cru aqui nao limpa o Storage (quem faz isso e deleteProduto).
+      await coletar("produto_imagens", "produto_id", true);
       break;
     case "clientes":
       await coletar("pedidos", "cliente_id");
       await coletar("conversas", "cliente_id", true);
       break;
     case "fornecedores":
-      // insumos.fornecedor_id é "on delete set null": apagar não quebra nada.
+      // Nao quebra nada (fornecedor_id e "on delete set null"), mas o insumo
+      // perderia o fornecedor em silencio — e o dialogo promete que o que
+      // esta em uso fica.
+      await coletar("insumos", "fornecedor_id");
       break;
   }
   return usados;
@@ -744,27 +799,50 @@ export async function desfazerImportacao(input: { data: unknown }): Promise<{ de
   const usados = await emUso(supabase, companyId, entidade, ids);
   const apagar = ids.filter((i) => !usados.has(i));
 
-  let desfeitos = 0;
-  let mantidos = usados.size;
+  /* .select() no delete: sem ele o supabase devolve data null e nao ha como
+     saber quantas linhas casaram. A RLS filtra em silencio — o delete "da
+     certo" afetando zero linhas, e o contador mentia dizendo que apagou tudo. */
+  const apagados = new Set<string>();
   for (const fatia of fatias(apagar)) {
-    const { error: delError } = await supabase.from(entidade).delete().eq("company_id", companyId).in("id", fatia);
+    const { data, error: delError } = await supabase
+      .from(entidade)
+      .delete()
+      .eq("company_id", companyId)
+      .in("id", fatia)
+      .select("id");
+
     if (!delError) {
-      desfeitos += fatia.length;
+      for (const linha of data ?? []) apagados.add(linha.id as string);
       continue;
     }
     for (const um of fatia) {
-      const { error: umError } = await supabase.from(entidade).delete().eq("company_id", companyId).eq("id", um);
-      if (umError) mantidos += 1;
-      else desfeitos += 1;
+      const { data: umDado } = await supabase
+        .from(entidade)
+        .delete()
+        .eq("company_id", companyId)
+        .eq("id", um)
+        .select("id")
+        .maybeSingle();
+      if (umDado) apagados.add(umDado.id as string);
     }
   }
 
+  const desfeitos = apagados.size;
+  const restantes = ids.filter((i) => !apagados.has(i));
+
+  /* So encerra o lote quando nao sobrou nada. Marcar desfeita_em com registros
+     vivos escondia o botao para sempre: quem tirasse o insumo da composicao
+     depois nao teria mais como desfazer. */
   const { error: updError } = await supabase
     .from("importacoes")
-    .update({ desfeita_em: new Date().toISOString(), desfeitos })
+    .update(
+      restantes.length === 0
+        ? { desfeita_em: new Date().toISOString(), desfeitos, registros_criados: [] }
+        : { desfeitos, registros_criados: restantes },
+    )
     .eq("id", id)
     .eq("company_id", companyId);
   if (updError) throw updError;
 
-  return { desfeitos, mantidos };
+  return { desfeitos, mantidos: restantes.length };
 }
