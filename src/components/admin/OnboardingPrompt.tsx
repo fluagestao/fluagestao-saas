@@ -378,7 +378,10 @@ export function OnboardingPrompt() {
     return () => {
       ativo = false;
     };
-  }, [dentroDoSistema, pathname]);
+  // A navegação interna muda `pathname`, mas não deve reinicializar o estado
+  // visual do Guia. No mobile isso fazia o card reaparecer ou sumir ao trocar
+  // de aba. Recarregamos apenas ao entrar ou sair da área autenticada.
+  }, [dentroDoSistema]);
 
   useEffect(() => {
     if (pathname !== "/admin") return;
@@ -624,8 +627,8 @@ export function OnboardingPrompt() {
       {!boasVindas &&
         expandido &&
         (percentual < 100 || abertoPelaCentral) && (
-        <aside className="fixed bottom-20 right-3 z-[65] flex max-h-[min(680px,calc(100dvh-7rem))] w-[calc(100%-1.5rem)] max-w-[370px] flex-col overflow-hidden rounded-[24px] border border-[var(--admin-border)] bg-white shadow-[0_24px_70px_rgba(58,34,31,0.22)] lg:bottom-6 lg:right-6">
-          <header className="bg-[var(--terracotta)] p-4 text-white">
+        <aside className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 right-4 z-[65] flex max-h-[min(70dvh,34rem)] w-auto flex-col overflow-hidden rounded-[22px] border border-[var(--admin-border)] bg-white shadow-[0_24px_70px_rgba(58,34,31,0.22)] sm:bottom-20 sm:left-auto sm:right-3 sm:max-h-[min(680px,calc(100dvh-7rem))] sm:w-[calc(100%-1.5rem)] sm:max-w-[370px] lg:bottom-6 lg:right-6">
+          <header className="bg-[var(--terracotta)] p-3.5 text-white sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="flex items-center gap-2 font-bold">
@@ -644,7 +647,7 @@ export function OnboardingPrompt() {
                 <ChevronDown className="h-4 w-4" />
               </button>
             </div>
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-3 flex items-center gap-3 sm:mt-4">
               <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/20">
                 <div
                   className="h-full rounded-full bg-white transition-[width]"
@@ -655,7 +658,7 @@ export function OnboardingPrompt() {
             </div>
           </header>
 
-          <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[var(--admin-border)] px-3.5 py-2.5 sm:px-4 sm:py-3">
             <div>
               <p className="text-sm font-bold">
                 Guia {progresso.habilitado ? "ativado" : "pausado"}
@@ -672,9 +675,9 @@ export function OnboardingPrompt() {
             />
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto p-3">
+          <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto p-2.5 sm:p-3">
             {!progresso.habilitado ? (
-              <div className="flex flex-col items-center px-5 py-8 text-center">
+              <div className="flex flex-col items-center px-3 py-5 text-center sm:px-5 sm:py-8">
                 <Pause className="h-8 w-8 text-[var(--terracotta)]" />
                 <p className="mt-3 font-bold">Guia pausado</p>
                 <p className="mt-1 text-sm leading-5 text-[var(--admin-muted)]">
