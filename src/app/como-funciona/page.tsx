@@ -78,7 +78,7 @@ export default function ComoFuncionaPage() {
             </div>
           </div>
           <div className="cf-hero-screen">
-            <Image src="/mockup vendas.png" alt="Tela de pedidos da Flua Gestão" fill priority sizes="(max-width: 900px) 94vw, 760px" />
+            <Image src="/jornada-flua.svg" alt="A Jornada na Flua, da configuração da empresa ao pedido finalizado" fill priority sizes="(max-width: 900px) 94vw, 760px" />
           </div>
         </div>
       </section>
