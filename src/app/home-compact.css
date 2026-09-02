@@ -141,7 +141,8 @@
 
   /* Cabeçalhos dos cards */
   main > section.space-y-3.pb-4 > :nth-child(3) article > div:first-child,
-  main > section.space-y-3.pb-4 > :nth-child(4) article > div:first-child {
+  main > section.space-y-3.pb-4 > :nth-child(4) article > div:first-child,
+  main > section.space-y-3.pb-4 > :nth-child(4) aside > div:first-child {
     height: 38px !important;
     min-height: 38px !important;
     padding-inline: 14px !important;
@@ -200,8 +201,9 @@
   /* A área do gráfico agora se estica sozinha (flex-1) e as barras têm altura
      em %, então não existe mais número mágico para manter sincronizado aqui. */
 
-  main > section.space-y-3.pb-4 > :nth-child(4) aside {
-    padding: 10px !important;
+  /* O padding vive no corpo: o cabecalho tem o dele, como nos outros cards. */
+  main > section.space-y-3.pb-4 > :nth-child(4) aside > div:last-child {
+    padding: 8px 14px !important;
   }
 }
 

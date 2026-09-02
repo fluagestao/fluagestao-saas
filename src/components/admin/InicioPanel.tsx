@@ -140,22 +140,26 @@ function Vazio({
 }) {
   return (
     <div
-      className={`flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 text-center ${
-        destaque ? "py-4" : "py-3"
+      className={`flex min-h-0 w-full flex-1 px-5 ${
+        destaque
+          ? "flex-col items-center justify-center py-4 text-center"
+          : "items-center justify-center gap-3 py-3 text-left"
       }`}
     >
-      {/* O card de Tarefas tem altura fixa e curta no desktop: a versao sem
-          destaque precisa caber icone + duas linhas ali dentro, senao o texto
-          some na borda. Por isso ela usa halo e margens menores. */}
+      {/* O card de Tarefas e baixo e de altura fixa: empilhar icone sobre duas
+          linhas nao cabe e o texto sumia na borda. Sem destaque o vazio deita —
+          icone ao lado da mensagem — e passa a usar a largura, que sobra. */}
       <span
-        className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ${
+        className={`grid shrink-0 place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ${
           destaque ? "h-12 w-12 ring-8" : "h-9 w-9 ring-4"
         } ring-[var(--peach-soft)]`}
       >
         <Icon className={destaque ? "h-6 w-6" : "h-4 w-4"} strokeWidth={1.5} />
       </span>
-      <p className={`t-item text-[var(--admin-ink)] ${destaque ? "mt-4" : "mt-2"}`}>{titulo}</p>
-      <p className="t-support mt-1 max-w-sm text-[var(--admin-muted)]">{descricao}</p>
+      <div className={destaque ? "mt-4 max-w-sm" : "min-w-0"}>
+        <p className="t-item text-[var(--admin-ink)]">{titulo}</p>
+        <p className="t-support mt-0.5 text-[var(--admin-muted)]">{descricao}</p>
+      </div>
     </div>
   );
 }
@@ -624,33 +628,39 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <aside className="card-panel relative flex min-h-[150px] flex-col justify-center bg-[var(--cream)] p-6">
-          {/* Ramo decorativo: so respiro visual, sem peso. aria-hidden porque
-              nao acrescenta nada a leitura do card. */}
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 120 120"
-            className="pointer-events-none absolute -right-4 -top-3 h-28 w-28 text-[var(--coral)] opacity-[0.07]"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <path d="M96 8C74 30 58 58 50 96" />
-            <path d="M84 26c-12 1-20 7-24 17 11 2 19-3 24-17Z" />
-            <path d="M72 50c-12 1-20 7-24 17 11 2 19-3 24-17Z" />
-            <path d="M62 76c-11 1-18 7-22 16 10 2 18-3 22-16Z" />
-            <path d="M88 40c11-2 19 2 23 12-11 3-19-1-23-12Z" />
-            <path d="M78 66c11-2 19 2 23 12-11 3-19-1-23-12Z" />
-          </svg>
-          <p className="t-support font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">
-            Próxima data
-          </p>
-          <p className="t-title mt-1.5 text-[var(--admin-ink)]">{proximaData.nome}</p>
-          <p className="t-item mt-1 text-[var(--coral)]">
-            {contagem} · {dataCurta(proximaData.data)}
-          </p>
-          <p className="t-body mt-2 text-[var(--admin-muted)]">{proximaData.mensagem}</p>
+        <aside className="card-panel flex min-h-[150px] flex-col bg-[var(--cream)]">
+          {/* Mesma geometria do CabecalhoCard (altura minima, linha embaixo,
+              padding lateral), mas em coral e bold: e um card de aviso, nao um
+              modulo de dados. */}
+          <div className="flex min-h-12 shrink-0 items-center border-b border-[var(--admin-border)] px-4">
+            <h3 className="t-title font-bold text-[var(--coral)]">Datas comemorativas</h3>
+          </div>
+
+          <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center px-5 py-4 text-center">
+            {/* Ramo decorativo: so respiro visual, sem peso. aria-hidden porque
+                nao acrescenta nada a leitura do card. */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 120 120"
+              className="pointer-events-none absolute -right-4 -top-2 h-24 w-24 text-[var(--coral)] opacity-[0.07]"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M96 8C74 30 58 58 50 96" />
+              <path d="M84 26c-12 1-20 7-24 17 11 2 19-3 24-17Z" />
+              <path d="M72 50c-12 1-20 7-24 17 11 2 19-3 24-17Z" />
+              <path d="M62 76c-11 1-18 7-22 16 10 2 18-3 22-16Z" />
+              <path d="M88 40c11-2 19 2 23 12-11 3-19-1-23-12Z" />
+              <path d="M78 66c11-2 19 2 23 12-11 3-19-1-23-12Z" />
+            </svg>
+            <p className="t-title text-[var(--admin-ink)]">{proximaData.nome}</p>
+            <p className="t-item mt-1 text-[var(--coral)]">
+              {contagem} · {dataCurta(proximaData.data)}
+            </p>
+            <p className="t-body mt-2 max-w-xs text-[var(--admin-muted)]">{proximaData.mensagem}</p>
+          </div>
         </aside>
       </div>
     </section>
