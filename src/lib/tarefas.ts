@@ -39,13 +39,6 @@ export async function carregarTarefas() {
   };
 }
 
-export async function carregarVersiculo(input: { data: unknown }) {
-  z.object({ data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).parse(input.data);
-  // A tabela de versículos era específica do projeto antigo. A tela já possui
-  // uma lista local de fallback em lib/versiculos.ts.
-  return null;
-}
-
 export async function salvarTarefa(input: { data: unknown }) {
   const data = tarefaSchema.parse(input.data);
   const { supabase, companyId, userId } = await requireCompany();

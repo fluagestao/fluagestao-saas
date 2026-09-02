@@ -180,7 +180,7 @@ div {
     height: 100% !important;
   }
 
-  /* Rodape: grafico largo + versiculo estreito */
+  /* Rodape: grafico largo + card da proxima data estreito */
   main > section.space-y-3.pb-4 > :nth-child(4) {
     grid-template-columns: minmax(0, 2.08fr) minmax(350px, .95fr) !important;
     gap: 12px !important;

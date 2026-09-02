@@ -85,3 +85,17 @@ export function rotuloPrazo(
       return dataEscolhida ? formatarDataLonga(dataEscolhida) : "";
   }
 }
+
+/** "Bom dia" / "Boa tarde" / "Boa noite" pelo horário de Tubarão. */
+export function saudacao(now: Date = new Date()): string {
+  const hora = Number(
+    new Intl.DateTimeFormat("pt-BR", {
+      timeZone: TZ,
+      hour: "2-digit",
+      hour12: false,
+    }).format(now),
+  );
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
+}

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { formatarDataLonga, hojeISO } from "@/lib/prazo";
+import { formatarDataLonga, hojeISO, saudacao } from "@/lib/prazo";
 import { carregarFaturamentoDoMes, carregarResumoPedidos } from "@/lib/pedidos";
 import {
   carregarTarefas,
@@ -28,7 +28,6 @@ import {
   resumoVendas,
   type Pedido,
 } from "@/lib/vendas";
-import { saudacao } from "@/lib/versiculos";
 import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { Num } from "./shell";
 
