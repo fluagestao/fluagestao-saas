@@ -23,7 +23,8 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Insumos: "/cadastros/insumos",
   Clientes: "/cadastros/clientes",
   Fornecedores: "/cadastros/fornecedores",
-  "Categorias financeiras": "/cadastros/financeiro",
+  "Tipos de receita": "/cadastros/financeiro/receitas",
+  "Tipos de despesa": "/cadastros/financeiro/despesas",
   Bairros: "/cadastros/bairros",
   Horários: "/cadastros/horarios",
 
@@ -53,7 +54,8 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/cadastros/insumos": { pai: "Cadastros", filho: "Insumos" },
   "/cadastros/clientes": { pai: "Cadastros", filho: "Clientes" },
   "/cadastros/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
-  "/cadastros/financeiro": { pai: "Cadastros", filho: "Categorias financeiras" },
+  "/cadastros/financeiro/receitas": { pai: "Cadastros", filho: "Tipos de receita" },
+  "/cadastros/financeiro/despesas": { pai: "Cadastros", filho: "Tipos de despesa" },
   "/cadastros/bairros": { pai: "Cadastros", filho: "Bairros" },
   "/cadastros/horarios": { pai: "Cadastros", filho: "Horários" },
 

@@ -115,7 +115,8 @@ const nextConfig: NextConfig = {
       { source: "/cadastros/insumos", destination: "/admin" },
       { source: "/cadastros/clientes", destination: "/admin" },
       { source: "/cadastros/fornecedores", destination: "/admin" },
-      { source: "/cadastros/financeiro", destination: "/admin" },
+      { source: "/cadastros/financeiro/receitas", destination: "/admin" },
+      { source: "/cadastros/financeiro/despesas", destination: "/admin" },
       { source: "/cadastros/bairros", destination: "/admin" },
       { source: "/cadastros/horarios", destination: "/admin" },
 

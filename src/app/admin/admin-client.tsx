@@ -6,6 +6,7 @@ import {
   ChartPie,
   CheckSquare,
   ChevronDown,
+  ChevronRight,
   Contact,
   Home,
   Loader2,
@@ -66,7 +67,8 @@ export type AbaId =
   | "cadastros"
   | "produtos"
   | "colecoes"
-  | "cadastro-financeiro"
+  | "cadastro-receitas"
+  | "cadastro-despesas"
   | "categorias"
   | "etiquetas"
   | "insumos"
@@ -92,7 +94,7 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
   { id: "followup", label: "Follow-up" },
 ];
 
-const SUB_CADASTROS: { id: string; label: string }[] = [
+const SUB_CADASTROS: { id: string; label: string; grupo?: string }[] = [
   { id: "produtos", label: "Produtos" },
   // Também é por aqui que o AdminPathSync abre a tela certa: ele procura no
   // cabeçalho um botão com o rótulo da rota e clica nele. Sem a entrada aqui,
@@ -102,19 +104,32 @@ const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "insumos", label: "Insumos" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },
-  // "Categorias financeiras" e nao "Financeiro": o AdminPathSync acha a tela
-  // pelo texto do botao, e "Financeiro" ja e o menu de topo — os dois
-  // colidiriam e o clique abriria o menu errado.
-  { id: "cadastro-financeiro", label: "Categorias financeiras" },
+  // Os dois vivem sob o grupo "Financeiro" no menu do desktop. A barra do
+  // celular continua plana, e e nela que o AdminPathSync acha o botao pelo
+  // rotulo — por isso o grupo nao entra no caminho da navegacao.
+  { id: "cadastro-receitas", label: "Tipos de receita", grupo: "Financeiro" },
+  { id: "cadastro-despesas", label: "Tipos de despesa", grupo: "Financeiro" },
 ];
 
 type ItemMenu = {
   id: AbaId;
   label: string;
   icon: LucideIcon;
-  vistas?: { id: string; label: string }[];
+  vistas?: { id: string; label: string; grupo?: string }[];
   abas?: { id: AbaId; label: string }[];
 };
+
+/** Junta os filhos que declaram o mesmo grupo, preservando a ordem em que aparecem. */
+function agruparFilhos(filhos: { id: string; label: string; grupo?: string }[]) {
+  const grupos = new Map<string, { id: string; label: string }[]>();
+  for (const filho of filhos) {
+    if (!filho.grupo) continue;
+    const atual = grupos.get(filho.grupo) ?? [];
+    atual.push(filho);
+    grupos.set(filho.grupo, atual);
+  }
+  return [...grupos.entries()];
+}
 
 const MENU: ItemMenu[] = [
   { id: "inicio", label: "Início", icon: Home },
@@ -142,7 +157,8 @@ const DO_CATALOGO: AbaId[] = [
   "etiquetas",
   "insumos",
   "horarios",
-  "cadastro-financeiro",
+  "cadastro-receitas",
+  "cadastro-despesas",
 ];
 
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
@@ -191,6 +207,8 @@ export default function AdminClient({
     initialAba === "followup" ? "followup" : "pedidos",
   );
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
+  // Terceiro nivel do menu do desktop. Fecha junto com o menu que o contem.
+  const [grupoAberto, setGrupoAberto] = useState<string | null>(null);
   const [subCad, setSubCad] = useState<SubCadastros>("clientes");
   const [expandida, setExpandida] = useState<AbaId | null>(null);
 
@@ -297,6 +315,7 @@ export default function AdminClient({
                       onClick={() => {
                         if (filhos) {
                           setExpandida(aberta ? null : item.id);
+                          setGrupoAberto(null);
                           return;
                         }
                         setAba(item.id);
@@ -322,15 +341,56 @@ export default function AdminClient({
 
                     {aberta && filhos && (
                       <div className="absolute left-0 top-full mt-2 min-w-48 rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[var(--shadow-lift)]">
-                        {filhos.map((sub) => (
-                          <button
-                            key={sub.id}
-                            type="button"
-                            onClick={() => selecionarSub(item, sub.id)}
-                            className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
-                          >
-                            {sub.label}
-                          </button>
+                        {filhos
+                          .filter((sub) => !("grupo" in sub) || !sub.grupo)
+                          .map((sub) => (
+                            <button
+                              key={sub.id}
+                              type="button"
+                              onClick={() => selecionarSub(item, sub.id)}
+                              className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                            >
+                              {sub.label}
+                            </button>
+                          ))}
+
+                        {/* Terceiro nivel: so no desktop. A barra do celular
+                            segue plana, e e la que o AdminPathSync procura o
+                            botao pelo rotulo. */}
+                        {agruparFilhos(filhos).map(([nome, membros]) => (
+                          <div key={nome} className="relative">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGrupoAberto((atual) => (atual === nome ? null : nome))
+                              }
+                              aria-expanded={grupoAberto === nome}
+                              className="flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                            >
+                              {nome}
+                              <ChevronRight
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0 transition-transform",
+                                  grupoAberto === nome && "rotate-90",
+                                )}
+                              />
+                            </button>
+
+                            {grupoAberto === nome && (
+                              <div className="absolute left-full top-0 z-10 ml-1 min-w-48 rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[var(--shadow-lift)]">
+                                {membros.map((sub) => (
+                                  <button
+                                    key={sub.id}
+                                    type="button"
+                                    onClick={() => selecionarSub(item, sub.id)}
+                                    className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                                  >
+                                    {sub.label}
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
@@ -571,8 +631,9 @@ export default function AdminClient({
               onEditar={(produto) => setEditando(produto)}
               onChange={recarregar}
             />
-          ) : aba === "cadastro-financeiro" ? (
+          ) : aba === "cadastro-receitas" || aba === "cadastro-despesas" ? (
             <CategoriasFinanceirasPanel
+              lado={aba === "cadastro-receitas" ? "receita" : "despesa"}
               onIrPara={(destino) => {
                 setAba("financeiro");
                 setSubFin(destino);

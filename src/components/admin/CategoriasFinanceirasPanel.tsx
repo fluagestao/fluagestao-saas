@@ -28,12 +28,13 @@ type Lado = "receita" | "despesa";
  * e para qual tela do Financeiro o atalho leva.
  */
 export function CategoriasFinanceirasPanel({
+  lado,
   onIrPara,
 }: {
+  lado: Lado;
   onIrPara?: (aba: "entradas" | "saidas") => void;
 }) {
-  const [receitas, setReceitas] = useState<Categoria[]>([]);
-  const [despesas, setDespesas] = useState<Categoria[]>([]);
+  const [itens, setItens] = useState<Categoria[]>([]);
   const [uso, setUso] = useState<Record<string, number>>({});
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -46,24 +47,39 @@ export function CategoriasFinanceirasPanel({
         carregarCategoriasFinanceiras(),
         contarUsoCategorias(),
       ]);
-      setReceitas(listas.receitas as Categoria[]);
-      setDespesas(listas.despesas as Categoria[]);
+      setItens((lado === "receita" ? listas.receitas : listas.despesas) as Categoria[]);
       setUso(usos);
     } catch (e) {
       setErro(mensagemDeErro(e, "carregar as categorias"));
     }
     setCarregando(false);
-  }, []);
+  }, [lado]);
 
   useEffect(() => {
     recarregar();
   }, [recarregar]);
 
+  const ehReceita = lado === "receita";
+
   return (
     <section data-tela-cheia className="min-w-0">
       <PageHeader
-        titulo="Financeiro"
-        descricao="As categorias que você escolhe ao lançar dinheiro no caixa. Receita entra em Recebimentos, despesa entra em Pagamentos."
+        titulo={ehReceita ? "Tipos de receita" : "Tipos de despesa"}
+        descricao={
+          ehReceita
+            ? "De onde o dinheiro entra: venda, taxa de entrega, outros. Você escolhe uma delas ao lançar em Recebimentos."
+            : "Para onde o dinheiro sai: insumo, embalagem, combustível. Você escolhe uma delas ao lançar em Pagamentos."
+        }
+        acoes={
+          <button
+            type="button"
+            onClick={() => onIrPara?.(ehReceita ? "entradas" : "saidas")}
+            className="t-support inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[var(--coral)] transition-colors hover:bg-[var(--peach)]"
+          >
+            {ehReceita ? "Ir para Recebimentos" : "Ir para Pagamentos"}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+        }
       />
 
       {erro && (
@@ -75,27 +91,8 @@ export function CategoriasFinanceirasPanel({
       {carregando ? (
         <Carregando texto="carregando as categorias…" />
       ) : (
-        <div className="mt-4 grid min-h-0 flex-1 gap-4 overflow-y-auto pr-1 lg:grid-cols-2">
-          <Coluna
-            lado="receita"
-            titulo="Tipos de receita"
-            explicacao="De onde o dinheiro entra: venda, taxa de entrega, outros."
-            atalho="Ir para Recebimentos"
-            onAtalho={() => onIrPara?.("entradas")}
-            itens={receitas}
-            uso={uso}
-            onMudou={recarregar}
-          />
-          <Coluna
-            lado="despesa"
-            titulo="Tipos de despesa"
-            explicacao="Para onde o dinheiro sai: insumo, embalagem, combustível."
-            atalho="Ir para Pagamentos"
-            onAtalho={() => onIrPara?.("saidas")}
-            itens={despesas}
-            uso={uso}
-            onMudou={recarregar}
-          />
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
+          <Coluna lado={lado} itens={itens} uso={uso} onMudou={recarregar} />
         </div>
       )}
     </section>
@@ -104,19 +101,11 @@ export function CategoriasFinanceirasPanel({
 
 function Coluna({
   lado,
-  titulo,
-  explicacao,
-  atalho,
-  onAtalho,
   itens,
   uso,
   onMudou,
 }: {
   lado: Lado;
-  titulo: string;
-  explicacao: string;
-  atalho: string;
-  onAtalho: () => void;
   itens: Categoria[];
   uso: Record<string, number>;
   onMudou: () => void;
@@ -178,23 +167,8 @@ function Coluna({
   }
 
   return (
-    <article className="flex min-h-0 flex-col rounded-2xl border border-[var(--admin-border)] bg-card p-4 shadow-[var(--shadow-card)]">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="t-title text-foreground">{titulo}</h3>
-          <p className="t-support mt-0.5 text-muted-foreground">{explicacao}</p>
-        </div>
-        <button
-          type="button"
-          onClick={onAtalho}
-          className="t-support inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[var(--coral)] transition-colors hover:bg-[var(--peach)]"
-        >
-          {atalho}
-          <ArrowRight className="h-3.5 w-3.5" />
-        </button>
-      </div>
-
-      <div className="mt-3 flex gap-2">
+    <article className="flex min-h-0 flex-1 flex-col rounded-2xl border border-[var(--admin-border)] bg-card p-4 shadow-[var(--shadow-card)]">
+      <div className="flex gap-2">
         <Input
           value={nome}
           onChange={(e) => setNome(e.target.value)}
