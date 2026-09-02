@@ -5,6 +5,13 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { mensagemDeErro } from "@/lib/erros";
 import {
@@ -53,12 +60,17 @@ import {
 const PAGINA = 25;
 const CHAVE_VISAO = "flua-admin-vendas-visao";
 
-type FiltroStatus = "todos" | StatusPedido;
+type FiltroStatus = "nao_entregue" | "todos" | StatusPedido;
 
-// Os status vêm primeiro, na ordem em que o pedido anda; "Todos" fecha a fila.
-// A tela é usada pra tocar o trabalho do dia, e o que se busca ao abrir é o que
-// acabou de entrar — não a lista inteira.
+/* O que ainda está nas mãos da cesteira: novo, em produção e pronto esperando
+   retirada. É o filtro padrão porque é o trabalho do dia — o que já saiu ou
+   foi cancelado só interessa quando se procura. */
+const STATUS_NAO_ENTREGUE: StatusPedido[] = ["novo", "producao", "pronto"];
+
+// "Não entregue" abre a lista; os status seguem na ordem em que o pedido anda;
+// "Todos" fecha a fila.
 const FILTROS: { v: FiltroStatus; label: string }[] = [
+  { v: "nao_entregue", label: "Não entregue" },
   ...STATUS_PEDIDO.map((s) => ({ v: s.v as FiltroStatus, label: s.label })),
   { v: "todos", label: "Todos" },
 ];
@@ -292,7 +304,7 @@ export function VendasPanel({
 }) {
   // Abre em "Novo": ao entrar em Vendas, o que se procura é o pedido que
   // acabou de cair, não o histórico do mês.
-  const [status, setStatus] = useState<FiltroStatus>("novo");
+  const [status, setStatus] = useState<FiltroStatus>("nao_entregue");
   const [busca, setBusca] = useState("");
   const [buscaAtiva, setBuscaAtiva] = useState("");
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -371,7 +383,13 @@ export function VendasPanel({
       .replace(/\p{Diacritic}/gu, "");
     return base.filter((p) => {
       // Sem filtro de status aqui: cada coluna do quadro já é um status.
-      if (visao === "lista" && status !== "todos" && p.status !== status) return false;
+      if (visao === "lista" && status !== "todos") {
+        if (status === "nao_entregue") {
+          if (!STATUS_NAO_ENTREGUE.includes(p.status)) return false;
+        } else if (p.status !== status) {
+          return false;
+        }
+      }
       if (!alvo) return true;
       const texto = `${p.cliente_nome ?? ""} ${p.cliente_whatsapp ?? ""}`
         .toLowerCase()
@@ -666,7 +684,10 @@ export function VendasPanel({
     // por dentro e a barra de selecao presa no rodape. As outras sub-abas
     // seguem como estao — mudar as tres de uma vez sem ver o resultado seria
     // apostar em tres layouts ao mesmo tempo.
-    <section data-tela-cheia>
+    // Pedidos é a única tela do painel que rola a página inteira: é a lista
+    // de trabalho do dia, e o pedido de baixo importa tanto quanto o de cima.
+    // A receber e Realizadas seguem presas no viewport.
+    <section data-tela-cheia={sub === "pedidos" ? undefined : ""}>
       <PageHeader
         titulo={
           sub === "areceber" ? "A receber" : sub === "realizadas" ? "Vendas realizadas" : "Pedidos"
@@ -742,31 +763,29 @@ export function VendasPanel({
           (sub !== "pedidos" || visao === "kanban") && "hidden",
         )}
       >
-        {FILTROS.map((f) => {
-          const ativo = status === f.v;
-          return (
-            <button
-              key={f.v}
-              type="button"
-              onClick={() => setStatus(f.v)}
-              className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-                ativo
-                  ? "text-[var(--cream-soft)]"
-                  : "border border-[var(--cream-deep)] bg-card text-foreground"
-              }`}
-              style={
-                ativo
-                  ? {
+        <Select value={status} onValueChange={(v) => setStatus(v as FiltroStatus)}>
+          <SelectTrigger className="h-9 w-[220px] rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {FILTROS.map((f) => (
+              <SelectItem key={f.v} value={f.v}>
+                <span className="flex items-center gap-2">
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{
                       backgroundColor:
-                        f.v === "todos" ? "var(--terracotta)" : statusCor(f.v as StatusPedido),
-                    }
-                  : undefined
-              }
-            >
-              {f.label}
-            </button>
-          );
-        })}
+                        f.v === "todos" || f.v === "nao_entregue"
+                          ? "var(--terracotta)"
+                          : statusCor(f.v as StatusPedido),
+                    }}
+                  />
+                  {f.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
