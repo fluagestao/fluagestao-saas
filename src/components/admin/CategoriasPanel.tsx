@@ -66,6 +66,7 @@ export function CategoriasPanel({
       cor: categoria.cor,
       subtitulo: categoria.subtitulo,
       catalogo_id: categoria.catalogo_id,
+      e_adicional: Boolean(categoria.e_adicional),
     };
   }
 
@@ -273,6 +274,19 @@ export function CategoriasPanel({
               </div>
 
               <div className="flex items-center justify-end gap-2">
+                <label
+                  title="Marque quando esta categoria for de itens vendidos junto de uma cesta, como bebidas, cartão ou chocolate. Alimenta a aba Adicionais e a taxa de anexo do Dashboard."
+                  className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs text-muted-foreground"
+                >
+                  <Switch
+                    checked={Boolean(categoria.e_adicional)}
+                    onCheckedChange={(e_adicional) =>
+                      atualizarCategoria(categoria, { e_adicional })
+                    }
+                  />
+                  Adicionais
+                </label>
+
                 <label className="flex items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2 text-xs text-muted-foreground">
                   <Switch
                     checked={categoria.ativa}

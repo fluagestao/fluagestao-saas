@@ -37,4 +37,13 @@ export type DashboardVendas = {
   porColecao: VendaAgrupada[];
   porPagamento: VendaAgrupada[];
   colecoes: { id: string; nome: string }[];
+  /** Quanto o adicional acompanha a cesta, e quanto ele soma ao ticket. */
+  anexo: {
+    comAdicional: number;
+    semAdicional: number;
+    soAdicional: number;
+    taxa: number;
+    ticketComAdicional: number;
+    ticketSemAdicional: number;
+  };
 };

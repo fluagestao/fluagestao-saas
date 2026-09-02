@@ -50,6 +50,7 @@ const categoriaSchema = z.object({
   cor: z.string().nullable().optional(),
   subtitulo: z.string().nullable().optional(),
   catalogo_id: z.string().uuid().nullable().optional(),
+  e_adicional: z.boolean().default(false),
 });
 
 const catalogoSchema = z.object({

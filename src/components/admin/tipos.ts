@@ -23,6 +23,8 @@ export type CategoriaRow = {
   cor: string | null;
   subtitulo: string | null;
   catalogo_id: string | null;
+  /** Categoria de adicionais. Opcional: a coluna entrou depois. */
+  e_adicional?: boolean | null;
 };
 
 export type EtiquetaRow = {

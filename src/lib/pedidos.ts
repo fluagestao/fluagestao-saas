@@ -725,8 +725,10 @@ export async function carregarDashboard(input: { data: unknown }) {
         .eq("company_id", companyId)
         .limit(1000),
       supabase
+        // "*" de proposito: e_adicional entrou depois e, listando coluna a
+        // coluna, o dashboard quebraria inteiro entre o deploy e a migration.
         .from("categorias")
-        .select("id, nome, slug, catalogo_id")
+        .select("*")
         .eq("company_id", companyId)
         .limit(500),
       supabase
@@ -746,6 +748,7 @@ export async function carregarDashboard(input: { data: unknown }) {
     nome: string;
     slug: string;
     catalogo_id: string | null;
+    e_adicional?: boolean | null;
   };
   type CatalogoRef = { id: string; nome: string };
   type ProdutoRef = {
@@ -796,6 +799,28 @@ export async function carregarDashboard(input: { data: unknown }) {
     mapa.set(chave, atual);
   };
 
+  /**
+   * Categoria de adicionais.
+   *
+   * A flag manda. O reconhecimento pelo slug fica como ponte: antes da coluna
+   * existir, chamar a categoria de "Adicionais" era a unica forma de marcar, e
+   * quem fez isso nao pode ver o historico mudar de leitura.
+   */
+  const adicional = (categoria?: CategoriaRef) =>
+    Boolean(categoria?.e_adicional) || (categoria?.slug ?? "").includes("adicionais");
+
+  const categoriaDoItem = (item: ItemPedido) => {
+    const produto = item.slug ? produtos.get(item.slug) : undefined;
+    return produto?.categoria_id ? categorias.get(produto.categoria_id) : undefined;
+  };
+
+  // Taxa de anexo: de cada cem pedidos com cesta, quantos levaram adicional.
+  let pedidosComAdicional = 0;
+  let pedidosSemAdicional = 0;
+  let pedidosSoAdicional = 0;
+  let valorComAdicional = 0;
+  let valorSemAdicional = 0;
+
   const porProduto = new Map<string, VendaAgrupada>();
   const adicionais = new Map<string, VendaAgrupada>();
   const porCategoria = new Map<string, VendaAgrupada>();
@@ -825,6 +850,20 @@ export async function carregarDashboard(input: { data: unknown }) {
     totalPedidos += 1;
     totalVendido += Number(pedido.total ?? 0);
 
+    const temAdicional = itens.some((item) => adicional(categoriaDoItem(item)));
+    const temPrincipal = itens.some((item) => !adicional(categoriaDoItem(item)));
+    const valorPedido = Number(pedido.total ?? 0);
+
+    if (temAdicional && temPrincipal) {
+      pedidosComAdicional += 1;
+      valorComAdicional += valorPedido;
+    } else if (temAdicional) {
+      pedidosSoAdicional += 1;
+    } else if (temPrincipal) {
+      pedidosSemAdicional += 1;
+      valorSemAdicional += valorPedido;
+    }
+
     const forma = pedido.forma_pagamento || "A combinar";
     somar(
       porPagamento,
@@ -849,7 +888,7 @@ export async function carregarDashboard(input: { data: unknown }) {
 
       const valor = (item.preco ?? 0) * item.qtd;
       const nome = produto?.nome ?? item.nome;
-      const ehAdicional = (categoria?.slug ?? "").includes("adicionais");
+      const ehAdicional = adicional(categoria);
 
       somar(
         ehAdicional ? adicionais : porProduto,
@@ -900,6 +939,17 @@ export async function carregarDashboard(input: { data: unknown }) {
     porCategoria: ordenar(porCategoria).sort((a, b) => b.valor - a.valor),
     porColecao: ordenar(porColecao).sort((a, b) => b.valor - a.valor),
     porPagamento: ordenar(porPagamento).sort((a, b) => b.valor - a.valor),
+    anexo: {
+      comAdicional: pedidosComAdicional,
+      semAdicional: pedidosSemAdicional,
+      soAdicional: pedidosSoAdicional,
+      taxa:
+        pedidosComAdicional + pedidosSemAdicional
+          ? pedidosComAdicional / (pedidosComAdicional + pedidosSemAdicional)
+          : 0,
+      ticketComAdicional: pedidosComAdicional ? valorComAdicional / pedidosComAdicional : 0,
+      ticketSemAdicional: pedidosSemAdicional ? valorSemAdicional / pedidosSemAdicional : 0,
+    },
     colecoes: [...catalogos.values()].map((catalogo) => ({
       id: catalogo.id,
       nome: catalogo.nome,

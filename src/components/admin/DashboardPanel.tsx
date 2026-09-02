@@ -353,6 +353,46 @@ export function DashboardPanel() {
               </div>
             </div>
             <Ranking itens={lista} />
+
+            {/* Taxa de anexo: o numero que diz se vale empurrar adicional.
+                Fica sob a aba de Adicionais porque so faz sentido junto dela. */}
+            {aba === "adicionais" && (
+              <div className="mt-4 grid gap-3 border-t border-[var(--cream-deep)] pt-4 sm:grid-cols-3">
+                <div>
+                  <p className="t-support text-muted-foreground">Levaram adicional</p>
+                  <p className="t-hero text-foreground">
+                    {(dados.anexo.taxa * 100).toFixed(0)}%
+                  </p>
+                  <p className="t-support text-muted-foreground">
+                    {dados.anexo.comAdicional} de{" "}
+                    {dados.anexo.comAdicional + dados.anexo.semAdicional} pedidos com cesta
+                  </p>
+                </div>
+
+                <div>
+                  <p className="t-support text-muted-foreground">O adicional soma</p>
+                  <p className="t-hero text-foreground">
+                    {formatBRL(
+                      Math.max(
+                        0,
+                        dados.anexo.ticketComAdicional - dados.anexo.ticketSemAdicional,
+                      ),
+                    )}
+                  </p>
+                  <p className="t-support text-muted-foreground">
+                    a mais por pedido, no ticket médio
+                  </p>
+                </div>
+
+                <div>
+                  <p className="t-support text-muted-foreground">Vendidos sozinhos</p>
+                  <p className="t-hero text-foreground">{dados.anexo.soAdicional}</p>
+                  <p className="t-support text-muted-foreground">
+                    pedidos só de adicional, sem cesta
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

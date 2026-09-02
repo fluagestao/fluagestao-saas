@@ -30,6 +30,7 @@ export type CategoriaInput = {
   cor?: string | null;
   subtitulo?: string | null;
   catalogo_id?: string | null;
+  e_adicional?: boolean;
 };
 
 export type CatalogoInput = {
@@ -68,7 +69,9 @@ export async function listCatalogo(
       .order("ordem"),
     db
       .from("categorias")
-      .select("id, slug, nome, ordem, ativa, cor, subtitulo, catalogo_id")
+      // "*": e_adicional entrou depois e a tela nao pode depender
+      // de a migration ja ter rodado.
+      .select("*")
       .eq("company_id", companyId)
       .order("ordem"),
     db
@@ -215,6 +218,7 @@ export async function upsertCategoria(
     cor: input.cor ?? null,
     subtitulo: input.subtitulo ?? null,
     catalogo_id: input.catalogo_id ?? null,
+    e_adicional: input.e_adicional ?? false,
   };
 
   if (input.id) {
