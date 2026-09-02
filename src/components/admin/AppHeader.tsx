@@ -6,13 +6,13 @@ import {
   Bell,
   CalendarDays,
   ChevronDown,
-  CircleHelp,
   Search,
   Settings,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { PerfilContaMenu } from "@/components/admin/PerfilContaMenu";
+import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { cn } from "@/lib/utils";
 
 type ItemFilho = { label: string; href: string };
@@ -158,9 +158,7 @@ export function AppHeader({
           <Link href="/tarefas" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Agenda">
             <CalendarDays className="h-[18px] w-[18px]" />
           </Link>
-          <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Ajuda">
-            <CircleHelp className="h-[18px] w-[18px]" />
-          </button>
+          <CentralAjudaButton />
           <Link href="/conta/configuracoes" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
             <Settings className="h-[18px] w-[18px]" />
           </Link>
