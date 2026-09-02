@@ -52,15 +52,32 @@ function primeiroNome(nome: string | null): string {
   return (nome ?? "").trim().split(/\s+/)[0] || "cliente";
 }
 
+/**
+ * Todos os itens do pedido, escritos como se fala: "A, B e C".
+ *
+ * Antes cortava nos dois primeiros — quem comprou quatro coisas recebia uma
+ * mensagem sobre metade do que levou. A quantidade so aparece quando passa de
+ * um, para "Cesta premium" nao virar "1x Cesta premium" no meio da frase.
+ */
+function listarItens(itens: PedidoFollowup["itens"]): string {
+  const nomes = itens
+    .map((item) => {
+      const base = item.variacao ? `${item.nome} (${item.variacao})` : item.nome;
+      return item.qtd > 1 ? `${item.qtd}x ${base}` : base;
+    })
+    .filter((nome) => nome.trim());
+
+  if (nomes.length === 0) return "";
+  if (nomes.length === 1) return nomes[0];
+  return `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
+}
+
 export function aplicarModeloAvaliacao(
   modelo: string,
   pedido: PedidoFollowup,
   empresaNome: string,
 ): string {
-  const produtos = pedido.itens
-    .slice(0, 2)
-    .map((item) => item.nome)
-    .join(" e ");
+  const produtos = listarItens(pedido.itens);
 
   const valores: Record<string, string> = {
     nome: primeiroNome(pedido.cliente_nome),

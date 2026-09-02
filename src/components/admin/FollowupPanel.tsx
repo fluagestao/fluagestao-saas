@@ -57,7 +57,7 @@ function dataDaEntrega(pedido: PedidoFollowup): string | null {
 const VARIAVEIS_MENSAGEM = [
   { token: "{{nome}}", descricao: "Primeiro nome do cliente" },
   { token: "{{empresa}}", descricao: "Nome da sua empresa" },
-  { token: "{{produto}}", descricao: "O que ele comprou (até 2 itens)" },
+  { token: "{{produto}}", descricao: "Tudo o que ele comprou" },
   { token: "{{pedido}}", descricao: "Número do pedido" },
 ];
 
