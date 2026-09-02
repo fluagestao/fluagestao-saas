@@ -88,11 +88,11 @@ function Kpi({
         <Icon className="h-5 w-5" strokeWidth={1.8} />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium leading-tight text-[var(--admin-ink-soft)]">{titulo}</p>
-        <p className="mt-1 truncate text-[clamp(1.65rem,2vw,2rem)] font-bold leading-none tracking-[-0.04em] text-[var(--admin-ink)]">
+        <p className="t-support truncate text-[var(--admin-ink-soft)]">{titulo}</p>
+        <p className="t-hero mt-1 truncate text-[var(--admin-ink)]">
           <Num>{valor}</Num>
         </p>
-        {nota && <p className={`mt-1.5 truncate text-xs ${detalheClass}`}>{nota}</p>}
+        {nota && <p className={`t-support mt-1.5 truncate ${detalheClass}`}>{nota}</p>}
       </div>
     </article>
   );
@@ -112,13 +112,13 @@ function CabecalhoCard({
 }) {
   return (
     <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4">
-      <h3 className="text-lg font-semibold tracking-[-0.02em] text-[var(--admin-ink)]">{titulo}</h3>
+      <h3 className="t-title text-[var(--admin-ink)]">{titulo}</h3>
       {children}
       {acao && onClick && (
         <button
           type="button"
           onClick={onClick}
-          className="inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-sm font-medium text-[var(--coral)] transition-colors hover:bg-[var(--peach)]"
+          className="t-support inline-flex min-h-9 shrink-0 items-center gap-1 rounded-lg px-2 text-[var(--coral)] transition-colors hover:bg-[var(--peach)]"
         >
           {acao} <ArrowRight className="h-4 w-4" />
         </button>
@@ -144,8 +144,8 @@ function Vazio({
       <span className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
         <Icon className={destaque ? "h-6 w-6" : "h-5 w-5"} strokeWidth={1.7} />
       </span>
-      <p className={`font-semibold text-[var(--admin-ink)] ${destaque ? "mt-4 text-base" : "mt-3 text-sm"}`}>{titulo}</p>
-      <p className={`mt-1 max-w-sm leading-relaxed text-[var(--admin-muted)] ${destaque ? "text-sm" : "text-xs"}`}>{descricao}</p>
+      <p className={`t-item text-[var(--admin-ink)] ${destaque ? "mt-4" : "mt-3"}`}>{titulo}</p>
+      <p className="t-support mt-1 max-w-sm text-[var(--admin-muted)]">{descricao}</p>
     </div>
   );
 }
@@ -197,7 +197,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   }, [carregar]);
 
   const resumo = useMemo(() => resumoVendas(pedidos), [pedidos]);
-  const primeiro = (nome ?? email.split("@")[0] ?? "").trim().split(/\s+/)[0] ?? "";
+  const primeiroCru = (nome ?? email.split("@")[0] ?? "").trim().split(/\s+/)[0] ?? "";
+  // So a exibicao: "lucas" digitado em minusculo vira "Lucas" no titulo.
+  const primeiro = primeiroCru ? primeiroCru[0].toUpperCase() + primeiroCru.slice(1) : "";
 
   const abertos = useMemo(
     () =>
@@ -344,7 +346,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <Button size="sm" onClick={salvarNome}>Salvar</Button>
             </div>
           ) : (
-            <h1 className="flex items-center gap-2 text-2xl font-bold tracking-[-0.035em] text-[var(--admin-ink)] sm:text-[28px]">
+            <h1 className="t-greeting flex items-center gap-2 text-[var(--admin-ink)]">
               {saudacao()}{primeiro && `, ${primeiro}`}!
               <button
                 type="button"
@@ -359,10 +361,10 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               </button>
             </h1>
           )}
-          <span className="mt-1.5 flex items-center gap-2 text-xs text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
+          <span className="t-support mt-1.5 flex items-center gap-2 text-[var(--admin-muted)]"><CalendarDays className="h-4 w-4" />{formatarDataLonga(hoje)}</span>
         </div>
 
-        <Button onClick={novoPedido} className="h-11 w-full shrink-0 rounded-xl bg-[var(--coral)] px-6 text-sm font-semibold shadow-[0_7px_18px_rgba(182,83,70,0.18)] hover:bg-[var(--coral-hover)] sm:w-auto">
+        <Button onClick={novoPedido} className="t-item h-11 w-full shrink-0 rounded-xl bg-[var(--coral)] px-6 shadow-[var(--shadow-cta)] hover:bg-[var(--coral-hover)] sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo pedido
         </Button>
@@ -386,7 +388,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           valor={String(entregasHoje.length)}
           nota={entregasHoje.length ? "precisam sair hoje" : "nada pra hoje"}
           icon={Truck}
-          detalheClass="text-[#2d7296]"
+          detalheClass="text-[var(--blue-ink)]"
         />
         <Kpi
           titulo="Ticket médio"
@@ -405,15 +407,15 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             ) : (
               entregasHoje.slice(0, 6).map((p) => (
                 <div key={p.id} className="grid grid-cols-[52px_minmax(0,1fr)_auto] gap-3 py-4">
-                  <span className="text-sm font-semibold text-[var(--admin-ink)]">{p.janela_entrega || "—"}</span>
+                  <span className="t-body text-[var(--admin-ink)]">{p.janela_entrega || "—"}</span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
-                    <p className="mt-0.5 truncate text-[11px] text-[var(--admin-muted)]">{itensResumo(p)}</p>
-                    <p className="mt-0.5 text-[11px] text-[var(--admin-muted)]">{p.tipo === "retirada" ? "Retirada" : "Entrega"}</p>
+                    <p className="t-item truncate text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
+                    <p className="t-body mt-0.5 truncate text-[var(--admin-muted)]">{itensResumo(p)}</p>
+                    <p className="t-support mt-0.5 text-[var(--admin-muted)]">{p.tipo === "retirada" ? "Retirada" : "Entrega"}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-medium">{formatBRL(p.total)}</p>
-                    {p.recebido_em && <span className="mt-1 inline-flex rounded-full bg-[#eaf7ea] px-2 py-0.5 text-[10px] text-[#397348]">Pago</span>}
+                    <p className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</p>
+                    {p.recebido_em && <span className="t-support mt-1 inline-flex rounded-full bg-[var(--green-soft)] px-2 py-0.5 text-[var(--green-ink)]">Pago</span>}
                   </div>
                 </div>
               ))
@@ -430,18 +432,18 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               proximosSete.map((p) => (
                 <div key={p.id} className="grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4">
                   <div>
-                    <p className="text-xs font-bold text-[var(--terracotta)]">{diaSemanaCurto(p.data_entrega!)}</p>
-                    <p className="text-2xl font-bold leading-none text-[var(--admin-ink)]">{dataCurta(p.data_entrega!).slice(0, 2)}</p>
+                    <p className="t-support font-bold uppercase tracking-[0.08em] text-[var(--coral)]">{diaSemanaCurto(p.data_entrega!)}</p>
+                    <p className="t-hero text-[var(--admin-ink)]">{dataCurta(p.data_entrega!).slice(0, 2)}</p>
                   </div>
-                  <span className="flex items-center gap-2 text-sm font-medium text-[var(--admin-muted)]">
+                  <span className="t-body flex items-center gap-2 text-[var(--admin-muted)]">
                     <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
                     {p.janela_entrega || "—"}
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-base font-semibold text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
-                    <p className="mt-0.5 truncate text-sm text-[var(--admin-muted)]">{itensResumo(p)}</p>
+                    <p className="t-item truncate text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
+                    <p className="t-body mt-0.5 truncate text-[var(--admin-muted)]">{itensResumo(p)}</p>
                   </div>
-                  <span className="text-sm font-semibold text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</span>
+                  <span className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</span>
                 </div>
               ))
             )}
@@ -460,8 +462,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                     <button key={t.id} type="button" onClick={() => alternarTarefa(t)} className="flex w-full items-start gap-3 py-2.5 text-left">
                       <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full border border-[var(--terracotta)]" />
                       <div className="min-w-0">
-                        <p className="truncate text-sm">{t.titulo}</p>
-                        {t.detalhe && <p className="truncate text-[11px] text-[var(--admin-muted)]">{t.detalhe}</p>}
+                        <p className="t-body truncate">{t.titulo}</p>
+                        {t.detalhe && <p className="t-support truncate text-[var(--admin-muted)]">{t.detalhe}</p>}
                       </div>
                     </button>
                   ))}
@@ -479,11 +481,11 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                 abertos.slice(0, 5).map((p) => (
                   <div key={p.id} className="grid grid-cols-[minmax(0,1fr)_72px_auto] items-center gap-2 py-2.5">
                     <div className="min-w-0">
-                      <p className="truncate text-xs font-medium">#{p.numero} {p.cliente_nome || "Cliente"}</p>
-                      <p className="truncate text-[10px] text-[var(--admin-muted)]">{itensResumo(p)}</p>
+                      <p className="t-item truncate text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
+                      <p className="t-body truncate text-[var(--admin-muted)]">{itensResumo(p)}</p>
                     </div>
-                    <span className="rounded-full bg-[#3d6671] px-2 py-1 text-center text-[9px] font-semibold text-white">Novo</span>
-                    <span className="text-xs font-medium">{formatBRL(p.total)}</span>
+                    <span className="t-support rounded-full bg-[var(--teal)] px-2 py-0.5 text-center font-semibold text-white">Novo</span>
+                    <span className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</span>
                   </div>
                 ))
               )}
@@ -508,7 +510,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                   onClick={() => trocarPeriodo(id)}
                   aria-pressed={periodo === id}
                   disabled={carregandoMes}
-                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 ${
+                  className={`t-support inline-flex items-center gap-1 rounded-full px-2.5 py-1 transition-colors disabled:opacity-60 ${
                     periodo === id
                       ? "bg-white text-[var(--admin-ink)] shadow-[var(--shadow-soft)]"
                       : "text-[var(--admin-muted)] hover:text-[var(--wine)]"
@@ -525,21 +527,21 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
           <div className="grid min-h-0 flex-1 gap-4 p-4 md:grid-cols-[minmax(190px,.72fr)_minmax(0,1.4fr)]">
             <div className="min-w-0">
-              <p className="text-2xl font-bold tracking-[-0.03em] text-[var(--admin-ink)]">
+              <p className="t-hero text-[var(--admin-ink)]">
                 {formatBRL(faturamento?.total ?? 0)}
               </p>
-              <p className="mt-1 text-xs text-[var(--admin-muted)]">
+              <p className="t-support mt-1 text-[var(--admin-muted)]">
                 {faturamento?.pedidos ?? 0} pedidos · ticket {formatBRL(faturamento?.ticket ?? 0)}
               </p>
               {grafico.exibidos.every((p) => p.valor === 0) && (
-                <p className="mt-5 text-xs text-[var(--admin-muted)]">
+                <p className="t-support mt-5 text-[var(--admin-muted)]">
                   Sem faturamento registrado neste mês.
                 </p>
               )}
             </div>
 
             <div className="grid min-h-[105px] grid-cols-[38px_minmax(0,1fr)] gap-2">
-              <div className="flex flex-col justify-between pb-5 text-right text-[10px] text-[var(--admin-muted)]">
+              <div className="t-support flex flex-col justify-between pb-5 text-right text-[var(--admin-muted)]">
                 <span>{rotuloEixo(grafico.max)}</span>
                 <span>{rotuloEixo(grafico.max / 2)}</span>
                 <span>0</span>
@@ -588,7 +590,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                     })}
                   </svg>
                 </div>
-                <div className="mt-1 flex justify-between text-[9px] text-[var(--admin-muted)]">
+                <div className="t-support mt-1 flex justify-between text-[var(--admin-muted)]">
                   {[0, 7, 14, 21, grafico.exibidos.length - 1]
                     .filter((dia, index, lista) => dia >= 0 && dia < grafico.exibidos.length && lista.indexOf(dia) === index)
                     .map((index) => (
@@ -604,8 +606,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         </article>
 
         <figure className="flex min-h-[150px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[var(--shadow-panel)]">
-          <blockquote className="text-sm leading-relaxed text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
-          <figcaption className="mt-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">{versiculo.referencia}</figcaption>
+          <blockquote className="t-body text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
+          <figcaption className="t-support mt-3 font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">{versiculo.referencia}</figcaption>
         </figure>
       </div>
     </section>
