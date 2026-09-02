@@ -18,7 +18,6 @@ import { formatarDataLonga, hojeISO } from "@/lib/prazo";
 import { carregarFaturamentoDoMes, carregarResumoPedidos } from "@/lib/pedidos";
 import {
   carregarTarefas,
-  carregarVersiculo,
   marcarTarefa,
   salvarMeuNome,
 } from "@/lib/tarefas";
@@ -29,7 +28,8 @@ import {
   resumoVendas,
   type Pedido,
 } from "@/lib/vendas";
-import { saudacao, versiculoDoDia } from "@/lib/versiculos";
+import { saudacao } from "@/lib/versiculos";
+import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { Num } from "./shell";
 
 type FaturamentoMes = Awaited<ReturnType<typeof carregarFaturamentoDoMes>>;
@@ -181,13 +181,16 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   const [carregandoMes, setCarregandoMes] = useState(false);
 
   const hoje = hojeISO();
-  const [versiculo, setVersiculo] = useState(() => versiculoDoDia(hoje));
-
-  useEffect(() => {
-    carregarVersiculo({ data: { data: hoje } })
-      .then((v) => v && setVersiculo(v))
-      .catch(() => {});
-  }, [hoje]);
+  // Data comemorativa e o que move o faturamento de cesta e tabua: saber que
+  // faltam poucos dias e o aviso para comprar insumo e abrir encomenda. E
+  // calculo puro de data, sem ida ao banco.
+  const proximaData = useMemo(() => proximaDataComemorativa(dataParaDate(hoje)), [hoje]);
+  const contagem =
+    proximaData.diasRestantes === 0
+      ? "é hoje"
+      : proximaData.diasRestantes === 1
+        ? "é amanhã"
+        : `em ${proximaData.diasRestantes} dias`;
 
   const carregar = useCallback(async () => {
     const [ped, tar] = await Promise.allSettled([
@@ -622,9 +625,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <figure className="card-panel relative flex min-h-[150px] flex-col justify-center bg-[var(--cream)] p-6">
-          {/* Ramo decorativo: so respiro visual, sem peso. aria-hidden porque nao
-              acrescenta nada a leitura do versiculo. */}
+        <aside className="card-panel relative flex min-h-[150px] flex-col justify-center bg-[var(--cream)] p-6">
+          {/* Ramo decorativo: so respiro visual, sem peso. aria-hidden porque
+              nao acrescenta nada a leitura do card. */}
           <svg
             aria-hidden="true"
             viewBox="0 0 120 120"
@@ -641,9 +644,15 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             <path d="M88 40c11-2 19 2 23 12-11 3-19-1-23-12Z" />
             <path d="M78 66c11-2 19 2 23 12-11 3-19-1-23-12Z" />
           </svg>
-          <blockquote className="t-body text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
-          <figcaption className="t-support mt-3 font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">{versiculo.referencia}</figcaption>
-        </figure>
+          <p className="t-support font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">
+            Próxima data
+          </p>
+          <p className="t-title mt-1.5 text-[var(--admin-ink)]">{proximaData.nome}</p>
+          <p className="t-item mt-1 text-[var(--coral)]">
+            {contagem} · {dataCurta(proximaData.data)}
+          </p>
+          <p className="t-body mt-2 text-[var(--admin-muted)]">{proximaData.mensagem}</p>
+        </aside>
       </div>
     </section>
   );
