@@ -75,16 +75,16 @@ function Pizza({
       {dados.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{vazio}</p>
       ) : (
-        <div className="mt-2 flex flex-col items-center gap-3">
-          <div className="h-40 w-40 shrink-0">
+        <div className="mt-2 flex items-center gap-3">
+          <div className="h-32 w-32 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={dados}
                   dataKey="valor"
                   nameKey="nome"
-                  innerRadius={38}
-                  outerRadius={70}
+                  innerRadius={30}
+                  outerRadius={58}
                   paddingAngle={2}
                   onClick={(d: { payload?: VendaAgrupada }) => {
                     const chave = d?.payload?.chave ?? null;
@@ -116,7 +116,7 @@ function Pizza({
             </ResponsiveContainer>
           </div>
 
-          <ul className="w-full min-w-0 space-y-1">
+          <ul className="max-h-32 min-w-0 flex-1 space-y-1 overflow-y-auto pr-1">
             {dados.map((d, i) => (
               <li key={d.chave}>
                 <button
@@ -304,7 +304,7 @@ export function DashboardPanel() {
             <Cartao titulo="Ticket médio" valor={formatBRL(dados.ticketMedio)} />
           </div>
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <div className="mt-3 grid gap-3 lg:grid-cols-3">
             <Pizza
               titulo="Por categoria"
               dados={dados.porCategoria}
@@ -328,7 +328,7 @@ export function DashboardPanel() {
             />
           </div>
 
-          <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+          <div className="mt-3 flex min-h-0 flex-1 flex-col rounded-2xl bg-card p-4 shadow-[var(--shadow-card)] lg:min-h-[232px]">
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <h3 className="text-lg font-semibold text-foreground">Mais vendidos</h3>
               <div className="ml-auto flex gap-1 rounded-full border border-[var(--cream-deep)] p-0.5">
