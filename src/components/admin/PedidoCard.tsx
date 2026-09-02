@@ -247,7 +247,7 @@ export function PedidoCard({
                 className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--whatsapp)] px-3 text-xs font-medium text-[var(--whatsapp-foreground)]"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
-                Enviar confirmação
+                Confirme o pedido
               </button>
               {noComputador && (
                 <button
