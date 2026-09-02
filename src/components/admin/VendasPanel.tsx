@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutGrid, List, Plus } from "lucide-react";
-import { formatarDataLonga, hojeISO, somarDias } from "@/lib/prazo";
+import {
+  formatarDataLonga,
+  hojeISO,
+  intervaloAno,
+  intervaloMes,
+  intervaloSemana,
+  somarDias,
+} from "@/lib/prazo";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -148,7 +155,18 @@ function SeletorPeriodo({
   );
 }
 
-type PeriodoRealizadas = "escolher" | "tudo" | "ultimo_mes" | "ultima_semana" | "hoje";
+/* Atalhos de calendario, nao janelas moveis. "Ultimo mes" antes era hoje-29
+   dias: em 02/09 vinha 04/08 a 02/09, que nao fecha com mes nenhum e nao bate
+   com nada que a pessoa confira no extrato ou no fechamento. */
+type PeriodoRealizadas =
+  | "escolher"
+  | "tudo"
+  | "hoje"
+  | "esta_semana"
+  | "semana_passada"
+  | "este_mes"
+  | "mes_passado"
+  | "este_ano";
 
 /** Cartao de indicador do topo de Vendas realizadas. */
 function IndicadorVenda({
@@ -210,10 +228,13 @@ function SeletorPeriodoRealizadas({
           onChange={(e) => onSelecionar(e.target.value as PeriodoRealizadas)}
           className="h-9 min-w-52 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
         >
-          <option value="tudo">Tudo</option>
-          <option value="ultimo_mes">Último mês</option>
-          <option value="ultima_semana">Última semana</option>
           <option value="hoje">Hoje</option>
+          <option value="esta_semana">Esta semana</option>
+          <option value="semana_passada">Semana passada</option>
+          <option value="este_mes">Este mês</option>
+          <option value="mes_passado">Mês passado</option>
+          <option value="este_ano">Este ano</option>
+          <option value="tudo">Tudo</option>
           <option value="escolher">Escolher datas</option>
         </select>
       </label>
@@ -556,14 +577,25 @@ export function VendasPanel({
       return;
     }
 
-    setRealAte(hoje);
-    setRealDe(
-      periodo === "hoje"
-        ? hoje
-        : periodo === "ultima_semana"
-          ? somarDias(hoje, -6)
-          : somarDias(hoje, -29),
-    );
+    if (periodo === "hoje") {
+      setRealDe(hoje);
+      setRealAte(hoje);
+      return;
+    }
+
+    const intervalo =
+      periodo === "esta_semana"
+        ? intervaloSemana(hoje, 0)
+        : periodo === "semana_passada"
+          ? intervaloSemana(hoje, -1)
+          : periodo === "este_mes"
+            ? intervaloMes(hoje, 0)
+            : periodo === "mes_passado"
+              ? intervaloMes(hoje, -1)
+              : intervaloAno(hoje, 0);
+
+    setRealDe(intervalo.de);
+    setRealAte(intervalo.ate);
   }
 
   /** Registrar pagamento abre o diálogo; desfazer é direto. */

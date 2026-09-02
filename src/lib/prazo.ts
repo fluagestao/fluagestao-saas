@@ -119,3 +119,51 @@ export function diaMes(iso: string | null | undefined): string {
     month: "2-digit",
   }).format(new Date(iso));
 }
+
+/* --------------------------------------------------------------------------
+   Períodos de calendário
+
+   Um atalho chamado "mês" precisa ir do dia 1 ao último dia do mês. A versão
+   antiga fazia "hoje menos 29 dias" e chamava isso de mês: em 02/09 o filtro
+   ia de 04/08 a 02/09, misturando dois meses e batendo com nenhum fechamento.
+   Mesma regra para semana (segunda a domingo) e ano (1º de janeiro a 31/12).
+   -------------------------------------------------------------------------- */
+
+export type Intervalo = { de: string; ate: string };
+
+function iso(ano: number, mes: number, dia: number): string {
+  return `${ano}-${String(mes).padStart(2, "0")}-${String(dia).padStart(2, "0")}`;
+}
+
+/** Último dia do mês, respeitando ano bissexto. */
+function ultimoDia(ano: number, mes: number): number {
+  return new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+}
+
+export function intervaloMes(referencia: string = hojeISO(), deslocamento = 0): Intervalo {
+  const [ano, mes] = referencia.split("-").map(Number);
+  const total = ano * 12 + (mes - 1) + deslocamento;
+  const a = Math.floor(total / 12);
+  const m = (total % 12) + 1;
+  return { de: iso(a, m, 1), ate: iso(a, m, ultimoDia(a, m)) };
+}
+
+/** Semana de segunda a domingo. Domingo pertence à semana que começou antes. */
+export function intervaloSemana(referencia: string = hojeISO(), deslocamento = 0): Intervalo {
+  const [ano, mes, dia] = referencia.split("-").map(Number);
+  const base = new Date(Date.UTC(ano, mes - 1, dia));
+  const diaDaSemana = base.getUTCDay(); // 0 = domingo
+  const recuo = diaDaSemana === 0 ? 6 : diaDaSemana - 1;
+  base.setUTCDate(base.getUTCDate() - recuo + deslocamento * 7);
+  const fim = new Date(base);
+  fim.setUTCDate(fim.getUTCDate() + 6);
+  return {
+    de: iso(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate()),
+    ate: iso(fim.getUTCFullYear(), fim.getUTCMonth() + 1, fim.getUTCDate()),
+  };
+}
+
+export function intervaloAno(referencia: string = hojeISO(), deslocamento = 0): Intervalo {
+  const ano = Number(referencia.slice(0, 4)) + deslocamento;
+  return { de: iso(ano, 1, 1), ate: iso(ano, 12, 31) };
+}
