@@ -83,7 +83,7 @@ function Kpi({
   detalheClass?: string;
 }) {
   return (
-    <article className="flex min-h-[104px] min-w-0 items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-white p-4 shadow-[var(--shadow-panel)]">
+    <article className="flex min-h-[104px] min-w-0 items-center gap-3 card-panel p-4">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)]">
         <Icon className="h-5 w-5" strokeWidth={1.8} />
       </span>
@@ -141,8 +141,8 @@ function Vazio({
 }) {
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 py-4 text-center">
-      <span className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
-        <Icon className={destaque ? "h-6 w-6" : "h-5 w-5"} strokeWidth={1.7} />
+      <span className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ring-8 ring-[var(--peach-soft)] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
+        <Icon className={destaque ? "h-6 w-6" : "h-5 w-5"} strokeWidth={1.5} />
       </span>
       <p className={`t-item text-[var(--admin-ink)] ${destaque ? "mt-4" : "mt-3"}`}>{titulo}</p>
       <p className="t-support mt-1 max-w-sm text-[var(--admin-muted)]">{descricao}</p>
@@ -399,7 +399,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       </div>
 
       <div className="grid items-stretch gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.95fr]">
-        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
+        <article className="flex min-h-[260px] flex-col card-panel">
           <CabecalhoCard titulo="Entregas de hoje" acao="ver agenda" onClick={() => onIrPara("calendario")} />
           <div className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${entregasHoje.length === 0 ? "flex" : ""}`}>
             {entregasHoje.length === 0 ? (
@@ -423,7 +423,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <article className="flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
+        <article className="flex min-h-[190px] flex-col card-panel">
           <CabecalhoCard titulo="Próximos 7 dias" />
           <div className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${proximosSete.length === 0 ? "flex" : ""}`}>
             {proximosSete.length === 0 ? (
@@ -451,7 +451,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         </article>
 
         <div className="grid content-stretch gap-3 md:col-span-2 xl:col-span-1">
-          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
+          <article className="flex min-h-0 flex-col card-panel">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
               {tarefasPendentes.length === 0 ? (
@@ -472,7 +472,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             </div>
           </article>
 
-          <article className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
+          <article className="flex min-h-0 flex-col card-panel">
             <CabecalhoCard titulo="Pedidos em aberto" acao="ver todos" onClick={() => onIrPara("vendas")} />
             <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
               {abertos.length === 0 ? (
@@ -495,7 +495,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       </div>
 
       <div className="grid gap-3 xl:grid-cols-[2.08fr_.95fr]">
-        <article className="flex min-h-[260px] flex-col overflow-hidden rounded-2xl border border-[var(--admin-border)] bg-white shadow-[var(--shadow-panel)]">
+        <article className="flex min-h-[260px] flex-col card-panel">
           <CabecalhoCard titulo="Resumo do faturamento">
             <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-[var(--cream-soft)] p-0.5">
               {(
@@ -549,8 +549,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <div className="flex min-w-0 flex-col">
                 <div className="relative min-h-[82px] flex-1">
                   <div className="absolute inset-0 flex flex-col justify-between pb-1">
-                    <span className="border-t border-dashed border-[var(--admin-border)]" />
-                    <span className="border-t border-dashed border-[var(--admin-border)]" />
+                    <span className="border-t border-dashed border-[var(--admin-border-soft)]" />
+                    <span className="border-t border-dashed border-[var(--admin-border-soft)]" />
                     <span className="border-t border-[var(--admin-border)]" />
                   </div>
                   <svg
@@ -560,6 +560,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                     aria-label="Faturamento diário do período selecionado"
                     className="absolute inset-0 h-full w-full overflow-visible"
                   >
+                    <polygon
+                      points={`0,36 ${pontosLinha} 100,36`}
+                      fill="var(--coral)"
+                      fillOpacity="0.07"
+                      stroke="none"
+                    />
                     <polyline
                       points={pontosLinha}
                       fill="none"
@@ -578,10 +584,10 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                           key={p.dia}
                           cx={x}
                           cy={y}
-                          r="0.8"
-                          fill="#fff"
+                          r="0.65"
+                          fill="var(--cream-soft)"
                           stroke="var(--coral)"
-                          strokeWidth="1"
+                          strokeWidth="0.9"
                           vectorEffect="non-scaling-stroke"
                         >
                           <title>{String(p.dia).padStart(2, "0")}: {formatBRL(p.valor)}</title>
@@ -605,7 +611,25 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           </div>
         </article>
 
-        <figure className="flex min-h-[150px] flex-col justify-center rounded-2xl border border-[var(--admin-border)] bg-white p-5 shadow-[var(--shadow-panel)]">
+        <figure className="card-panel relative flex min-h-[150px] flex-col justify-center bg-[var(--cream)] p-6">
+          {/* Ramo decorativo: so respiro visual, sem peso. aria-hidden porque nao
+              acrescenta nada a leitura do versiculo. */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 120 120"
+            className="pointer-events-none absolute -right-4 -top-3 h-28 w-28 text-[var(--coral)] opacity-[0.07]"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <path d="M96 8C74 30 58 58 50 96" />
+            <path d="M84 26c-12 1-20 7-24 17 11 2 19-3 24-17Z" />
+            <path d="M72 50c-12 1-20 7-24 17 11 2 19-3 24-17Z" />
+            <path d="M62 76c-11 1-18 7-22 16 10 2 18-3 22-16Z" />
+            <path d="M88 40c11-2 19 2 23 12-11 3-19-1-23-12Z" />
+            <path d="M78 66c11-2 19 2 23 12-11 3-19-1-23-12Z" />
+          </svg>
           <blockquote className="t-body text-[var(--admin-ink-soft)]">“{versiculo.texto}”</blockquote>
           <figcaption className="t-support mt-3 font-semibold uppercase tracking-[0.12em] text-[var(--coral)]">{versiculo.referencia}</figcaption>
         </figure>
