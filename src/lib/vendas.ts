@@ -1,4 +1,5 @@
 // Tipos e helpers puros do módulo de vendas (sem Supabase) — site e admin.
+// Mantém mensagens e cálculos do fluxo de pedidos centralizados.
 
 import { formatarDataCurta, hojeISO, somarDias } from "./prazo";
 
