@@ -113,9 +113,9 @@
      tamanho literal: o degrau é o mesmo, quem muda é o contexto.
      -------------------------------------------------------------------- */
   --text-hero: 1.65rem; /* 26.4px — números-herói; mantém o mesmo tamanho que o clamp antigo dava no celular, onde o card do KPI é estreito */
-  /* Cormorant tem altura-de-x baixa: no mesmo tamanho em px ela parece menor
-     que a Geist. Por isso o degrau da saudação subiu junto com a troca de
-     família — o tamanho ótico é que ficou igual, não o número. */
+  /* Serifada tem altura-de-x menor que a Geist: no mesmo tamanho em px parece
+     menor. Por isso o degrau da saudação subiu junto com a troca de família —
+     o tamanho ótico é que ficou igual, não o número. */
   --text-greeting: 2.125rem; /* 34px — saudação em serifada; degrau próprio porque a linha dela é curta */
   --text-title: 1.0625rem; /* 17px — título de módulo */
   --text-item: 0.9375rem; /* 15px — item de lista (cliente, pedido) */
@@ -134,12 +134,13 @@
     letter-spacing: -0.03em;
   }
 
-  /* A serifada da marca, a mesma dos títulos do site. O painel inteiro era
-     Geist: a saudação é a única frase humana da tela e falava com a mesma voz
-     de um cabeçalho de tabela. Tracking quase neutro porque serifada apertada
-     fecha os contornos. */
+  /* Fraunces, serifada de display. O painel inteiro era Geist: a saudação é a
+     única frase humana da tela e falava com a mesma voz de um cabeçalho de
+     tabela. Não é a --font-flua-serif do site (Cormorant) porque aquela é de
+     texto de livro e afina demais neste tamanho — ver a nota no layout.tsx.
+     Tracking quase neutro porque serifada apertada fecha os contornos. */
   .t-greeting {
-    font-family: var(--font-flua-serif), Georgia, "Times New Roman", serif;
+    font-family: var(--font-flua-display), Georgia, "Times New Roman", serif;
     font-size: var(--text-greeting);
     font-weight: 600;
     line-height: 1.1;

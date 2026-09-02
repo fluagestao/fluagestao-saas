@@ -1,6 +1,6 @@
 import "./scrollbars.css";
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Fraunces, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./admin-fill.css";
 import "./panel-shell.css";
@@ -29,6 +29,19 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+/* Duas serifadas de proposito, cada uma no tamanho para o qual foi desenhada.
+   A Cormorant e de texto de livro: contraste alto e hastes finas, que viram
+   elegancia nos titulos de 60-80px do site. No painel, em 34px, as hastes
+   finas somem e a leitura sofre. A Fraunces e serifada de display: haste cheia
+   e canto macio, feita para tamanho grande em tela. Se um dia o site migrar
+   para Fraunces tambem, esta e a variavel que fica. */
+const fluaDisplay = Fraunces({
+  variable: "--font-flua-display",
+  subsets: ["latin"],
+  axes: ["opsz"],
+  display: "swap",
 });
 
 const fluaSerif = Cormorant_Garamond({
@@ -81,7 +94,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} ${fluaSerif.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fluaSerif.variable} ${fluaDisplay.variable} h-full antialiased`}
     >
       <body className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-hidden">
         <AdminPathSync />
