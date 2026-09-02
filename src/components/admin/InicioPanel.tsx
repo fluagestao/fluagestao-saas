@@ -155,13 +155,27 @@ function LinhaPedidoAgenda({
   rotuloDia: string;
   numeroDia: string;
 }) {
+  // Entregue nao some da agenda: vira uma linha concluida, no mesmo lugar.
+  // Ver a fila do dia se preenchendo vale mais do que ver ela esvaziar.
+  const concluido = p.status === "entregue";
+
   return (
-    <div className="grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4">
+    <div
+      className={`grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4 ${
+        concluido ? "-mx-4 bg-[var(--green-soft)] px-4" : ""
+      }`}
+    >
       <div>
-        <p className="t-support font-bold uppercase tracking-[0.08em] text-[var(--coral)]">
+        <p
+          className={`t-support font-bold uppercase tracking-[0.08em] ${
+            concluido ? "text-[var(--green-ink)]" : "text-[var(--coral)]"
+          }`}
+        >
           {rotuloDia}
         </p>
-        <p className="t-hero text-[var(--admin-ink)]">{numeroDia}</p>
+        <p className={`t-hero ${concluido ? "text-[var(--green-ink)]" : "text-[var(--admin-ink)]"}`}>
+          {numeroDia}
+        </p>
       </div>
       <span className="t-body flex items-center gap-2 text-[var(--admin-muted)]">
         <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
@@ -178,11 +192,23 @@ function LinhaPedidoAgenda({
       </div>
       <div className="text-right">
         <p className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</p>
-        {p.recebido_em && (
-          <span className="t-support mt-1 inline-flex rounded-full bg-[var(--green-soft)] px-2 py-0.5 text-[var(--green-ink)]">
-            Pago
-          </span>
-        )}
+        <div className="mt-1 flex flex-wrap justify-end gap-1">
+          {concluido && (
+            <span className="t-support inline-flex rounded-full bg-[var(--green-ink)] px-2 py-0.5 font-semibold text-white">
+              Entregue
+            </span>
+          )}
+          {p.recebido_em && (
+            <span
+              className={`t-support inline-flex rounded-full px-2 py-0.5 text-[var(--green-ink)] ${
+                // Na linha verde o badge claro sumiria no fundo.
+                concluido ? "bg-white" : "bg-[var(--green-soft)]"
+              }`}
+            >
+              Pago
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -316,9 +342,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
     [pedidos],
   );
 
+  /* Diferente dos outros cards, este NAO parte de `abertos`: a agenda do dia
+     mantem o que ja foi entregue, marcado como concluido. Some sozinho quando
+     o dia vira, porque o filtro e a data. Cancelado continua de fora. */
   const entregasHoje = useMemo(
-    () => abertos.filter((p) => p.data_entrega === hoje),
-    [abertos, hoje],
+    () => pedidos.filter((p) => p.data_entrega === hoje && p.status !== "cancelado"),
+    [pedidos, hoje],
   );
 
   const proximosSete = useMemo(() => {
