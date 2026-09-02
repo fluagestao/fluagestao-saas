@@ -51,6 +51,16 @@ function dataDaEntrega(pedido: PedidoFollowup): string | null {
 }
 
 /** A cor conta o estado antes de a pessoa ler o texto. */
+/* O que cada marcacao vira na mensagem que chega no cliente. Sem a legenda,
+   {{produto}} e {{pedido}} sao adivinhacao — e quem adivinha errado descobre
+   depois de mandar. Os valores aqui espelham aplicarModeloAvaliacao(). */
+const VARIAVEIS_MENSAGEM = [
+  { token: "{{nome}}", descricao: "Primeiro nome do cliente" },
+  { token: "{{empresa}}", descricao: "Nome da sua empresa" },
+  { token: "{{produto}}", descricao: "O que ele comprou (até 2 itens)" },
+  { token: "{{pedido}}", descricao: "Número do pedido" },
+];
+
 const ESTILO_ESTADO: Record<EstadoFollowup, string> = {
   no_prazo: "border-[var(--admin-border)]",
   hoje: "border-[var(--terracotta)] bg-[var(--peach)]",
@@ -569,17 +579,23 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
 
                 <div>
                   <p className="mb-2 text-xs font-medium text-[var(--admin-ink-soft)]">
-                    Inserir informação automática
+                    Inserir informação automática — clique para adicionar no texto
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    {["{{nome}}", "{{empresa}}", "{{produto}}", "{{pedido}}"].map((variavel) => (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {VARIAVEIS_MENSAGEM.map((variavel) => (
                       <button
-                        key={variavel}
+                        key={variavel.token}
                         type="button"
-                        onClick={() => inserirVariavel(variavel)}
-                        className="rounded-full border border-[var(--admin-border)] bg-white px-3 py-1.5 text-xs text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]"
+                        title={`${variavel.token} vira ${variavel.descricao.toLocaleLowerCase("pt-BR")}`}
+                        onClick={() => inserirVariavel(variavel.token)}
+                        className="flex items-center gap-2.5 rounded-xl border border-[var(--admin-border)] bg-white px-3 py-2 text-left hover:bg-[var(--cream-soft)]"
                       >
-                        {variavel}
+                        <span className="shrink-0 rounded-full bg-[var(--cream)] px-2 py-0.5 font-mono text-[11px] text-[var(--wine)]">
+                          {variavel.token}
+                        </span>
+                        <span className="min-w-0 text-[11px] leading-tight text-[var(--admin-muted)]">
+                          {variavel.descricao}
+                        </span>
                       </button>
                     ))}
                   </div>

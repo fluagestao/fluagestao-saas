@@ -454,7 +454,7 @@ export function InsumosPanel() {
       </p>
 
       <Dialog open={aberto} onOpenChange={(estado) => !estado && setAberto(false)}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
           <DialogHeader className="pr-6 text-left">
             <DialogTitle>{form.id ? "Editar insumo" : "Novo insumo"}</DialogTitle>
             <DialogDescription>
@@ -474,7 +474,7 @@ export function InsumosPanel() {
             ))}
           </datalist>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
               Nome
               <Input
@@ -515,7 +515,47 @@ export function InsumosPanel() {
               </Select>
             </label>
 
-            <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-4 sm:col-span-2">
+            <label className="space-y-1.5 text-sm font-medium">
+              Fornecedor
+              <Select
+                value={form.fornecedorId}
+                onValueChange={(value) => setForm((f) => ({ ...f, fornecedorId: value }))}
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_VALOR}>Sem fornecedor</SelectItem>
+                  {dados.fornecedores.map((fornecedor) => (
+                    <SelectItem key={fornecedor.id} value={fornecedor.id}>
+                      {fornecedor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <label className="space-y-1.5 text-sm font-medium">
+              Frequência de compra
+              <Select
+                value={form.frequencia}
+                onValueChange={(value) => setForm((f) => ({ ...f, frequencia: value }))}
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_VALOR}>Não definida</SelectItem>
+                  {FREQUENCIAS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-4 sm:col-span-3">
               <p className="text-sm font-semibold text-foreground">Como você compra</p>
               <p className="mt-0.5 text-xs text-muted-foreground">
                 Copie da nota: o que vem na embalagem e quanto ela custou.
@@ -574,46 +614,6 @@ export function InsumosPanel() {
               </div>
             </div>
 
-            <label className="space-y-1.5 text-sm font-medium">
-              Fornecedor
-              <Select
-                value={form.fornecedorId}
-                onValueChange={(value) => setForm((f) => ({ ...f, fornecedorId: value }))}
-              >
-                <SelectTrigger className="h-11 w-full rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SEM_VALOR}>Sem fornecedor</SelectItem>
-                  {dados.fornecedores.map((fornecedor) => (
-                    <SelectItem key={fornecedor.id} value={fornecedor.id}>
-                      {fornecedor.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-
-            <label className="space-y-1.5 text-sm font-medium">
-              Frequência de compra
-              <Select
-                value={form.frequencia}
-                onValueChange={(value) => setForm((f) => ({ ...f, frequencia: value }))}
-              >
-                <SelectTrigger className="h-11 w-full rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SEM_VALOR}>Não definida</SelectItem>
-                  {FREQUENCIAS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-
             <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
               Observação
               <Textarea
@@ -624,7 +624,7 @@ export function InsumosPanel() {
               />
             </label>
 
-            <label className="flex h-11 items-center gap-3 rounded-xl border border-input px-3.5 text-sm font-medium sm:col-span-2">
+            <label className="flex h-11 items-center gap-3 self-end rounded-xl border border-input px-3.5 text-sm font-medium">
               <Switch
                 checked={form.ativo}
                 onCheckedChange={(valor) => setForm((f) => ({ ...f, ativo: valor }))}
@@ -633,7 +633,7 @@ export function InsumosPanel() {
             </label>
 
             {form.id && historico.length > 0 && (
-              <div className="sm:col-span-2">
+              <div className="sm:col-span-3">
                 <button
                   type="button"
                   onClick={() => setVerHistorico((v) => !v)}
