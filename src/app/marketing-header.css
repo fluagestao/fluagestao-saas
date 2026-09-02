@@ -74,6 +74,9 @@
 .marketing-global-nav a:hover{opacity:.72}
 .marketing-global-nav a:hover::after{width:70%}
 
+.marketing-global-nav a[aria-current="page"]{opacity:1}
+.marketing-global-nav a[aria-current="page"]::after{width:70%}
+
 .marketing-global-actions{
   flex:0 0 auto;
   margin-left:auto;
