@@ -15,7 +15,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
     supabase
       .from("movimentos")
       .select(
-        "id, pedido_id, tipo, data, valor, descricao, fornecedor, tipo_despesa_id, tipo_receita_id",
+        "id, pedido_id, tipo, data, valor, descricao, fornecedor, tipo_despesa_id, tipo_receita_id, conferido_em",
       )
       .eq("company_id", companyId)
       .gte("data", de)
@@ -108,6 +108,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
     forma_pagamento: m.pedido_id
       ? (formaPorPedido.get(m.pedido_id) ?? null)
       : null,
+    conferido_em: (m.conferido_em as string | null) ?? null,
     cliente_nome: m.pedido_id
       ? (clientePorPedido.get(m.pedido_id) ?? null)
       : null,
@@ -145,6 +146,94 @@ export async function carregarMovimentos(input: { data: unknown }) {
       nome: tipo.nome,
     })),
   };
+}
+
+/** Saldo inicial e a data em que ele vale. */
+export async function carregarConfigFinanceiro() {
+  const { supabase, companyId } = await requireCompany();
+  const { data, error } = await supabase
+    .from("financeiro_config")
+    .select("saldo_inicial, saldo_inicial_em")
+    .eq("company_id", companyId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return {
+    saldo_inicial: Number(data?.saldo_inicial ?? 0),
+    saldo_inicial_em: (data?.saldo_inicial_em as string | null) ?? null,
+  };
+}
+
+export async function salvarConfigFinanceiro(input: { data: unknown }) {
+  const dados = z
+    .object({
+      saldo_inicial: z.number().min(-1_000_000).max(10_000_000),
+      saldo_inicial_em: DATA,
+    })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+  const { error } = await supabase
+    .from("financeiro_config")
+    .upsert({ company_id: companyId, ...dados }, { onConflict: "company_id" });
+
+  if (error) throw error;
+  return { ok: true as const };
+}
+
+/**
+ * Saldo acumulado ate a data: saldo inicial mais tudo que entrou e saiu desde
+ * ele. E o numero que bate com o extrato — o "sobrou" do periodo nao bate,
+ * porque ignora o que veio antes.
+ */
+export async function carregarSaldoAcumulado(input: { data: unknown }) {
+  const { ate } = z.object({ ate: DATA }).parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const [configRes, movRes] = await Promise.all([
+    supabase
+      .from("financeiro_config")
+      .select("saldo_inicial, saldo_inicial_em")
+      .eq("company_id", companyId)
+      .maybeSingle(),
+    supabase
+      .from("movimentos")
+      .select("tipo, valor, data")
+      .eq("company_id", companyId)
+      .lte("data", ate)
+      .limit(20000),
+  ]);
+
+  if (movRes.error) throw movRes.error;
+
+  const inicial = Number(configRes.data?.saldo_inicial ?? 0);
+  const desde = (configRes.data?.saldo_inicial_em as string | null) ?? null;
+
+  let saldo = inicial;
+  for (const m of movRes.data ?? []) {
+    // Movimento anterior ao saldo inicial ja esta embutido nele.
+    if (desde && (m.data as string) < desde) continue;
+    saldo += m.tipo === "entrada" ? Number(m.valor ?? 0) : -Number(m.valor ?? 0);
+  }
+
+  return { saldo, saldoInicial: inicial, desde };
+}
+
+/** Marca ou desmarca o lancamento como conferido contra o extrato. */
+export async function conferirMovimento(input: { data: unknown }) {
+  const { id, conferido } = z
+    .object({ id: z.string().uuid(), conferido: z.boolean() })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+  const { error } = await supabase
+    .from("movimentos")
+    .update({ conferido_em: conferido ? new Date().toISOString().slice(0, 10) : null })
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error) throw error;
+  return { ok: true as const };
 }
 
 export async function criarTipoDespesa(input: { data: unknown }) {

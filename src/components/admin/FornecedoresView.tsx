@@ -425,7 +425,6 @@ function DialogoFornecedor({
               inputMode="numeric"
               onChange={(e) => setDocumento(formatarDocumento(e.target.value))}
               className={cn("h-10", !documentoValido && "border-destructive")}
-              placeholder="Só se você tiver"
             />
             {!documentoValido && (
               <span className="mt-1 block text-xs text-destructive">

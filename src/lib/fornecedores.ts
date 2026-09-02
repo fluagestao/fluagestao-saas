@@ -5,6 +5,24 @@ import { z } from "zod";
 import { requireCompany } from "@/lib/company-context.server";
 import type { Fornecedor, TipoFornecedor } from "@/lib/fornecedores-ops.server";
 
+/**
+ * Tipos que quase toda cesteira usa. Semeados na primeira leitura, quando a
+ * empresa ainda nao tem nenhum: comecar com a lista vazia empurra o trabalho de
+ * pensar em categorias para a hora errada, no meio do cadastro.
+ *
+ * So semeia quando esta zerado, entao renomear ou apagar continua valendo.
+ */
+const TIPOS_PADRAO = [
+  "Supermercado",
+  "Atacado",
+  "Distribuidora",
+  "Hortifruti",
+  "Boutique",
+  "Loja",
+  "Indústria",
+  "Embalagens",
+];
+
 export async function carregarFornecedores() {
   const { supabase, companyId } = await requireCompany();
 
@@ -32,7 +50,16 @@ export async function carregarFornecedores() {
   if (movRes.error) throw movRes.error;
   if (tiposRes.error) throw tiposRes.error;
 
-  const nomeDoTipo = new Map((tiposRes.data ?? []).map((t) => [t.id, t.nome]));
+  let tipos = tiposRes.data ?? [];
+  if (tipos.length === 0) {
+    const { data: semeados } = await supabase
+      .from("tipos_fornecedor")
+      .insert(TIPOS_PADRAO.map((nome) => ({ company_id: companyId, nome })))
+      .select("id, nome");
+    if (semeados?.length) tipos = semeados.sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }
+
+  const nomeDoTipo = new Map(tipos.map((t) => [t.id, t.nome]));
 
   const chave = (texto: string) => texto.trim().toLowerCase();
   const gastos = new Map<string, number>();
@@ -53,7 +80,7 @@ export async function carregarFornecedores() {
     }),
   );
 
-  return { fornecedores, tipos: (tiposRes.data ?? []) as TipoFornecedor[] };
+  return { fornecedores, tipos: tipos as TipoFornecedor[] };
 }
 
 export async function salvarFornecedor(input: { data: unknown }) {

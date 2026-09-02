@@ -42,6 +42,7 @@ const MENU: ItemMenu[] = [
       { label: "Recebimentos", href: "/financeiro/entradas" },
       { label: "Pagamentos", href: "/financeiro/saidas" },
       { label: "A pagar", href: "/financeiro/a-pagar" },
+      { label: "Previsão de caixa", href: "/financeiro/previsao" },
     ],
   },
   {

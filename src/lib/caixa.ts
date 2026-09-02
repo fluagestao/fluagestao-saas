@@ -16,6 +16,8 @@ export type Movimento = {
   forma_pagamento?: string | null;
   /** Quem pagou. Vem do pedido, nao da descricao do lancamento. */
   cliente_nome?: string | null;
+  /** Quando bateu com o extrato. Nulo = ainda nao conferido. */
+  conferido_em?: string | null;
 };
 
 export type ResumoCaixa = { entradas: number; saidas: number; saldo: number };
