@@ -4,6 +4,24 @@ export type TipoMensagemAvaliacao = "presente" | "consumo_proprio";
 
 export type ModelosAvaliacao = Record<TipoMensagemAvaliacao, string>;
 
+/** Ajustes do follow-up: as duas mensagens e o prazo, por empresa. */
+export type AjustesFollowup = ModelosAvaliacao & { dias_para_avaliacao: number };
+
+export const DIAS_PARA_AVALIACAO_PADRAO = 3;
+
+/** No prazo, vence hoje, ou passou. Decide a cor do card e a conta do sino. */
+export type EstadoFollowup = "no_prazo" | "hoje" | "atrasado";
+
+export function estadoFollowup(
+  diasDesdeEntrega: number | null,
+  prazo: number,
+): EstadoFollowup {
+  if (diasDesdeEntrega == null) return "no_prazo";
+  if (diasDesdeEntrega > prazo) return "atrasado";
+  if (diasDesdeEntrega >= prazo) return "hoje";
+  return "no_prazo";
+}
+
 export const MODELOS_AVALIACAO_PADRAO: ModelosAvaliacao = {
   presente: [
     "Oi, {{nome}}! 🤍 Aqui é da *{{empresa}}*.",
@@ -23,6 +41,11 @@ export const MODELOS_AVALIACAO_PADRAO: ModelosAvaliacao = {
     "",
     "E se alguma coisa não saiu como esperado, pode me contar por aqui que a gente resolve.",
   ].join("\n"),
+};
+
+export const AJUSTES_FOLLOWUP_PADRAO: AjustesFollowup = {
+  ...MODELOS_AVALIACAO_PADRAO,
+  dias_para_avaliacao: DIAS_PARA_AVALIACAO_PADRAO,
 };
 
 function primeiroNome(nome: string | null): string {

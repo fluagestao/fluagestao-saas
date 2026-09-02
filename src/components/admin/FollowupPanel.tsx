@@ -1,5 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, Gift, MessageCircle, Save, Send, ShoppingBag, ThumbsUp } from "lucide-react";
+import {
+  Check,
+  Gift,
+  MessageCircle,
+  Save,
+  Send,
+  Settings2,
+  ShoppingBag,
+  ThumbsUp,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,15 +26,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { mensagemDeErro } from "@/lib/erros";
 import {
+  carregarAjustesFollowup,
   carregarFollowup,
-  carregarModelosAvaliacao,
   marcarAvaliacaoPedida,
-  salvarModelosAvaliacao,
+  salvarAjustesFollowup,
 } from "@/lib/followup";
 import {
+  AJUSTES_FOLLOWUP_PADRAO,
   aplicarModeloAvaliacao,
-  MODELOS_AVALIACAO_PADRAO,
-  type ModelosAvaliacao,
+  estadoFollowup,
+  type AjustesFollowup,
+  type EstadoFollowup,
   type TipoMensagemAvaliacao,
 } from "@/lib/followup-mensagens";
 import type { PedidoFollowup } from "@/lib/followup-ops.server";
@@ -37,6 +48,26 @@ import { Carregando, EstadoVazio, Num, PageHeader } from "./shell";
 /** A data que vale para o follow-up: quando o pedido chegou na mão do cliente. */
 function dataDaEntrega(pedido: PedidoFollowup): string | null {
   return pedido.data_entrega ?? (pedido.created_at ? pedido.created_at.slice(0, 10) : null);
+}
+
+/** A cor conta o estado antes de a pessoa ler o texto. */
+const ESTILO_ESTADO: Record<EstadoFollowup, string> = {
+  no_prazo: "border-[var(--admin-border)]",
+  hoje: "border-[var(--terracotta)] bg-[var(--peach)]",
+  atrasado: "border-destructive bg-destructive/5",
+};
+
+const ETIQUETA_ESTADO: Record<Exclude<EstadoFollowup, "no_prazo">, string> = {
+  hoje: "bg-[var(--terracotta)] text-white",
+  atrasado: "bg-destructive text-white",
+};
+
+/** Dias corridos entre a data e hoje. Negativo se a data for no futuro. */
+function diasDesde(iso: string | null): number | null {
+  if (!iso) return null;
+  const [a1, m1, d1] = hojeISO().split("-").map(Number);
+  const [a2, m2, d2] = iso.split("-").map(Number);
+  return Math.round((Date.UTC(a1, m1 - 1, d1) - Date.UTC(a2, m2 - 1, d2)) / 86_400_000);
 }
 
 /** "hoje" / "ontem" / "há 3 dias" — mais legível que a data crua numa lista. */
@@ -101,8 +132,9 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
   const [busca, setBusca] = useState("");
   const [pedidoSelecionado, setPedidoSelecionado] = useState<PedidoFollowup | null>(null);
   const [tipoMensagem, setTipoMensagem] = useState<TipoMensagemAvaliacao>("presente");
-  const [modelos, setModelos] = useState<ModelosAvaliacao>(MODELOS_AVALIACAO_PADRAO);
+  const [ajustes, setAjustes] = useState<AjustesFollowup>(AJUSTES_FOLLOWUP_PADRAO);
   const [salvandoModelos, setSalvandoModelos] = useState(false);
+  const [ajustesAberto, setAjustesAberto] = useState(false);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -122,9 +154,9 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
   }, [recarregar]);
 
   useEffect(() => {
-    carregarModelosAvaliacao()
-      .then(setModelos)
-      .catch((e) => toast.error(mensagemDeErro(e, "carregar os modelos de avaliação")));
+    carregarAjustesFollowup()
+      .then(setAjustes)
+      .catch((e) => toast.error(mensagemDeErro(e, "carregar os ajustes do follow-up")));
   }, []);
 
   const aChamar = useMemo(() => pedidos.filter((p) => !p.avaliacao_pedida_em), [pedidos]);
@@ -138,9 +170,28 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
   const lista = useMemo(() => {
     const base = vista === "achamar" ? aChamar : chamados;
     const termo = busca.trim().toLowerCase();
-    if (!termo) return base;
-    return base.filter((p) => (p.cliente_nome ?? "").toLowerCase().includes(termo));
+    const filtrada = termo
+      ? base.filter((p) => (p.cliente_nome ?? "").toLowerCase().includes(termo))
+      : base;
+
+    // Quem esta a chamar vem do mais atrasado para o mais recente: com prazo
+    // configuravel, ordenar so por data de entrega deixa de casar com a
+    // urgencia. Ja chamados seguem na ordem que vieram.
+    if (vista !== "achamar") return filtrada;
+    return [...filtrada].sort(
+      (a, b) => (diasDesde(dataDaEntrega(b)) ?? -1) - (diasDesde(dataDaEntrega(a)) ?? -1),
+    );
   }, [vista, aChamar, chamados, busca]);
+
+  /** Quantos ja passaram do prazo ou vencem hoje. Alimenta o aviso do topo. */
+  const vencendo = useMemo(
+    () =>
+      aChamar.filter(
+        (p) =>
+          estadoFollowup(diasDesde(dataDaEntrega(p)), ajustes.dias_para_avaliacao) !== "no_prazo",
+      ).length,
+    [aChamar, ajustes.dias_para_avaliacao],
+  );
 
   /** Otimista: a linha muda na hora e volta sozinha se o banco recusar. */
   const alternarConvite = useCallback(
@@ -167,11 +218,11 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
   async function salvarModelos(mostrarConfirmacao = true) {
     setSalvandoModelos(true);
     try {
-      await salvarModelosAvaliacao({ data: modelos });
-      if (mostrarConfirmacao) toast.success("Modelos de avaliação salvos.");
+      await salvarAjustesFollowup({ data: ajustes });
+      if (mostrarConfirmacao) toast.success("Ajustes do follow-up salvos.");
       return true;
     } catch (e) {
-      toast.error(mensagemDeErro(e, "salvar os modelos de avaliação"));
+      toast.error(mensagemDeErro(e, "salvar os ajustes do follow-up"));
       return false;
     } finally {
       setSalvandoModelos(false);
@@ -186,7 +237,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
   function enviarAvaliacao() {
     if (!pedidoSelecionado) return;
     const mensagem = aplicarModeloAvaliacao(
-      modelos[tipoMensagem],
+      ajustes[tipoMensagem],
       pedidoSelecionado,
       empresaNome,
     );
@@ -196,16 +247,15 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
       return;
     }
     setPedidoSelecionado(null);
-    void salvarModelos(false);
     void alternarConvite(pedidoSelecionado, true);
   }
 
   function atualizarModelo(valor: string) {
-    setModelos((atuais) => ({ ...atuais, [tipoMensagem]: valor }));
+    setAjustes((atuais) => ({ ...atuais, [tipoMensagem]: valor }));
   }
 
   function inserirVariavel(variavel: string) {
-    const atual = modelos[tipoMensagem];
+    const atual = ajustes[tipoMensagem];
     atualizarModelo(`${atual}${atual.endsWith(" ") || atual.endsWith("\n") ? "" : " "}${variavel}`);
   }
 
@@ -214,6 +264,17 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
       <PageHeader
         titulo="Follow-up"
         descricao="Clientes que já receberam o pedido e ainda não foram convidados a avaliar. A mensagem vai pronta para conferir e enviar."
+        acoes={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setAjustesAberto(true)}
+            className="h-10 rounded-full"
+          >
+            <Settings2 className="mr-2 h-4 w-4" />
+            Ajustes
+          </Button>
+        }
       />
 
       {erro && (
@@ -226,7 +287,11 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
         <Kpi
           titulo="Esperando contato"
           valor={String(aChamar.length)}
-          nota="entregas sem pedido de avaliação"
+          nota={
+            vencendo
+              ? `${vencendo} no dia de chamar ou em atraso`
+              : "entregas sem pedido de avaliação"
+          }
           icon={MessageCircle}
         />
         <Kpi
@@ -289,7 +354,16 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
           lista.map((pedido) => (
             <article
               key={pedido.id}
-              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-2xl border border-[var(--admin-border)] bg-white px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap sm:gap-3"
+              className={cn(
+                "grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 rounded-2xl border bg-white px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap sm:gap-3",
+                // A cor so vale para quem ainda nao foi chamado: depois de
+                // enviado, atraso nao quer dizer mais nada.
+                vista === "achamar" &&
+                  ESTILO_ESTADO[
+                    estadoFollowup(diasDesde(dataDaEntrega(pedido)), ajustes.dias_para_avaliacao)
+                  ],
+                vista !== "achamar" && "border-[var(--admin-border)]",
+              )}
             >
               <div className="col-span-2 min-w-0 sm:col-auto sm:min-w-[180px] sm:flex-1">
                 <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-[var(--admin-ink)]">
@@ -305,8 +379,21 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                 </p>
               </div>
 
-              <span className="col-start-1 row-start-2 whitespace-nowrap text-xs text-[var(--admin-muted)] sm:col-auto sm:row-auto">
+              <span className="col-start-1 row-start-2 flex items-center gap-2 whitespace-nowrap text-xs text-[var(--admin-muted)] sm:col-auto sm:row-auto">
                 {rotuloDeQuando(dataDaEntrega(pedido))}
+                {vista === "achamar" &&
+                  (() => {
+                    const estado = estadoFollowup(
+                      diasDesde(dataDaEntrega(pedido)),
+                      ajustes.dias_para_avaliacao,
+                    );
+                    if (estado === "no_prazo") return null;
+                    return (
+                      <span className={cn("rounded-full px-2 py-0.5 font-semibold", ETIQUETA_ESTADO[estado])}>
+                        {estado === "hoje" ? "chamar hoje" : "atrasado"}
+                      </span>
+                    );
+                  })()}
               </span>
 
               <button
@@ -348,9 +435,103 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
           <DialogHeader className="pr-6 text-left">
             <DialogTitle>Mensagem de pedido de avaliação</DialogTitle>
             <DialogDescription>
-              Escolha o contexto, personalize o modelo e confira a mensagem antes de abrir o WhatsApp.
+              Escolha o contexto, confira a mensagem e abra o WhatsApp.
             </DialogDescription>
           </DialogHeader>
+
+          <Tabs
+            value={tipoMensagem}
+            onValueChange={(valor) => setTipoMensagem(valor as TipoMensagemAvaliacao)}
+          >
+            <TabsList className="grid h-auto w-full min-w-0 grid-cols-2 gap-1 rounded-xl bg-transparent p-0">
+              <TabsTrigger value="presente" className="min-w-0 gap-1.5 whitespace-normal rounded-xl border border-transparent bg-[#f7e5e1] px-2 py-2.5 text-center text-xs leading-tight text-[var(--wine)] opacity-45 shadow-none transition-all hover:opacity-70 data-[state=active]:border-[var(--wine)] data-[state=active]:bg-[var(--wine)] data-[state=active]:text-white data-[state=active]:opacity-100 data-[state=active]:shadow-sm sm:gap-2 sm:text-sm">
+                <Gift className="h-4 w-4" />
+                Presente ou surpresa
+              </TabsTrigger>
+              <TabsTrigger value="consumo_proprio" className="min-w-0 gap-1.5 whitespace-normal rounded-xl border border-transparent bg-[#f7e5e1] px-2 py-2.5 text-center text-xs leading-tight text-[var(--wine)] opacity-45 shadow-none transition-all hover:opacity-70 data-[state=active]:border-[var(--wine)] data-[state=active]:bg-[var(--wine)] data-[state=active]:text-white data-[state=active]:opacity-100 data-[state=active]:shadow-sm sm:gap-2 sm:text-sm">
+                <ShoppingBag className="h-4 w-4" />
+                Consumo próprio
+              </TabsTrigger>
+            </TabsList>
+
+            {(["presente", "consumo_proprio"] as const).map((tipo) => (
+              <TabsContent key={tipo} value={tipo} className="mt-3">
+                {pedidoSelecionado && (
+                  <div className="max-h-[45dvh] overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-3">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--terracotta)]">
+                      Prévia para {pedidoSelecionado.cliente_nome || "o cliente"}
+                    </p>
+                    <p className="whitespace-pre-wrap text-xs leading-snug text-[var(--admin-ink-soft)]">
+                      {aplicarModeloAvaliacao(ajustes[tipo], pedidoSelecionado, empresaNome)}
+                    </p>
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
+
+          <DialogFooter className="pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setPedidoSelecionado(null);
+                setAjustesAberto(true);
+              }}
+              className="w-full rounded-full sm:w-auto"
+            >
+              <Settings2 className="mr-2 h-4 w-4" />
+              Editar mensagem
+            </Button>
+            <Button
+              type="button"
+              onClick={enviarAvaliacao}
+              disabled={!ajustes[tipoMensagem].trim()}
+              className="w-full rounded-full bg-[var(--whatsapp)] text-white hover:opacity-90 sm:w-auto"
+            >
+              <Send className="mr-2 h-4 w-4" />
+              Abrir no WhatsApp
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ajustes: o que antes vivia dentro do dialogo de envio, mais o prazo.
+          Editar modelo e mandar mensagem sao tarefas diferentes e nao precisam
+          dividir a mesma tela. */}
+      <Dialog open={ajustesAberto} onOpenChange={setAjustesAberto}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader className="pr-6 text-left">
+            <DialogTitle>Ajustes do follow-up</DialogTitle>
+            <DialogDescription>
+              As mensagens que vão para o cliente e quando o pedido entra na sua fila.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-3">
+            <Label htmlFor="dias-avaliacao">Pedir avaliação depois da entrega</Label>
+            <div className="mt-2 flex items-center gap-2">
+              <Input
+                id="dias-avaliacao"
+                type="number"
+                min={0}
+                max={60}
+                value={ajustes.dias_para_avaliacao}
+                onChange={(e) =>
+                  setAjustes((atuais) => ({
+                    ...atuais,
+                    dias_para_avaliacao: Math.min(60, Math.max(0, Number(e.target.value) || 0)),
+                  }))
+                }
+                className="h-10 w-24"
+              />
+              <span className="text-sm text-[var(--admin-ink-soft)]">dias</span>
+            </div>
+            <p className="mt-2 text-xs text-[var(--admin-muted)]">
+              No dia, o card fica destacado e entra na contagem do sino. Passou, fica em
+              vermelho e sobe para o topo da lista.
+            </p>
+          </div>
 
           <Tabs
             value={tipoMensagem}
@@ -371,18 +552,18 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
               <TabsContent key={tipo} value={tipo} className="mt-3 space-y-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label htmlFor={`modelo-${tipo}`}>Modelo da mensagem</Label>
+                    <Label htmlFor={`ajuste-modelo-${tipo}`}>Modelo da mensagem</Label>
                     <span className="text-xs text-[var(--admin-muted)]">
-                      {modelos[tipo].length}/2000
+                      {ajustes[tipo].length}/2000
                     </span>
                   </div>
                   <Textarea
-                    id={`modelo-${tipo}`}
-                    value={modelos[tipo]}
-                    onChange={(e) => setModelos((atuais) => ({ ...atuais, [tipo]: e.target.value }))}
+                    id={`ajuste-modelo-${tipo}`}
+                    value={ajustes[tipo]}
+                    onChange={(e) => setAjustes((atuais) => ({ ...atuais, [tipo]: e.target.value }))}
                     maxLength={2000}
-                    rows={6}
-                    className="h-[clamp(8rem,22dvh,11rem)] resize-none rounded-xl border-[var(--admin-border)] bg-white text-sm leading-relaxed"
+                    rows={8}
+                    className="resize-none rounded-xl border-[var(--admin-border)] bg-white text-sm leading-relaxed"
                   />
                 </div>
 
@@ -403,17 +584,6 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                     ))}
                   </div>
                 </div>
-
-                {pedidoSelecionado && (
-                  <div className="max-h-[30dvh] overflow-y-auto rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-3 sm:max-h-none">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--terracotta)]">
-                      Prévia para {pedidoSelecionado.cliente_nome || "o cliente"}
-                    </p>
-                    <p className="whitespace-pre-wrap text-xs leading-snug text-[var(--admin-ink-soft)]">
-                      {aplicarModeloAvaliacao(modelos[tipo], pedidoSelecionado, empresaNome)}
-                    </p>
-                  </div>
-                )}
               </TabsContent>
             ))}
           </Tabs>
@@ -421,22 +591,14 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
           <DialogFooter className="pt-1">
             <Button
               type="button"
-              variant="outline"
-              onClick={() => void salvarModelos()}
-              disabled={salvandoModelos}
+              onClick={async () => {
+                if (await salvarModelos()) setAjustesAberto(false);
+              }}
+              disabled={salvandoModelos || !ajustes.presente.trim() || !ajustes.consumo_proprio.trim()}
               className="w-full rounded-full sm:w-auto"
             >
               <Save className="mr-2 h-4 w-4" />
-              {salvandoModelos ? "Salvando…" : "Salvar modelos"}
-            </Button>
-            <Button
-              type="button"
-              onClick={enviarAvaliacao}
-              disabled={!modelos[tipoMensagem].trim()}
-              className="w-full rounded-full bg-[var(--whatsapp)] text-white hover:opacity-90 sm:w-auto"
-            >
-              <Send className="mr-2 h-4 w-4" />
-              Abrir no WhatsApp
+              {salvandoModelos ? "Salvando…" : "Salvar ajustes"}
             </Button>
           </DialogFooter>
         </DialogContent>
