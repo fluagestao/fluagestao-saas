@@ -11,6 +11,7 @@ import { formatarDataLonga, hojeISO, somarDias } from "@/lib/prazo";
 import {
   carregarMovimentos,
   criarTipoDespesa,
+  criarTipoReceita,
   removerMovimento,
   salvarMovimento,
 } from "@/lib/financeiro";
@@ -40,6 +41,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   const [movimentos, setMovimentos] = useState<Movimento[]>([]);
   const [fornecedores, setFornecedores] = useState<string[]>([]);
   const [tiposDespesa, setTiposDespesa] = useState<TipoDespesa[]>([]);
+  const [tiposReceita, setTiposReceita] = useState<TipoDespesa[]>([]);
   const [aReceber, setAReceber] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -53,6 +55,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
       setMovimentos(d.movimentos as Movimento[]);
       setFornecedores(d.fornecedores);
       setTiposDespesa(d.tiposDespesa as TipoDespesa[]);
+      setTiposReceita(d.tiposReceita as TipoDespesa[]);
       setAReceber(d.aReceber);
     } catch (e) {
       setErro(mensagemDeErro(e, "carregar o financeiro"));
@@ -99,13 +102,13 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   function baixarCsv() {
     const campo = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const linhas = [
-      ["Data", "Descrição", "Origem", "Forma", "Tipo de despesa", "Fornecedor", "Valor"],
+      ["Data", "Descrição", "Origem", "Forma", "Categoria", "Fornecedor", "Valor"],
       ...daAba.map((m) => [
         m.data,
         m.descricao ?? "",
         m.pedido_numero ? `Pedido #${m.pedido_numero}` : "Manual",
         m.forma_pagamento ?? "",
-        m.tipo_despesa ?? "",
+        m.tipo_receita ?? m.tipo_despesa ?? "",
         m.fornecedor ?? "",
         m.valor.toFixed(2).replace(".", ","),
       ]),
@@ -229,6 +232,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         tipo={tipo}
         fornecedores={fornecedores}
         tiposDespesa={tiposDespesa}
+        tiposReceita={tiposReceita}
         onSalvo={recarregar}
       />
 
@@ -285,9 +289,11 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                       {m.pedido_numero ? `pedido #${m.pedido_numero}` : "manual"}
                     </span>
                   </p>
-                  {(m.tipo_despesa || m.fornecedor || m.forma_pagamento) && (
+                  {(m.tipo_despesa || m.tipo_receita || m.fornecedor || m.forma_pagamento) && (
                     <p className="truncate text-xs text-muted-foreground">
-                      {[m.forma_pagamento, m.tipo_despesa, m.fornecedor].filter(Boolean).join(" · ")}
+                      {[m.forma_pagamento, m.tipo_receita, m.tipo_despesa, m.fornecedor]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   )}
                 </div>
@@ -339,27 +345,34 @@ function NovoLancamento({
   tipo,
   fornecedores,
   tiposDespesa,
+  tiposReceita,
   onSalvo,
 }: {
   tipo: "entrada" | "saida";
   fornecedores: string[];
   tiposDespesa: TipoDespesa[];
+  tiposReceita: TipoDespesa[];
   onSalvo: () => void;
 }) {
+  // O bloco de categoria e um so: muda a lista, o rotulo e quem cria. Duplicar
+  // o formulario por lado sairia caro para manter.
+  const ehEntrada = tipo === "entrada";
   const [data, setData] = useState(() => hojeISO());
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [fornecedor, setFornecedor] = useState("");
   const [tipoDespesaId, setTipoDespesaId] = useState("");
-  const [opcoesDespesa, setOpcoesDespesa] = useState<TipoDespesa[]>(tiposDespesa);
+  const [opcoesDespesa, setOpcoesDespesa] = useState<TipoDespesa[]>(
+    ehEntrada ? tiposReceita : tiposDespesa,
+  );
   const [cadastrandoTipo, setCadastrandoTipo] = useState(false);
   const [novoTipo, setNovoTipo] = useState("");
   const [salvandoTipo, setSalvandoTipo] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
   useEffect(() => {
-    setOpcoesDespesa(tiposDespesa);
-  }, [tiposDespesa]);
+    setOpcoesDespesa(ehEntrada ? tiposReceita : tiposDespesa);
+  }, [ehEntrada, tiposDespesa, tiposReceita]);
 
   const podeSalvar = paraNumero(valor) > 0 && descricao.trim().length > 0;
 
@@ -369,16 +382,20 @@ function NovoLancamento({
 
     setSalvandoTipo(true);
     try {
-      const criado = await criarTipoDespesa({ data: { nome } });
+      const criado = ehEntrada
+        ? await criarTipoReceita({ data: { nome } })
+        : await criarTipoDespesa({ data: { nome } });
       setOpcoesDespesa((atuais) =>
         [...atuais, criado].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
       );
       setTipoDespesaId(criado.id);
       setNovoTipo("");
       setCadastrandoTipo(false);
-      toast.success("Tipo de despesa cadastrado.");
+      toast.success(ehEntrada ? "Tipo de receita cadastrado." : "Tipo de despesa cadastrado.");
     } catch (e) {
-      toast.error(mensagemDeErro(e, "cadastrar o tipo de despesa"));
+      toast.error(
+        mensagemDeErro(e, ehEntrada ? "cadastrar o tipo de receita" : "cadastrar o tipo de despesa"),
+      );
     } finally {
       setSalvandoTipo(false);
     }
@@ -395,7 +412,8 @@ function NovoLancamento({
           valor: paraNumero(valor),
           descricao: descricao.trim(),
           fornecedor: fornecedor.trim() || null,
-          tipo_despesa_id: tipo === "saida" ? tipoDespesaId || null : null,
+          tipo_despesa_id: ehEntrada ? null : tipoDespesaId || null,
+          tipo_receita_id: ehEntrada ? tipoDespesaId || null : null,
         },
       });
       toast.success(tipo === "entrada" ? "Entrada lançada." : "Saída lançada.");
@@ -448,15 +466,16 @@ function NovoLancamento({
           />
         </label>
 
-        {tipo === "saida" && (
-          <div className="block min-w-[12rem]">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">Despesa</span>
+        <div className="block min-w-[12rem]">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">
+              {ehEntrada ? "Receita" : "Despesa"}
+            </span>
             <div className="flex h-10 overflow-hidden rounded-md border border-input bg-background shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
               <select
                 value={tipoDespesaId}
                 onChange={(e) => setTipoDespesaId(e.target.value)}
                 className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
-                aria-label="Tipo de despesa"
+                aria-label={ehEntrada ? "Tipo de receita" : "Tipo de despesa"}
               >
                 <option value="">Selecione</option>
                 {opcoesDespesa.map((opcao) => (
@@ -469,14 +488,13 @@ function NovoLancamento({
                 type="button"
                 onClick={() => setCadastrandoTipo((valorAtual) => !valorAtual)}
                 className="grid w-10 shrink-0 place-items-center border-l border-input text-[var(--terracotta)] transition hover:bg-[var(--cream)]"
-                aria-label="Cadastrar tipo de despesa"
-                title="Cadastrar tipo de despesa"
+                aria-label={ehEntrada ? "Cadastrar tipo de receita" : "Cadastrar tipo de despesa"}
+                title={ehEntrada ? "Cadastrar tipo de receita" : "Cadastrar tipo de despesa"}
               >
                 {cadastrandoTipo ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               </button>
             </div>
           </div>
-        )}
 
         {tipo === "saida" && (
           <label className="block">

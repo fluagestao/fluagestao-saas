@@ -11,10 +11,12 @@ export async function carregarMovimentos(input: { data: unknown }) {
   const { de, ate } = z.object({ de: DATA, ate: DATA }).parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
-  const [movRes, pedRes, aReceberRes, fornRes, tiposRes] = await Promise.all([
+  const [movRes, pedRes, aReceberRes, fornRes, tiposRes, receitasRes] = await Promise.all([
     supabase
       .from("movimentos")
-      .select("id, pedido_id, tipo, data, valor, descricao, fornecedor, tipo_despesa_id")
+      .select(
+        "id, pedido_id, tipo, data, valor, descricao, fornecedor, tipo_despesa_id, tipo_receita_id",
+      )
       .eq("company_id", companyId)
       .gte("data", de)
       .lte("data", ate)
@@ -46,6 +48,11 @@ export async function carregarMovimentos(input: { data: unknown }) {
       .select("id, nome")
       .eq("company_id", companyId)
       .order("nome"),
+    supabase
+      .from("tipos_receita")
+      .select("id, nome")
+      .eq("company_id", companyId)
+      .order("nome"),
   ]);
 
   if (movRes.error) throw movRes.error;
@@ -53,6 +60,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
   if (aReceberRes.error) throw aReceberRes.error;
   if (fornRes.error) throw fornRes.error;
   if (tiposRes.error) throw tiposRes.error;
+  if (receitasRes.error) throw receitasRes.error;
 
   const numeroPorPedido = new Map(
     (pedRes.data ?? []).map((pedido) => [
@@ -69,6 +77,9 @@ export async function carregarMovimentos(input: { data: unknown }) {
   const nomeTipoPorId = new Map(
     (tiposRes.data ?? []).map((tipo) => [tipo.id, tipo.nome]),
   );
+  const nomeReceitaPorId = new Map(
+    (receitasRes.data ?? []).map((tipo) => [tipo.id, tipo.nome]),
+  );
 
   const movimentos: Movimento[] = (movRes.data ?? []).map((m) => ({
     id: m.pedido_id ? `pedido:${m.pedido_id}` : m.id,
@@ -79,6 +90,9 @@ export async function carregarMovimentos(input: { data: unknown }) {
     fornecedor: m.fornecedor,
     tipo_despesa: m.tipo_despesa_id
       ? (nomeTipoPorId.get(m.tipo_despesa_id) ?? null)
+      : null,
+    tipo_receita: m.tipo_receita_id
+      ? (nomeReceitaPorId.get(m.tipo_receita_id) ?? null)
       : null,
     pedido_numero: m.pedido_id
       ? (numeroPorPedido.get(m.pedido_id) ?? null)
@@ -115,6 +129,10 @@ export async function carregarMovimentos(input: { data: unknown }) {
       id: tipo.id,
       nome: tipo.nome,
     })),
+    tiposReceita: (receitasRes.data ?? []).map((tipo) => ({
+      id: tipo.id,
+      nome: tipo.nome,
+    })),
   };
 }
 
@@ -138,6 +156,26 @@ export async function criarTipoDespesa(input: { data: unknown }) {
   return { id: data.id, nome: data.nome };
 }
 
+export async function criarTipoReceita(input: { data: unknown }) {
+  const { nome } = z
+    .object({ nome: z.string().trim().min(1).max(80) })
+    .parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("tipos_receita")
+    .insert({ company_id: companyId, nome })
+    .select("id, nome")
+    .single();
+
+  if (error?.code === "23505") {
+    throw new Error("Este tipo de receita já está cadastrado.");
+  }
+  if (error) throw error;
+
+  return { id: data.id, nome: data.nome };
+}
+
 export async function salvarMovimento(input: { data: unknown }) {
   const data = z
     .object({
@@ -148,6 +186,7 @@ export async function salvarMovimento(input: { data: unknown }) {
       descricao: z.string().trim().min(1).max(200),
       fornecedor: z.string().trim().max(120).nullable().default(null),
       tipo_despesa_id: z.string().uuid().nullable().default(null),
+      tipo_receita_id: z.string().uuid().nullable().default(null),
     })
     .parse(input.data);
 
@@ -159,7 +198,10 @@ export async function salvarMovimento(input: { data: unknown }) {
     valor: data.valor,
     descricao: data.descricao,
     fornecedor: data.fornecedor,
+    // Cada lado guarda a sua categoria e zera a do outro: trocar o tipo do
+    // lancamento nao pode deixar uma categoria orfa apontando para o lado errado.
     tipo_despesa_id: data.tipo === "saida" ? data.tipo_despesa_id : null,
+    tipo_receita_id: data.tipo === "entrada" ? data.tipo_receita_id : null,
   };
 
   if (data.id) {

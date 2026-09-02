@@ -8,6 +8,8 @@ export type Movimento = {
   descricao: string;
   fornecedor: string | null;
   tipo_despesa: string | null;
+  /** Categoria do recebimento. Espelha tipo_despesa, do outro lado do caixa. */
+  tipo_receita?: string | null;
   /** Entrada que veio de um pedido pago — não existe na tabela, é derivada. */
   pedido_numero?: number | null;
   /** Forma de pagamento do pedido de origem. Derivada, como o número. */
