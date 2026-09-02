@@ -181,14 +181,23 @@ export function PedidoCard({
             </p>
           )}
         </div>
-        <span
-          className={cn(
-            "font-semibold tabular-nums text-foreground",
-            compacto ? "text-sm" : "text-base",
+        <div className="flex shrink-0 flex-col items-end gap-0.5">
+          <span
+            className={cn(
+              "font-semibold tabular-nums text-foreground",
+              compacto ? "text-sm" : "text-base",
+            )}
+          >
+            {formatBRL(p.total)}
+          </span>
+          {/* Nada no card avisa que ele abre. Sem esse aviso, as ações (ficha,
+              recebi, WhatsApp) ficam escondidas de quem nunca clicou por acaso. */}
+          {!compacto && (
+            <span className="text-[11px] text-muted-foreground">
+              {aberto ? "Clique para recolher" : "Clique para expandir"}
+            </span>
           )}
-        >
-          {formatBRL(p.total)}
-        </span>
+        </div>
       </div>
 
       {!compacto && aberto && (
