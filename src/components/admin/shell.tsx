@@ -89,6 +89,22 @@ export function TabelaSkeleton({ linhas = 5, colunas = 4 }: { linhas?: number; c
   );
 }
 
+/**
+ * Barra cinza no lugar do número enquanto ele não chegou.
+ *
+ * Mostrar zero durante o carregamento é pior que não mostrar nada: o usuário
+ * lê "R$ 0,00" como resposta e só depois vê o valor pular. Aqui a tela diz
+ * "ainda não sei" em vez de dizer um número errado.
+ */
+export function ValorCarregando({ largura = "w-28" }: { largura?: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={`mt-1 block h-7 ${largura} animate-pulse rounded-md bg-[var(--cream-deep)]`}
+    />
+  );
+}
+
 export function Carregando({ texto = "carregando…" }: { texto?: string }) {
   return (
     <p className="flex min-w-0 items-center gap-2 px-4 py-6 text-sm text-muted-foreground">

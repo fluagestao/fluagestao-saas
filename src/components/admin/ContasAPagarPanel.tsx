@@ -27,7 +27,7 @@ import { mensagemDeErro } from "@/lib/erros";
 import { diaMes, hojeISO, somarDias } from "@/lib/prazo";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/vendas";
-import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
+import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar, ValorCarregando } from "./shell";
 
 type TipoDespesa = { id: string; nome: string };
 type Estado = "paga" | "a_vencer" | "hoje" | "vencida";
@@ -219,13 +219,14 @@ export function ContasAPagarPanel() {
       )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <Cartao rotulo="Vencido" valor={indicadores.vencido} cor="var(--destructive)" />
-        <Cartao rotulo="Vence em 7 dias" valor={indicadores.semana} cor="var(--terracotta)" />
-        <Cartao rotulo="Em aberto no período" valor={indicadores.periodo} />
+        <Cartao rotulo="Vencido" valor={indicadores.vencido} cor="var(--destructive)" carregando={carregando} />
+        <Cartao rotulo="Vence em 7 dias" valor={indicadores.semana} cor="var(--terracotta)" carregando={carregando} />
+        <Cartao rotulo="Em aberto no período" valor={indicadores.periodo} carregando={carregando} />
         <Cartao
           rotulo="Em aberto no total"
           valor={emAberto}
           nota="de qualquer período"
+          carregando={carregando}
         />
       </div>
 
@@ -375,18 +376,24 @@ function Cartao({
   valor,
   cor,
   nota,
+  carregando,
 }: {
   rotulo: string;
   valor: number;
   cor?: string;
   nota?: string;
+  carregando?: boolean;
 }) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
       <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
-      <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
-        <Num>{formatBRL(valor)}</Num>
-      </p>
+      {carregando ? (
+        <ValorCarregando />
+      ) : (
+        <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
+          <Num>{formatBRL(valor)}</Num>
+        </p>
+      )}
       {nota && <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>}
     </div>
   );

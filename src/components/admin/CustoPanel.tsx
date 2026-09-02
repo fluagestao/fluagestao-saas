@@ -8,7 +8,7 @@ import { mensagemDeErro } from "@/lib/erros";
 import { hojeISO } from "@/lib/prazo";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/vendas";
-import { Carregando, EstadoVazio, Num, PageHeader } from "./shell";
+import { Carregando, EstadoVazio, Num, PageHeader, ValorCarregando } from "./shell";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -135,11 +135,12 @@ export function CustoPanel() {
       )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <Cartao rotulo="Receita" valor={formatBRL(dados?.receita ?? 0)} />
-        <Cartao rotulo="Custo dos insumos" valor={formatBRL(dados?.custoTotal ?? 0)} cor="var(--terracotta)" />
-        <Cartao rotulo="Sobrou" valor={formatBRL(dados?.lucro ?? 0)} cor="var(--green-ink)" />
+        <Cartao rotulo="Receita" valor={formatBRL(dados?.receita ?? 0)} carregando={carregando} />
+        <Cartao rotulo="Custo dos insumos" valor={formatBRL(dados?.custoTotal ?? 0)} cor="var(--terracotta)" carregando={carregando} />
+        <Cartao rotulo="Sobrou" valor={formatBRL(dados?.lucro ?? 0)} cor="var(--green-ink)" carregando={carregando} />
         <Cartao
           rotulo="Margem"
+          carregando={carregando}
           valor={porcento(dados?.margem ?? null)}
           nota="sobre o que tem custo cadastrado"
         />
@@ -231,13 +232,29 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
   );
 }
 
-function Cartao({ rotulo, valor, cor, nota }: { rotulo: string; valor: string; cor?: string; nota?: string }) {
+function Cartao({
+  rotulo,
+  valor,
+  cor,
+  nota,
+  carregando,
+}: {
+  rotulo: string;
+  valor: string;
+  cor?: string;
+  nota?: string;
+  carregando?: boolean;
+}) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
       <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
-      <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
-        <Num>{valor}</Num>
-      </p>
+      {carregando ? (
+        <ValorCarregando />
+      ) : (
+        <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
+          <Num>{valor}</Num>
+        </p>
+      )}
       {nota && <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>}
     </div>
   );

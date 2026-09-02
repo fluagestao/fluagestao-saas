@@ -8,7 +8,7 @@ import { formatarDataLonga } from "@/lib/prazo";
 import { carregarPrevisao, type DiaPrevisto } from "@/lib/previsao";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/vendas";
-import { Carregando, EstadoVazio, Num, PageHeader } from "./shell";
+import { Carregando, EstadoVazio, Num, PageHeader, ValorCarregando } from "./shell";
 
 const JANELAS = [
   { dias: 30, rotulo: "30 dias" },
@@ -60,11 +60,12 @@ export function PrevisaoCaixaPanel() {
       )}
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <Cartao rotulo="Saldo hoje" valor={dados?.saldoHoje ?? 0} />
-        <Cartao rotulo="Ainda entra" valor={dados?.totalAReceber ?? 0} cor="var(--whatsapp)" />
-        <Cartao rotulo="Ainda sai" valor={dados?.totalAPagar ?? 0} cor="var(--terracotta)" />
+        <Cartao rotulo="Saldo hoje" valor={dados?.saldoHoje ?? 0} carregando={carregando} />
+        <Cartao rotulo="Ainda entra" valor={dados?.totalAReceber ?? 0} cor="var(--whatsapp)" carregando={carregando} />
+        <Cartao rotulo="Ainda sai" valor={dados?.totalAPagar ?? 0} cor="var(--terracotta)" carregando={carregando} />
         <Cartao
           rotulo="Saldo no fim"
+          carregando={carregando}
           valor={dados?.saldoFinal ?? 0}
           cor={(dados?.saldoFinal ?? 0) < 0 ? "var(--destructive)" : undefined}
         />
@@ -193,13 +194,27 @@ function LinhaDia({ dia }: { dia: DiaPrevisto }) {
   );
 }
 
-function Cartao({ rotulo, valor, cor }: { rotulo: string; valor: number; cor?: string }) {
+function Cartao({
+  rotulo,
+  valor,
+  cor,
+  carregando,
+}: {
+  rotulo: string;
+  valor: number;
+  cor?: string;
+  carregando?: boolean;
+}) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
       <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
-      <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
-        <Num>{formatBRL(valor)}</Num>
-      </p>
+      {carregando ? (
+        <ValorCarregando />
+      ) : (
+        <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
+          <Num>{formatBRL(valor)}</Num>
+        </p>
+      )}
     </div>
   );
 }

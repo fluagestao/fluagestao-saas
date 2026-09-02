@@ -41,7 +41,14 @@ import { PedidoDialog, type ProdutoOpcao } from "./PedidoDialog";
 import type { CategoriaRapida } from "./QuickProductDialog";
 import { PagamentoDialog } from "./PagamentoDialog";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
-import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
+import {
+  Carregando,
+  EstadoVazio,
+  Num,
+  PageHeader,
+  useConfirmar,
+  ValorCarregando,
+} from "./shell";
 
 const PAGINA = 25;
 const CHAVE_VISAO = "flua-admin-vendas-visao";
@@ -137,22 +144,25 @@ function IndicadorVenda({
   valor,
   nota,
   cor,
+  carregando,
 }: {
   rotulo: string;
   valor: string;
   nota: string;
   cor?: string;
+  carregando?: boolean;
 }) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
       <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
-      <p
-        className="mt-1 t-hero tabular-nums"
-        style={{ color: cor ?? "var(--admin-ink)" }}
-      >
-        <Num>{valor}</Num>
-      </p>
-      <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>
+      {carregando ? (
+        <ValorCarregando />
+      ) : (
+        <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
+          <Num>{valor}</Num>
+        </p>
+      )}
+      {!carregando && <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>}
     </div>
   );
 }
@@ -909,11 +919,13 @@ export function VendasPanel({
               vazio. Os quatro indicadores saem da mesma lista da tabela. */}
           <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
             <IndicadorVenda
+              carregando={carregandoRealizadas}
               rotulo="Vendido no período"
               valor={formatBRL(indicadores.total)}
               nota={`${realizadasFiltradas.length} venda(s)`}
             />
             <IndicadorVenda
+              carregando={carregandoRealizadas}
               rotulo="Recebido"
               valor={formatBRL(indicadores.recebido)}
               nota={
@@ -926,12 +938,14 @@ export function VendasPanel({
               cor="var(--whatsapp)"
             />
             <IndicadorVenda
+              carregando={carregandoRealizadas}
               rotulo="A receber"
               valor={formatBRL(indicadores.aReceber)}
               nota={`${indicadores.emAberto} entrega(s) sem pagamento`}
               cor={indicadores.aReceber > 0 ? "var(--destructive)" : undefined}
             />
             <IndicadorVenda
+              carregando={carregandoRealizadas}
               rotulo="Ticket médio"
               valor={formatBRL(indicadores.ticket)}
               nota="por venda no período"

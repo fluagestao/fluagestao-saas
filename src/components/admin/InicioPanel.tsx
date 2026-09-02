@@ -34,7 +34,7 @@ import {
   type Pedido,
 } from "@/lib/vendas";
 import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
-import { Num } from "./shell";
+import { Num, ValorCarregando } from "./shell";
 
 type FaturamentoMes = Awaited<ReturnType<typeof carregarFaturamentoDoMes>>;
 
@@ -79,12 +79,14 @@ function Kpi({
   nota,
   icon: Icon,
   detalheClass = "text-[var(--admin-muted)]",
+  carregando,
 }: {
   titulo: string;
   valor: string;
   nota: string;
   icon: typeof CircleDollarSign;
   detalheClass?: string;
+  carregando?: boolean;
 }) {
   return (
     <article className="flex min-h-[104px] min-w-0 items-center gap-3 card-panel p-4">
@@ -93,10 +95,16 @@ function Kpi({
       </span>
       <div className="min-w-0">
         <p className="t-support truncate text-[var(--admin-ink-soft)]">{titulo}</p>
-        <p className="t-hero mt-1 truncate text-[var(--admin-ink)]">
-          <Num>{valor}</Num>
-        </p>
-        {nota && <p className={`t-support mt-1.5 truncate ${detalheClass}`}>{nota}</p>}
+        {carregando ? (
+          <ValorCarregando largura="w-24" />
+        ) : (
+          <p className="t-hero mt-1 truncate text-[var(--admin-ink)]">
+            <Num>{valor}</Num>
+          </p>
+        )}
+        {nota && !carregando && (
+          <p className={`t-support mt-1.5 truncate ${detalheClass}`}>{nota}</p>
+        )}
       </div>
     </article>
   );
@@ -259,6 +267,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   const [pontoAtivo, setPontoAtivo] = useState<number | null>(null);
   const [mesPassado, setMesPassado] = useState<FaturamentoMes | null>(null);
   const [carregandoMes, setCarregandoMes] = useState(false);
+  // Os KPIs mostram esqueleto ate o primeiro carregamento terminar: zero
+  // enquanto carrega e lido como resposta, e depois o numero pula.
+  const [carregando, setCarregando] = useState(true);
 
   const hoje = hojeISO();
   // Data comemorativa e o que move o faturamento de cesta e tabua: saber que
@@ -273,6 +284,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         : `em ${proximaData.diasRestantes} dias`;
 
   const carregar = useCallback(async () => {
+    setCarregando(true);
     const [ped, tar] = await Promise.allSettled([
       carregarResumoPedidos(),
       carregarTarefas(),
@@ -284,6 +296,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       setNome(tar.value.nome);
       setEmail(tar.value.email);
     }
+    setCarregando(false);
   }, []);
 
   useEffect(() => {
@@ -516,18 +529,21 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
+          carregando={carregando}
           titulo="Faturamento do mês"
           valor={formatBRL(resumo.faturamentoMes)}
           nota=""
           icon={CircleDollarSign}
         />
         <Kpi
+          carregando={carregando}
           titulo="Pedidos em aberto"
           valor={String(abertos.length)}
           nota={abertos.length ? "aguardando saída" : "nenhuma pendência"}
           icon={Package}
         />
         <Kpi
+          carregando={carregando}
           titulo="Entregas hoje"
           valor={String(entregasHoje.length)}
           nota={entregasHoje.length ? "precisam sair hoje" : "nada pra hoje"}
@@ -535,6 +551,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           detalheClass="text-[var(--blue-ink)]"
         />
         <Kpi
+          carregando={carregando}
           titulo="Ticket médio"
           valor={formatBRL(resumo.ticketMedio)}
           nota={`${resumo.numMes} pedido(s) no mês`}

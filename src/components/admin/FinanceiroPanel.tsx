@@ -29,7 +29,7 @@ import {
 } from "@/lib/financeiro";
 import { porDia, resumoDoCaixa, type Movimento } from "@/lib/caixa";
 import { formatBRL } from "@/lib/vendas";
-import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar } from "./shell";
+import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar, ValorCarregando } from "./shell";
 
 type TipoDespesa = { id: string; nome: string };
 
@@ -186,10 +186,11 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
       />
 
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <Cartao rotulo="Entrou" valor={resumo.entradas} cor="var(--whatsapp)" />
-        <Cartao rotulo="Saiu" valor={resumo.saidas} cor="var(--terracotta)" />
+        <Cartao rotulo="Entrou" valor={resumo.entradas} cor="var(--whatsapp)" carregando={carregando} />
+        <Cartao rotulo="Saiu" valor={resumo.saidas} cor="var(--terracotta)" carregando={carregando} />
         <Cartao
           rotulo="Saldo"
+          carregando={carregando}
           valor={saldo}
           cor={saldo < 0 ? "var(--terracotta)" : "var(--bronze)"}
           destaque
@@ -198,7 +199,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         />
         {/* Fora do periodo de proposito: e o que esta em aberto hoje, nao o que
             ficou em aberto naquele mes. */}
-        <Cartao rotulo="A receber" valor={aReceber} cor="var(--admin-muted)" />
+        <Cartao rotulo="A receber" valor={aReceber} cor="var(--admin-muted)" carregando={carregando} />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -431,6 +432,7 @@ function Cartao({
   destaque,
   nota,
   onEditar,
+  carregando,
 }: {
   rotulo: string;
   valor: number;
@@ -438,6 +440,7 @@ function Cartao({
   destaque?: boolean;
   nota?: string;
   onEditar?: () => void;
+  carregando?: boolean;
 }) {
   return (
     <div
@@ -460,10 +463,14 @@ function Cartao({
           </button>
         )}
       </div>
-      <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: cor }}>
-        {formatBRL(valor)}
-      </p>
-      {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
+      {carregando ? (
+        <ValorCarregando />
+      ) : (
+        <p className="mt-1 text-2xl font-semibold tabular-nums" style={{ color: cor }}>
+          {formatBRL(valor)}
+        </p>
+      )}
+      {nota && !carregando && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
     </div>
   );
 }
