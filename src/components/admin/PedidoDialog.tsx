@@ -284,6 +284,10 @@ export function PedidoDialog({
     if (!nome.trim()) faltando.push("Cliente");
     if (itens.length === 0) faltando.push("pelo menos um item");
     if (itens.some((i) => !i.nome.trim())) faltando.push("o nome de todos os itens");
+    // Sem data o pedido nao entra na agenda nem na rota do dia, e some das
+    // listas de entrega. Por isso e obrigatoria, e nao assumimos "hoje": um
+    // padrao silencioso e o que fazia pedido nascer com a data errada.
+    if (!dataEntrega) faltando.push(ehRetirada ? "Data de retirada" : "Data de entrega");
     if (faltando.length) {
       setErro(`Falta preencher: ${faltando.join(", ")}.`);
       return;
@@ -752,11 +756,16 @@ export function PedidoDialog({
               <Input value={referencia} onChange={(e) => setReferencia(e.target.value)} />
             </Campo>
           )}
-          <Campo label={ehRetirada ? "Data de retirada" : "Data de entrega"}>
+          <Campo label={ehRetirada ? "Data de retirada *" : "Data de entrega *"}>
             <Input
               type="date"
+              required
+              aria-invalid={Boolean(erro) && !dataEntrega}
               value={dataEntrega}
               onChange={(e) => setDataEntrega(e.target.value)}
+              className={
+                Boolean(erro) && !dataEntrega ? "border-destructive" : undefined
+              }
             />
           </Campo>
           <Campo label="Horário">

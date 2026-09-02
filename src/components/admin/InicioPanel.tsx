@@ -126,6 +126,55 @@ function CabecalhoCard({
   );
 }
 
+/**
+ * Linha de pedido das listas de agenda.
+ *
+ * "Entregas de hoje" e "Próximos 7 dias" mostram o mesmo dado e tinham grid,
+ * colunas e escala próprias — o mesmo pedido ficava com cara diferente em cada
+ * card. Agora as duas montam esta linha; só o rótulo do dia muda.
+ */
+function LinhaPedidoAgenda({
+  pedido: p,
+  rotuloDia,
+  numeroDia,
+}: {
+  pedido: Pedido;
+  rotuloDia: string;
+  numeroDia: string;
+}) {
+  return (
+    <div className="grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4">
+      <div>
+        <p className="t-support font-bold uppercase tracking-[0.08em] text-[var(--coral)]">
+          {rotuloDia}
+        </p>
+        <p className="t-hero text-[var(--admin-ink)]">{numeroDia}</p>
+      </div>
+      <span className="t-body flex items-center gap-2 text-[var(--admin-muted)]">
+        <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
+        {p.janela_entrega || "—"}
+      </span>
+      <div className="min-w-0">
+        <p className="t-item truncate text-[var(--admin-ink)]">
+          #{p.numero} {p.cliente_nome || "Cliente"}
+        </p>
+        <p className="t-body mt-0.5 truncate text-[var(--admin-muted)]">{itensResumo(p)}</p>
+        <p className="t-support mt-0.5 text-[var(--admin-muted)]">
+          {p.tipo === "retirada" ? "Retirada" : "Entrega"}
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</p>
+        {p.recebido_em && (
+          <span className="t-support mt-1 inline-flex rounded-full bg-[var(--green-soft)] px-2 py-0.5 text-[var(--green-ink)]">
+            Pago
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Vazio no padrão do painel: ícone + frase curta + explicação. */
 function Vazio({
   titulo,
@@ -423,18 +472,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <Vazio titulo="Sem entregas hoje" descricao="Nenhuma entrega programada." icon={CalendarDays} destaque />
             ) : (
               entregasHoje.slice(0, 6).map((p) => (
-                <div key={p.id} className="grid grid-cols-[52px_minmax(0,1fr)_auto] gap-3 py-4">
-                  <span className="t-body text-[var(--admin-ink)]">{p.janela_entrega || "—"}</span>
-                  <div className="min-w-0">
-                    <p className="t-item truncate text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
-                    <p className="t-body mt-0.5 truncate text-[var(--admin-muted)]">{itensResumo(p)}</p>
-                    <p className="t-support mt-0.5 text-[var(--admin-muted)]">{p.tipo === "retirada" ? "Retirada" : "Entrega"}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</p>
-                    {p.recebido_em && <span className="t-support mt-1 inline-flex rounded-full bg-[var(--green-soft)] px-2 py-0.5 text-[var(--green-ink)]">Pago</span>}
-                  </div>
-                </div>
+                <LinhaPedidoAgenda
+                  key={p.id}
+                  pedido={p}
+                  rotuloDia="Hoje"
+                  numeroDia={dataCurta(hoje).slice(0, 2)}
+                />
               ))
             )}
           </div>
@@ -447,21 +490,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <Vazio titulo="Nada nos próximos 7 dias" descricao="Nenhum pedido programado." icon={CalendarDays} destaque />
             ) : (
               proximosSete.map((p) => (
-                <div key={p.id} className="grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4">
-                  <div>
-                    <p className="t-support font-bold uppercase tracking-[0.08em] text-[var(--coral)]">{diaSemanaCurto(p.data_entrega!)}</p>
-                    <p className="t-hero text-[var(--admin-ink)]">{dataCurta(p.data_entrega!).slice(0, 2)}</p>
-                  </div>
-                  <span className="t-body flex items-center gap-2 text-[var(--admin-muted)]">
-                    <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
-                    {p.janela_entrega || "—"}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="t-item truncate text-[var(--admin-ink)]">#{p.numero} {p.cliente_nome || "Cliente"}</p>
-                    <p className="t-body mt-0.5 truncate text-[var(--admin-muted)]">{itensResumo(p)}</p>
-                  </div>
-                  <span className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</span>
-                </div>
+                <LinhaPedidoAgenda
+                  key={p.id}
+                  pedido={p}
+                  rotuloDia={diaSemanaCurto(p.data_entrega!)}
+                  numeroDia={dataCurta(p.data_entrega!).slice(0, 2)}
+                />
               ))
             )}
           </div>
@@ -470,7 +504,13 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         <div className="grid content-stretch gap-3 md:col-span-2 xl:col-span-1">
           <article className="flex min-h-0 flex-col card-panel">
             <CabecalhoCard titulo="Tarefas pendentes" acao="ver todas" onClick={() => onIrPara("tarefas")} />
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-1">
+            {/* `flex` quando vazio: sem isso o container e um bloco comum, o
+                flex-1 do Vazio nao vale nada e a mensagem encosta no topo. */}
+            <div
+              className={`min-h-0 flex-1 overflow-y-auto px-4 py-1 ${
+                tarefasPendentes.length === 0 ? "flex" : ""
+              }`}
+            >
               {tarefasPendentes.length === 0 ? (
                 <Vazio titulo="Nenhuma tarefa pendente" descricao="As tarefas adicionadas aparecem aqui." />
               ) : (
@@ -491,7 +531,11 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
           <article className="flex min-h-0 flex-col card-panel">
             <CabecalhoCard titulo="Pedidos em aberto" acao="ver todos" onClick={() => onIrPara("vendas")} />
-            <div className="min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4">
+            <div
+              className={`min-h-0 flex-1 divide-y divide-[var(--admin-border)] overflow-y-auto px-4 ${
+                abertos.length === 0 ? "flex" : ""
+              }`}
+            >
               {abertos.length === 0 ? (
                 <Vazio titulo="Nenhum pedido em aberto" descricao="Tudo entregue por aqui." />
               ) : (
