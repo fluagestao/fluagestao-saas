@@ -14,6 +14,8 @@ export type Movimento = {
   pedido_numero?: number | null;
   /** Forma de pagamento do pedido de origem. Derivada, como o número. */
   forma_pagamento?: string | null;
+  /** Quem pagou. Vem do pedido, nao da descricao do lancamento. */
+  cliente_nome?: string | null;
 };
 
 export type ResumoCaixa = { entradas: number; saidas: number; saldo: number };

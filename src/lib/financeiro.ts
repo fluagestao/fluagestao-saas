@@ -23,7 +23,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
       .order("data", { ascending: false }),
     supabase
       .from("pedidos")
-      .select("id, numero, forma_pagamento")
+      .select("id, numero, forma_pagamento, cliente_nome")
       .eq("company_id", companyId)
       .not("recebido_em", "is", null)
       .gte("recebido_em", de)
@@ -74,6 +74,14 @@ export async function carregarMovimentos(input: { data: unknown }) {
       (pedido.forma_pagamento as string | null) ?? null,
     ]),
   );
+  // O nome sai do pedido, e nao da descricao do movimento: o que a RPC gravou
+  // ali varia, e sem o nome a linha do caixa nao diz de quem e o dinheiro.
+  const clientePorPedido = new Map(
+    (pedRes.data ?? []).map((pedido) => [
+      pedido.id,
+      (pedido.cliente_nome as string | null) ?? null,
+    ]),
+  );
   const nomeTipoPorId = new Map(
     (tiposRes.data ?? []).map((tipo) => [tipo.id, tipo.nome]),
   );
@@ -99,6 +107,9 @@ export async function carregarMovimentos(input: { data: unknown }) {
       : null,
     forma_pagamento: m.pedido_id
       ? (formaPorPedido.get(m.pedido_id) ?? null)
+      : null,
+    cliente_nome: m.pedido_id
+      ? (clientePorPedido.get(m.pedido_id) ?? null)
       : null,
   }));
 

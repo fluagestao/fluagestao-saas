@@ -102,9 +102,10 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   function baixarCsv() {
     const campo = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const linhas = [
-      ["Data", "Descrição", "Origem", "Forma", "Categoria", "Fornecedor", "Valor"],
+      ["Data", "Cliente", "Descrição", "Origem", "Forma", "Categoria", "Fornecedor", "Valor"],
       ...daAba.map((m) => [
         m.data,
+        m.cliente_nome ?? "",
         m.descricao ?? "",
         m.pedido_numero ? `Pedido #${m.pedido_numero}` : "Manual",
         m.forma_pagamento ?? "",
@@ -275,7 +276,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-2 truncate text-sm text-foreground">
-                    <span className="truncate">{m.descricao}</span>
+                    <span className="truncate">{m.cliente_nome?.trim() || m.descricao}</span>
                     {/* Diz de onde veio o lancamento: e a etiqueta que explica
                         por que a lixeira funciona num e avisa no outro. */}
                     <span
@@ -291,7 +292,15 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                   </p>
                   {(m.tipo_despesa || m.tipo_receita || m.fornecedor || m.forma_pagamento) && (
                     <p className="truncate text-xs text-muted-foreground">
-                      {[m.forma_pagamento, m.tipo_receita, m.tipo_despesa, m.fornecedor]
+                      {[
+                        m.forma_pagamento,
+                        // Sem cliente, a descricao ja e o titulo — repetir aqui
+                        // era o "Pix / Pix" das linhas vindas de pedido.
+                        m.cliente_nome?.trim() ? m.descricao : null,
+                        m.tipo_receita,
+                        m.tipo_despesa,
+                        m.fornecedor,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
