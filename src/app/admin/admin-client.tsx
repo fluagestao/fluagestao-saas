@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChartPie,
   CheckSquare,
+  Boxes,
   Calculator,
   ChevronDown,
   ChevronRight,
@@ -33,6 +34,7 @@ import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
 import { CustoPanel } from "@/components/admin/CustoPanel";
+import { EstoquePanel } from "@/components/admin/EstoquePanel";
 import { SinoNotificacoes } from "@/components/admin/SinoNotificacoes";
 import { PrevisaoCaixaPanel } from "@/components/admin/PrevisaoCaixaPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
@@ -72,6 +74,7 @@ export type AbaId =
   | "produtos"
   | "colecoes"
   | "custo"
+  | "estoque"
   | "cadastro-receitas"
   | "cadastro-despesas"
   | "categorias"
@@ -149,13 +152,13 @@ const MENU: ItemMenu[] = [
     vistas: SUB_FINANCEIRO,
   },
   { id: "custo", label: "Custo", icon: Calculator },
+  { id: "estoque", label: "Estoque", icon: Boxes },
   {
     id: "cadastros",
     label: "Cadastros",
     icon: Contact,
     vistas: SUB_CADASTROS,
   },
-  { id: "tarefas", label: "Tarefas", icon: CheckSquare },
 ];
 
 const DO_CATALOGO: AbaId[] = [
@@ -176,6 +179,7 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "custo", label: "Custo", icon: Calculator },
+  { id: "estoque", label: "Estoque", icon: Boxes },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
 ];
@@ -614,6 +618,8 @@ export default function AdminClient({
             />
           ) : aba === "custo" ? (
             <CustoPanel />
+          ) : aba === "estoque" ? (
+            <EstoquePanel />
           ) : aba === "cadastro-receitas" || aba === "cadastro-despesas" ? (
             <CategoriasFinanceirasPanel
               lado={aba === "cadastro-receitas" ? "receita" : "despesa"}

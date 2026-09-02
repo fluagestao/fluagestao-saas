@@ -105,6 +105,7 @@ const nextConfig: NextConfig = {
 
       { source: "/dashboard", destination: "/admin" },
       { source: "/custo", destination: "/admin" },
+      { source: "/estoque", destination: "/admin" },
 
       { source: "/financeiro/entradas", destination: "/admin" },
       { source: "/financeiro/saidas", destination: "/admin" },
