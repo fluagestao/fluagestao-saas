@@ -85,6 +85,11 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
 
 const SUB_CADASTROS: { id: string; label: string }[] = [
   { id: "produtos", label: "Produtos" },
+  // Também é por aqui que o AdminPathSync abre a tela certa: ele procura no
+  // cabeçalho um botão com o rótulo da rota e clica nele. Sem a entrada aqui,
+  // /cadastros/colecoes navegaria e cairia no Início.
+  { id: "colecoes", label: "Coleções" },
+  { id: "categorias", label: "Categorias" },
   { id: "insumos", label: "Insumos" },
   { id: "clientes", label: "Clientes" },
   { id: "fornecedores", label: "Fornecedores" },

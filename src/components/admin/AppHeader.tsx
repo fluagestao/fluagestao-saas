@@ -47,6 +47,11 @@ const MENU: ItemMenu[] = [
     label: "Cadastros",
     filhos: [
       { label: "Produtos", href: "/cadastros/produtos" },
+      // Coleção agrupa categorias e categoria agrupa produto. As duas telas já
+      // existiam e continuavam alcançáveis pela URL, mas sem elas no menu não
+      // dava para montar a corrente que alimenta o "Por coleção" do Dashboard.
+      { label: "Coleções", href: "/cadastros/colecoes" },
+      { label: "Categorias", href: "/cadastros/categorias" },
       { label: "Insumos", href: "/cadastros/insumos" },
       { label: "Clientes", href: "/cadastros/clientes" },
       { label: "Fornecedores", href: "/cadastros/fornecedores" },
