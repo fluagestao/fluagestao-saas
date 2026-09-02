@@ -81,7 +81,7 @@ function SeletorPeriodo({
     <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
       <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
         De
-        <Input
+      <Input
           type="date"
           value={de}
           onChange={(e) => onMudar(e.target.value, ate)}
@@ -521,6 +521,9 @@ export function VendasPanel({
               : "Pedidos do site entram sozinhos. Os que chegam por telefone ou Instagram, lance aqui."
         }
       />
+      <p className="mt-2 text-xs text-muted-foreground">
+        Clique em um card de pedido para abrir as ações e ver mais opções.
+      </p>
 
       {/* Só o operacional: a análise (mais vendidos, formas, coleções) é do Dashboard. */}
       <div
