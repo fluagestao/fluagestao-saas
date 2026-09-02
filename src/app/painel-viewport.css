@@ -1,0 +1,45 @@
+/* --------------------------------------------------------------------------
+   Painéis que cabem em um viewport só
+
+   Marque o <section> do painel com data-tela-cheia e dê
+   `flex-1 min-h-0 overflow-y-auto` na lista interna. O resultado: a página
+   para de rolar e quem rola é a lista.
+
+   Por que !important e por que este arquivo é importado por último:
+   admin-fill.css e panel-shell.css forçam `height: auto` e
+   `overflow: visible` no shell e no main, os dois com !important. Sem vencer
+   essa briga, a regra não faz efeito nenhum — foi o que aconteceu na primeira
+   tentativa, escrita em globals.css.
+
+   O shell vira coluna e o main pega a altura que sobra, em vez de descontar
+   um "menos 64px" do cabeçalho. A altura real dele muda com a borda e com o
+   breakpoint, e o número mágico erra por alguns pixels — é o mesmo motivo
+   registrado no comentário de home-compact.css.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 1024px) {
+  div[class~="bg-[var(--admin-bg)]"][class~="min-h-screen"]:has(> main > [data-tela-cheia]) {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  div[class~="bg-[var(--admin-bg)]"] > main:has(> [data-tela-cheia]) {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  [data-tela-cheia] {
+    display: flex !important;
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    flex-direction: column !important;
+  }
+}

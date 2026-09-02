@@ -19,6 +19,12 @@ import { useCallback, useEffect, useState } from "react";
 import { Toaster } from "sonner";
 
 import { CadastrosPanel } from "@/components/admin/CadastrosPanel";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
@@ -320,33 +326,55 @@ export default function AdminClient({
               </label>
             </div>
 
-            <div className="hidden items-center gap-1 md:flex">
-              <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Notificações">
-                <Bell className="h-[18px] w-[18px]" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAba("calendario");
-                  setExpandida(null);
-                }}
-                className={cn(
-                  "grid h-10 w-10 place-items-center rounded-xl transition",
-                  aba === "calendario"
-                    ? "bg-[var(--cream)] text-[var(--terracotta)]"
-                    : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream)] hover:text-[var(--terracotta)]",
-                )}
-                aria-label="Calendário de entregas"
-                aria-pressed={aba === "calendario"}
-              >
-                <CalendarDays className="h-[18px] w-[18px]" />
-              </button>
-              <CentralAjudaButton />
-              <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
-                <Settings className="h-[18px] w-[18px]" />
-              </button>
-            </div>
+            {/* Os baloes moram aqui, e nao no AppHeader: aquele componente so
+                e usado nas paginas de conta. Este e o cabecalho do painel. */}
+            <TooltipProvider delayDuration={250}>
+              <div className="hidden items-center gap-1 md:flex">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Notificações">
+                      <Bell className="h-[18px] w-[18px]" />
+                      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Avisos e lembretes do sistema</TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAba("calendario");
+                        setExpandida(null);
+                      }}
+                      className={cn(
+                        "grid h-10 w-10 place-items-center rounded-xl transition",
+                        aba === "calendario"
+                          ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                          : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream)] hover:text-[var(--terracotta)]",
+                      )}
+                      aria-label="Calendário de entregas"
+                      aria-pressed={aba === "calendario"}
+                    >
+                      <CalendarDays className="h-[18px] w-[18px]" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Calendário de entregas</TooltipContent>
+                </Tooltip>
+
+                <CentralAjudaButton />
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
+                      <Settings className="h-[18px] w-[18px]" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Configurações da conta e da empresa</TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
 
             <PerfilContaMenu email={email} displayName={displayName} companyName={companyName} onUsuarios={abrirUsuarios} />
           </div>

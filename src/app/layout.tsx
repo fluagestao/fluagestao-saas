@@ -11,6 +11,9 @@ import "./marketing-header.css";
 import "./responsive-system.css";
 import "./home-compact.css";
 import "./mobile-admin.css";
+// Por ultimo de proposito: admin-fill e panel-shell forcam height/overflow
+// no main com !important, e esta folha precisa vencer os dois.
+import "./painel-viewport.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
