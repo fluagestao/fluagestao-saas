@@ -6,7 +6,6 @@ import {
   ChartPie,
   CheckSquare,
   ChevronDown,
-  CircleHelp,
   Contact,
   Home,
   Loader2,
@@ -20,6 +19,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Toaster } from "sonner";
 
 import { CadastrosPanel } from "@/components/admin/CadastrosPanel";
+import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
@@ -337,9 +337,7 @@ export default function AdminClient({
               >
                 <CalendarDays className="h-[18px] w-[18px]" />
               </button>
-              <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Ajuda">
-                <CircleHelp className="h-[18px] w-[18px]" />
-              </button>
+              <CentralAjudaButton />
               <button type="button" className="grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Configurações">
                 <Settings className="h-[18px] w-[18px]" />
               </button>
