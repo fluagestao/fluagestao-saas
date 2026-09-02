@@ -573,7 +573,7 @@ export function ClienteDialog({
 }: {
   cliente: Cliente | null;
   onClose: () => void;
-  onSaved: (id?: string) => void;
+  onSaved: (cliente: { id: string; nome: string; whatsapp: string }) => void;
   /** Preenche quando o cadastro é aberto de dentro de um pedido. */
   inicial?: { nome?: string; whatsapp?: string };
 }) {
@@ -586,7 +586,9 @@ export function ClienteDialog({
   const [endereco, setEndereco] = useState(c?.endereco ?? "");
   const [bairro, setBairro] = useState(c?.bairro ?? "");
   const [referencia, setReferencia] = useState(c?.referencia ?? "");
-  const [aniversario, setAniversario] = useState(c?.aniversario ?? "");
+  const [aniversario, setAniversario] = useState(
+    c ? c.aniversario ?? "" : "",
+  );
   const [observacao, setObservacao] = useState(c?.observacao ?? "");
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -636,7 +638,11 @@ export function ClienteDialog({
 
   async function salvar() {
     if (!nome.trim()) {
-      setErro("O nome é obrigatório.");
+      setErro("O nome completo é obrigatório.");
+      return;
+    }
+    if (!whatsapp.trim()) {
+      setErro("O WhatsApp é obrigatório.");
       return;
     }
     setSalvando(true);
@@ -646,7 +652,7 @@ export function ClienteDialog({
         data: {
           ...(c ? { id: c.id } : {}),
           nome: nome.trim(),
-          whatsapp: whatsapp.trim() || null,
+          whatsapp: whatsapp.trim(),
           email: email.trim() || null,
           documento: documento.trim() || null,
           cep: cep.trim() || null,
@@ -662,7 +668,11 @@ export function ClienteDialog({
         data: { id: r.id, cidade: cidade.trim() || null },
       });
       toast.success(c ? "Cliente atualizado." : `"${nome.trim()}" cadastrado.`);
-      onSaved(r.id);
+      onSaved({
+        id: r.id,
+        nome: nome.trim(),
+        whatsapp: whatsapp.trim(),
+      });
       onClose();
     } catch (e) {
       setErro(mensagemDeErro(e, "salvar"));
@@ -697,15 +707,23 @@ export function ClienteDialog({
 
         <div className="grid gap-4 sm:grid-cols-2">
           {campo(
-            "Nome",
-            <Input value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />,
+            "Nome completo *",
+            <Input
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Nome completo"
+              required
+              autoFocus
+            />,
           )}
           {campo(
-            "WhatsApp",
+            "WhatsApp *",
             <Input
               value={whatsapp}
               inputMode="numeric"
               onChange={(e) => setWhatsapp(formatCelular(e.target.value))}
+              placeholder="(00) 00000-0000"
+              required
             />,
           )}
           {campo("E-mail", <Input value={email} onChange={(e) => setEmail(e.target.value)} />)}
@@ -736,8 +754,9 @@ export function ClienteDialog({
             "Aniversário",
             <Input
               type="date"
-              value={aniversario}
+              value={aniversario || ""}
               onChange={(e) => setAniversario(e.target.value)}
+              autoComplete="off"
             />,
           )}
         </div>
