@@ -238,6 +238,7 @@ export function OnboardingPrompt() {
   const [boasVindas, setBoasVindas] = useState(false);
   const [expandido, setExpandido] = useState(true);
   const [etapaAberta, setEtapaAberta] = useState<EtapaId | null>(null);
+  const [abertoPelaCentral, setAbertoPelaCentral] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -403,8 +404,24 @@ export function OnboardingPrompt() {
   }, [pathname]);
 
   useEffect(() => {
-    function abrirPelaCentral(event: Event) {
+    async function abrirPelaCentral(event: Event) {
       const detalhe = (event as CustomEvent<{ modo?: string }>).detail;
+      setErro(null);
+
+      if (progresso && !progresso.habilitado) {
+        setSalvando(true);
+        const resultado = await atualizarGuiaFlua({
+          data: { habilitado: true },
+        });
+        setSalvando(false);
+        if (!resultado.ok) {
+          setErro(resultado.mensagem);
+          return;
+        }
+        setProgresso({ ...progresso, habilitado: true });
+      }
+
+      setAbertoPelaCentral(true);
       setEtapaAberta(detalhe?.modo === "revisar" ? "empresa" : null);
       setExpandido(true);
       window.localStorage.removeItem("flua-guia-recolhido");
@@ -413,7 +430,7 @@ export function OnboardingPrompt() {
     window.addEventListener("flua:abrir-guia", abrirPelaCentral);
     return () =>
       window.removeEventListener("flua:abrir-guia", abrirPelaCentral);
-  }, []);
+  }, [progresso]);
 
   const contabilizadas = useMemo(
     () =>
@@ -473,6 +490,7 @@ export function OnboardingPrompt() {
       return;
     setProgresso({ ...progresso, habilitado });
     if (habilitado) {
+      setAbertoPelaCentral(true);
       setExpandido(true);
       window.localStorage.removeItem("flua-guia-recolhido");
     }
@@ -495,6 +513,19 @@ export function OnboardingPrompt() {
       return;
     setProgresso({ ...progresso, concluidas, puladas });
     setEtapaAberta(null);
+
+    const totalContabilizado = new Set([...concluidas, ...puladas]).size;
+    if (totalContabilizado === ETAPAS.length) {
+      setAbertoPelaCentral(false);
+      setExpandido(false);
+      window.localStorage.setItem("flua-guia-recolhido", "1");
+    }
+  }
+
+  function ocultarGuiaPausado() {
+    setAbertoPelaCentral(false);
+    setExpandido(false);
+    window.localStorage.setItem("flua-guia-recolhido", "1");
   }
 
   function recolher() {
@@ -577,7 +608,7 @@ export function OnboardingPrompt() {
         </div>
       )}
 
-      {!boasVindas && !expandido && (
+      {!boasVindas && !expandido && progresso.habilitado && percentual < 100 && (
         <button
           type="button"
           onClick={abrir}
@@ -590,7 +621,9 @@ export function OnboardingPrompt() {
         </button>
       )}
 
-      {!boasVindas && expandido && (
+      {!boasVindas &&
+        expandido &&
+        (percentual < 100 || abertoPelaCentral) && (
         <aside className="fixed bottom-20 right-3 z-[65] flex max-h-[min(680px,calc(100dvh-7rem))] w-[calc(100%-1.5rem)] max-w-[370px] flex-col overflow-hidden rounded-[24px] border border-[var(--admin-border)] bg-white shadow-[0_24px_70px_rgba(58,34,31,0.22)] lg:bottom-6 lg:right-6">
           <header className="bg-[var(--terracotta)] p-4 text-white">
             <div className="flex items-start justify-between gap-3">
@@ -645,8 +678,16 @@ export function OnboardingPrompt() {
                 <Pause className="h-8 w-8 text-[var(--terracotta)]" />
                 <p className="mt-3 font-bold">Guia pausado</p>
                 <p className="mt-1 text-sm leading-5 text-[var(--admin-muted)]">
-                  Ative quando quiser continuar do ponto em que parou.
+                  Seu progresso continuará salvo. Você poderá ligar o guia
+                  novamente pelo botão ? da Central de ajuda.
                 </p>
+                <button
+                  type="button"
+                  onClick={ocultarGuiaPausado}
+                  className="mt-5 h-10 rounded-xl bg-[var(--terracotta)] px-5 text-sm font-bold text-white hover:bg-[var(--wine)]"
+                >
+                  Ocultar este card
+                </button>
               </div>
             ) : etapa && EtapaIcon ? (
               <div className="p-1">
