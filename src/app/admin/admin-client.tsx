@@ -377,13 +377,13 @@ export default function AdminClient({
                             </button>
 
                             {grupoAberto === nome && (
-                              <div className="absolute left-full top-0 z-10 ml-1 min-w-48 rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[var(--shadow-lift)]">
+                              <div className="absolute left-full top-0 z-10 ml-1 w-max min-w-48 rounded-2xl border border-[var(--admin-border)] bg-white p-2 shadow-[var(--shadow-lift)]">
                                 {membros.map((sub) => (
                                   <button
                                     key={sub.id}
                                     type="button"
                                     onClick={() => selecionarSub(item, sub.id)}
-                                    className="flex w-full items-center rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                                    className="flex w-full items-center whitespace-nowrap rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
                                   >
                                     {sub.label}
                                   </button>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CalendarDays,
+  CalendarHeart,
   CircleCheck,
   CircleDollarSign,
   Loader2,
@@ -15,7 +16,11 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatarDataLonga, hojeISO, saudacao } from "@/lib/prazo";
-import { carregarFaturamentoDoMes, carregarResumoPedidos } from "@/lib/pedidos";
+import {
+  carregarFaturamentoDoAno,
+  carregarFaturamentoDoMes,
+  carregarResumoPedidos,
+} from "@/lib/pedidos";
 import {
   carregarTarefas,
   marcarTarefa,
@@ -213,6 +218,26 @@ function Vazio({
   );
 }
 
+const MESES_CURTOS = [
+  "jan", "fev", "mar", "abr", "mai", "jun",
+  "jul", "ago", "set", "out", "nov", "dez",
+] as const;
+
+type FaturamentoAno = {
+  ano: number;
+  meses: { mes: number; valor: number }[];
+  total: number;
+  pedidos: number;
+  ticket: number;
+};
+
+/** Espalha ate `quantos` rotulos pelo eixo, sempre com o primeiro e o ultimo. */
+function indicesDoEixo(tamanho: number, quantos: number): number[] {
+  if (tamanho <= quantos) return Array.from({ length: tamanho }, (_, i) => i);
+  const passo = (tamanho - 1) / (quantos - 1);
+  return Array.from({ length: quantos }, (_, i) => Math.round(i * passo));
+}
+
 /** 12345 → "12k"; 1500 → "1,5k"; 900 → "900". */
 function rotuloEixo(valor: number) {
   if (valor >= 10000) return `${Math.round(valor / 1000)}k`;
@@ -228,7 +253,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   const [editandoNome, setEditandoNome] = useState(false);
   const [nomeRascunho, setNomeRascunho] = useState("");
 
-  const [periodo, setPeriodo] = useState<"atual" | "anterior">("atual");
+  const [periodo, setPeriodo] = useState<"atual" | "anterior" | "ano">("atual");
+  const [ano, setAno] = useState<FaturamentoAno | null>(null);
   const [mesPassado, setMesPassado] = useState<FaturamentoMes | null>(null);
   const [carregandoMes, setCarregandoMes] = useState(false);
 
@@ -332,11 +358,24 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   const mesPassadoValido = mesPassado?.mes === mesAnterior ? mesPassado : null;
   const faturamento = periodo === "atual" ? faturamentoAtual : mesPassadoValido;
 
+  /**
+   * Mes e ano viram a mesma forma: uma lista de pontos com rotulo. Sem isso, o
+   * grafico precisaria de dois desenhos e dois eixos para a mesma linha.
+   */
   const grafico = useMemo(() => {
-    const dias = faturamento?.dias ?? [];
-    const max = Math.max(...dias.map((d) => d.valor), 1);
-    return { max, exibidos: dias };
-  }, [faturamento]);
+    const pontos =
+      periodo === "ano"
+        ? (ano?.meses ?? []).map((m) => ({
+            rotulo: MESES_CURTOS[m.mes - 1],
+            valor: m.valor,
+          }))
+        : (faturamento?.dias ?? []).map((d) => ({
+            rotulo: `${String(d.dia).padStart(2, "0")}/${(faturamento?.mes ?? mesAtual).slice(5)}`,
+            valor: d.valor,
+          }));
+    const max = Math.max(...pontos.map((p) => p.valor), 1);
+    return { max, exibidos: pontos };
+  }, [periodo, ano, faturamento, mesAtual]);
 
   const pontosLinha = useMemo(() => {
     const divisor = Math.max(grafico.exibidos.length - 1, 1);
@@ -349,8 +388,29 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       .join(" ");
   }, [grafico]);
 
-  async function trocarPeriodo(novo: "atual" | "anterior") {
+  async function trocarPeriodo(novo: "atual" | "anterior" | "ano") {
     if (carregandoMes) return; // trava clique repetido enquanto a busca corre
+
+    if (novo === "ano") {
+      if (ano?.ano === Number(mesAtual.slice(0, 4))) {
+        setPeriodo("ano");
+        return;
+      }
+      setCarregandoMes(true);
+      try {
+        setAno(
+          (await carregarFaturamentoDoAno({
+            data: { ano: Number(mesAtual.slice(0, 4)) },
+          })) as FaturamentoAno,
+        );
+        setPeriodo("ano");
+      } catch {
+        toast.error("Não foi possível carregar o ano.");
+      } finally {
+        setCarregandoMes(false);
+      }
+      return;
+    }
 
     if (novo === "atual" || mesPassadoValido) {
       setPeriodo(novo);
@@ -563,6 +623,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                 [
                   ["atual", "Este mês"],
                   ["anterior", "Mês passado"],
+                  ["ano", "Ano"],
                 ] as const
               ).map(([id, rotulo]) => (
                 <button
@@ -642,7 +703,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                       const y = 36 - (p.valor / grafico.max) * 32;
                       return (
                         <circle
-                          key={p.dia}
+                          key={p.rotulo}
                           cx={x}
                           cy={y}
                           r="0.65"
@@ -651,21 +712,20 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                           strokeWidth="0.9"
                           vectorEffect="non-scaling-stroke"
                         >
-                          <title>{String(p.dia).padStart(2, "0")}: {formatBRL(p.valor)}</title>
+                          <title>
+                            {p.rotulo}: {formatBRL(p.valor)}
+                          </title>
                         </circle>
                       );
                     })}
                   </svg>
                 </div>
                 <div className="t-support mt-1 flex justify-between text-[var(--admin-muted)]">
-                  {[0, 7, 14, 21, grafico.exibidos.length - 1]
-                    .filter((dia, index, lista) => dia >= 0 && dia < grafico.exibidos.length && lista.indexOf(dia) === index)
-                    .map((index) => (
-                      <span key={index}>
-                        {String(grafico.exibidos[index].dia).padStart(2, "0")}/
-                        {(faturamento?.mes ?? mesAtual).slice(5)}
-                      </span>
-                    ))}
+                  {indicesDoEixo(grafico.exibidos.length, periodo === "ano" ? 12 : 5).map(
+                    (index) => (
+                      <span key={index}>{grafico.exibidos[index]?.rotulo}</span>
+                    ),
+                  )}
                 </div>
               </div>
             </div>
@@ -699,7 +759,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
               <path d="M88 40c11-2 19 2 23 12-11 3-19-1-23-12Z" />
               <path d="M78 66c11-2 19 2 23 12-11 3-19-1-23-12Z" />
             </svg>
-            <p className="t-title text-[var(--admin-ink)]">{proximaData.nome}</p>
+            {/* Mesma marca dos KPIs e dos estados vazios: circulo pessego com
+                halo. Sem ele o card era o unico da tela sem simbolo. */}
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ring-8 ring-[var(--peach-soft)]">
+              <CalendarHeart className="h-5 w-5" strokeWidth={1.5} />
+            </span>
+            <p className="t-title mt-3 text-[var(--admin-ink)]">{proximaData.nome}</p>
             <p className="t-item mt-1 text-[var(--coral)]">
               {contagem} · {dataCurta(proximaData.data)}
             </p>

@@ -278,6 +278,54 @@ export async function carregarFaturamentoDoMes(input: { data: unknown }) {
   return { mes, dias, total, pedidos, ticket: pedidos ? total / pedidos : 0 };
 }
 
+/**
+ * Faturamento mes a mes do ano inteiro.
+ *
+ * Uma consulta so para os doze meses, agrupando aqui: doze chamadas de
+ * carregarFaturamentoDoMes custariam doze idas ao banco para desenhar um
+ * grafico. A base e created_at, a mesma do resumo mensal — trocar isso faria
+ * o ano discordar do mes.
+ */
+export async function carregarFaturamentoDoAno(input: { data: unknown }) {
+  const { ano } = z
+    .object({ ano: z.number().int().min(2000).max(2100) })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select("created_at, total")
+    .eq("company_id", companyId)
+    .neq("status", "cancelado")
+    .gte("created_at", `${ano}-01-01T00:00:00-03:00`)
+    .lt("created_at", `${ano + 1}-01-01T00:00:00-03:00`)
+    .order("created_at", { ascending: true })
+    .limit(20000);
+
+  if (error) throw error;
+
+  const meses = Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, valor: 0 }));
+  let total = 0;
+  let pedidos = 0;
+
+  for (const linha of data ?? []) {
+    const criadoEm = linha.created_at as string | null;
+    if (!criadoEm) continue;
+
+    const iso = dataLocalISO(criadoEm);
+    if (!iso.startsWith(String(ano))) continue;
+
+    const mes = Number(iso.slice(5, 7));
+    const valor = Number(linha.total) || 0;
+    if (meses[mes - 1]) meses[mes - 1].valor += valor;
+    total += valor;
+    pedidos += 1;
+  }
+
+  return { ano, meses, total, pedidos, ticket: pedidos ? total / pedidos : 0 };
+}
+
 export async function salvarPedido(input: { data: unknown }) {
   const data = pedidoManualSchema.parse(input.data);
   const { supabase, companyId } = await requireCompany();
