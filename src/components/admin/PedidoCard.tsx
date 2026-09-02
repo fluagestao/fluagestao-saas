@@ -193,7 +193,7 @@ export function PedidoCard({
           {/* Nada no card avisa que ele abre. Sem esse aviso, as ações (ficha,
               recebi, WhatsApp) ficam escondidas de quem nunca clicou por acaso. */}
           {!compacto && (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               {aberto ? "Clique para recolher" : "Clique para expandir"}
             </span>
           )}
