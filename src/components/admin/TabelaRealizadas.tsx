@@ -1,7 +1,8 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { BadgeDollarSign, Download, Pencil, Undo2 } from "lucide-react";
 
+import type { AcoesPedido } from "@/components/admin/PedidoCard";
 import { diaMes } from "@/lib/prazo";
 import { formatBRL, type Pedido } from "@/lib/vendas";
 
@@ -24,7 +25,23 @@ function valorCsv(n: number) {
 
 function baixarCsv(pedidos: Pedido[]) {
   const linhas = [
-    ["Pedido", "Cliente", "Itens", "Entregue em", "Pago em", "Forma", "Valor"],
+    [
+      "Pedido",
+      "Cliente",
+      "Itens",
+      "Entregue em",
+      "Pago em",
+      "Forma",
+      "Valor",
+      "WhatsApp",
+      "Tipo",
+      "CEP",
+      "Endereço",
+      "Bairro",
+      "Ponto de referência",
+      "Presenteado",
+      "WhatsApp do presenteado",
+    ],
     ...pedidos.map((p) => [
       String(p.numero),
       p.cliente_nome ?? "",
@@ -33,6 +50,14 @@ function baixarCsv(pedidos: Pedido[]) {
       diaMes(p.recebido_em),
       p.recebido_em ? (p.forma_pagamento ?? "") : "a receber",
       valorCsv(p.total),
+      p.cliente_whatsapp ?? "",
+      p.tipo === "retirada" ? "Retirada" : "Entrega",
+      p.cep ?? "",
+      p.endereco ?? "",
+      p.bairro ?? "",
+      p.referencia ?? "",
+      p.destinatario_nome ?? "",
+      p.destinatario_whatsapp ?? "",
     ]),
   ];
 
@@ -60,7 +85,13 @@ function baixarCsv(pedidos: Pedido[]) {
  * abrir pedido por pedido. Some no celular — seis colunas não cabem — e lá a
  * lista continua em cards.
  */
-export function TabelaRealizadas({ pedidos }: { pedidos: Pedido[] }) {
+export function TabelaRealizadas({
+  pedidos,
+  acoes,
+}: {
+  pedidos: Pedido[];
+  acoes: AcoesPedido;
+}) {
   const total = pedidos.reduce((t, p) => t + p.total, 0);
   const recebido = pedidos.reduce((t, p) => t + (p.recebido_em ? p.total : 0), 0);
 
@@ -93,8 +124,11 @@ export function TabelaRealizadas({ pedidos }: { pedidos: Pedido[] }) {
               <th className="t-support w-24 px-2 py-2.5 text-left text-[var(--admin-muted)]">
                 Forma
               </th>
-              <th className="t-support w-32 px-3 py-2.5 text-right text-[var(--admin-muted)]">
+              <th className="t-support w-28 px-3 py-2.5 text-right text-[var(--admin-muted)]">
                 Valor
+              </th>
+              <th className="t-support w-36 px-3 py-2.5 text-right text-[var(--admin-muted)]">
+                Ações
               </th>
             </tr>
           </thead>
@@ -128,6 +162,43 @@ export function TabelaRealizadas({ pedidos }: { pedidos: Pedido[] }) {
                 <td className="t-item px-3 py-2.5 text-right tabular-nums text-foreground">
                   {formatBRL(p.total)}
                 </td>
+                <td className="px-3 py-2.5">
+                  <div className="flex justify-end gap-1">
+                    <button
+                      type="button"
+                      title="Abrir o pedido completo"
+                      onClick={() => acoes.editar(p)}
+                      className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--admin-border)] px-2.5 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Abrir
+                    </button>
+                    {acoes.receber && (
+                      <button
+                        type="button"
+                        title={
+                          p.recebido_em
+                            ? "Desfazer o recebimento: o pedido volta para a receber"
+                            : "Registrar o recebimento deste pedido"
+                        }
+                        onClick={() => acoes.receber!(p)}
+                        className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--admin-border)] px-2.5 text-foreground transition-colors hover:bg-[var(--cream-soft)]"
+                      >
+                        {p.recebido_em ? (
+                          <>
+                            <Undo2 className="h-3.5 w-3.5" />
+                            Desfazer
+                          </>
+                        ) : (
+                          <>
+                            <BadgeDollarSign className="h-3.5 w-3.5" />
+                            Recebi
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
 
@@ -144,6 +215,7 @@ export function TabelaRealizadas({ pedidos }: { pedidos: Pedido[] }) {
               <td className="t-item px-3 py-3 text-right tabular-nums text-foreground">
                 {formatBRL(total)}
               </td>
+              <td />
             </tr>
           </tbody>
         </table>

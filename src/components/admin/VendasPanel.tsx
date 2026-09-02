@@ -129,19 +129,24 @@ function SeletorPeriodo({
   );
 }
 
-type PeriodoRealizadas = "tudo" | "ultimo_mes" | "ultima_semana" | "hoje";
+type PeriodoRealizadas = "escolher" | "tudo" | "ultimo_mes" | "ultima_semana" | "hoje";
 
 function SeletorPeriodoRealizadas({
   periodo,
   de,
   ate,
   onSelecionar,
+  onDe,
+  onAte,
 }: {
   periodo: PeriodoRealizadas;
   de: string;
   ate: string;
   onSelecionar: (periodo: PeriodoRealizadas) => void;
+  onDe: (valor: string) => void;
+  onAte: (valor: string) => void;
 }) {
+  const livre = periodo === "escolher";
   return (
     <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
       <label className="grid gap-1 text-sm text-muted-foreground">
@@ -155,12 +160,21 @@ function SeletorPeriodoRealizadas({
           <option value="ultimo_mes">Último mês</option>
           <option value="ultima_semana">Última semana</option>
           <option value="hoje">Hoje</option>
+          <option value="escolher">Escolher datas</option>
         </select>
       </label>
 
       <label className="grid gap-1 text-sm text-muted-foreground">
         De
-        {de ? (
+        {livre ? (
+          <Input
+            type="date"
+            value={de}
+            max={ate || undefined}
+            onChange={(e) => onDe(e.target.value)}
+            className="h-9 w-[9.5rem]"
+          />
+        ) : de ? (
           <Input type="date" value={de} readOnly className="h-9 w-[9.5rem]" />
         ) : (
           <Input value="Desde o início" readOnly className="h-9 w-[9.5rem]" />
@@ -168,7 +182,15 @@ function SeletorPeriodoRealizadas({
       </label>
       <label className="grid gap-1 text-sm text-muted-foreground">
         Até
-        {ate ? (
+        {livre ? (
+          <Input
+            type="date"
+            value={ate}
+            min={de || undefined}
+            onChange={(e) => onAte(e.target.value)}
+            className="h-9 w-[9.5rem]"
+          />
+        ) : ate ? (
           <Input type="date" value={ate} readOnly className="h-9 w-[9.5rem]" />
         ) : (
           <Input value="Hoje" readOnly className="h-9 w-[9.5rem]" />
@@ -242,7 +264,9 @@ export function VendasPanel({
   const irPara = onVista ?? setSubInterna;
   const [pagando, setPagando] = useState<Pedido | null>(null);
   const [clientes, setClientes] = useState<ClienteComHistorico[]>([]);
-  const [periodoRealizadas, setPeriodoRealizadas] = useState<PeriodoRealizadas>("tudo");
+  // Abre em "escolher" com as datas vazias: mostra tudo e os campos ja aceitam
+  // digitacao, sem precisar trocar o seletor antes.
+  const [periodoRealizadas, setPeriodoRealizadas] = useState<PeriodoRealizadas>("escolher");
   const [realDe, setRealDe] = useState("");
   const [realAte, setRealAte] = useState("");
   // A cobrança abre sem filtro: quer ver tudo que está em aberto.
@@ -388,6 +412,10 @@ export function VendasPanel({
   function selecionarPeriodoRealizadas(periodo: PeriodoRealizadas) {
     const hoje = hojeISO();
     setPeriodoRealizadas(periodo);
+
+    // "escolher" so libera os campos; preserva as datas para dar pra partir de
+    // um atalho e ajustar a ponta.
+    if (periodo === "escolher") return;
 
     if (periodo === "tudo") {
       setRealDe("");
@@ -765,6 +793,8 @@ export function VendasPanel({
             de={realDe}
             ate={realAte}
             onSelecionar={selecionarPeriodoRealizadas}
+            onDe={setRealDe}
+            onAte={setRealAte}
           />
 
           <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
@@ -790,7 +820,7 @@ export function VendasPanel({
 
           {realizadas.length > 0 && (
             <div className="mt-3">
-              <TabelaRealizadas pedidos={realizadas} />
+              <TabelaRealizadas pedidos={realizadas} acoes={acoes} />
             </div>
           )}
 
