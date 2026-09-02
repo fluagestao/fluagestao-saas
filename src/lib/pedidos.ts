@@ -622,7 +622,7 @@ export async function carregarPedidosDoCliente(input: { data: unknown }) {
 const clienteSchema = z.object({
   id: z.string().uuid().optional(),
   nome: z.string().trim().min(1).max(120),
-  whatsapp: z.string().trim().max(24).nullable(),
+  whatsapp: z.string().trim().min(1, "O WhatsApp é obrigatório.").max(24),
   email: z.string().max(120).nullable(),
   documento: z.string().max(30).nullable(),
   cep: z.string().max(12).nullable(),
