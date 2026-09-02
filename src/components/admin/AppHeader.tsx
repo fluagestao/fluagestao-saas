@@ -39,7 +39,7 @@ const MENU: ItemMenu[] = [
   {
     label: "Financeiro",
     filhos: [
-      { label: "Entradas", href: "/financeiro/entradas" },
+      { label: "Recebimentos", href: "/financeiro/entradas" },
       { label: "Saídas", href: "/financeiro/saidas" },
     ],
   },

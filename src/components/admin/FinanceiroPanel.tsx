@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDownCircle, ArrowUpCircle, Plus, Trash2, X } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Download, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -32,9 +32,15 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
 
   const [de, setDe] = useState(inicioDoMes);
   const [ate, setAte] = useState(() => hojeISO());
+  // Abre em "escolher": os campos de data ja aceitam digitacao, sem precisar
+  // passar por um atalho antes.
+  const [periodo, setPeriodo] = useState<"escolher" | "mes" | "7dias" | "mes_passado">(
+    "escolher",
+  );
   const [movimentos, setMovimentos] = useState<Movimento[]>([]);
   const [fornecedores, setFornecedores] = useState<string[]>([]);
   const [tiposDespesa, setTiposDespesa] = useState<TipoDespesa[]>([]);
+  const [aReceber, setAReceber] = useState(0);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const confirmar = useConfirmar();
@@ -47,6 +53,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
       setMovimentos(d.movimentos as Movimento[]);
       setFornecedores(d.fornecedores);
       setTiposDespesa(d.tiposDespesa as TipoDespesa[]);
+      setAReceber(d.aReceber);
     } catch (e) {
       setErro(mensagemDeErro(e, "carregar o financeiro"));
     }
@@ -77,24 +84,67 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
     recarregar();
   }
 
+  /** Quanto entrou por forma de pagamento. E o numero que se concilia com
+      banco e maquininha; lancamento manual nao tem forma e vira um grupo. */
+  const porForma = useMemo(() => {
+    if (tipo !== "entrada") return [];
+    const mapa = new Map<string, number>();
+    for (const m of daAba) {
+      const chave = m.forma_pagamento?.trim() || "Lançamento manual";
+      mapa.set(chave, (mapa.get(chave) ?? 0) + m.valor);
+    }
+    return [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+  }, [daAba, tipo]);
+
+  function baixarCsv() {
+    const campo = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const linhas = [
+      ["Data", "Descrição", "Origem", "Forma", "Tipo de despesa", "Fornecedor", "Valor"],
+      ...daAba.map((m) => [
+        m.data,
+        m.descricao ?? "",
+        m.pedido_numero ? `Pedido #${m.pedido_numero}` : "Manual",
+        m.forma_pagamento ?? "",
+        m.tipo_despesa ?? "",
+        m.fornecedor ?? "",
+        m.valor.toFixed(2).replace(".", ","),
+      ]),
+    ];
+    const csv = linhas.map((l) => l.map(campo).join(";")).join("\r\n");
+    const blob = new Blob([`\ufeff${csv}`], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${tipo === "entrada" ? "recebimentos" : "saidas"}-${de}-a-${ate}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   const atalhos = [
-    { label: "Este mês", de: inicioDoMes(), ate: hojeISO() },
-    { label: "7 dias", de: somarDias(hojeISO(), -6), ate: hojeISO() },
-    { label: "Mês passado", de: mesPassado().de, ate: mesPassado().ate },
+    { id: "mes" as const, label: "Este mês", de: inicioDoMes(), ate: hojeISO() },
+    { id: "7dias" as const, label: "7 dias", de: somarDias(hojeISO(), -6), ate: hojeISO() },
+    {
+      id: "mes_passado" as const,
+      label: "Mês passado",
+      de: mesPassado().de,
+      ate: mesPassado().ate,
+    },
   ];
 
   return (
     <section>
       <PageHeader
-        titulo={tipo === "entrada" ? "Entradas" : "Saídas"}
+        titulo={tipo === "entrada" ? "Recebimentos" : "Saídas"}
         descricao={
           tipo === "entrada"
-            ? "Todo pedido marcado como pago entra aqui sozinho. Use o campo abaixo só para dinheiro que não veio de um pedido."
+            ? "Todo pedido marcado como pago entra aqui sozinho, com a forma de pagamento. Use o campo abaixo só para dinheiro que não veio de um pedido."
             : "Compra, conta, retirada. Informe a descrição, o tipo de despesa e o fornecedor."
         }
       />
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <Cartao rotulo="Entrou" valor={resumo.entradas} cor="var(--whatsapp)" />
         <Cartao rotulo="Saiu" valor={resumo.saidas} cor="var(--terracotta)" />
         <Cartao
@@ -103,42 +153,77 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
           cor={resumo.saldo < 0 ? "var(--terracotta)" : "var(--bronze)"}
           destaque
         />
+        {/* Fora do periodo de proposito: e o que esta em aberto hoje, nao o que
+            ficou em aberto naquele mes. */}
+        <Cartao rotulo="A receber" valor={aReceber} cor="var(--admin-muted)" />
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {atalhos.map((a) => (
-          <button
-            key={a.label}
-            type="button"
-            onClick={() => {
-              setDe(a.de);
-              setAte(a.ate);
-            }}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-              de === a.de && ate === a.ate
-                ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
-                : "border border-[var(--cream-deep)] bg-card text-foreground",
-            )}
-          >
-            {a.label}
-          </button>
-        ))}
+        <select
+          value={periodo}
+          onChange={(e) => {
+            const escolhido = e.target.value as typeof periodo;
+            setPeriodo(escolhido);
+            // "escolher" preserva as datas: da para partir de um atalho e
+            // ajustar so a ponta.
+            const atalho = atalhos.find((a) => a.id === escolhido);
+            if (!atalho) return;
+            setDe(atalho.de);
+            setAte(atalho.ate);
+          }}
+          aria-label="Período"
+          className="h-9 min-w-44 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+        >
+          <option value="escolher">Escolher datas</option>
+          {atalhos.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.label}
+            </option>
+          ))}
+        </select>
 
         <DatePickerField
           value={de}
-          onChange={setDe}
+          onChange={(valor) => {
+            setPeriodo("escolher");
+            setDe(valor);
+          }}
           ariaLabel="Data inicial"
           className="h-9 w-[10.5rem]"
         />
         <span className="text-sm text-muted-foreground">até</span>
         <DatePickerField
           value={ate}
-          onChange={setAte}
+          onChange={(valor) => {
+            setPeriodo("escolher");
+            setAte(valor);
+          }}
           ariaLabel="Data final"
           className="h-9 w-[10.5rem]"
         />
       </div>
+
+      {porForma.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {porForma.map(([forma, valor]) => (
+            <span
+              key={forma}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cream-deep)] bg-card px-3 py-1.5 text-xs text-muted-foreground"
+            >
+              {forma}
+              <Num className="font-semibold text-foreground">{formatBRL(valor)}</Num>
+            </span>
+          ))}
+          <button
+            type="button"
+            onClick={baixarCsv}
+            className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)]"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Baixar CSV
+          </button>
+        </div>
+      )}
 
       <NovoLancamento
         tipo={tipo}
@@ -185,10 +270,24 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                   <ArrowDownCircle className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-foreground">{m.descricao}</p>
-                  {(m.tipo_despesa || m.fornecedor) && (
+                  <p className="flex items-center gap-2 truncate text-sm text-foreground">
+                    <span className="truncate">{m.descricao}</span>
+                    {/* Diz de onde veio o lancamento: e a etiqueta que explica
+                        por que a lixeira funciona num e avisa no outro. */}
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        m.pedido_numero
+                          ? "bg-[var(--peach)] text-[var(--coral)]"
+                          : "bg-[var(--cream-deep)] text-[var(--bronze)]",
+                      )}
+                    >
+                      {m.pedido_numero ? `pedido #${m.pedido_numero}` : "manual"}
+                    </span>
+                  </p>
+                  {(m.tipo_despesa || m.fornecedor || m.forma_pagamento) && (
                     <p className="truncate text-xs text-muted-foreground">
-                      {[m.tipo_despesa, m.fornecedor].filter(Boolean).join(" · ")}
+                      {[m.forma_pagamento, m.tipo_despesa, m.fornecedor].filter(Boolean).join(" · ")}
                     </p>
                   )}
                 </div>
@@ -338,7 +437,7 @@ function NovoLancamento({
         </label>
         <label className="block min-w-[12rem] flex-1">
           <span className="mb-1 block text-xs font-medium text-muted-foreground">
-            {tipo === "entrada" ? "De onde veio" : "Descrição"}
+            Descrição
           </span>
           <Input
             value={descricao}

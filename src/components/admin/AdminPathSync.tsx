@@ -13,7 +13,7 @@ const ROTAS_DIRETAS: Record<string, string> = {
   "A receber": "/vendas/a-receber",
   Realizadas: "/vendas/realizadas",
 
-  Entradas: "/financeiro/entradas",
+  Recebimentos: "/financeiro/entradas",
   Saídas: "/financeiro/saidas",
 
   Produtos: "/cadastros/produtos",
@@ -42,7 +42,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
 
   "/dashboard": { filho: "Relatórios" },
 
-  "/financeiro/entradas": { pai: "Financeiro", filho: "Entradas" },
+  "/financeiro/entradas": { pai: "Financeiro", filho: "Recebimentos" },
   "/financeiro/saidas": { pai: "Financeiro", filho: "Saídas" },
 
   "/cadastros/produtos": { pai: "Cadastros", filho: "Produtos" },
@@ -64,7 +64,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/pedidos": { pai: "Vendas", filho: "Pedidos" },
   "/a-receber": { pai: "Vendas", filho: "A receber" },
   "/realizadas": { pai: "Vendas", filho: "Realizadas" },
-  "/entradas": { pai: "Financeiro", filho: "Entradas" },
+  "/entradas": { pai: "Financeiro", filho: "Recebimentos" },
   "/saidas": { pai: "Financeiro", filho: "Saídas" },
   "/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/colecoes": { pai: "Cadastros", filho: "Coleções" },

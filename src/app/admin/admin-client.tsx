@@ -79,7 +79,7 @@ export type SubCadastros =
   | "usuarios";
 
 const SUB_FINANCEIRO: { id: SubFinanceiro; label: string }[] = [
-  { id: "entradas", label: "Entradas" },
+  { id: "entradas", label: "Recebimentos" },
   { id: "saidas", label: "Saídas" },
 ];
 

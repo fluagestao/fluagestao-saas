@@ -10,6 +10,8 @@ export type Movimento = {
   tipo_despesa: string | null;
   /** Entrada que veio de um pedido pago — não existe na tabela, é derivada. */
   pedido_numero?: number | null;
+  /** Forma de pagamento do pedido de origem. Derivada, como o número. */
+  forma_pagamento?: string | null;
 };
 
 export type ResumoCaixa = { entradas: number; saidas: number; saldo: number };

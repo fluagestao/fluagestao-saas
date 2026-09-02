@@ -11,7 +11,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
   const { de, ate } = z.object({ de: DATA, ate: DATA }).parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
-  const [movRes, pedRes, fornRes, tiposRes] = await Promise.all([
+  const [movRes, pedRes, aReceberRes, fornRes, tiposRes] = await Promise.all([
     supabase
       .from("movimentos")
       .select("id, pedido_id, tipo, data, valor, descricao, fornecedor, tipo_despesa_id")
@@ -21,11 +21,20 @@ export async function carregarMovimentos(input: { data: unknown }) {
       .order("data", { ascending: false }),
     supabase
       .from("pedidos")
-      .select("id, numero")
+      .select("id, numero, forma_pagamento")
       .eq("company_id", companyId)
       .not("recebido_em", "is", null)
       .gte("recebido_em", de)
       .lte("recebido_em", ate),
+    // Fora do periodo de proposito: "a receber" e o que esta em aberto hoje,
+    // nao o que ficou em aberto naquele mes.
+    supabase
+      .from("pedidos")
+      .select("total")
+      .eq("company_id", companyId)
+      .is("recebido_em", null)
+      .neq("status", "cancelado")
+      .limit(3000),
     supabase
       .from("fornecedores")
       .select("nome")
@@ -41,6 +50,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
 
   if (movRes.error) throw movRes.error;
   if (pedRes.error) throw pedRes.error;
+  if (aReceberRes.error) throw aReceberRes.error;
   if (fornRes.error) throw fornRes.error;
   if (tiposRes.error) throw tiposRes.error;
 
@@ -48,6 +58,12 @@ export async function carregarMovimentos(input: { data: unknown }) {
     (pedRes.data ?? []).map((pedido) => [
       pedido.id,
       Number(pedido.numero ?? 0),
+    ]),
+  );
+  const formaPorPedido = new Map(
+    (pedRes.data ?? []).map((pedido) => [
+      pedido.id,
+      (pedido.forma_pagamento as string | null) ?? null,
     ]),
   );
   const nomeTipoPorId = new Map(
@@ -67,7 +83,15 @@ export async function carregarMovimentos(input: { data: unknown }) {
     pedido_numero: m.pedido_id
       ? (numeroPorPedido.get(m.pedido_id) ?? null)
       : null,
+    forma_pagamento: m.pedido_id
+      ? (formaPorPedido.get(m.pedido_id) ?? null)
+      : null,
   }));
+
+  const aReceber = (aReceberRes.data ?? []).reduce(
+    (total, pedido) => total + Number(pedido.total ?? 0),
+    0,
+  );
 
   const fornecedores = new Set<string>();
 
@@ -83,6 +107,7 @@ export async function carregarMovimentos(input: { data: unknown }) {
 
   return {
     movimentos,
+    aReceber,
     fornecedores: [...fornecedores].sort((a, b) =>
       a.localeCompare(b, "pt-BR"),
     ),
