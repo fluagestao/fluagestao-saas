@@ -295,8 +295,9 @@ export function DashboardPanel() {
       )}
 
       {!carregando && dados && dados.totalPedidos > 0 && (
-        // Cabecalho, periodo e as colecoes ficam parados; o miolo rola aqui.
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
+        // Nada aqui rola: quem rola e a lista dentro do card de Mais vendidos.
+        // Rolar o miolo inteiro cortava o card de KPI na metade.
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <Cartao titulo="Vendido no mês" valor={formatBRL(dados.totalVendido)} />
             <Cartao titulo="Pedidos" valor={String(dados.totalPedidos)} />
@@ -327,8 +328,8 @@ export function DashboardPanel() {
             />
           </div>
 
-          <div className="mt-4 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-            <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-4 flex min-h-0 flex-1 flex-col rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
               <h3 className="text-lg font-semibold text-foreground">Mais vendidos</h3>
               <div className="ml-auto flex gap-1 rounded-full border border-[var(--cream-deep)] p-0.5">
                 {(
@@ -353,12 +354,14 @@ export function DashboardPanel() {
                 ))}
               </div>
             </div>
-            <Ranking itens={lista} />
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <Ranking itens={lista} />
+            </div>
 
             {/* Taxa de anexo: o numero que diz se vale empurrar adicional.
                 Fica sob a aba de Adicionais porque so faz sentido junto dela. */}
             {aba === "adicionais" && (
-              <div className="mt-4 grid gap-3 border-t border-[var(--cream-deep)] pt-4 sm:grid-cols-3">
+              <div className="mt-4 grid shrink-0 gap-3 border-t border-[var(--cream-deep)] pt-4 sm:grid-cols-3">
                 <div>
                   <p className="t-support text-muted-foreground">Levaram adicional</p>
                   <p className="t-hero text-foreground">
