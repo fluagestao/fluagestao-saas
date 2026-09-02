@@ -187,7 +187,7 @@ export function ProdutosPanel({
   const fimExibido = Math.min(pagina * ITENS_POR_PAGINA, itensFiltrados.length);
 
   return (
-    <section>
+    <section data-tela-cheia>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
@@ -285,7 +285,7 @@ export function ProdutosPanel({
         </div>
       ) : (
         <>
-          <div className="mt-5 space-y-2">
+          <div className="mt-5 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             {itensPagina.map((p) => {
               const categoria = categorias.find((item) => item.id === p.categoria_id);
               return (

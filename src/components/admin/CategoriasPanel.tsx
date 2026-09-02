@@ -131,7 +131,7 @@ export function CategoriasPanel({
   );
 
   return (
-    <section>
+    <section data-tela-cheia>
       <PageHeader
         titulo={`Categorias (${categorias.length})`}
         descricao="Crie e organize as categorias usadas no cadastro dos produtos. Cada categoria pode pertencer a uma coleção."
@@ -210,7 +210,7 @@ export function CategoriasPanel({
           Nenhuma categoria encontrada.
         </div>
       ) : (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {categoriasFiltradas.map((categoria) => (
             <article
               key={categoria.id}

@@ -215,7 +215,7 @@ export function DashboardPanel() {
   const lista = aba === "produtos" ? (dados?.produtos ?? []) : (dados?.adicionais ?? []);
 
   return (
-    <section>
+    <section data-tela-cheia>
       <PageHeader
         titulo="Relatórios"
         descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta todo pedido do período, menos os cancelados."
@@ -295,7 +295,8 @@ export function DashboardPanel() {
       )}
 
       {!carregando && dados && dados.totalPedidos > 0 && (
-        <>
+        // Cabecalho, periodo e as colecoes ficam parados; o miolo rola aqui.
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
             <Cartao titulo="Vendido no mês" valor={formatBRL(dados.totalVendido)} />
             <Cartao titulo="Pedidos" valor={String(dados.totalPedidos)} />
@@ -394,7 +395,7 @@ export function DashboardPanel() {
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
     </section>
   );

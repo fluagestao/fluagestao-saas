@@ -248,6 +248,27 @@ div[class~="bg-[var(--admin-bg)]"] > main::-webkit-scrollbar {
     overscroll-behavior: contain;
   }
 
+  /* Painéis que cabem em um viewport só.
+     Marcados com data-tela-cheia no <section>. O main para de rolar e vira
+     coluna; quem rola é a lista dentro do painel, que ganha flex-1 e
+     overflow-y-auto no próprio componente.
+
+     Declarativo de propósito: home-compact.css resolve o mesmo problema na
+     tela de Início com dezenas de regras !important amarradas a :nth-child(),
+     e elas já quebraram uma vez quando o número de blocos mudou. */
+  div[class~="bg-[var(--admin-bg)]"] > main:has(> [data-tela-cheia]) {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  [data-tela-cheia] {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 0;
+    flex-direction: column;
+  }
+
   /* O ajuste fino da tela de Início vive em home-compact.css.
      Havia aqui um bloco que mirava `> div:nth-of-type(1..5)` da seção, escrito
      para uma versão do InicioPanel que tinha 5 blocos. Hoje ela tem 4, então
