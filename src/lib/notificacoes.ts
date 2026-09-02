@@ -50,6 +50,9 @@ export async function carregarNotificacoes() {
   const { supabase, companyId } = await requireCompany();
   const hoje = hojeISO();
   const limiteCobranca = somarDias(hoje, -DIAS_PARA_COBRAR);
+  // Mesma janela da tela de Follow-up: pedir avaliacao de entrega antiga
+  // constrange mais do que ajuda.
+  const janelaFollowup = somarDias(hoje, -60);
 
   const [configRes, pedidosRes, contasRes, tarefasRes, saldoRes, templateRes] =
     await Promise.all([
@@ -60,7 +63,9 @@ export async function carregarNotificacoes() {
         .maybeSingle(),
       supabase
         .from("pedidos")
-        .select("status, origem, data_entrega, entregue_em, recebido_em, total")
+        .select(
+          "status, origem, data_entrega, entregue_em, recebido_em, total, avaliacao_pedida_em",
+        )
         .eq("company_id", companyId)
         .neq("status", "cancelado")
         .limit(5000),
@@ -203,8 +208,13 @@ export async function carregarNotificacoes() {
     templateRes.data?.dias_para_avaliacao ?? DIAS_PARA_AVALIACAO_PADRAO,
   );
   const followup = pedidos.filter((p) => {
-    if (p.status !== "entregue" || p.recebido_em === undefined) return false;
+    // Tres condicoes, e eu tinha errado duas: so entregue, so quem ainda nao
+    // foi convidado, e so dentro da janela de 60 dias que a tela de Follow-up
+    // usa. Sem a segunda, o sino somava os ja chamados; sem a terceira, somava
+    // entrega antiga que a tela nem lista.
+    if (p.status !== "entregue" || p.avaliacao_pedida_em) return false;
     if (!p.entregue_em) return false;
+    if ((p.entregue_em as string).slice(0, 10) < janelaFollowup) return false;
     const entrega = (p.entregue_em as string).slice(0, 10);
     const [a1, m1, d1] = hoje.split("-").map(Number);
     const [a2, m2, d2] = entrega.split("-").map(Number);
