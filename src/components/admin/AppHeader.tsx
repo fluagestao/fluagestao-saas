@@ -35,7 +35,7 @@ const MENU: ItemMenu[] = [
       { label: "Follow-up", href: "/followup" },
     ],
   },
-  { label: "Relatórios", href: "/dashboard" },
+  { label: "Dashboard", href: "/dashboard" },
   {
     label: "Financeiro",
     filhos: [
@@ -45,6 +45,7 @@ const MENU: ItemMenu[] = [
       { label: "Previsão de caixa", href: "/financeiro/previsao" },
     ],
   },
+  { label: "Custo", href: "/custo" },
   {
     label: "Cadastros",
     filhos: [

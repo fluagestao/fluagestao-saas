@@ -217,7 +217,7 @@ export function DashboardPanel() {
   return (
     <section data-tela-cheia>
       <PageHeader
-        titulo="Relatórios"
+        titulo="Dashboard"
         descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta todo pedido do período, menos os cancelados."
         acoes={
           <div className="flex flex-wrap items-end gap-2">

@@ -5,6 +5,7 @@ import {
   CalendarDays,
   ChartPie,
   CheckSquare,
+  Calculator,
   ChevronDown,
   ChevronRight,
   Contact,
@@ -32,6 +33,7 @@ import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPa
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
+import { CustoPanel } from "@/components/admin/CustoPanel";
 import { PrevisaoCaixaPanel } from "@/components/admin/PrevisaoCaixaPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
@@ -69,6 +71,7 @@ export type AbaId =
   | "cadastros"
   | "produtos"
   | "colecoes"
+  | "custo"
   | "cadastro-receitas"
   | "cadastro-despesas"
   | "categorias"
@@ -138,13 +141,14 @@ function agruparFilhos(filhos: { id: string; label: string; grupo?: string }[]) 
 const MENU: ItemMenu[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart, vistas: SUB_VENDAS },
-  { id: "dashboard", label: "Relatórios", icon: ChartPie },
+  { id: "dashboard", label: "Dashboard", icon: ChartPie },
   {
     id: "financeiro",
     label: "Financeiro",
     icon: Wallet,
     vistas: SUB_FINANCEIRO,
   },
+  { id: "custo", label: "Custo", icon: Calculator },
   {
     id: "cadastros",
     label: "Cadastros",
@@ -168,9 +172,10 @@ const DO_CATALOGO: AbaId[] = [
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart },
-  { id: "dashboard", label: "Relatórios", icon: ChartPie },
+  { id: "dashboard", label: "Dashboard", icon: ChartPie },
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
+  { id: "custo", label: "Custo", icon: Calculator },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
 ];
@@ -641,6 +646,8 @@ export default function AdminClient({
               onEditar={(produto) => setEditando(produto)}
               onChange={recarregar}
             />
+          ) : aba === "custo" ? (
+            <CustoPanel />
           ) : aba === "cadastro-receitas" || aba === "cadastro-despesas" ? (
             <CategoriasFinanceirasPanel
               lado={aba === "cadastro-receitas" ? "receita" : "despesa"}

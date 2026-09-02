@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 
 const ROTAS_DIRETAS: Record<string, string> = {
   "Início": "/inicio",
-  Relatórios: "/dashboard",
+  Dashboard: "/dashboard",
+  Custo: "/custo",
   Tarefas: "/tarefas",
   "Follow-up": "/followup",
 
@@ -44,7 +45,8 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/vendas/realizadas": { pai: "Vendas", filho: "Realizadas" },
   "/followup": { pai: "Vendas", filho: "Follow-up" },
 
-  "/dashboard": { filho: "Relatórios" },
+  "/dashboard": { filho: "Dashboard" },
+  "/custo": { filho: "Custo" },
 
   "/financeiro/entradas": { pai: "Financeiro", filho: "Recebimentos" },
   "/financeiro/saidas": { pai: "Financeiro", filho: "Pagamentos" },
