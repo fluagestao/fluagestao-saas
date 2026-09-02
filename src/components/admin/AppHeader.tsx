@@ -41,6 +41,7 @@ const MENU: ItemMenu[] = [
     filhos: [
       { label: "Recebimentos", href: "/financeiro/entradas" },
       { label: "Pagamentos", href: "/financeiro/saidas" },
+      { label: "A pagar", href: "/financeiro/a-pagar" },
     ],
   },
   {

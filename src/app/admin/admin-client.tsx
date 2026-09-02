@@ -31,6 +31,7 @@ import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
+import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
 import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
@@ -74,7 +75,7 @@ export type AbaId =
   | "insumos"
   | "horarios";
 
-export type SubFinanceiro = "entradas" | "saidas";
+export type SubFinanceiro = "entradas" | "saidas" | "apagar";
 export type SubVendas = "pedidos" | "areceber" | "realizadas" | "followup";
 export type SubCadastros =
   | "clientes"
@@ -85,6 +86,7 @@ export type SubCadastros =
 const SUB_FINANCEIRO: { id: SubFinanceiro; label: string }[] = [
   { id: "entradas", label: "Recebimentos" },
   { id: "saidas", label: "Pagamentos" },
+  { id: "apagar", label: "A pagar" },
 ];
 
 const SUB_VENDAS: { id: SubVendas; label: string }[] = [
@@ -583,7 +585,11 @@ export default function AdminClient({
               }}
             />
           ) : aba === "financeiro" ? (
-            <FinanceiroPanel vista={subFin} />
+            subFin === "apagar" ? (
+              <ContasAPagarPanel />
+            ) : (
+              <FinanceiroPanel vista={subFin} />
+            )
           ) : aba === "cadastros" ? (
             <CadastrosPanel vista={subCad} />
           ) : aba === "tarefas" ? (
