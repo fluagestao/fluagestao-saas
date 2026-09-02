@@ -4,6 +4,14 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { DatePickerField } from "@/components/ui/date-picker-field";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { mensagemDeErro } from "@/lib/erros";
@@ -43,6 +51,10 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   const [tiposDespesa, setTiposDespesa] = useState<TipoDespesa[]>([]);
   const [tiposReceita, setTiposReceita] = useState<TipoDespesa[]>([]);
   const [aReceber, setAReceber] = useState(0);
+  const [lancamentoAberto, setLancamentoAberto] = useState(false);
+  // O mesmo dialogo serve para criar e para editar: salvarMovimento ja aceita
+  // um id, so nao havia tela que usasse isso.
+  const [editando, setEditando] = useState<Movimento | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const confirmar = useConfirmar();
@@ -207,33 +219,52 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         />
       </div>
 
-      {porForma.length > 0 && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {porForma.map(([forma, valor]) => (
-            <span
-              key={forma}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cream-deep)] bg-card px-3 py-1.5 text-xs text-muted-foreground"
-            >
-              {forma}
-              <Num className="font-semibold text-foreground">{formatBRL(valor)}</Num>
-            </span>
-          ))}
-          <button
-            type="button"
-            onClick={baixarCsv}
-            className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)]"
+      {/* Chips e acoes na mesma faixa. Os chips sao so de recebimento e so
+          quando ha o que somar; os botoes valem sempre. */}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {porForma.map(([forma, valor]) => (
+          <span
+            key={forma}
+            className="inline-flex items-center gap-1.5 rounded-full border border-[var(--cream-deep)] bg-card px-3 py-1.5 text-xs text-muted-foreground"
           >
-            <Download className="h-3.5 w-3.5" />
-            Baixar CSV
-          </button>
-        </div>
-      )}
+            {forma}
+            <Num className="font-semibold text-foreground">{formatBRL(valor)}</Num>
+          </span>
+        ))}
 
-      <NovoLancamento
+        <button
+          type="button"
+          onClick={() => {
+            setEditando(null);
+            setLancamentoAberto(true);
+          }}
+          className="ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl bg-[var(--coral)] px-3 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Novo lançamento
+        </button>
+        <button
+          type="button"
+          onClick={baixarCsv}
+          disabled={daAba.length === 0}
+          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Baixar CSV
+        </button>
+      </div>
+
+      <DialogoLancamento
         tipo={tipo}
         fornecedores={fornecedores}
         tiposDespesa={tiposDespesa}
         tiposReceita={tiposReceita}
+        editando={editando}
+        aberto={lancamentoAberto}
+        onFechar={() => {
+          setLancamentoAberto(false);
+          setEditando(null);
+        }}
         onSalvo={recarregar}
       />
 
@@ -250,7 +281,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
           descricao={
             tipo === "entrada"
               ? "Pedidos marcados como pagos aparecem aqui automaticamente."
-              : "Lance a primeira compra no campo acima."
+              : "Use o botão Novo lançamento para registrar a primeira compra."
           }
         />
       )}
@@ -274,7 +305,18 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                 ) : (
                   <ArrowDownCircle className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
                 )}
-                <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  // So o manual abre: o que veio de pedido se edita em Vendas,
+                  // e o mesmo motivo pelo qual a lixeira avisa em vez de apagar.
+                  onClick={() => {
+                    if (m.pedido_numero) return;
+                    setEditando(m);
+                    setLancamentoAberto(true);
+                  }}
+                  disabled={Boolean(m.pedido_numero)}
+                  className="min-w-0 flex-1 text-left disabled:cursor-default"
+                >
                   <p className="flex items-center gap-2 truncate text-sm text-foreground">
                     <span className="truncate">{m.cliente_nome?.trim() || m.descricao}</span>
                     {/* Diz de onde veio o lancamento: e a etiqueta que explica
@@ -305,7 +347,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                         .join(" · ")}
                     </p>
                   )}
-                </div>
+                </button>
                 <Num className="shrink-0 font-medium text-foreground">{formatBRL(m.valor)}</Num>
                 <button
                   type="button"
@@ -350,61 +392,77 @@ function Cartao({
   );
 }
 
-function NovoLancamento({
+/**
+ * Lançamento manual em diálogo.
+ *
+ * Era uma faixa de campos apertados acima da lista, com rótulos minúsculos e
+ * tudo numa linha só. Em diálogo cabem rótulo, ajuda e espaço — e o mesmo
+ * formulário passa a servir para editar, coisa que salvarMovimento já aceitava
+ * e nenhuma tela usava.
+ */
+function DialogoLancamento({
   tipo,
   fornecedores,
   tiposDespesa,
   tiposReceita,
+  editando,
+  aberto,
+  onFechar,
   onSalvo,
 }: {
   tipo: "entrada" | "saida";
   fornecedores: string[];
   tiposDespesa: TipoDespesa[];
   tiposReceita: TipoDespesa[];
+  editando: Movimento | null;
+  aberto: boolean;
+  onFechar: () => void;
   onSalvo: () => void;
 }) {
-  // O bloco de categoria e um so: muda a lista, o rotulo e quem cria. Duplicar
-  // o formulario por lado sairia caro para manter.
   const ehEntrada = tipo === "entrada";
+  const opcoes = ehEntrada ? tiposReceita : tiposDespesa;
+
   const [data, setData] = useState(() => hojeISO());
   const [valor, setValor] = useState("");
   const [descricao, setDescricao] = useState("");
   const [fornecedor, setFornecedor] = useState("");
-  const [tipoDespesaId, setTipoDespesaId] = useState("");
-  const [opcoesDespesa, setOpcoesDespesa] = useState<TipoDespesa[]>(
-    ehEntrada ? tiposReceita : tiposDespesa,
-  );
-  const [cadastrandoTipo, setCadastrandoTipo] = useState(false);
+  const [categoriaId, setCategoriaId] = useState("");
+  const [cadastrando, setCadastrando] = useState(false);
   const [novoTipo, setNovoTipo] = useState("");
   const [salvandoTipo, setSalvandoTipo] = useState(false);
   const [salvando, setSalvando] = useState(false);
 
+  // Semeia os campos toda vez que o dialogo abre: sem isso, editar um
+  // lancamento mostraria o que sobrou do anterior.
   useEffect(() => {
-    setOpcoesDespesa(ehEntrada ? tiposReceita : tiposDespesa);
-  }, [ehEntrada, tiposDespesa, tiposReceita]);
+    if (!aberto) return;
+    setData(editando?.data ?? hojeISO());
+    setValor(editando ? String(editando.valor).replace(".", ",") : "");
+    setDescricao(editando?.descricao ?? "");
+    setFornecedor(editando?.fornecedor ?? "");
+    const nome = ehEntrada ? editando?.tipo_receita : editando?.tipo_despesa;
+    setCategoriaId(opcoes.find((o) => o.nome === nome)?.id ?? "");
+    setCadastrando(false);
+    setNovoTipo("");
+  }, [aberto, editando, ehEntrada, opcoes]);
 
   const podeSalvar = paraNumero(valor) > 0 && descricao.trim().length > 0;
 
-  async function cadastrarTipoDespesa() {
+  async function cadastrarCategoria() {
     const nome = novoTipo.trim();
     if (!nome || salvandoTipo) return;
-
     setSalvandoTipo(true);
     try {
       const criado = ehEntrada
         ? await criarTipoReceita({ data: { nome } })
         : await criarTipoDespesa({ data: { nome } });
-      setOpcoesDespesa((atuais) =>
-        [...atuais, criado].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
-      );
-      setTipoDespesaId(criado.id);
+      setCategoriaId(criado.id);
       setNovoTipo("");
-      setCadastrandoTipo(false);
-      toast.success(ehEntrada ? "Tipo de receita cadastrado." : "Tipo de despesa cadastrado.");
+      setCadastrando(false);
+      toast.success("Categoria cadastrada.");
+      onSalvo();
     } catch (e) {
-      toast.error(
-        mensagemDeErro(e, ehEntrada ? "cadastrar o tipo de receita" : "cadastrar o tipo de despesa"),
-      );
+      toast.error(mensagemDeErro(e, "cadastrar a categoria"));
     } finally {
       setSalvandoTipo(false);
     }
@@ -416,22 +474,25 @@ function NovoLancamento({
     try {
       await salvarMovimento({
         data: {
+          ...(editando ? { id: editando.id } : {}),
           tipo,
           data,
           valor: paraNumero(valor),
           descricao: descricao.trim(),
           fornecedor: fornecedor.trim() || null,
-          tipo_despesa_id: ehEntrada ? null : tipoDespesaId || null,
-          tipo_receita_id: ehEntrada ? tipoDespesaId || null : null,
+          tipo_despesa_id: ehEntrada ? null : categoriaId || null,
+          tipo_receita_id: ehEntrada ? categoriaId || null : null,
         },
       });
-      toast.success(tipo === "entrada" ? "Recebimento lançado." : "Pagamento lançado.");
-      setValor("");
-      setDescricao("");
-      setFornecedor("");
-      setTipoDespesaId("");
-      document.getElementById("campo-valor")?.focus();
+      toast.success(
+        editando
+          ? "Lançamento atualizado."
+          : ehEntrada
+            ? "Recebimento lançado."
+            : "Pagamento lançado.",
+      );
       onSalvo();
+      onFechar();
     } catch (e) {
       toast.error(mensagemDeErro(e, "salvar o lançamento"));
     }
@@ -439,55 +500,66 @@ function NovoLancamento({
   }
 
   return (
-    <div className="mt-4 rounded-2xl border border-dashed border-[var(--cream-deep)] p-3">
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground">Dia</span>
-          <DatePickerField
-            value={data}
-            onChange={setData}
-            ariaLabel="Dia do lançamento"
-            className="h-10 w-[10.5rem]"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground">Valor</span>
-          <Input
-            id="campo-valor"
-            inputMode="decimal"
-            value={valor}
-            onChange={(e) => setValor(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && salvar()}
-            placeholder="0,00"
-            className="h-10 w-28"
-          />
-        </label>
-        <label className="block min-w-[12rem] flex-1">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground">
-            Descrição
-          </span>
-          <Input
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && salvar()}
-            placeholder={tipo === "entrada" ? "Ex.: venda na feira" : "Ex.: frios e pães"}
-            className="h-10"
-          />
-        </label>
+    <Dialog open={aberto} onOpenChange={(estado) => !estado && onFechar()}>
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+        <DialogHeader className="pr-6 text-left">
+          <DialogTitle>
+            {editando ? "Editar lançamento" : ehEntrada ? "Novo recebimento" : "Novo pagamento"}
+          </DialogTitle>
+          <DialogDescription>
+            {ehEntrada
+              ? "Dinheiro que entrou e não veio de um pedido — venda na feira, adiantamento, devolução."
+              : "Compra, conta, retirada. A categoria e o fornecedor ajudam a achar depois."}
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="block min-w-[12rem]">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Dia</span>
+            <DatePickerField
+              value={data}
+              onChange={setData}
+              ariaLabel="Dia do lançamento"
+              className="h-10 w-full"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Valor</span>
+            <Input
+              autoFocus
+              inputMode="decimal"
+              value={valor}
+              onChange={(e) => setValor(e.target.value)}
+              placeholder="0,00"
+              className="h-10"
+            />
+          </label>
+
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Descrição</span>
+            <Input
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              placeholder={ehEntrada ? "Ex.: venda na feira" : "Ex.: frios e pães"}
+              maxLength={200}
+              className="h-10"
+            />
+          </label>
+
+          <div className={ehEntrada ? "block sm:col-span-2" : "block"}>
             <span className="mb-1 block text-xs font-medium text-muted-foreground">
-              {ehEntrada ? "Receita" : "Despesa"}
+              {ehEntrada ? "Tipo de receita" : "Tipo de despesa"}
             </span>
             <div className="flex h-10 overflow-hidden rounded-md border border-input bg-background shadow-xs focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
               <select
-                value={tipoDespesaId}
-                onChange={(e) => setTipoDespesaId(e.target.value)}
+                value={categoriaId}
+                onChange={(e) => setCategoriaId(e.target.value)}
                 className="min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
                 aria-label={ehEntrada ? "Tipo de receita" : "Tipo de despesa"}
               >
-                <option value="">Selecione</option>
-                {opcoesDespesa.map((opcao) => (
+                <option value="">Sem categoria</option>
+                {opcoes.map((opcao) => (
                   <option key={opcao.id} value={opcao.id}>
                     {opcao.nome}
                   </option>
@@ -495,67 +567,78 @@ function NovoLancamento({
               </select>
               <button
                 type="button"
-                onClick={() => setCadastrandoTipo((valorAtual) => !valorAtual)}
+                onClick={() => setCadastrando((atual) => !atual)}
                 className="grid w-10 shrink-0 place-items-center border-l border-input text-[var(--terracotta)] transition hover:bg-[var(--cream)]"
-                aria-label={ehEntrada ? "Cadastrar tipo de receita" : "Cadastrar tipo de despesa"}
-                title={ehEntrada ? "Cadastrar tipo de receita" : "Cadastrar tipo de despesa"}
+                aria-label="Cadastrar categoria"
+                title="Cadastrar categoria"
               >
-                {cadastrandoTipo ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                {cadastrando ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
-        {tipo === "saida" && (
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">Fornecedor</span>
-            <Input
-              value={fornecedor}
-              onChange={(e) => setFornecedor(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && salvar()}
-              placeholder=""
-              list="fornecedores-usados"
-              className="h-10 w-40"
-            />
-            <datalist id="fornecedores-usados">
-              {fornecedores.map((f) => (
-                <option key={f} value={f} />
-              ))}
-            </datalist>
-          </label>
-        )}
+          {!ehEntrada && (
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                Fornecedor
+              </span>
+              <Input
+                value={fornecedor}
+                onChange={(e) => setFornecedor(e.target.value)}
+                list="fornecedores-usados"
+                className="h-10"
+              />
+              <datalist id="fornecedores-usados">
+                {fornecedores.map((f) => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
+            </label>
+          )}
 
-        <Button onClick={salvar} disabled={!podeSalvar || salvando} className="h-10">
-          <Plus className="mr-1 h-4 w-4" />
-          Lançar
-        </Button>
-      </div>
+          {cadastrando && (
+            <div className="flex items-center gap-2 rounded-xl bg-[var(--cream-soft)] p-2 sm:col-span-2">
+              <Input
+                value={novoTipo}
+                onChange={(e) => setNovoTipo(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void cadastrarCategoria();
+                  }
+                }}
+                placeholder={ehEntrada ? "Ex.: taxa de entrega" : "Ex.: insumos, gasolina"}
+                autoFocus
+                className="h-9"
+              />
+              <Button
+                type="button"
+                onClick={cadastrarCategoria}
+                disabled={!novoTipo.trim() || salvandoTipo}
+                className="h-9 shrink-0"
+              >
+                Salvar
+              </Button>
+            </div>
+          )}
+        </div>
 
-      {tipo === "saida" && cadastrandoTipo && (
-        <div className="mt-2 ml-auto flex max-w-md items-center gap-2 rounded-xl bg-[var(--cream-soft)] p-2">
-          <Input
-            value={novoTipo}
-            onChange={(e) => setNovoTipo(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void cadastrarTipoDespesa();
-              }
-            }}
-            placeholder="Ex.: Insumos, salários, gasolina"
-            autoFocus
-            className="h-9"
-          />
+        <DialogFooter className="pt-1">
+          <Button type="button" variant="outline" onClick={onFechar} className="rounded-full">
+            Cancelar
+          </Button>
           <Button
             type="button"
-            onClick={cadastrarTipoDespesa}
-            disabled={!novoTipo.trim() || salvandoTipo}
-            className="h-9 shrink-0"
+            onClick={salvar}
+            disabled={!podeSalvar || salvando}
+            className="rounded-full"
           >
-            Salvar
+            <Plus className="mr-1.5 h-4 w-4" />
+            {salvando ? "Salvando…" : editando ? "Salvar alterações" : "Lançar"}
           </Button>
-        </div>
-      )}
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
