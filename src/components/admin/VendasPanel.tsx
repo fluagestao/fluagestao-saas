@@ -662,7 +662,11 @@ export function VendasPanel({
   }
 
   return (
-    <section>
+    // A receber cabe num viewport: cabecalho e filtro parados, lista rolando
+    // por dentro e a barra de selecao presa no rodape. As outras sub-abas
+    // seguem como estao — mudar as tres de uma vez sem ver o resultado seria
+    // apostar em tres layouts ao mesmo tempo.
+    <section data-tela-cheia={sub === "areceber" ? "" : undefined}>
       <PageHeader
         titulo={
           sub === "areceber" ? "A receber" : sub === "realizadas" ? "Vendas realizadas" : "Pedidos"
@@ -785,7 +789,7 @@ export function VendasPanel({
 
       {/* a receber: entregues sem pagamento primeiro, que é o que se cobra */}
       {sub === "areceber" && (
-        <div className="mt-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
           <SeletorPeriodo
             de={recDe}
             ate={recAte}
@@ -818,7 +822,7 @@ export function VendasPanel({
             <p className="mt-3 text-sm text-muted-foreground">Tudo recebido por aqui 🤍</p>
           ) : (
             <>
-              <ul className="mt-3 space-y-1.5">
+              <ul className="mt-3 min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1">
                 {[...aReceberLista]
                   // Entregue sem pagar sobe: é a cobrança de verdade.
                   .sort((a, b) => Number(b.status === "entregue") - Number(a.status === "entregue"))
@@ -867,7 +871,7 @@ export function VendasPanel({
               </ul>
 
               {marcados.size > 0 && (
-                <div className="mt-3 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--terracotta)] bg-card p-3">
+                <div className="mt-3 flex shrink-0 flex-wrap items-center gap-3 rounded-xl border border-[var(--terracotta)] bg-card p-3">
                   <span className="text-sm font-medium text-foreground">
                     {marcados.size} selecionado(s) ·{" "}
                     <Num>
