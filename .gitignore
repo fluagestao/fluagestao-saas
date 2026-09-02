@@ -42,3 +42,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# bun (ambiente local) — a Vercel usa o package-lock.json
+bun.lock
+bun.lockb
