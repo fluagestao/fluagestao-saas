@@ -178,7 +178,8 @@ export function htmlDaFicha(
 }
 
 /**
- * Abre a ficha numa janela e manda imprimir.
+ * Abre diretamente o diálogo de impressão/PDF, sem deixar uma página extra
+ * da ficha aberta no navegador.
  *
  * Precisa ser chamada direto do clique, sem await antes: o navegador só deixa
  * abrir janela dentro do gesto da pessoa.
@@ -187,11 +188,28 @@ export function imprimirFicha(
   p: Pedido,
   empresaDados: string | EmpresaFichaPedido = "Sua empresa",
 ): boolean {
-  const janela = window.open("", "_blank", "width=820,height=1000");
-  if (!janela) return false;
-  janela.document.write(htmlDaFicha(p, empresaDados));
-  janela.document.close();
-  // Espera a logo carregar, senão a impressão sai sem ela.
-  janela.onload = () => janela.print();
+  const frame = document.createElement("iframe");
+  frame.setAttribute("aria-hidden", "true");
+  frame.style.position = "fixed";
+  frame.style.width = "0";
+  frame.style.height = "0";
+  frame.style.border = "0";
+  frame.style.opacity = "0";
+  document.body.appendChild(frame);
+
+  const documento = frame.contentDocument;
+  const janela = frame.contentWindow;
+  if (!documento || !janela) {
+    frame.remove();
+    return false;
+  }
+  frame.onload = () => {
+    janela.focus();
+    janela.print();
+    window.setTimeout(() => frame.remove(), 1_000);
+  };
+  documento.open();
+  documento.write(htmlDaFicha(p, empresaDados));
+  documento.close();
   return true;
 }
