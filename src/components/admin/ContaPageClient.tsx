@@ -23,6 +23,7 @@ import {
 } from "@/lib/notificacoes";
 import { CATALOGO_AVISOS, type TipoAviso } from "@/lib/notificacoes-tipos";
 import { ConfirmProvider } from "@/components/admin/shell";
+import { ImportacaoConfig } from "@/components/admin/ImportacaoConfig";
 import { UsuariosView } from "@/components/admin/UsuariosView";
 import { createClient } from "@/lib/supabase/client";
 
@@ -658,6 +659,7 @@ export function ContaPageClient({
                 </div>
               ) : (
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+                  <ImportacaoConfig />
                   <AvisosConfig />
                   <div className="rounded-2xl border border-[var(--admin-border)] bg-white p-5 sm:p-6 xl:col-span-2">
                     <label>

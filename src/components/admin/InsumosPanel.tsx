@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  FileSpreadsheet,
   History,
   PackagePlus,
   Pencil,
@@ -312,10 +313,18 @@ export function InsumosPanel() {
         titulo="Insumos"
         descricao="Cadastre o que você compra do jeito que compra: a embalagem inteira e o preço dela. O custo unitário sai da conta e alimenta o custo dos produtos."
         acoes={
-          <Button onClick={abrirNovo} className="h-11">
-            <PackagePlus className="mr-1.5 h-4 w-4" />
-            Cadastrar novo insumo
-          </Button>
+          <>
+            <Button asChild variant="outline" className="h-11">
+              <a href="/conta/configuracoes?importar=insumos">
+                <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                Importar planilha
+              </a>
+            </Button>
+            <Button onClick={abrirNovo} className="h-11">
+              <PackagePlus className="mr-1.5 h-4 w-4" />
+              Cadastrar novo insumo
+            </Button>
+          </>
         }
       />
 

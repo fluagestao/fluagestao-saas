@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  FileSpreadsheet,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -199,6 +200,12 @@ export function ProdutosPanel({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline">
+            <a href="/conta/configuracoes?importar=produtos">
+              <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+              Importar planilha
+            </a>
+          </Button>
           <Button asChild>
             <Link href="/cadastros/produtos/novo">
               <Plus className="mr-1.5 h-4 w-4" /> Novo produto

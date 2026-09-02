@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  FileSpreadsheet,
   ArrowUpDown,
   MessageCircle,
   MoreHorizontal,
@@ -188,10 +189,18 @@ export function ClientesView({
           </>
         }
         acoes={
-          <Button onClick={() => setEditando("novo")}>
-            <Plus className="mr-1.5 h-4 w-4" />
-            Novo cliente
-          </Button>
+          <>
+            <Button asChild variant="outline">
+              <a href="/conta/configuracoes?importar=clientes">
+                <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                Importar planilha
+              </a>
+            </Button>
+            <Button onClick={() => setEditando("novo")}>
+              <Plus className="mr-1.5 h-4 w-4" />
+              Novo cliente
+            </Button>
+          </>
         }
       />
 

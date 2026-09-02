@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { MessageCircle, Pencil, Plus, Trash2, X } from "lucide-react";
+import { FileSpreadsheet, MessageCircle, Pencil, Plus, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -118,16 +118,24 @@ export function FornecedoresView() {
         titulo="Fornecedores"
         descricao="Quem vende pra vocês. O nome cadastrado aparece como sugestão ao lançar um pagamento."
         acoes={
-          <Button
-            onClick={() => {
-              setEditando(null);
-              setFormAberto(true);
-            }}
-            className="h-10 rounded-full"
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            Novo fornecedor
-          </Button>
+          <>
+            <Button asChild variant="outline" className="h-10 rounded-full">
+              <a href="/conta/configuracoes?importar=fornecedores">
+                <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                Importar planilha
+              </a>
+            </Button>
+            <Button
+              onClick={() => {
+                setEditando(null);
+                setFormAberto(true);
+              }}
+              className="h-10 rounded-full"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Novo fornecedor
+            </Button>
+          </>
         }
       />
 
