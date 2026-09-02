@@ -190,6 +190,11 @@ export function CalendarioEntregasPanel({
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarDatas, setMostrarDatas] = useState(false);
   const [pedidoAberto, setPedidoAberto] = useState<Pedido | null>(null);
+  // Celular: um dia por vez. Comeca no dia de hoje, que e o que se abre a agenda
+  // para ver.
+  const [diaFoco, setDiaFoco] = useState(() =>
+    Math.max(0, DIAS.findIndex((_, i) => somarDias(inicioDaSemana(hojeISO()), i) === hojeISO())),
+  );
 
   const hoje = hojeISO();
   const datasEspeciais = useMemo(
@@ -238,6 +243,92 @@ export function CalendarioEntregasPanel({
       }),
     [inicioSemana],
   );
+
+  /**
+   * Troca a semana e reposiciona o dia em foco na mesma acao — sem efeito
+   * colateral: derivar isso de um useEffect dispara render em cascata.
+   */
+  function irParaSemana(nova: string, onde: "hoje" | "inicio" | "fim" = "hoje") {
+    setInicioSemana(nova);
+    if (onde === "fim") return setDiaFoco(6);
+    if (onde === "inicio") return setDiaFoco(0);
+    const indiceHoje = DIAS.findIndex((_, i) => somarDias(nova, i) === hoje);
+    setDiaFoco(indiceHoje >= 0 ? indiceHoje : 0);
+  }
+
+  /** Nas pontas vira a semana e cai no primeiro ou no ultimo dia dela. */
+  function passarDia(passo: number) {
+    const alvo = diaFoco + passo;
+    if (alvo < 0) return irParaSemana(somarDias(inicioSemana, -7), "fim");
+    if (alvo > 6) return irParaSemana(somarDias(inicioSemana, 7), "inicio");
+    setDiaFoco(alvo);
+  }
+
+  /**
+   * A coluna de um dia. No celular ela ocupa a largura toda, nao fixa a altura
+   * de 520px da grade e dispensa o cabecalho — o navegador acima ja diz o dia.
+   */
+  function colunaDoDia(
+    dia: { nome: string; data: string },
+    index: number,
+    compacta: boolean,
+  ) {
+    const pedidosDoDia = pedidosPorDia.get(dia.data) ?? [];
+    const ehHoje = dia.data === hoje;
+
+    return (
+      <article
+        key={dia.data}
+        className={cn(
+          "rounded-[22px] border bg-[#fffdfa] p-2.5 shadow-[0_8px_28px_rgba(89,62,55,0.025)]",
+          compacta ? "min-h-[200px]" : "min-h-[520px]",
+          ehHoje
+            ? "border-[var(--terracotta)] ring-1 ring-[var(--terracotta)]/10"
+            : "border-[var(--admin-border)]",
+        )}
+      >
+        {!compacta && (
+          <header className="flex items-center justify-between px-1 pb-2">
+            <span
+              className={cn(
+                "text-[11px] font-bold tracking-[0.08em]",
+                ehHoje
+                  ? "text-[var(--terracotta)]"
+                  : index >= 5
+                    ? "text-[#9a6f64]"
+                    : "text-[var(--admin-muted)]",
+              )}
+            >
+              {dia.nome}
+            </span>
+            <span className="text-[11px] font-medium text-[var(--admin-muted)]">
+              {diaDoMes(dia.data)}/{dia.data.slice(5, 7)}
+            </span>
+          </header>
+        )}
+
+        <div className="space-y-2">
+          {carregando ? (
+            <div className="grid min-h-40 place-items-center text-[var(--terracotta)]">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+          ) : pedidosDoDia.length ? (
+            pedidosDoDia.map((pedido) => (
+              <CardEntrega
+                key={pedido.id}
+                pedido={pedido}
+                onClick={() => setPedidoAberto(pedido)}
+              />
+            ))
+          ) : (
+            <div className="grid min-h-20 place-items-center text-[var(--admin-muted)]">
+              <span className="text-sm">Nenhuma entrega neste dia.</span>
+            </div>
+          )}
+        </div>
+      </article>
+    );
+  }
 
   const pedidosPorDia = useMemo(() => {
     const mapa = new Map<string, Pedido[]>();
@@ -330,7 +421,7 @@ export function CalendarioEntregasPanel({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setInicioSemana((data) => somarDias(data, -7))}
+            onClick={() => irParaSemana(somarDias(inicioSemana, -7))}
             className="grid h-9 w-9 place-items-center rounded-full border border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)] transition hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]"
             aria-label="Ver semana anterior"
           >
@@ -338,14 +429,14 @@ export function CalendarioEntregasPanel({
           </button>
           <button
             type="button"
-            onClick={() => setInicioSemana(inicioDaSemana(hoje))}
+            onClick={() => irParaSemana(inicioDaSemana(hoje))}
             className="h-9 rounded-full border border-[var(--admin-border)] bg-white px-3 text-xs font-semibold text-[var(--admin-ink-soft)] transition hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]"
           >
             Hoje
           </button>
           <button
             type="button"
-            onClick={() => setInicioSemana((data) => somarDias(data, 7))}
+            onClick={() => irParaSemana(somarDias(inicioSemana, 7))}
             className="grid h-9 w-9 place-items-center rounded-full border border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)] transition hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]"
             aria-label="Ver próxima semana"
           >
@@ -360,62 +451,49 @@ export function CalendarioEntregasPanel({
         </div>
       )}
 
-      <div className="overflow-x-auto pb-2 [scrollbar-width:thin]">
+      {/* Celular: um dia por vez, com seta. A grade de sete colunas so cabia
+          rolando 1120px na horizontal, e as colunas ficavam espremidas. */}
+      <div className="md:hidden">
+        <div className="flex items-center justify-between gap-2 rounded-2xl border border-[var(--admin-border)] bg-white px-2 py-2">
+          <button
+            type="button"
+            onClick={() => passarDia(-1)}
+            aria-label="Dia anterior"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--admin-border)] text-[var(--admin-ink-soft)] transition hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+
+          <div className="min-w-0 text-center">
+            <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
+              {dias[diaFoco]?.nome}
+              {dias[diaFoco]?.data === hoje ? " · hoje" : ""}
+            </p>
+            <p className="text-xs text-[var(--admin-muted)]">
+              {dias[diaFoco] ? `${diaDoMes(dias[diaFoco].data)}/${dias[diaFoco].data.slice(5, 7)}` : ""}
+              {" · "}
+              {(pedidosPorDia.get(dias[diaFoco]?.data ?? "") ?? []).length} entrega(s)
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => passarDia(1)}
+            aria-label="Próximo dia"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[var(--admin-border)] text-[var(--admin-ink-soft)] transition hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-2">
+          {dias[diaFoco] && colunaDoDia(dias[diaFoco], diaFoco, true)}
+        </div>
+      </div>
+
+      <div className="hidden overflow-x-auto pb-2 md:block [scrollbar-width:thin]">
         <div className="grid min-w-[1120px] grid-cols-7 gap-2">
-          {dias.map((dia, index) => {
-            const pedidosDoDia = pedidosPorDia.get(dia.data) ?? [];
-            const ehHoje = dia.data === hoje;
-
-            return (
-              <article
-                key={dia.data}
-                className={cn(
-                  "min-h-[520px] rounded-[22px] border bg-[#fffdfa] p-2.5 shadow-[0_8px_28px_rgba(89,62,55,0.025)]",
-                  ehHoje
-                    ? "border-[var(--terracotta)] ring-1 ring-[var(--terracotta)]/10"
-                    : "border-[var(--admin-border)]",
-                )}
-              >
-                <header className="flex items-center justify-between px-1 pb-2">
-                  <span
-                    className={cn(
-                      "text-[11px] font-bold tracking-[0.08em]",
-                      ehHoje
-                        ? "text-[var(--terracotta)]"
-                        : index >= 5
-                          ? "text-[#9a6f64]"
-                          : "text-[var(--admin-muted)]",
-                    )}
-                  >
-                    {dia.nome}
-                  </span>
-                  <span className="text-[11px] font-medium text-[var(--admin-muted)]">
-                    {diaDoMes(dia.data)}/{dia.data.slice(5, 7)}
-                  </span>
-                </header>
-
-                <div className="space-y-2">
-                  {carregando ? (
-                    <div className="grid min-h-40 place-items-center text-[var(--terracotta)]">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                  ) : pedidosDoDia.length ? (
-                    pedidosDoDia.map((pedido) => (
-                      <CardEntrega
-                        key={pedido.id}
-                        pedido={pedido}
-                        onClick={() => setPedidoAberto(pedido)}
-                      />
-                    ))
-                  ) : (
-                    <div className="grid min-h-20 place-items-center text-[var(--admin-muted)]">
-                      <span className="text-sm">—</span>
-                    </div>
-                  )}
-                </div>
-              </article>
-            );
-          })}
+          {dias.map((dia, index) => colunaDoDia(dia, index, false))}
         </div>
       </div>
 
