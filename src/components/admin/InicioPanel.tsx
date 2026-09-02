@@ -140,11 +140,22 @@ function Vazio({
   destaque?: boolean;
 }) {
   return (
-    <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 py-4 text-center">
-      <span className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ring-8 ring-[var(--peach-soft)] ${destaque ? "h-12 w-12" : "h-10 w-10"}`}>
-        <Icon className={destaque ? "h-6 w-6" : "h-5 w-5"} strokeWidth={1.5} />
+    <div
+      className={`flex min-h-0 w-full flex-1 flex-col items-center justify-center px-5 text-center ${
+        destaque ? "py-4" : "py-3"
+      }`}
+    >
+      {/* O card de Tarefas tem altura fixa e curta no desktop: a versao sem
+          destaque precisa caber icone + duas linhas ali dentro, senao o texto
+          some na borda. Por isso ela usa halo e margens menores. */}
+      <span
+        className={`grid place-items-center rounded-full bg-[var(--peach)] text-[var(--coral)] ${
+          destaque ? "h-12 w-12 ring-8" : "h-9 w-9 ring-4"
+        } ring-[var(--peach-soft)]`}
+      >
+        <Icon className={destaque ? "h-6 w-6" : "h-4 w-4"} strokeWidth={1.5} />
       </span>
-      <p className={`t-item text-[var(--admin-ink)] ${destaque ? "mt-4" : "mt-3"}`}>{titulo}</p>
+      <p className={`t-item text-[var(--admin-ink)] ${destaque ? "mt-4" : "mt-2"}`}>{titulo}</p>
       <p className="t-support mt-1 max-w-sm text-[var(--admin-muted)]">{descricao}</p>
     </div>
   );

@@ -121,17 +121,17 @@
     border-radius: 13px !important;
   }
 
-  /* 116px, nao 78: o estado vazio de Tarefas tem icone + duas linhas e ficava
+  /* 126px, nao 78: o estado vazio de Tarefas tem icone + duas linhas e ficava
      cortado. Com tarefas na lista o proprio corpo do card rola. */
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
     display: grid !important;
-    grid-template-rows: 116px minmax(0, 1fr) !important;
+    grid-template-rows: 126px minmax(0, 1fr) !important;
     gap: 7px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
-    height: 116px !important;
-    min-height: 116px !important;
+    height: 126px !important;
+    min-height: 126px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:last-child {
@@ -254,13 +254,13 @@
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) {
-    grid-template-rows: 104px minmax(0, 1fr) !important;
+    grid-template-rows: 114px minmax(0, 1fr) !important;
     gap: 5px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:first-child {
-    height: 104px !important;
-    min-height: 104px !important;
+    height: 114px !important;
+    min-height: 114px !important;
   }
 
   main > section.space-y-3.pb-4 > :nth-child(3) > :nth-child(3) > article:last-child {
