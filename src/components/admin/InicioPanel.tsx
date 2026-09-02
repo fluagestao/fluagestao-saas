@@ -255,6 +255,8 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
   const [periodo, setPeriodo] = useState<"atual" | "anterior" | "ano">("atual");
   const [ano, setAno] = useState<FaturamentoAno | null>(null);
+  // Indice do ponto sob o cursor. null = mouse fora do grafico.
+  const [pontoAtivo, setPontoAtivo] = useState<number | null>(null);
   const [mesPassado, setMesPassado] = useState<FaturamentoMes | null>(null);
   const [carregandoMes, setCarregandoMes] = useState(false);
 
@@ -357,6 +359,22 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   // tela aberta, o dado guardado passa a ser de outro mês e não serve mais.
   const mesPassadoValido = mesPassado?.mes === mesAnterior ? mesPassado : null;
   const faturamento = periodo === "atual" ? faturamentoAtual : mesPassadoValido;
+
+  /** O cabecalho a esquerda segue o periodo escolhido, inclusive no ano. */
+  const totais = useMemo(() => {
+    if (periodo === "ano") {
+      return {
+        total: ano?.total ?? 0,
+        pedidos: ano?.pedidos ?? 0,
+        ticket: ano?.ticket ?? 0,
+      };
+    }
+    return {
+      total: faturamento?.total ?? 0,
+      pedidos: faturamento?.pedidos ?? 0,
+      ticket: faturamento?.ticket ?? 0,
+    };
+  }, [periodo, ano, faturamento]);
 
   /**
    * Mes e ano viram a mesma forma: uma lista de pontos com rotulo. Sem isso, o
@@ -650,10 +668,10 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
           <div className="grid min-h-0 flex-1 gap-4 p-4 md:grid-cols-[minmax(190px,.72fr)_minmax(0,1.4fr)]">
             <div className="min-w-0">
               <p className="t-hero text-[var(--admin-ink)]">
-                {formatBRL(faturamento?.total ?? 0)}
+                {formatBRL(totais.total)}
               </p>
               <p className="t-support mt-1 text-[var(--admin-muted)]">
-                {faturamento?.pedidos ?? 0} pedidos · ticket {formatBRL(faturamento?.ticket ?? 0)}
+                {totais.pedidos} pedidos · ticket {formatBRL(totais.ticket)}
               </p>
               {grafico.exibidos.every((p) => p.valor === 0) && (
                 <p className="t-support mt-5 text-[var(--admin-muted)]">
@@ -669,7 +687,44 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                 <span>0</span>
               </div>
               <div className="flex min-w-0 flex-col">
-                <div className="relative min-h-[82px] flex-1">
+                <div
+                  className="relative min-h-[82px] flex-1"
+                  onMouseMove={(e) => {
+                    // O ponto mais proximo do cursor, pela posicao relativa na
+                    // largura. Perseguir o circulo de 0.65 de raio seria
+                    // impossivel de acertar com o mouse.
+                    const caixa = e.currentTarget.getBoundingClientRect();
+                    if (caixa.width === 0 || grafico.exibidos.length === 0) return;
+                    const razao = (e.clientX - caixa.left) / caixa.width;
+                    const alvo = Math.round(razao * (grafico.exibidos.length - 1));
+                    setPontoAtivo(Math.min(Math.max(alvo, 0), grafico.exibidos.length - 1));
+                  }}
+                  onMouseLeave={() => setPontoAtivo(null)}
+                >
+                  {pontoAtivo != null && grafico.exibidos[pontoAtivo] && (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute bottom-0 top-0 w-px bg-[var(--coral)] opacity-30"
+                        style={{
+                          left: `${(pontoAtivo / Math.max(grafico.exibidos.length - 1, 1)) * 100}%`,
+                        }}
+                      />
+                      <div
+                        className="pointer-events-none absolute -top-1 z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg bg-[var(--admin-ink)] px-2 py-1 text-white shadow-[var(--shadow-lift)]"
+                        style={{
+                          left: `${(pontoAtivo / Math.max(grafico.exibidos.length - 1, 1)) * 100}%`,
+                        }}
+                      >
+                        <span className="t-support block opacity-80">
+                          {grafico.exibidos[pontoAtivo].rotulo}
+                        </span>
+                        <span className="t-support block font-semibold">
+                          {formatBRL(grafico.exibidos[pontoAtivo].valor)}
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="absolute inset-0 flex flex-col justify-between pb-1">
                     <span className="border-t border-dashed border-[var(--admin-border-soft)]" />
                     <span className="border-t border-dashed border-[var(--admin-border-soft)]" />
@@ -706,7 +761,7 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
                           key={p.rotulo}
                           cx={x}
                           cy={y}
-                          r="0.65"
+                          r={pontoAtivo === index ? "1.6" : "0.65"}
                           fill="var(--cream-soft)"
                           stroke="var(--coral)"
                           strokeWidth="0.9"
