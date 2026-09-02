@@ -120,6 +120,11 @@ export function PedidoDialog({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [clienteId, setClienteId] = useState(pedido?.cliente_id ?? "");
+  const [clienteRecemCriado, setClienteRecemCriado] = useState<{
+    id: string;
+    nome: string;
+    whatsapp: string;
+  } | null>(null);
   const [novoCliente, setNovoCliente] = useState(false);
   const [novoProduto, setNovoProduto] = useState(false);
   const [produtosLocais, setProdutosLocais] = useState(produtos);
@@ -357,7 +362,10 @@ export function PedidoDialog({
           <BuscaAdicionar
             className="flex-1"
             placeholder={
-              clientes.find((c) => c.id === clienteId)?.nome ?? "Busque aqui seu cliente cadastrado"
+              clientes.find((c) => c.id === clienteId)?.nome ??
+              (clienteRecemCriado?.id === clienteId
+                ? clienteRecemCriado.nome
+                : "Busque aqui seu cliente cadastrado")
             }
             buscaPlaceholder="Nome ou WhatsApp…"
             vazio="Nenhum cliente com esse nome."
@@ -374,6 +382,7 @@ export function PedidoDialog({
             onEscolher={(id) => {
               const c = clientes.find((x) => x.id === id);
               if (!c) return;
+              setClienteRecemCriado(null);
               setClienteId(id);
               setNome(c.nome);
               setWhatsapp(c.whatsapp ?? "");
@@ -853,8 +862,11 @@ export function PedidoDialog({
       cliente={null}
       inicial={{ nome, whatsapp }}
       onClose={() => setNovoCliente(false)}
-      onSaved={(id) => {
-        if (id) setClienteId(id);
+      onSaved={(cliente) => {
+        setClienteId(cliente.id);
+        setClienteRecemCriado(cliente);
+        setNome(cliente.nome);
+        setWhatsapp(cliente.whatsapp);
         setNovoCliente(false);
         toast.success("Cliente cadastrado e vinculado ao pedido.");
         onClienteCriado?.();
