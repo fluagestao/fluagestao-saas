@@ -666,7 +666,7 @@ export function VendasPanel({
     // por dentro e a barra de selecao presa no rodape. As outras sub-abas
     // seguem como estao — mudar as tres de uma vez sem ver o resultado seria
     // apostar em tres layouts ao mesmo tempo.
-    <section data-tela-cheia={sub === "areceber" ? "" : undefined}>
+    <section data-tela-cheia>
       <PageHeader
         titulo={
           sub === "areceber" ? "A receber" : sub === "realizadas" ? "Vendas realizadas" : "Pedidos"
@@ -906,7 +906,7 @@ export function VendasPanel({
 
       {/* vendas realizadas do dia */}
       {sub === "realizadas" && (
-        <div className="mt-4">
+        <div className="mt-4 flex min-h-0 flex-1 flex-col">
           <SeletorPeriodoRealizadas
             periodo={periodoRealizadas}
             de={realDe}
@@ -966,13 +966,13 @@ export function VendasPanel({
           )}
 
           {realizadasFiltradas.length > 0 && (
-            <div className="mt-3">
+            <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
               <TabelaRealizadas pedidos={realizadasFiltradas} acoes={acoes} />
             </div>
           )}
 
           {/* Celular: seis colunas nao cabem, entao a lista segue em cards. */}
-          <div className="mt-3 space-y-3 md:hidden">
+          <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 md:hidden">
             {realizadasFiltradas.map((p) => (
               <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
             ))}
@@ -982,7 +982,7 @@ export function VendasPanel({
 
       {/* corpo: quadro no desktop (se escolhido) ou lista agrupada por urgência */}
       {sub !== "pedidos" ? null : visao === "kanban" ? (
-        <div className="mt-4 hidden md:block">
+        <div className="mt-4 hidden min-h-0 flex-1 overflow-y-auto pr-1 md:block">
           <VendasKanban pedidos={paraOQuadro} acoes={acoes} onMover={mover} />
         </div>
       ) : null}
@@ -990,6 +990,7 @@ export function VendasPanel({
       <div
         className={cn(
           sub !== "pedidos" && "hidden",
+          "min-h-0 flex-1 overflow-y-auto pr-1",
           visao === "kanban" ? "mt-4 md:hidden" : "mt-4",
         )}
       >
