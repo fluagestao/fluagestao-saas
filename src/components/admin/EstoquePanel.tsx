@@ -5,6 +5,7 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   Boxes,
+  CheckCheck,
   ClipboardCheck,
   History,
   Search,
@@ -269,6 +270,13 @@ export function EstoquePanel() {
     }
   }
 
+  function marcarTodos(valor: boolean) {
+    const alvos = new Set(rascunhoFiltrado.map((i) => i.id));
+    setRascunho((atual) =>
+      atual.map((i) => (alvos.has(i.id) ? { ...i, controlar_estoque: valor } : i)),
+    );
+  }
+
   const rascunhoFiltrado = useMemo(() => {
     const termo = buscaControle.trim().toLocaleLowerCase("pt-BR");
     if (!termo) return rascunho;
@@ -276,6 +284,10 @@ export function EstoquePanel() {
       `${i.nome} ${i.categoria ?? ""}`.toLocaleLowerCase("pt-BR").includes(termo),
     );
   }, [buscaControle, rascunho]);
+
+  const selecionados = rascunho.filter((i) => i.controlar_estoque).length;
+  const todosMarcados =
+    rascunhoFiltrado.length > 0 && rascunhoFiltrado.every((i) => i.controlar_estoque);
 
   const colunas =
     "grid-cols-[minmax(200px,1.6fr)_120px_110px_130px_120px_110px_96px]";
@@ -615,6 +627,34 @@ export function EstoquePanel() {
               placeholder="Buscar insumo"
               className="min-w-0 flex-1 bg-transparent text-sm outline-none"
             />
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="t-support text-[var(--admin-muted)]">
+              {selecionados} de {rascunho.length} no controle
+              {buscaControle.trim() && ` · ${rascunhoFiltrado.length} na busca`}
+            </p>
+            <div className="flex gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => marcarTodos(true)}
+                disabled={rascunhoFiltrado.length === 0 || todosMarcados}
+                className="h-8 rounded-lg"
+              >
+                <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
+                {buscaControle.trim() ? "Selecionar os da busca" : "Selecionar todos"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => marcarTodos(false)}
+                disabled={rascunhoFiltrado.every((i) => !i.controlar_estoque)}
+                className="h-8 rounded-lg text-[var(--admin-muted)]"
+              >
+                Limpar
+              </Button>
+            </div>
           </div>
 
           <div className="max-h-[46vh] overflow-y-auto rounded-xl border border-[var(--cream-deep)]">
