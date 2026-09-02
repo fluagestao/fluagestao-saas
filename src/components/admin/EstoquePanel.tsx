@@ -7,10 +7,13 @@ import {
   Boxes,
   CheckCheck,
   ClipboardCheck,
+  ListPlus,
   History,
+  Plus,
   Search,
   SlidersHorizontal,
   Trash2,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -37,8 +40,7 @@ import {
   carregarEstoque,
   excluirMovimento,
   historicoEstoque,
-  registrarContagem,
-  registrarMovimento,
+  registrarMovimentos,
   salvarControleEstoque,
   type InsumoParaControle,
   type LinhaEstoque,
@@ -90,6 +92,14 @@ function dataCurta(iso: string | null) {
   return `${dia}/${mes}/${ano.slice(2)}`;
 }
 
+type LinhaLancamento = { chave: string; insumoId: string; quantidade: string };
+
+let sequencia = 0;
+function linhaVazia(insumoId = ""): LinhaLancamento {
+  sequencia += 1;
+  return { chave: `l${sequencia}`, insumoId, quantidade: "" };
+}
+
 export function EstoquePanel() {
   const [linhas, setLinhas] = useState<LinhaEstoque[]>([]);
   const [insumos, setInsumos] = useState<InsumoParaControle[]>([]);
@@ -100,8 +110,10 @@ export function EstoquePanel() {
 
   const [movAberto, setMovAberto] = useState(false);
   const [acao, setAcao] = useState<Acao>("entrada");
-  const [movInsumo, setMovInsumo] = useState("");
-  const [movQtd, setMovQtd] = useState("");
+  /* Tipo, data e motivo valem para o lote inteiro; as linhas sao os insumos.
+     E assim que acontece na vida: uma ida ao mercado, uma producao do dia,
+     uma contagem de prateleira. */
+  const [movLinhas, setMovLinhas] = useState<LinhaLancamento[]>([linhaVazia()]);
   const [movData, setMovData] = useState(hojeIso());
   const [movMotivo, setMovMotivo] = useState("");
 
@@ -152,57 +164,92 @@ export function EstoquePanel() {
     return { total: linhas.length, alerta, valor };
   }, [linhas]);
 
-  const insumoAtual = insumos.find((i) => i.id === movInsumo) ?? null;
-  const saldoAtual = linhas.find((l) => l.insumo_id === movInsumo)?.saldo ?? 0;
+  const noControle = useMemo(() => insumos.filter((i) => i.controlar_estoque), [insumos]);
+  const escolhidos = new Set(movLinhas.map((l) => l.insumoId).filter(Boolean));
+  const preenchidas = movLinhas.filter((l) => l.insumoId && l.quantidade.trim());
+
+  function unidadeDe(insumoId: string) {
+    return insumos.find((i) => i.id === insumoId)?.unidade ?? "";
+  }
+  function saldoDe(insumoId: string) {
+    return linhas.find((l) => l.insumo_id === insumoId)?.saldo ?? 0;
+  }
 
   function abrirMovimento(acaoInicial: Acao, insumoId?: string) {
     setAcao(acaoInicial);
-    setMovInsumo(insumoId ?? "");
-    setMovQtd("");
+    setMovLinhas([linhaVazia(insumoId ?? "")]);
     setMovData(hojeIso());
     setMovMotivo("");
     setMovAberto(true);
   }
 
-  async function salvarMovimento() {
-    const quantidade = paraNumero(movQtd);
+  function mudarLinha(chave: string, patch: Partial<LinhaLancamento>) {
+    setMovLinhas((atual) => atual.map((l) => (l.chave === chave ? { ...l, ...patch } : l)));
+  }
 
-    if (!movInsumo) {
-      toast.error("Escolha o insumo.");
-      return;
+  function removerLinha(chave: string) {
+    setMovLinhas((atual) => (atual.length === 1 ? [linhaVazia()] : atual.filter((l) => l.chave !== chave)));
+  }
+
+  /* Contagem de prateleira: puxa todos de uma vez. E o inventario — abrir o
+     dialogo dez vezes para conferir dez insumos ninguem faz duas vezes. */
+  function trazerTodos() {
+    const jaTem = new Set(movLinhas.map((l) => l.insumoId).filter(Boolean));
+    const novas = noControle.filter((i) => !jaTem.has(i.id)).map((i) => linhaVazia(i.id));
+    setMovLinhas((atual) => [...atual.filter((l) => l.insumoId), ...novas]);
+  }
+
+  async function salvarMovimento() {
+    const itens: { insumoId: string; quantidade: number }[] = [];
+
+    for (const linha of movLinhas) {
+      if (!linha.insumoId && !linha.quantidade.trim()) continue; // linha em branco: ignora
+      if (!linha.insumoId) {
+        toast.error("Tem uma linha sem insumo escolhido.");
+        return;
+      }
+      const quantidade = paraNumero(linha.quantidade);
+      if (!Number.isFinite(quantidade) || (acao === "contagem" ? quantidade < 0 : quantidade <= 0)) {
+        const nome = insumos.find((i) => i.id === linha.insumoId)?.nome ?? "um insumo";
+        toast.error(
+          acao === "contagem"
+            ? `Informe quanto você contou de ${nome}.`
+            : `Informe uma quantidade maior que zero para ${nome}.`,
+        );
+        return;
+      }
+      itens.push({ insumoId: linha.insumoId, quantidade });
     }
-    if (!Number.isFinite(quantidade) || (acao === "contagem" ? quantidade < 0 : quantidade <= 0)) {
-      toast.error(
-        acao === "contagem"
-          ? "Informe quanto você contou."
-          : "Informe uma quantidade maior que zero.",
-      );
+
+    if (itens.length === 0) {
+      toast.error("Adicione ao menos um insumo.");
       return;
     }
 
     setSalvando(true);
     try {
+      const r = await registrarMovimentos({
+        data: {
+          tipo: acao,
+          ocorridoEm: movData,
+          motivo: movMotivo.trim() || null,
+          itens,
+        },
+      });
+
       if (acao === "contagem") {
-        const r = await registrarContagem({
-          data: { insumoId: movInsumo, contado: quantidade, ocorridoEm: movData },
-        });
-        if (r.semMudanca) {
-          toast.info("A contagem bateu com o saldo. Nada a corrigir.");
+        if (r.gravados === 0) {
+          toast.info("Tudo bateu com o saldo. Nada a corrigir.");
         } else {
-          const sinal = r.diferenca > 0 ? "+" : "";
-          toast.success(`Contagem registrada. Ajuste de ${sinal}${numeroBr(r.diferenca)}.`);
+          const resto = r.semMudanca ? ` ${r.semMudanca} já estava certo.` : "";
+          toast.success(
+            `${r.gravados} ${r.gravados === 1 ? "ajuste registrado" : "ajustes registrados"}.${resto}`,
+          );
         }
       } else {
-        await registrarMovimento({
-          data: {
-            insumoId: movInsumo,
-            tipo: acao,
-            quantidade,
-            motivo: movMotivo.trim() || null,
-            ocorridoEm: movData,
-          },
-        });
-        toast.success(acao === "entrada" ? "Entrada registrada." : "Baixa registrada.");
+        toast.success(
+          `${r.gravados} ${r.gravados === 1 ? "lançamento registrado" : "lançamentos registrados"}.`,
+        );
       }
       setMovAberto(false);
       await carregar();
@@ -468,14 +515,15 @@ export function EstoquePanel() {
         </div>
       </div>
 
-      {/* ---------- Movimento ---------- */}
+      {/* ---------- Movimento (em lote) ---------- */}
       <Dialog open={movAberto} onOpenChange={(estado) => !estado && setMovAberto(false)}>
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-xl">
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
           <DialogHeader className="pr-6 text-left">
             <DialogTitle>Registrar movimento</DialogTitle>
             <DialogDescription>
               Entrada é o que chegou. Baixa é o que saiu. Contagem é quando você conta na
-              prateleira e o sistema corrige a diferença.
+              prateleira e o sistema corrige a diferença. Dá para lançar vários insumos de
+              uma vez.
             </DialogDescription>
           </DialogHeader>
 
@@ -497,40 +545,6 @@ export function EstoquePanel() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
-              Insumo
-              <Select value={movInsumo} onValueChange={setMovInsumo}>
-                <SelectTrigger className="h-11 w-full rounded-xl">
-                  <SelectValue placeholder="Escolha o insumo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {insumos
-                    .filter((i) => i.controlar_estoque)
-                    .map((i) => (
-                      <SelectItem key={i.id} value={i.id}>
-                        {i.nome}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </label>
-
-            <label className="space-y-1.5 text-sm font-medium">
-              {acao === "contagem" ? "Quanto você contou" : "Quantidade"}
-              {insumoAtual && (
-                <span className="ml-1 font-normal text-muted-foreground">
-                  ({insumoAtual.unidade})
-                </span>
-              )}
-              <Input
-                value={movQtd}
-                onChange={(e) => setMovQtd(e.target.value)}
-                inputMode="decimal"
-                placeholder="0"
-                className="h-11"
-              />
-            </label>
-
             <label className="space-y-1.5 text-sm font-medium">
               Data
               <Input
@@ -541,67 +555,143 @@ export function EstoquePanel() {
               />
             </label>
 
-            {acao !== "contagem" && (
-              <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
-                Motivo <span className="font-normal text-muted-foreground">(opcional)</span>
-                <Input
-                  value={movMotivo}
-                  onChange={(e) => setMovMotivo(e.target.value)}
-                  placeholder={
-                    acao === "entrada" ? "Compra no atacado" : "Produção do pedido #12"
-                  }
-                  className="h-11"
-                />
-              </label>
-            )}
+            <label className="space-y-1.5 text-sm font-medium">
+              Motivo <span className="font-normal text-muted-foreground">(opcional)</span>
+              <Input
+                value={movMotivo}
+                onChange={(e) => setMovMotivo(e.target.value)}
+                placeholder={
+                  acao === "entrada"
+                    ? "Compra no atacado"
+                    : acao === "saida"
+                      ? "Produção do pedido #12"
+                      : "Contagem do mês"
+                }
+                className="h-11"
+              />
+            </label>
           </div>
 
-          {movInsumo && (
-            <div className="rounded-xl bg-[var(--cream-soft)] px-3.5 py-2.5 text-sm text-[var(--admin-ink-soft)]">
-              {acao === "contagem" ? (
-                <>
-                  O sistema tem{" "}
-                  <strong className="font-bold">
-                    {numeroBr(saldoAtual)} {insumoAtual?.unidade}
-                  </strong>
-                  . A diferença entra como ajuste, com a data de hoje no histórico.
-                </>
-              ) : (
-                <>
-                  Saldo atual:{" "}
-                  <strong className="font-bold">
-                    {numeroBr(saldoAtual)} {insumoAtual?.unidade}
-                  </strong>
-                  {Number.isFinite(paraNumero(movQtd)) && movQtd.trim() && (
-                    <>
-                      {" → fica "}
-                      <strong className="font-bold text-[var(--wine)]">
-                        {numeroBr(
-                          acao === "entrada"
-                            ? saldoAtual + paraNumero(movQtd)
-                            : saldoAtual - paraNumero(movQtd),
-                        )}{" "}
-                        {insumoAtual?.unidade}
-                      </strong>
-                    </>
-                  )}
-                </>
+          <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-foreground">
+                {acao === "contagem" ? "O que você contou" : "Insumos"}
+                <span className="ml-1.5 font-normal text-muted-foreground">
+                  {preenchidas.length > 0 ? `${preenchidas.length} preenchido${preenchidas.length === 1 ? "" : "s"}` : ""}
+                </span>
+              </p>
+              {acao === "contagem" && noControle.length > 0 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={trazerTodos}
+                  className="h-8 rounded-lg"
+                >
+                  <ListPlus className="mr-1.5 h-3.5 w-3.5" />
+                  Trazer todos ({noControle.length})
+                </Button>
               )}
             </div>
-          )}
+
+            <div className="max-h-[38vh] space-y-2 overflow-y-auto pr-1">
+              {movLinhas.map((linha) => {
+                const unidade = unidadeDe(linha.insumoId);
+                const saldo = saldoDe(linha.insumoId);
+                const digitado = paraNumero(linha.quantidade);
+                const temNumero = Number.isFinite(digitado) && linha.quantidade.trim() !== "";
+                const depois =
+                  acao === "contagem"
+                    ? digitado
+                    : acao === "entrada"
+                      ? saldo + digitado
+                      : saldo - digitado;
+
+                return (
+                  <div key={linha.chave} className="flex items-start gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Select
+                        value={linha.insumoId}
+                        onValueChange={(valor) => mudarLinha(linha.chave, { insumoId: valor })}
+                      >
+                        <SelectTrigger className="h-10 w-full rounded-xl bg-white">
+                          <SelectValue placeholder="Escolha o insumo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {noControle.map((i) => (
+                            <SelectItem
+                              key={i.id}
+                              value={i.id}
+                              // Repetir o mesmo insumo no lote seria dois
+                              // movimentos brigando pelo mesmo saldo.
+                              disabled={escolhidos.has(i.id) && i.id !== linha.insumoId}
+                            >
+                              {i.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {linha.insumoId && temNumero && (
+                        <p className="mt-1 px-1 text-[11px] text-muted-foreground">
+                          {numeroBr(saldo)} {unidade} →{" "}
+                          <strong className="font-semibold text-[var(--wine)]">
+                            {numeroBr(depois)} {unidade}
+                          </strong>
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="w-28 shrink-0">
+                      <Input
+                        value={linha.quantidade}
+                        onChange={(e) => mudarLinha(linha.chave, { quantidade: e.target.value })}
+                        inputMode="decimal"
+                        placeholder={acao === "contagem" ? "contado" : "qtd"}
+                        className="h-10 bg-white text-center"
+                      />
+                      {linha.insumoId && (
+                        <p className="mt-1 text-center text-[11px] text-muted-foreground">{unidade}</p>
+                      )}
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removerLinha(linha.chave)}
+                      aria-label="Remover linha"
+                      className="h-10 w-9 shrink-0"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setMovLinhas((atual) => [...atual, linhaVazia()])}
+              className="mt-2 h-9 w-full rounded-lg border border-dashed border-[var(--cream-deep)] text-[var(--admin-ink-soft)]"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Adicionar insumo
+            </Button>
+          </div>
 
           <DialogFooter className="pt-1">
             <Button variant="outline" onClick={() => setMovAberto(false)} disabled={salvando}>
               Cancelar
             </Button>
-            <Button onClick={salvarMovimento} disabled={salvando}>
+            <Button onClick={salvarMovimento} disabled={salvando || preenchidas.length === 0}>
               {acao === "contagem" ? (
                 <>
                   <ClipboardCheck className="mr-1.5 h-4 w-4" />
                   Registrar contagem
                 </>
               ) : (
-                `Registrar ${ROTULO_ACAO[acao].toLocaleLowerCase("pt-BR")}`
+                `Registrar ${ROTULO_ACAO[acao].toLocaleLowerCase("pt-BR")}${preenchidas.length > 1 ? ` (${preenchidas.length})` : ""}`
               )}
             </Button>
           </DialogFooter>

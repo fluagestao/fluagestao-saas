@@ -145,105 +145,148 @@ export async function carregarEstoque(): Promise<{
   return { linhas, insumos };
 }
 
-const movimentoSchema = z.object({
-  insumoId: z.string().uuid(),
-  tipo: z.enum(["entrada", "saida"]),
-  /** Sempre positiva na tela; o sinal quem decide é o tipo. */
-  quantidade: z.number().positive("Informe uma quantidade maior que zero."),
-  motivo: z
-    .string()
-    .trim()
-    .max(200)
-    .nullish()
-    .transform((valor) => (valor ? valor : null)),
-  ocorridoEm: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
-  pedidoId: z.string().uuid().nullish(),
-});
+/* Lancamento em LOTE. Uma compra de atacado chega com oito itens de uma vez;
+   abrir o dialogo oito vezes e o tipo de atrito que faz a pessoa parar de
+   registrar — e estoque que nao e registrado nao serve para nada.
 
-export async function registrarMovimento(input: ActionInput<unknown>) {
-  const data = movimentoSchema.parse(input.data);
-  const { supabase, companyId } = await contextoEmpresa();
+   Tipo, data e motivo valem para o lote inteiro porque e assim que acontece:
+   uma ida ao mercado, uma producao do dia, uma contagem de prateleira. */
+const loteSchema = z
+  .object({
+    tipo: z.enum(["entrada", "saida", "contagem"]),
+    ocorridoEm: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
+    motivo: z
+      .string()
+      .trim()
+      .max(200)
+      .nullish()
+      .transform((valor) => (valor ? valor : null)),
+    itens: z
+      .array(
+        z.object({
+          insumoId: z.string().uuid(),
+          quantidade: z.number(),
+        }),
+      )
+      .min(1, "Informe ao menos um insumo.")
+      .max(100, "No máximo 100 insumos por vez."),
+  })
+  .superRefine((valor, ctx) => {
+    // Contagem aceita zero (contei e nao tem nenhum); entrada e baixa, nao.
+    const minimo = valor.tipo === "contagem" ? 0 : Number.MIN_VALUE;
+    valor.itens.forEach((item, i) => {
+      if (!Number.isFinite(item.quantidade) || item.quantidade < minimo) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["itens", i, "quantidade"],
+          message:
+            valor.tipo === "contagem"
+              ? "A contagem não pode ser negativa."
+              : "Informe uma quantidade maior que zero.",
+        });
+      }
+    });
 
-  // O custo do dia fica gravado na linha: sem isso, o valor do estoque de
-  // março seria recalculado com o preço de hoje.
-  const { data: insumo, error: insumoError } = await supabase
-    .from("insumos")
-    .select("id, custo")
-    .eq("id", data.insumoId)
-    .eq("company_id", companyId)
-    .single();
-  if (insumoError || !insumo) throw insumoError ?? new Error("Insumo não encontrado.");
-
-  const { error } = await supabase.from("estoque_movimentos").insert({
-    company_id: companyId,
-    insumo_id: data.insumoId,
-    tipo: data.tipo,
-    quantidade: data.tipo === "entrada" ? data.quantidade : -data.quantidade,
-    custo_unitario: Number(insumo.custo ?? 0),
-    motivo: data.motivo,
-    pedido_id: data.pedidoId ?? null,
-    ocorrido_em: data.ocorridoEm,
+    const vistos = new Set<string>();
+    for (const item of valor.itens) {
+      if (vistos.has(item.insumoId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["itens"],
+          message: "O mesmo insumo aparece duas vezes no lançamento.",
+        });
+        return;
+      }
+      vistos.add(item.insumoId);
+    }
   });
-  if (error) throw error;
 
-  return { ok: true as const };
-}
+export type ResultadoLote = {
+  /** Linhas efetivamente gravadas. */
+  gravados: number;
+  /** Contagens que bateram com o saldo — nada a corrigir, nada gravado. */
+  semMudanca: number;
+  /** Só na contagem: diferença aplicada por insumo, para o aviso na tela. */
+  ajustes: { insumoId: string; diferenca: number }[];
+};
 
-const contagemSchema = z.object({
-  insumoId: z.string().uuid(),
-  contado: z.number().nonnegative("A contagem não pode ser negativa."),
-  ocorridoEm: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data inválida."),
-});
-
-/**
- * Contagem física: grava a DIFERENÇA como ajuste, não o número contado.
- *
- * Sobrescrever o saldo apagaria a pergunta que interessa — sumiram 3 potes,
- * quando? Como diferença, a falta vira um evento datado no histórico.
- */
-export async function registrarContagem(input: ActionInput<unknown>) {
-  const data = contagemSchema.parse(input.data);
+export async function registrarMovimentos(
+  input: ActionInput<unknown>,
+): Promise<ResultadoLote> {
+  const data = loteSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
 
-  const [saldoRes, insumoRes] = await Promise.all([
-    supabase
-      .from("insumo_estoque")
-      .select("saldo")
-      .eq("company_id", companyId)
-      .eq("insumo_id", data.insumoId)
-      .maybeSingle(),
-    supabase
-      .from("insumos")
-      .select("id, custo")
-      .eq("id", data.insumoId)
-      .eq("company_id", companyId)
-      .single(),
+  const ids = data.itens.map((i) => i.insumoId);
+
+  const [insumosRes, saldosRes] = await Promise.all([
+    supabase.from("insumos").select("id, custo").eq("company_id", companyId).in("id", ids),
+    data.tipo === "contagem"
+      ? supabase
+          .from("insumo_estoque")
+          .select("insumo_id, saldo")
+          .eq("company_id", companyId)
+          .in("insumo_id", ids)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  if (saldoRes.error) throw saldoRes.error;
-  if (insumoRes.error || !insumoRes.data) {
-    throw insumoRes.error ?? new Error("Insumo não encontrado.");
+  if (insumosRes.error) throw insumosRes.error;
+  if (saldosRes.error) throw saldosRes.error;
+
+  const custos = new Map(
+    (insumosRes.data ?? []).map((i) => [i.id as string, Number(i.custo ?? 0)]),
+  );
+  // Um id que nao voltou nao e desta empresa: nao grava movimento fantasma.
+  const faltando = ids.filter((id) => !custos.has(id));
+  if (faltando.length) throw new Error("Um dos insumos não foi encontrado.");
+
+  const saldos = new Map(
+    (saldosRes.data ?? []).map((l) => [l.insumo_id as string, Number(l.saldo ?? 0)]),
+  );
+
+  const linhas: Record<string, unknown>[] = [];
+  const ajustes: { insumoId: string; diferenca: number }[] = [];
+  let semMudanca = 0;
+
+  for (const item of data.itens) {
+    const custo = custos.get(item.insumoId) ?? 0;
+
+    if (data.tipo === "contagem") {
+      const saldoAtual = saldos.get(item.insumoId) ?? 0;
+      const diferenca = Number((item.quantidade - saldoAtual).toFixed(3));
+      if (diferenca === 0) {
+        semMudanca += 1;
+        continue;
+      }
+      ajustes.push({ insumoId: item.insumoId, diferenca });
+      linhas.push({
+        company_id: companyId,
+        insumo_id: item.insumoId,
+        tipo: "ajuste",
+        quantidade: diferenca,
+        custo_unitario: custo,
+        motivo: data.motivo ?? `Contagem: ${item.quantidade}`,
+        ocorrido_em: data.ocorridoEm,
+      });
+      continue;
+    }
+
+    linhas.push({
+      company_id: companyId,
+      insumo_id: item.insumoId,
+      tipo: data.tipo,
+      quantidade: data.tipo === "entrada" ? item.quantidade : -item.quantidade,
+      custo_unitario: custo,
+      motivo: data.motivo,
+      ocorrido_em: data.ocorridoEm,
+    });
   }
 
-  const saldoAtual = Number(saldoRes.data?.saldo ?? 0);
-  const diferenca = Number((data.contado - saldoAtual).toFixed(3));
-
-  if (diferenca === 0) {
-    return { ok: true as const, diferenca: 0, semMudanca: true as const };
+  if (linhas.length > 0) {
+    const { error } = await supabase.from("estoque_movimentos").insert(linhas);
+    if (error) throw error;
   }
 
-  const { error } = await supabase.from("estoque_movimentos").insert({
-    company_id: companyId,
-    insumo_id: data.insumoId,
-    tipo: "ajuste",
-    quantidade: diferenca,
-    custo_unitario: Number(insumoRes.data.custo ?? 0),
-    motivo: `Contagem: ${data.contado}`,
-    ocorrido_em: data.ocorridoEm,
-  });
-  if (error) throw error;
-
-  return { ok: true as const, diferenca, semMudanca: false as const };
+  return { gravados: linhas.length, semMudanca, ajustes };
 }
 
 const controleSchema = z.object({
