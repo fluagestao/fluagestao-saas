@@ -13,6 +13,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { salvarPedido } from "@/lib/pedidos";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { MAX_LINHAS_CARTAO } from "@/lib/pedidos-schema";
@@ -145,7 +151,12 @@ export function PedidoDialog({
   );
   // Item fora do catálogo: nome e valor, direto. O antigo montava por insumos e
   // saiu junto com a precificação — isto aqui não depende dela.
-  const [avulso, setAvulso] = useState<{ nome: string; qtd: string; valor: string } | null>(null);
+  const [avulso, setAvulso] = useState<{
+    nome: string;
+    qtd: string;
+    custo: string;
+    valor: string;
+  } | null>(null);
   const [destNome, setDestNome] = useState(pedido?.destinatario_nome ?? "");
   const [destZap, setDestZap] = useState(pedido?.destinatario_whatsapp ?? "");
   const [bairroId, setBairroId] = useState(pedido?.bairro_id ?? "");
@@ -247,7 +258,12 @@ export function PedidoDialog({
     const qtd = Math.max(1, Math.min(99, Math.round(paraNumero(avulso.qtd) ?? 1)));
     setItens((prev) => [
       ...prev,
-      { nome: avulso.nome.trim(), preco: paraNumero(avulso.valor), qtd },
+      {
+        nome: avulso.nome.trim(),
+        preco: paraNumero(avulso.valor),
+        custo: paraNumero(avulso.custo),
+        qtd,
+      },
     ]);
     setAvulso(null);
   }
@@ -438,14 +454,27 @@ export function PedidoDialog({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-foreground">Itens</h3>
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setAvulso({ nome: "", qtd: "1", valor: "" })}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" />
-                Produto avulso
-              </Button>
+              <TooltipProvider delayDuration={250}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setAvulso({ nome: "", qtd: "1", custo: "", valor: "" })
+                      }
+                    >
+                      <Plus className="mr-1.5 h-3.5 w-3.5" />
+                      Produto avulso
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs text-center leading-5">
+                    Use para algo que não sai com frequência, um produto
+                    personalizado ou um teste. Ele entra somente neste pedido e
+                    não é adicionado ao cadastro de produtos.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <BuscaAdicionar
                 className="w-[15rem]"
                 placeholder="Adicionar produto cadastrado"
@@ -478,7 +507,7 @@ export function PedidoDialog({
             <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-[var(--cream-deep)] p-3">
               <label className="block min-w-[10rem] flex-1">
                 <span className="mb-1 block text-xs font-medium text-muted-foreground">
-                  O que é
+                  Descrição
                 </span>
                 <Input
                   autoFocus
@@ -494,6 +523,18 @@ export function PedidoDialog({
                   inputMode="numeric"
                   value={avulso.qtd}
                   onChange={(e) => setAvulso({ ...avulso, qtd: e.target.value })}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Custo (un.)
+                </span>
+                <Input
+                  className="w-28"
+                  inputMode="decimal"
+                  value={avulso.custo}
+                  onChange={(e) => setAvulso({ ...avulso, custo: e.target.value })}
+                  placeholder="0,00"
                 />
               </label>
               <label className="block">
@@ -688,16 +729,16 @@ export function PedidoDialog({
             </Campo>
           )}
           {!ehRetirada && (
-            <Campo label="Quem recebe">
+            <Campo label="Presenteado">
               <Input
                 value={destNome}
                 onChange={(e) => setDestNome(e.target.value)}
-                placeholder="Nome de quem vai receber"
+                placeholder="Nome do presenteado"
               />
             </Campo>
           )}
           {!ehRetirada && (
-            <Campo label="WhatsApp de quem recebe">
+            <Campo label="WhatsApp do presenteado">
               <Input
                 value={destZap}
                 inputMode="numeric"
