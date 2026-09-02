@@ -402,6 +402,19 @@ export function OnboardingPrompt() {
     }
   }, [pathname]);
 
+  useEffect(() => {
+    function abrirPelaCentral(event: Event) {
+      const detalhe = (event as CustomEvent<{ modo?: string }>).detail;
+      setEtapaAberta(detalhe?.modo === "revisar" ? "empresa" : null);
+      setExpandido(true);
+      window.localStorage.removeItem("flua-guia-recolhido");
+    }
+
+    window.addEventListener("flua:abrir-guia", abrirPelaCentral);
+    return () =>
+      window.removeEventListener("flua:abrir-guia", abrirPelaCentral);
+  }, []);
+
   const contabilizadas = useMemo(
     () =>
       new Set([
