@@ -24,8 +24,8 @@ export function MarketingHeader() {
         </Link>
 
         <nav className="marketing-global-nav" aria-label="Navegação institucional">
-          <Link href="/nosso-saas">NOSSO SAAS</Link>
-          <Link href="/#para-quem">A FLUA</Link>
+          <Link href="/nosso-saas" aria-current={pathname === "/nosso-saas" ? "page" : undefined}>NOSSO SAAS</Link>
+          <Link href="/a-flua" aria-current={pathname === "/a-flua" ? "page" : undefined}>A FLUA</Link>
           <Link href="/#contato">CONTATO</Link>
           <Link href="/catalogo">MINHA LOJA</Link>
           <Link href="/#documentos">DOCUMENTOS</Link>
