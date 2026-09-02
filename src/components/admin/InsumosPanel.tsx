@@ -1,18 +1,26 @@
 "use client";
 
 import {
-  ChevronLeft,
-  ChevronRight,
+  History,
   PackagePlus,
   Pencil,
   Search,
   Trash2,
-  X,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -22,57 +30,138 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  listarInsumos,
+  carregarCadastroInsumos,
+  historicoCustoInsumo,
   removerInsumo,
   salvarInsumo,
+  type CadastroInsumos,
+  type CustoHistorico,
+  type FrequenciaCompra,
   type InsumoRow,
   type UnidadeInsumo,
 } from "@/lib/insumos";
 import { mensagemDeErro } from "@/lib/erros";
 import { PageHeader, useConfirmar } from "./shell";
 
-const ITENS_POR_PAGINA = 7;
-
 const UNIDADES: { value: UnidadeInsumo; label: string }[] = [
   { value: "UN", label: "Unidade" },
-  { value: "KG", label: "Kg" },
+  { value: "KG", label: "Quilo" },
   { value: "G", label: "Grama" },
   { value: "L", label: "Litro" },
-  { value: "ML", label: "Ml" },
+  { value: "ML", label: "Mililitro" },
   { value: "CX", label: "Caixa" },
   { value: "PCT", label: "Pacote" },
 ];
 
+const FREQUENCIAS: { value: FrequenciaCompra; label: string }[] = [
+  { value: "semanal", label: "Semanal" },
+  { value: "quinzenal", label: "Quinzenal" },
+  { value: "mensal", label: "Mensal" },
+  { value: "esporadica", label: "Esporádica" },
+];
+
+/* Sugestoes de partida: sem elas o campo abre vazio e cada um inventa um
+   rotulo diferente para a mesma coisa. Elas somem de vista assim que a
+   empresa tem os proprios valores cadastrados. */
+const CATEGORIAS_SUGERIDAS = [
+  "Bebidas",
+  "Doces",
+  "Embalagens",
+  "Frios e queijos",
+  "Mercearia",
+  "Padaria",
+  "Salgados",
+];
+
+const EMBALAGENS_SUGERIDAS = ["pacote", "caixa", "garrafa", "lata", "pote", "bandeja", "fardo"];
+
+const SEM_VALOR = "__nenhum__";
+
 function moeda(valor: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor || 0);
+}
+
+/* Insumo barato — grama de bolacha, ml de vinho — vale centesimos de centavo.
+   Arredondar tudo em duas casas transformaria o custo do produto em zero. */
+function moedaUnitaria(valor: number) {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: valor > 0 && valor < 1 ? 4 : 2,
   }).format(valor || 0);
 }
 
+function numeroBr(valor: number) {
+  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(valor || 0);
+}
+
+/** Aceita "1.234,56" e "1234.56": vírgula manda quando existe. */
+function paraNumero(texto: string): number {
+  const bruto = texto.trim();
+  if (!bruto) return Number.NaN;
+  return Number(bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto);
+}
+
+function paraCampo(valor: number) {
+  return String(valor).replace(".", ",");
+}
+
+function dataCurta(iso: string) {
+  const [ano, mes, dia] = iso.slice(0, 10).split("-");
+  return `${dia}/${mes}/${ano.slice(2)}`;
+}
+
+type Formulario = {
+  id?: string;
+  nome: string;
+  categoria: string;
+  unidade: UnidadeInsumo;
+  quantidade: string;
+  tipoEmbalagem: string;
+  precoEmbalagem: string;
+  fornecedorId: string;
+  frequencia: string;
+  observacao: string;
+  ativo: boolean;
+};
+
+const FORMULARIO_VAZIO: Formulario = {
+  nome: "",
+  categoria: "",
+  unidade: "UN",
+  quantidade: "1",
+  tipoEmbalagem: "",
+  precoEmbalagem: "",
+  fornecedorId: SEM_VALOR,
+  frequencia: SEM_VALOR,
+  observacao: "",
+  ativo: true,
+};
+
 export function InsumosPanel() {
-  const [insumos, setInsumos] = useState<InsumoRow[]>([]);
+  const [dados, setDados] = useState<CadastroInsumos>({
+    insumos: [],
+    fornecedores: [],
+    categorias: [],
+    embalagens: [],
+  });
   const [busca, setBusca] = useState("");
-  const [pagina, setPagina] = useState(1);
-  const [nome, setNome] = useState("");
-  const [unidade, setUnidade] = useState<UnidadeInsumo>("UN");
-  const [quantidade, setQuantidade] = useState("1");
-  const [custo, setCusto] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState(SEM_VALOR);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [editando, setEditando] = useState<InsumoRow | null>(null);
-  const [editNome, setEditNome] = useState("");
-  const [editUnidade, setEditUnidade] = useState<UnidadeInsumo>("UN");
-  const [editQuantidade, setEditQuantidade] = useState("1");
-  const [editCusto, setEditCusto] = useState("");
-  const [editAtivo, setEditAtivo] = useState(true);
+  const [aberto, setAberto] = useState(false);
+  const [form, setForm] = useState<Formulario>(FORMULARIO_VAZIO);
+  const [historico, setHistorico] = useState<CustoHistorico[]>([]);
+  const [verHistorico, setVerHistorico] = useState(false);
   const confirmar = useConfirmar();
 
   async function carregar() {
     setCarregando(true);
     try {
-      setInsumos(await listarInsumos());
+      setDados(await carregarCadastroInsumos());
     } catch (e) {
       toast.error(mensagemDeErro(e, "carregar insumos"));
     } finally {
@@ -89,41 +178,77 @@ export function InsumosPanel() {
 
   const filtrados = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
-    if (!termo) return insumos;
-    return insumos.filter((item) =>
-      `${item.nome} ${item.unidade}`.toLocaleLowerCase("pt-BR").includes(termo),
-    );
-  }, [busca, insumos]);
+    return dados.insumos.filter((item) => {
+      if (categoriaFiltro !== SEM_VALOR && (item.categoria ?? "") !== categoriaFiltro) return false;
+      if (!termo) return true;
+      return `${item.nome} ${item.categoria ?? ""} ${item.fornecedor_nome ?? ""} ${item.unidade}`
+        .toLocaleLowerCase("pt-BR")
+        .includes(termo);
+    });
+  }, [busca, categoriaFiltro, dados.insumos]);
 
-  const totalPaginas = Math.max(1, Math.ceil(filtrados.length / ITENS_POR_PAGINA));
+  const categorias = useMemo(
+    () => Array.from(new Set([...dados.categorias, ...CATEGORIAS_SUGERIDAS])).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [dados.categorias],
+  );
 
-  const itensPagina = useMemo(() => {
-    const inicio = (pagina - 1) * ITENS_POR_PAGINA;
-    return filtrados.slice(inicio, inicio + ITENS_POR_PAGINA);
-  }, [filtrados, pagina]);
+  const embalagens = useMemo(
+    () => Array.from(new Set([...dados.embalagens, ...EMBALAGENS_SUGERIDAS])).sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [dados.embalagens],
+  );
 
-  useEffect(() => {
-    setPagina(1);
-  }, [busca]);
+  // A conta que a tela existe para fazer: preço pago dividido pelo que vem
+  // dentro. É o inverso do que o formulário antigo pedia.
+  const quantidadeForm = paraNumero(form.quantidade);
+  const precoForm = paraNumero(form.precoEmbalagem);
+  const custoUnitario =
+    Number.isFinite(quantidadeForm) && quantidadeForm > 0 && Number.isFinite(precoForm) && precoForm >= 0
+      ? precoForm / quantidadeForm
+      : null;
 
-  useEffect(() => {
-    if (pagina > totalPaginas) setPagina(totalPaginas);
-  }, [pagina, totalPaginas]);
+  function abrirNovo() {
+    setForm(FORMULARIO_VAZIO);
+    setHistorico([]);
+    setVerHistorico(false);
+    setAberto(true);
+  }
 
-  async function adicionar() {
-    const quantidadeNumero = Number(quantidade.replace(",", "."));
-    const custoNumero = Number(custo.replace(",", "."));
+  async function abrirEdicao(item: InsumoRow) {
+    setForm({
+      id: item.id,
+      nome: item.nome,
+      categoria: item.categoria ?? "",
+      unidade: item.unidade,
+      quantidade: paraCampo(item.quantidade_referencia),
+      tipoEmbalagem: item.tipo_embalagem ?? "",
+      precoEmbalagem: item.preco_embalagem.toFixed(2).replace(".", ","),
+      fornecedorId: item.fornecedor_id ?? SEM_VALOR,
+      frequencia: item.frequencia_compra ?? SEM_VALOR,
+      observacao: item.observacao ?? "",
+      ativo: item.ativo,
+    });
+    setHistorico([]);
+    setVerHistorico(false);
+    setAberto(true);
 
-    if (!nome.trim()) {
+    try {
+      setHistorico(await historicoCustoInsumo({ data: { id: item.id } }));
+    } catch {
+      // Histórico é acessório: se falhar, o cadastro continua editável.
+    }
+  }
+
+  async function salvar() {
+    if (!form.nome.trim()) {
       toast.error("Informe o nome do insumo.");
       return;
     }
-    if (!Number.isFinite(quantidadeNumero) || quantidadeNumero <= 0) {
-      toast.error("Informe uma quantidade válida.");
+    if (!Number.isFinite(quantidadeForm) || quantidadeForm <= 0) {
+      toast.error("Informe quanto vem na embalagem.");
       return;
     }
-    if (!Number.isFinite(custoNumero) || custoNumero < 0) {
-      toast.error("Informe um custo unitário válido.");
+    if (!Number.isFinite(precoForm) || precoForm < 0) {
+      toast.error("Informe quanto custa a embalagem.");
       return;
     }
 
@@ -131,69 +256,21 @@ export function InsumosPanel() {
     try {
       await salvarInsumo({
         data: {
-          nome: nome.trim(),
-          unidade,
-          quantidade_referencia: quantidadeNumero,
-          custo_referencia: custoNumero,
-          ativo: true,
+          id: form.id,
+          nome: form.nome.trim(),
+          unidade: form.unidade,
+          quantidade_referencia: quantidadeForm,
+          preco_embalagem: precoForm,
+          ativo: form.ativo,
+          categoria: form.categoria.trim() || null,
+          tipo_embalagem: form.tipoEmbalagem.trim() || null,
+          fornecedor_id: form.fornecedorId === SEM_VALOR ? null : form.fornecedorId,
+          frequencia_compra: form.frequencia === SEM_VALOR ? null : form.frequencia,
+          observacao: form.observacao.trim() || null,
         },
       });
-      setNome("");
-      setUnidade("UN");
-      setQuantidade("1");
-      setCusto("");
-      setPagina(1);
-      toast.success("Insumo cadastrado.");
-      await carregar();
-    } catch (e) {
-      toast.error(mensagemDeErro(e, "cadastrar insumo"));
-    } finally {
-      setSalvando(false);
-    }
-  }
-
-  function abrirEdicao(item: InsumoRow) {
-    setEditando(item);
-    setEditNome(item.nome);
-    setEditUnidade(item.unidade);
-    setEditQuantidade(String(item.quantidade_referencia).replace(".", ","));
-    setEditCusto(item.custo_referencia.toFixed(2).replace(".", ","));
-    setEditAtivo(item.ativo);
-  }
-
-  async function salvarEdicao() {
-    if (!editando) return;
-
-    const quantidadeNumero = Number(editQuantidade.replace(",", "."));
-    const custoNumero = Number(editCusto.replace(",", "."));
-
-    if (!editNome.trim()) {
-      toast.error("Informe o nome do insumo.");
-      return;
-    }
-    if (!Number.isFinite(quantidadeNumero) || quantidadeNumero <= 0) {
-      toast.error("Informe uma quantidade válida.");
-      return;
-    }
-    if (!Number.isFinite(custoNumero) || custoNumero < 0) {
-      toast.error("Informe um custo unitário válido.");
-      return;
-    }
-
-    setSalvando(true);
-    try {
-      await salvarInsumo({
-        data: {
-          id: editando.id,
-          nome: editNome.trim(),
-          unidade: editUnidade,
-          quantidade_referencia: quantidadeNumero,
-          custo_referencia: custoNumero,
-          ativo: editAtivo,
-        },
-      });
-      toast.success("Insumo atualizado.");
-      setEditando(null);
+      toast.success(form.id ? "Insumo atualizado." : "Insumo cadastrado.");
+      setAberto(false);
       await carregar();
     } catch (e) {
       toast.error(mensagemDeErro(e, "salvar insumo"));
@@ -219,290 +296,423 @@ export function InsumosPanel() {
         return;
       }
       toast.success("Insumo excluído.");
+      setAberto(false);
       await carregar();
     } catch (e) {
       toast.error(mensagemDeErro(e, "excluir insumo"));
     }
   }
 
-  const inicioExibido = filtrados.length === 0 ? 0 : (pagina - 1) * ITENS_POR_PAGINA + 1;
-  const fimExibido = Math.min(pagina * ITENS_POR_PAGINA, filtrados.length);
+  const colunas =
+    "grid-cols-[minmax(220px,1.7fr)_minmax(150px,1fr)_130px_minmax(140px,1fr)_100px_88px]";
 
   return (
-    <section className="xl:h-[calc(100dvh-122px)] xl:overflow-hidden">
+    <section data-tela-cheia className="xl:h-[calc(100dvh-122px)] xl:overflow-hidden">
       <PageHeader
         titulo="Insumos"
-        descricao="Cadastre tudo o que entra na montagem dos produtos. O custo de cada produto será calculado pela quantidade usada de cada insumo."
+        descricao="Cadastre o que você compra do jeito que compra: a embalagem inteira e o preço dela. O custo unitário sai da conta e alimenta o custo dos produtos."
+        acoes={
+          <Button onClick={abrirNovo} className="h-11">
+            <PackagePlus className="mr-1.5 h-4 w-4" />
+            Cadastrar novo insumo
+          </Button>
+        }
       />
 
-      <div className="mt-4 rounded-2xl border border-[var(--cream-deep)] bg-card p-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <PackagePlus className="h-4 w-4 text-[var(--terracotta)]" />
-          Novo insumo
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex h-11 min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar por nome, categoria ou fornecedor"
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+          />
         </div>
 
-        <div className="mt-3 grid gap-3 md:grid-cols-[minmax(260px,1fr)_160px_160px_190px_auto]">
-          <Input
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Ex.: Vinho Campo Largo 900 ml"
-            className="h-11"
-          />
-          <Select value={unidade} onValueChange={(value) => setUnidade(value as UnidadeInsumo)}>
-            <SelectTrigger className="h-11 rounded-xl">
+        {dados.categorias.length > 0 && (
+          <Select value={categoriaFiltro} onValueChange={setCategoriaFiltro}>
+            <SelectTrigger className="h-11 w-[200px] rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {UNIDADES.map((item) => (
-                <SelectItem key={item.value} value={item.value}>
-                  {item.label}
+              <SelectItem value={SEM_VALOR}>Todas as categorias</SelectItem>
+              {dados.categorias.map((categoria) => (
+                <SelectItem key={categoria} value={categoria}>
+                  {categoria}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Input
-            value={quantidade}
-            onChange={(e) => setQuantidade(e.target.value)}
-            inputMode="decimal"
-            placeholder="Quantidade"
-            className="h-11"
-          />
-          <Input
-            value={custo}
-            onChange={(e) => setCusto(e.target.value)}
-            inputMode="decimal"
-            placeholder="Custo unitário R$"
-            className="h-11"
-          />
-          <Button onClick={adicionar} disabled={salvando} className="h-11">
-            <PackagePlus className="mr-1.5 h-4 w-4" /> Adicionar
-          </Button>
-        </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          O campo custo é sempre unitário. Ex.: Queijo Colonial · KG · quantidade 1 · custo unitário R$ 109,90. Se usar 0,250 kg em um produto, o custo será R$ 27,48.
-        </p>
+        )}
       </div>
 
-      <div className="mt-4 flex h-11 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <input
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar insumo"
-          className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-        />
-      </div>
-
-      <div className="mt-4 overflow-hidden rounded-2xl border border-[var(--cream-deep)] bg-card">
-        <div className="grid grid-cols-[minmax(240px,1.6fr)_110px_140px_170px_120px_90px] gap-3 border-b border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">
-          <span>Insumo</span>
-          <span>Tipo</span>
-          <span>Qtd. base</span>
-          <span>Custo unitário</span>
-          <span>Status</span>
-          <span>Ações</span>
-        </div>
-
-        {carregando ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Carregando insumos...
-          </div>
-        ) : filtrados.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">
-            Nenhum insumo cadastrado.
-          </div>
-        ) : (
-          itensPagina.map((item) => (
+      <div className="mt-4 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-[var(--cream-deep)] bg-card">
+        <div className="min-h-0 flex-1 overflow-auto">
+          <div className="min-w-[900px]">
             <div
-              key={item.id}
-              className="grid min-h-[54px] grid-cols-[minmax(240px,1.6fr)_110px_140px_170px_120px_90px] items-center gap-3 border-b border-[var(--cream-deep)] px-4 py-2.5 last:border-b-0"
+              className={`sticky top-0 z-10 grid ${colunas} gap-3 border-b border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground`}
             >
-              <span className="truncate text-sm font-semibold text-foreground">
-                {item.nome}
-              </span>
-              <span className="text-sm text-[var(--admin-ink-soft)]">
-                {item.unidade}
-              </span>
-              <span className="text-sm tabular-nums text-[var(--admin-ink-soft)]">
-                {String(item.quantidade_referencia).replace(".", ",")}
-              </span>
-              <span className="text-sm font-bold text-[var(--wine)]">
-                {moeda(item.custo_referencia)} / {item.unidade}
-              </span>
-              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--cream-soft)] px-2.5 py-1 text-xs font-medium text-[var(--admin-ink-soft)]">
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    item.ativo ? "bg-emerald-500" : "bg-zinc-400"
-                  }`}
-                />
-                {item.ativo ? "Ativo" : "Inativo"}
-              </span>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => abrirEdicao(item)}
-                  aria-label={`Editar ${item.nome}`}
-                >
-                  <Pencil className="h-4 w-4 text-[var(--terracotta)]" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => excluir(item)}
-                  aria-label={`Excluir ${item.nome}`}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
-              </div>
+              <span>Insumo</span>
+              <span>Embalagem</span>
+              <span>Custo unitário</span>
+              <span>Fornecedor</span>
+              <span>Status</span>
+              <span>Ações</span>
             </div>
-          ))
-        )}
-      </div>
 
-      <div className="mt-3 flex h-10 items-center justify-between gap-4">
-        <p className="text-xs text-muted-foreground">
-          {filtrados.length === 0
-            ? "Nenhum insumo"
-            : `Exibindo ${inicioExibido}–${fimExibido} de ${filtrados.length} insumos`}
-        </p>
-
-        {totalPaginas > 1 && (
-          <div className="flex items-center gap-1.5">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setPagina((atual) => Math.max(1, atual - 1))}
-              disabled={pagina === 1}
-              className="h-8 px-2.5"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-
-            {Array.from({ length: totalPaginas }, (_, index) => index + 1).map(
-              (numero) => (
-                <button
-                  key={numero}
-                  type="button"
-                  onClick={() => setPagina(numero)}
-                  className={`grid h-8 min-w-8 place-items-center rounded-lg px-2 text-xs font-semibold transition-colors ${
-                    pagina === numero
-                      ? "bg-[var(--terracotta)] text-white"
-                      : "border border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)] hover:bg-[var(--cream)]"
-                  }`}
-                  aria-label={`Ir para página ${numero}`}
-                >
-                  {numero}
-                </button>
-              ),
-            )}
-
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setPagina((atual) => Math.min(totalPaginas, atual + 1))
-              }
-              disabled={pagina === totalPaginas}
-              className="h-8 px-2.5"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {editando && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/35 p-4 backdrop-blur-[2px]">
-          <div className="w-full max-w-xl rounded-3xl border border-[var(--admin-border)] bg-white p-6 shadow-2xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-semibold">Editar insumo</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Altere os dados e salve. A listagem permanece bloqueada para edição direta.
+            {carregando ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                Carregando insumos...
+              </div>
+            ) : filtrados.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 p-10 text-center">
+                <div className="grid h-11 w-11 place-items-center rounded-2xl bg-[var(--peach-soft)]">
+                  <PackagePlus className="h-5 w-5 text-[var(--coral)]" />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {dados.insumos.length === 0
+                    ? "Nenhum insumo cadastrado ainda."
+                    : "Nenhum insumo encontrado com esse filtro."}
                 </p>
+                {dados.insumos.length === 0 && (
+                  <Button variant="outline" onClick={abrirNovo}>
+                    <PackagePlus className="mr-1.5 h-4 w-4" />
+                    Cadastrar o primeiro
+                  </Button>
+                )}
               </div>
-              <button
-                type="button"
-                onClick={() => setEditando(null)}
-                className="grid h-9 w-9 place-items-center rounded-xl text-muted-foreground hover:bg-[var(--cream-soft)]"
-                aria-label="Fechar"
+            ) : (
+              filtrados.map((item) => (
+                <div
+                  key={item.id}
+                  className={`grid min-h-[58px] ${colunas} items-center gap-3 border-b border-[var(--cream-deep)] px-4 py-2.5 last:border-b-0`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{item.nome}</p>
+                    {item.categoria && (
+                      <p className="truncate text-xs text-muted-foreground">{item.categoria}</p>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-[var(--admin-ink-soft)]">
+                      {numeroBr(item.quantidade_referencia)} {item.unidade}
+                      {item.tipo_embalagem ? ` · ${item.tipo_embalagem}` : ""}
+                    </p>
+                    <p className="truncate text-xs tabular-nums text-muted-foreground">
+                      {moeda(item.preco_embalagem)}
+                    </p>
+                  </div>
+
+                  <span className="text-sm font-bold tabular-nums text-[var(--wine)]">
+                    {moedaUnitaria(item.custo_referencia)}
+                  </span>
+
+                  <span className="truncate text-sm text-[var(--admin-ink-soft)]">
+                    {item.fornecedor_nome ?? "—"}
+                  </span>
+
+                  <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[var(--cream-soft)] px-2.5 py-1 text-xs font-medium text-[var(--admin-ink-soft)]">
+                    <span
+                      className={`h-2 w-2 rounded-full ${item.ativo ? "bg-emerald-500" : "bg-zinc-400"}`}
+                    />
+                    {item.ativo ? "Ativo" : "Inativo"}
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => abrirEdicao(item)}
+                      aria-label={`Editar ${item.nome}`}
+                    >
+                      <Pencil className="h-4 w-4 text-[var(--terracotta)]" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => excluir(item)}
+                      aria-label={`Excluir ${item.nome}`}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-3 h-6 text-xs text-muted-foreground">
+        {carregando
+          ? ""
+          : filtrados.length === dados.insumos.length
+            ? `${dados.insumos.length} ${dados.insumos.length === 1 ? "insumo" : "insumos"}`
+            : `${filtrados.length} de ${dados.insumos.length} insumos`}
+      </p>
+
+      <Dialog open={aberto} onOpenChange={(estado) => !estado && setAberto(false)}>
+        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader className="pr-6 text-left">
+            <DialogTitle>{form.id ? "Editar insumo" : "Novo insumo"}</DialogTitle>
+            <DialogDescription>
+              Preencha como você compra. O custo por unidade é calculado sozinho e é ele que entra
+              na composição dos produtos.
+            </DialogDescription>
+          </DialogHeader>
+
+          <datalist id="lista-categorias-insumo">
+            {categorias.map((categoria) => (
+              <option key={categoria} value={categoria} />
+            ))}
+          </datalist>
+          <datalist id="lista-embalagens-insumo">
+            {embalagens.map((embalagem) => (
+              <option key={embalagem} value={embalagem} />
+            ))}
+          </datalist>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
+              Nome
+              <Input
+                value={form.nome}
+                onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+                placeholder="Ex.: Vinho Campo Largo 900 ml"
+                className="h-11"
+              />
+            </label>
+
+            <label className="space-y-1.5 text-sm font-medium">
+              Categoria
+              <Input
+                value={form.categoria}
+                list="lista-categorias-insumo"
+                onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
+                placeholder="Ex.: Frios e queijos"
+                className="h-11"
+              />
+            </label>
+
+            <label className="space-y-1.5 text-sm font-medium">
+              Unidade de consumo
+              <Select
+                value={form.unidade}
+                onValueChange={(value) => setForm((f) => ({ ...f, unidade: value as UnidadeInsumo }))}
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+                <SelectTrigger className="h-11 w-full rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNIDADES.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
 
-            <div className="mt-5 grid gap-4 sm:grid-cols-2">
-              <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
-                Nome
-                <Input
-                  value={editNome}
-                  onChange={(e) => setEditNome(e.target.value)}
-                  className="h-11"
-                />
-              </label>
+            <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-4 sm:col-span-2">
+              <p className="text-sm font-semibold text-foreground">Como você compra</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Copie da nota: o que vem na embalagem e quanto ela custou.
+              </p>
 
-              <label className="space-y-1.5 text-sm font-medium">
-                Tipo
-                <Select value={editUnidade} onValueChange={(value) => setEditUnidade(value as UnidadeInsumo)}>
-                  <SelectTrigger className="h-11 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {UNIDADES.map((item) => (
-                      <SelectItem key={item.value} value={item.value}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <label className="space-y-1.5 text-sm font-medium">
+                  Quantidade por embalagem
+                  <Input
+                    value={form.quantidade}
+                    onChange={(e) => setForm((f) => ({ ...f, quantidade: e.target.value }))}
+                    inputMode="decimal"
+                    placeholder="6"
+                    className="h-11 bg-white"
+                  />
+                </label>
 
-              <label className="space-y-1.5 text-sm font-medium">
-                Quantidade base
-                <Input
-                  value={editQuantidade}
-                  onChange={(e) => setEditQuantidade(e.target.value)}
-                  inputMode="decimal"
-                  className="h-11"
-                />
-              </label>
+                <label className="space-y-1.5 text-sm font-medium">
+                  Tipo de embalagem
+                  <Input
+                    value={form.tipoEmbalagem}
+                    list="lista-embalagens-insumo"
+                    onChange={(e) => setForm((f) => ({ ...f, tipoEmbalagem: e.target.value }))}
+                    placeholder="pacote"
+                    className="h-11 bg-white"
+                  />
+                </label>
 
-              <label className="space-y-1.5 text-sm font-medium">
-                Custo unitário (R$)
-                <Input
-                  value={editCusto}
-                  onChange={(e) => setEditCusto(e.target.value)}
-                  inputMode="decimal"
-                  className="h-11"
-                />
-              </label>
-
-              <div className="flex items-end">
-                <label className="flex h-11 items-center gap-3 rounded-xl border border-input px-3.5 text-sm font-medium">
-                  <Switch checked={editAtivo} onCheckedChange={setEditAtivo} />
-                  {editAtivo ? "Insumo ativo" : "Insumo inativo"}
+                <label className="space-y-1.5 text-sm font-medium">
+                  Custo da embalagem (R$)
+                  <Input
+                    value={form.precoEmbalagem}
+                    onChange={(e) => setForm((f) => ({ ...f, precoEmbalagem: e.target.value }))}
+                    inputMode="decimal"
+                    placeholder="39,90"
+                    className="h-11 bg-white"
+                  />
                 </label>
               </div>
+
+              <div className="mt-3 rounded-xl bg-white px-3.5 py-2.5 text-sm">
+                {custoUnitario === null ? (
+                  <span className="text-muted-foreground">
+                    Preencha a quantidade e o custo para ver o valor por unidade.
+                  </span>
+                ) : (
+                  <span className="text-[var(--admin-ink-soft)]">
+                    {form.tipoEmbalagem.trim() ? `1 ${form.tipoEmbalagem.trim()} com ` : ""}
+                    {numeroBr(quantidadeForm)} {form.unidade} por {moeda(precoForm)} ={" "}
+                    <strong className="font-bold text-[var(--wine)]">
+                      {moedaUnitaria(custoUnitario)}
+                    </strong>{" "}
+                    por {form.unidade}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setEditando(null)}
-                disabled={salvando}
+            <label className="space-y-1.5 text-sm font-medium">
+              Fornecedor
+              <Select
+                value={form.fornecedorId}
+                onValueChange={(value) => setForm((f) => ({ ...f, fornecedorId: value }))}
               >
+                <SelectTrigger className="h-11 w-full rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_VALOR}>Sem fornecedor</SelectItem>
+                  {dados.fornecedores.map((fornecedor) => (
+                    <SelectItem key={fornecedor.id} value={fornecedor.id}>
+                      {fornecedor.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <label className="space-y-1.5 text-sm font-medium">
+              Frequência de compra
+              <Select
+                value={form.frequencia}
+                onValueChange={(value) => setForm((f) => ({ ...f, frequencia: value }))}
+              >
+                <SelectTrigger className="h-11 w-full rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SEM_VALOR}>Não definida</SelectItem>
+                  {FREQUENCIAS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      {item.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
+
+            <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
+              Observação
+              <Textarea
+                value={form.observacao}
+                onChange={(e) => setForm((f) => ({ ...f, observacao: e.target.value }))}
+                placeholder="Marca preferida, onde comprar mais barato, cuidado no transporte..."
+                rows={2}
+              />
+            </label>
+
+            <label className="flex h-11 items-center gap-3 rounded-xl border border-input px-3.5 text-sm font-medium sm:col-span-2">
+              <Switch
+                checked={form.ativo}
+                onCheckedChange={(valor) => setForm((f) => ({ ...f, ativo: valor }))}
+              />
+              {form.ativo ? "Insumo ativo" : "Insumo inativo"}
+            </label>
+
+            {form.id && historico.length > 0 && (
+              <div className="sm:col-span-2">
+                <button
+                  type="button"
+                  onClick={() => setVerHistorico((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--coral)]"
+                >
+                  <History className="h-4 w-4" />
+                  {verHistorico ? "Ocultar histórico de custo" : `Histórico de custo (${historico.length})`}
+                </button>
+
+                {verHistorico && (
+                  <div className="mt-2 max-h-40 overflow-auto rounded-xl border border-[var(--cream-deep)]">
+                    {historico.map((linha, indice) => {
+                      const anterior = historico[indice + 1];
+                      const variacao =
+                        anterior && anterior.custo > 0
+                          ? (linha.custo - anterior.custo) / anterior.custo
+                          : null;
+                      return (
+                        <div
+                          key={linha.id}
+                          className="flex items-center justify-between gap-3 border-b border-[var(--cream-deep)] px-3.5 py-2 text-sm last:border-b-0"
+                        >
+                          <span className="text-muted-foreground">{dataCurta(linha.registrado_em)}</span>
+                          <span className="flex items-center gap-2">
+                            <span className="font-semibold tabular-nums text-[var(--admin-ink-soft)]">
+                              {moedaUnitaria(linha.custo)} / {form.unidade}
+                            </span>
+                            {variacao !== null && Math.abs(variacao) >= 0.005 && (
+                              <span
+                                className={`inline-flex items-center gap-1 text-xs font-semibold ${
+                                  variacao > 0 ? "text-destructive" : "text-[var(--green-ink)]"
+                                }`}
+                              >
+                                {variacao > 0 ? (
+                                  <TrendingUp className="h-3.5 w-3.5" />
+                                ) : (
+                                  <TrendingDown className="h-3.5 w-3.5" />
+                                )}
+                                {`${variacao > 0 ? "+" : ""}${(variacao * 100).toFixed(0)}%`}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-1 sm:justify-between">
+            {form.id ? (
+              <Button
+                variant="ghost"
+                className="text-destructive hover:text-destructive"
+                disabled={salvando}
+                onClick={() => {
+                  const item = dados.insumos.find((i) => i.id === form.id);
+                  if (item) excluir(item);
+                }}
+              >
+                <Trash2 className="mr-1.5 h-4 w-4" />
+                Excluir
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setAberto(false)} disabled={salvando}>
                 Cancelar
               </Button>
-              <Button onClick={salvarEdicao} disabled={salvando}>
-                Salvar alterações
+              <Button onClick={salvar} disabled={salvando}>
+                {form.id ? "Salvar alterações" : "Cadastrar insumo"}
               </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

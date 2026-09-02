@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export type UnidadeInsumo = "UN" | "KG" | "G" | "L" | "ML" | "CX" | "PCT";
 
+export type FrequenciaCompra = "semanal" | "quinzenal" | "mensal" | "esporadica";
+
 export type InsumoRow = {
   id: string;
   nome: string;
@@ -13,6 +15,33 @@ export type InsumoRow = {
   quantidade_referencia: number;
   custo_referencia: number;
   ativo: boolean;
+  categoria: string | null;
+  tipo_embalagem: string | null;
+  /** Preco pago na embalagem inteira — e assim que se compra. */
+  preco_embalagem: number;
+  fornecedor_id: string | null;
+  fornecedor_nome: string | null;
+  frequencia_compra: FrequenciaCompra | null;
+  observacao: string | null;
+};
+
+export type FornecedorOpcao = { id: string; nome: string };
+
+export type CustoHistorico = {
+  id: string;
+  custo: number;
+  qtd_embalagem: number | null;
+  preco_pacote: number | null;
+  registrado_em: string;
+};
+
+/** Tudo que a tela de cadastro precisa, numa ida so ao banco. */
+export type CadastroInsumos = {
+  insumos: InsumoRow[];
+  fornecedores: FornecedorOpcao[];
+  /** Valores ja usados, para sugerir sem virar tabela de tipos. */
+  categorias: string[];
+  embalagens: string[];
 };
 
 export type ProdutoInsumoInput = {
@@ -22,14 +51,38 @@ export type ProdutoInsumoInput = {
 
 const unidadeSchema = z.enum(["UN", "KG", "G", "L", "ML", "CX", "PCT"]);
 
-const insumoSchema = z.object({
-  id: z.string().uuid().optional(),
-  nome: z.string().trim().min(1, "Nome obrigatório").max(160),
-  unidade: unidadeSchema,
-  quantidade_referencia: z.number().positive(),
-  custo_referencia: z.number().nonnegative(),
-  ativo: z.boolean().default(true),
-});
+const frequenciaSchema = z.enum(["semanal", "quinzenal", "mensal", "esporadica"]);
+
+const textoOpcional = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .nullish()
+    .transform((valor) => (valor ? valor : null));
+
+const insumoSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    nome: z.string().trim().min(1, "Nome obrigatório").max(160),
+    unidade: unidadeSchema,
+    quantidade_referencia: z.number().positive(),
+    /* A tela cadastra pelo preco da embalagem, que e como se compra: um pacote
+       de 400 g por R$ 12,00. O unitario sai da divisao. `custo_referencia`
+       continua aceito porque outras telas ja salvam pelo valor unitario. */
+    preco_embalagem: z.number().nonnegative().optional(),
+    custo_referencia: z.number().nonnegative().optional(),
+    ativo: z.boolean().default(true),
+    categoria: textoOpcional(60),
+    tipo_embalagem: textoOpcional(40),
+    fornecedor_id: z.string().uuid().nullish(),
+    frequencia_compra: frequenciaSchema.nullish(),
+    observacao: textoOpcional(500),
+  })
+  .refine(
+    (valor) => valor.preco_embalagem !== undefined || valor.custo_referencia !== undefined,
+    { message: "Informe o custo do insumo." },
+  );
 
 const idSchema = z.object({ id: z.string().uuid() });
 const composicaoSchema = z.object({
@@ -43,6 +96,9 @@ const composicaoSchema = z.object({
 });
 
 type ActionInput<T> = { data: T };
+
+const COLUNAS_INSUMO =
+  "id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo, categoria, tipo_embalagem, fornecedor_id, frequencia_compra, observacao";
 
 async function contextoEmpresa() {
   const supabase = await createClient();
@@ -71,22 +127,117 @@ function normalizarUnidade(unidade: string | null | undefined): UnidadeInsumo {
   return unidadeSchema.safeParse(valor).success ? (valor as UnidadeInsumo) : "UN";
 }
 
+type InsumoDb = {
+  id: string;
+  nome: string;
+  unidade: string | null;
+  qtd_embalagem: number | string | null;
+  preco_pacote: number | string | null;
+  custo: number | string | null;
+  ativo: boolean | null;
+  categoria: string | null;
+  tipo_embalagem: string | null;
+  fornecedor_id: string | null;
+  frequencia_compra: FrequenciaCompra | null;
+  observacao: string | null;
+};
+
+function paraInsumoRow(item: InsumoDb, nomePorFornecedor?: Map<string, string>): InsumoRow {
+  const quantidade = Number(item.qtd_embalagem ?? 1) || 1;
+  const custo = Number(item.custo ?? 0);
+  return {
+    id: item.id,
+    nome: item.nome,
+    unidade: normalizarUnidade(item.unidade),
+    quantidade_referencia: quantidade,
+    custo_referencia: custo,
+    ativo: item.ativo !== false,
+    categoria: item.categoria ?? null,
+    tipo_embalagem: item.tipo_embalagem ?? null,
+    // Embalagens antigas nao tinham preco proprio: reconstroi pelo unitario.
+    preco_embalagem: Number(item.preco_pacote ?? 0) || quantidade * custo,
+    fornecedor_id: item.fornecedor_id ?? null,
+    fornecedor_nome: item.fornecedor_id
+      ? (nomePorFornecedor?.get(item.fornecedor_id) ?? null)
+      : null,
+    frequencia_compra: item.frequencia_compra ?? null,
+    observacao: item.observacao ?? null,
+  };
+}
+
 export async function listarInsumos(): Promise<InsumoRow[]> {
   const { supabase, companyId } = await contextoEmpresa();
   const { data, error } = await supabase
     .from("insumos")
-    .select("id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo")
+    .select(COLUNAS_INSUMO)
     .eq("company_id", companyId)
     .order("nome");
 
   if (error) throw error;
-  return (data ?? []).map((item) => ({
-    id: item.id,
-    nome: item.nome,
-    unidade: normalizarUnidade(item.unidade),
-    quantidade_referencia: Number(item.qtd_embalagem ?? 1) || 1,
-    custo_referencia: Number(item.custo ?? 0),
-    ativo: item.ativo !== false,
+  return (data ?? []).map((item) => paraInsumoRow(item));
+}
+
+/**
+ * Carga da tela de cadastro: insumos, fornecedores para o seletor e os valores
+ * ja digitados em categoria e tipo de embalagem, que viram sugestoes.
+ *
+ * Sugestao em vez de tabela de tipos: sao rotulos que ninguem filtra em
+ * relatorio, entao mais uma tabela seria manutencao sem ganho.
+ */
+export async function carregarCadastroInsumos(): Promise<CadastroInsumos> {
+  const { supabase, companyId } = await contextoEmpresa();
+
+  const [insumosRes, fornecedoresRes] = await Promise.all([
+    supabase.from("insumos").select(COLUNAS_INSUMO).eq("company_id", companyId).order("nome"),
+    supabase
+      .from("fornecedores")
+      .select("id, nome")
+      .eq("company_id", companyId)
+      .eq("ativo", true)
+      .order("nome"),
+  ]);
+
+  if (insumosRes.error) throw insumosRes.error;
+  if (fornecedoresRes.error) throw fornecedoresRes.error;
+
+  const fornecedores = (fornecedoresRes.data ?? []) as FornecedorOpcao[];
+  const nomePorFornecedor = new Map(fornecedores.map((f) => [f.id, f.nome]));
+  const insumos = (insumosRes.data ?? []).map((item) => paraInsumoRow(item, nomePorFornecedor));
+
+  const distintos = (valores: (string | null)[]) =>
+    Array.from(new Set(valores.filter((v): v is string => Boolean(v && v.trim())))).sort((a, b) =>
+      a.localeCompare(b, "pt-BR"),
+    );
+
+  return {
+    insumos,
+    fornecedores,
+    categorias: distintos(insumos.map((i) => i.categoria)),
+    embalagens: distintos(insumos.map((i) => i.tipo_embalagem)),
+  };
+}
+
+/** Historico de preco do insumo. Gravado por trigger, nunca pela tela. */
+export async function historicoCustoInsumo(input: ActionInput<unknown>): Promise<CustoHistorico[]> {
+  const { id } = idSchema.parse(input.data);
+  const { supabase, companyId } = await contextoEmpresa();
+
+  const { data, error } = await supabase
+    .from("insumo_custo_historico")
+    .select("id, custo, qtd_embalagem, preco_pacote, registrado_em")
+    .eq("company_id", companyId)
+    .eq("insumo_id", id)
+    .order("registrado_em", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(24);
+
+  if (error) throw error;
+  return (data ?? []).map((linha) => ({
+    id: linha.id,
+    custo: Number(linha.custo ?? 0),
+    qtd_embalagem: linha.qtd_embalagem === null ? null : Number(linha.qtd_embalagem),
+    preco_pacote: linha.preco_pacote === null ? null : Number(linha.preco_pacote),
+    registrado_em: linha.registrado_em,
   }));
 }
 
@@ -94,20 +245,30 @@ export async function salvarInsumo(input: ActionInput<unknown>) {
   const data = insumoSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
 
-  // Na tela, custo_referencia representa sempre o valor UNITÁRIO do insumo.
-  // A tabela existente mantém também preco_pacote, que fica apenas como valor
-  // de referência calculado pela quantidade-base x custo unitário.
-  const custoUnitario = data.custo_referencia;
-  const precoReferencia = data.quantidade_referencia * custoUnitario;
+  /* Quem manda e o preco da embalagem, quando ele vem: e o numero que esta na
+     nota. O unitario e derivado. Quando so vem o unitario (telas antigas), a
+     conta corre no sentido inverso, como antes. */
+  const quantidade = data.quantidade_referencia;
+  const custoUnitario =
+    data.preco_embalagem !== undefined
+      ? Math.round((data.preco_embalagem / quantidade) * 10000) / 10000
+      : (data.custo_referencia ?? 0);
+  const precoEmbalagem =
+    data.preco_embalagem !== undefined ? data.preco_embalagem : quantidade * custoUnitario;
 
   const row = {
     company_id: companyId,
     nome: data.nome,
     unidade: data.unidade,
-    qtd_embalagem: data.quantidade_referencia,
-    preco_pacote: precoReferencia,
+    qtd_embalagem: quantidade,
+    preco_pacote: precoEmbalagem,
     custo: custoUnitario,
     ativo: data.ativo,
+    categoria: data.categoria ?? null,
+    tipo_embalagem: data.tipo_embalagem ?? null,
+    fornecedor_id: data.fornecedor_id ?? null,
+    frequencia_compra: data.frequencia_compra ?? null,
+    observacao: data.observacao ?? null,
     updated_at: new Date().toISOString(),
   };
 
@@ -117,7 +278,7 @@ export async function salvarInsumo(input: ActionInput<unknown>) {
       .update(row)
       .eq("id", data.id)
       .eq("company_id", companyId)
-      .select("id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo")
+      .select(COLUNAS_INSUMO)
       .single();
     if (error) throw error;
     return atualizado;
@@ -126,7 +287,7 @@ export async function salvarInsumo(input: ActionInput<unknown>) {
   const { data: criado, error } = await supabase
     .from("insumos")
     .insert(row)
-    .select("id, nome, unidade, qtd_embalagem, preco_pacote, custo, ativo")
+    .select(COLUNAS_INSUMO)
     .single();
   if (error) throw error;
   return criado;
