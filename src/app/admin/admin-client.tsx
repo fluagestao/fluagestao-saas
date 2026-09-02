@@ -25,6 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { contarFollowupVencendo } from "@/lib/followup";
 import { CentralAjudaButton } from "@/components/admin/CentralAjudaButton";
 import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPanel";
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
@@ -165,6 +166,10 @@ export default function AdminClient({
   const [etiquetas, setEtiquetas] = useState<EtiquetaRow[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  // Sino: quantos follow-ups estao no dia de chamar ou em atraso. Consulta
+  // enxuta e uma vez por abertura do painel — o numero nao muda a cada minuto.
+  const [followupVencendo, setFollowupVencendo] = useState(0);
   const [editando, setEditando] = useState<ProdutoRow | "novo" | null>(null);
 
   const [aba, setAba] = useState<AbaId>(initialAba);
@@ -210,6 +215,12 @@ export default function AdminClient({
     if (item.id === "vendas" && aba === "followup") return true;
     return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
   }
+
+  useEffect(() => {
+    contarFollowupVencendo()
+      .then(setFollowupVencendo)
+      .catch(() => setFollowupVencendo(0));
+  }, []);
 
   function selecionarSub(item: ItemMenu, subId: string) {
     if (item.id === "cadastros" && DO_CATALOGO.includes(subId as AbaId)) {
@@ -332,12 +343,34 @@ export default function AdminClient({
               <div className="hidden items-center gap-1 md:flex">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button type="button" className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]" aria-label="Notificações">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAba("followup");
+                        setExpandida(null);
+                      }}
+                      className="relative grid h-10 w-10 place-items-center rounded-xl text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream)] hover:text-[var(--terracotta)]"
+                      aria-label={
+                        followupVencendo
+                          ? `${followupVencendo} follow-up(s) para chamar`
+                          : "Nenhum follow-up para chamar"
+                      }
+                    >
                       <Bell className="h-[18px] w-[18px]" />
-                      <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-[var(--terracotta)] ring-2 ring-white" />
+                      {/* A bolinha so acende quando ha algo: antes ela ficava
+                          acesa sempre, e um aviso que nunca apaga nao avisa. */}
+                      {followupVencendo > 0 && (
+                        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[var(--terracotta)] px-1 text-[10px] font-bold text-white ring-2 ring-white">
+                          {followupVencendo > 9 ? "9+" : followupVencendo}
+                        </span>
+                      )}
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent>Avisos e lembretes do sistema</TooltipContent>
+                  <TooltipContent>
+                    {followupVencendo
+                      ? `${followupVencendo} cliente(s) esperando o pedido de avaliação`
+                      : "Nenhum follow-up para chamar agora"}
+                  </TooltipContent>
                 </Tooltip>
 
                 <Tooltip>
