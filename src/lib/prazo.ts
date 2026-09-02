@@ -99,3 +99,23 @@ export function saudacao(now: Date = new Date()): string {
   if (hora < 18) return "Boa tarde";
   return "Boa noite";
 }
+
+/**
+ * "04/09" no fuso de Tubarão. Aceita data pura (YYYY-MM-DD) ou timestamp.
+ *
+ * A data pura não tem fuso: passá-la pelo Intl com timeZone deslocaria o dia.
+ * O timestamp precisa do contrário — sem o fuso, uma entrega das 22h vira o
+ * dia seguinte, porque o banco guarda em UTC.
+ */
+export function diaMes(iso: string | null | undefined): string {
+  if (!iso) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    const [, mes, dia] = iso.split("-");
+    return `${dia}/${mes}`;
+  }
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: TZ,
+    day: "2-digit",
+    month: "2-digit",
+  }).format(new Date(iso));
+}

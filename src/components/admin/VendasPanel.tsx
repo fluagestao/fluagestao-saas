@@ -34,6 +34,7 @@ import {
   type StatusPedido,
   type Urgencia,
 } from "@/lib/vendas";
+import { TabelaRealizadas } from "@/components/admin/TabelaRealizadas";
 import { PedidoCard, type AcoesPedido } from "./PedidoCard";
 import { VendasKanban } from "./VendasKanban";
 import { PedidoDialog, type ProdutoOpcao } from "./PedidoDialog";
@@ -527,11 +528,16 @@ export function VendasPanel({
           sub === "areceber"
             ? "Quem ainda não pagou, de qualquer mês. Os já entregues vêm primeiro."
             : sub === "realizadas"
-              ? "Histórico das vendas concluídas — entregues e pagas."
+              ? "Histórico do que já foi entregue. A coluna Pago em mostra o que entrou no caixa."
               : "Pedidos do site entram sozinhos. Os que chegam por telefone ou Instagram, lance aqui."
         }
       />
-      <p className="mt-2 text-xs text-muted-foreground">
+      {/* Em realizadas o desktop mostra tabela, sem card para clicar. */}
+      <p
+        className={`mt-2 text-xs text-muted-foreground ${
+          sub === "realizadas" ? "md:hidden" : ""
+        }`}
+      >
         Clique em um card de pedido para abrir as ações e ver mais opções.
       </p>
 
@@ -782,7 +788,14 @@ export function VendasPanel({
             />
           )}
 
-          <div className="mt-3 space-y-3">
+          {realizadas.length > 0 && (
+            <div className="mt-3">
+              <TabelaRealizadas pedidos={realizadas} />
+            </div>
+          )}
+
+          {/* Celular: seis colunas nao cabem, entao a lista segue em cards. */}
+          <div className="mt-3 space-y-3 md:hidden">
             {realizadas.map((p) => (
               <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
             ))}

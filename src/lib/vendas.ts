@@ -42,6 +42,8 @@ export type Pedido = {
   origem: string; // site | manual
   /** Quando o dinheiro entrou. null = ainda não recebido. */
   recebido_em?: string | null;
+  /** Carimbo automático de quando o pedido virou "entregue" (trigger no banco). */
+  entregue_em?: string | null;
   /** Cliente cadastrado, quando o pedido veio de um. */
   cliente_id?: string | null;
   created_at?: string;
