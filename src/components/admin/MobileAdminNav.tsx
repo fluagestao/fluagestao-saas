@@ -4,16 +4,15 @@ import { ChartPie, Home, ShoppingBag } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-const ROTAS_PAINEL = [
-  "/admin",
-  "/inicio",
-  "/dashboard",
-  "/vendas",
-  "/financeiro",
-  "/cadastros",
-  "/tarefas",
-  "/conta",
-];
+import { ROTAS_DO_PAINEL } from "./AdminPathSync";
+
+/* Derivada do AdminPathSync, não copiada. A lista à mão ficou para trás das
+   rotas que ele empurra (/margem, /estoque, /custo/*, /followup) e, em cada
+   uma delas, esta barra devolvia null. O efeito não era só perder a barra: as
+   regras de celular são escritas como body:has(.mobile-admin-nav), então o
+   layout mobile inteiro caía junto nessas telas.
+   /conta entra à parte porque não é tela do painel. */
+const ROTAS_PAINEL = [...ROTAS_DO_PAINEL, "/conta"];
 
 type ItemId = "inicio" | "pedidos" | "dashboard";
 

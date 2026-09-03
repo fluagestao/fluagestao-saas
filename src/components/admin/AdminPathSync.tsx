@@ -91,6 +91,13 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
 
 const ROTAS_PAINEL = new Set(Object.keys(ESTADO_POR_ROTA));
 
+/* Exportada para a barra do celular usar a MESMA lista. Enquanto ela mantinha
+   uma cópia à mão, as duas divergiram: este arquivo empurra /margem, /estoque,
+   /custo/* e /followup, que não estavam lá — e em cada rota faltante a barra
+   sumia levando junto TODO o CSS mobile, que é escrito como
+   body:has(.mobile-admin-nav). */
+export const ROTAS_DO_PAINEL = Object.keys(ESTADO_POR_ROTA);
+
 function textoElemento(elemento: Element) {
   return (elemento.textContent ?? "").replace(/\s+/g, " ").trim();
 }
