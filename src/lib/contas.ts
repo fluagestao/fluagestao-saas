@@ -58,6 +58,9 @@ async function gerarRecorrentes(
     )
     .eq("company_id", companyId)
     .eq("recorrencia", "mensal")
+    /* Sem isto o grupo se regenera de si mesmo: apagar as parcelas abertas
+       deixa a paga como a mais recente, e ela vira o modelo da proxima. */
+    .is("encerrado_em", null)
     .order("vencimento", { ascending: false });
 
   if (error || !data?.length) return;
@@ -296,6 +299,21 @@ export async function excluirContaAPagar(input: { data: unknown }) {
 
   if (!alvo) return { ok: true as const };
 
+  /* Carimba ANTES de apagar. Se a ordem fosse a inversa e a segunda escrita
+     falhasse, as abertas teriam sumido e o grupo continuaria vivo — voltaria a
+     gerar tudo na proxima abertura, que e exatamente o defeito de origem.
+     Carimbando primeiro, uma falha no delete deixa o grupo parado, que e o
+     resultado que a pessoa pediu. */
+  const { error: erroCarimbo } = await supabase
+    .from("contas_a_pagar")
+    .update({ encerrado_em: new Date().toISOString() })
+    .eq("company_id", companyId)
+    .eq("grupo_id", alvo.grupo_id)
+    .is("encerrado_em", null);
+
+  if (erroCarimbo) throw erroCarimbo;
+
+  // As pagas ficam: viraram movimento e sao historico de caixa.
   const { error } = await supabase
     .from("contas_a_pagar")
     .delete()
