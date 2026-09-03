@@ -42,6 +42,7 @@ import {
   carregarEstoque,
   excluirMovimento,
   historicoEstoque,
+  atualizarMinimo,
   registrarMovimentos,
   salvarControleEstoque,
   type InsumoParaControle,
@@ -75,6 +76,15 @@ const PESO_SITUACAO: Record<SituacaoEstoque, number> = {
   sem_minimo: 2,
   ok: 3,
 };
+
+/* Espelha situacaoDe de lib/estoque.ts. Duplicado porque aquele modulo e
+   "use server" e so pode exportar funcao async — e aqui a situacao precisa
+   mudar enquanto se digita, sem ida ao servidor. */
+function situacaoDe(saldo: number, minimo: number | null): SituacaoEstoque {
+  if (saldo <= 0) return "zerado";
+  if (minimo === null) return "sem_minimo";
+  return saldo <= minimo ? "baixo" : "ok";
+}
 
 const SITUACAO: Record<SituacaoEstoque, { texto: string; classe: string }> = {
   ok: { texto: "Ok", classe: "bg-[var(--green-soft)] text-[var(--green-ink)]" },
@@ -315,6 +325,36 @@ export function EstoquePanel() {
     }
   }
 
+  /* Editar na propria linha: o minimo so faz sentido olhando o saldo ao lado, e
+     era esse contexto que se perdia ao ter que abrir outro dialogo para ajustar.
+     O estado muda a cada tecla para a coluna Situacao reagir na hora; a gravacao
+     acontece ao sair do campo. */
+  function mudarMinimo(insumoId: string, texto: string) {
+    const digitado = paraNumero(texto);
+    const valor =
+      texto.trim() === "" || !Number.isFinite(digitado) || digitado < 0 ? null : digitado;
+
+    setLinhas((atual) =>
+      atual.map((l) =>
+        l.insumo_id === insumoId
+          ? { ...l, estoque_minimo: valor, situacao: situacaoDe(l.saldo, valor) }
+          : l,
+      ),
+    );
+  }
+
+  async function salvarMinimo(insumoId: string) {
+    const linha = linhas.find((l) => l.insumo_id === insumoId);
+    if (!linha) return;
+    try {
+      await atualizarMinimo({ data: { insumoId, minimo: linha.estoque_minimo } });
+    } catch (e) {
+      // Recarrega para a tela nao ficar mostrando um numero que nao foi salvo.
+      toast.error(mensagemDeErro(e, "salvar o mínimo"));
+      await carregar();
+    }
+  }
+
   function abrirControle() {
     setRascunho(insumos.map((i) => ({ ...i })));
     setBuscaControle("");
@@ -326,11 +366,7 @@ export function EstoquePanel() {
     try {
       await salvarControleEstoque({
         data: {
-          itens: rascunho.map((i) => ({
-            id: i.id,
-            controlar: i.controlar_estoque,
-            minimo: i.estoque_minimo,
-          })),
+          itens: rascunho.map((i) => ({ id: i.id, controlar: i.controlar_estoque })),
         },
       });
       toast.success("Controle de estoque atualizado.");
@@ -584,9 +620,19 @@ export function EstoquePanel() {
                     {numeroBr(linha.saldo)} {linha.unidade}
                   </span>
 
-                  <span className="text-sm tabular-nums text-[var(--admin-ink-soft)]">
-                    {linha.estoque_minimo === null ? "—" : numeroBr(linha.estoque_minimo)}
-                  </span>
+                  <Input
+                    value={
+                      linha.estoque_minimo === null
+                        ? ""
+                        : String(linha.estoque_minimo).replace(".", ",")
+                    }
+                    onChange={(e) => mudarMinimo(linha.insumo_id, e.target.value)}
+                    onBlur={() => salvarMinimo(linha.insumo_id)}
+                    inputMode="decimal"
+                    placeholder="—"
+                    aria-label={`Mínimo de ${linha.nome}`}
+                    className="h-9 w-20 border-transparent bg-transparent text-center tabular-nums shadow-none hover:border-input hover:bg-white focus-visible:border-input focus-visible:bg-white"
+                  />
 
                   <span
                     className={`inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold ${SITUACAO[linha.situacao].classe}`}
@@ -828,7 +874,8 @@ export function EstoquePanel() {
             <DialogTitle>Insumos no controle de estoque</DialogTitle>
             <DialogDescription>
               Ligue só o que vale acompanhar. Quem fica de fora não some — continua contando no
-              custo dos produtos, apenas não aparece nesta tela.
+              custo dos produtos, apenas não aparece nesta tela. O mínimo de cada um você define
+              direto na tabela, olhando o saldo.
             </DialogDescription>
           </DialogHeader>
 
@@ -938,34 +985,9 @@ export function EstoquePanel() {
                           <p className="truncate text-xs text-muted-foreground">{item.categoria}</p>
                         )}
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <span className="t-support text-[var(--admin-muted)]">Mínimo</span>
-                        <Input
-                          value={item.estoque_minimo === null ? "" : String(item.estoque_minimo).replace(".", ",")}
-                          onChange={(e) => {
-                            const bruto = e.target.value;
-                            const numero = paraNumero(bruto);
-                            setRascunho((atual) =>
-                              atual.map((i) =>
-                                i.id === item.id
-                                  ? {
-                                      ...i,
-                                      estoque_minimo:
-                                        bruto.trim() === "" || !Number.isFinite(numero)
-                                          ? null
-                                          : numero,
-                                    }
-                                  : i,
-                              ),
-                            );
-                          }}
-                          disabled={!item.controlar_estoque}
-                          inputMode="decimal"
-                          placeholder="—"
-                          className="h-9 w-20 text-center"
-                        />
-                        <span className="t-support w-8 text-[var(--admin-muted)]">{item.unidade}</span>
-                      </div>
+                      <span className="t-support shrink-0 text-[var(--admin-muted)]">
+                        {item.unidade}
+                      </span>
                     </div>
                     ))}
                   </div>

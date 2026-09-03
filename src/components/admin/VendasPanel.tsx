@@ -82,6 +82,13 @@ const FILTROS: { v: FiltroStatus; label: string }[] = [
   { v: "todos", label: "Todos" },
 ];
 
+/* "Não entregue" e "Todos" não dizem o que agrupam — o primeiro junta três
+   status, o segundo inclui cancelado. Os status avulsos são o próprio nome. */
+const EXPLICA_FILTRO: Partial<Record<FiltroStatus, string>> = {
+  nao_entregue: "novos, em produção e prontos aguardando retirada",
+  todos: "inclui entregues e cancelados",
+};
+
 /** Período com atalhos: o uso normal é "hoje" ou "este mês", não digitar datas. */
 function SeletorPeriodo({
   de,
@@ -795,8 +802,9 @@ export function VendasPanel({
           (sub !== "pedidos" || visao === "kanban") && "hidden",
         )}
       >
+        <span className="t-support shrink-0 text-[var(--admin-muted)]">Mostrando</span>
         <Select value={status} onValueChange={(v) => setStatus(v as FiltroStatus)}>
-          <SelectTrigger className="h-9 w-[220px] rounded-xl">
+          <SelectTrigger className="h-9 w-[200px] rounded-xl">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -818,11 +826,23 @@ export function VendasPanel({
             ))}
           </SelectContent>
         </Select>
+
+        {/* O seletor sozinho nao explicava nada. O numero e a legenda dizem o
+            que aquela escolha esta mostrando agora. */}
+        {!carregando && (
+          <span className="t-support min-w-0 text-[var(--admin-muted)]">
+            <strong className="font-semibold text-[var(--admin-ink-soft)]">
+              {pedidos.length} {pedidos.length === 1 ? "pedido" : "pedidos"}
+            </strong>
+            {EXPLICA_FILTRO[status] ? ` · ${EXPLICA_FILTRO[status]}` : ""}
+          </span>
+        )}
+
         <Input
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por nome ou WhatsApp"
-          className="ml-auto h-9 max-w-[15rem]"
+          className="ml-auto h-9 w-full max-w-[15rem]"
         />
       </div>
 

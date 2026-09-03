@@ -350,6 +350,14 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
     [pedidos, hoje],
   );
 
+  /* O card conta so o que ainda tem que sair. A lista acima mantem as
+     entregues; o numero, nao — "3 precisam sair hoje" com as tres ja entregues
+     manda voce correr atras de trabalho que ja foi feito. */
+  const faltamSair = useMemo(
+    () => entregasHoje.filter((p) => p.status !== "entregue").length,
+    [entregasHoje],
+  );
+
   const proximosSete = useMemo(() => {
     const inicio = dataParaDate(hoje);
     const limite = new Date(inicio);
@@ -584,8 +592,14 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
         <Kpi
           carregando={carregando}
           titulo="Entregas hoje"
-          valor={String(entregasHoje.length)}
-          nota={entregasHoje.length ? "precisam sair hoje" : "nada pra hoje"}
+          valor={String(faltamSair)}
+          nota={
+            entregasHoje.length === 0
+              ? "nada pra hoje"
+              : faltamSair === 0
+                ? `tudo entregue · ${entregasHoje.length} no dia`
+                : `${faltamSair === 1 ? "precisa" : "precisam"} sair hoje · ${entregasHoje.length - faltamSair} ${entregasHoje.length - faltamSair === 1 ? "entregue" : "entregues"}`
+          }
           icon={Truck}
           detalheClass="text-[var(--blue-ink)]"
         />

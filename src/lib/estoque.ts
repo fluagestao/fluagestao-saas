@@ -294,12 +294,16 @@ const controleSchema = z.object({
     z.object({
       id: z.string().uuid(),
       controlar: z.boolean(),
-      minimo: z.number().nonnegative().nullish(),
     }),
   ),
 });
 
-/** Define quais insumos entram no controle e o mínimo de cada um. */
+/**
+ * Define quais insumos entram no controle. O mínimo NÃO passa por aqui: ele é
+ * editado na linha da tabela, e deixar dois lugares gravando o mesmo campo
+ * fazia o diálogo sobrescrever o que tinha acabado de ser ajustado ali.
+ * A única exceção é desligar o controle, que zera o mínimo junto.
+ */
 export async function salvarControleEstoque(input: ActionInput<unknown>) {
   const data = controleSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
@@ -309,7 +313,7 @@ export async function salvarControleEstoque(input: ActionInput<unknown>) {
       .from("insumos")
       .update({
         controlar_estoque: item.controlar,
-        estoque_minimo: item.controlar ? (item.minimo ?? null) : null,
+        ...(item.controlar ? {} : { estoque_minimo: null }),
         updated_at: new Date().toISOString(),
       })
       .eq("id", item.id)
@@ -355,6 +359,27 @@ export async function excluirMovimento(input: ActionInput<unknown>) {
     .from("estoque_movimentos")
     .delete()
     .eq("id", id)
+    .eq("company_id", companyId);
+  if (error) throw error;
+
+  return { ok: true as const };
+}
+
+/** Só o mínimo de um insumo. Editado direto na linha da tabela. */
+export async function atualizarMinimo(input: ActionInput<unknown>) {
+  const { insumoId, minimo } = z
+    .object({
+      insumoId: z.string().uuid(),
+      minimo: z.number().nonnegative().max(1_000_000).nullable(),
+    })
+    .parse(input.data);
+
+  const { supabase, companyId } = await contextoEmpresa();
+
+  const { error } = await supabase
+    .from("insumos")
+    .update({ estoque_minimo: minimo, updated_at: new Date().toISOString() })
+    .eq("id", insumoId)
     .eq("company_id", companyId);
   if (error) throw error;
 
