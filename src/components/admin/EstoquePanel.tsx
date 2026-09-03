@@ -149,6 +149,11 @@ export function EstoquePanel() {
   const [movMotivo, setMovMotivo] = useState("");
 
   const [controleAberto, setControleAberto] = useState(false);
+  /* Texto cru do minimo enquanto o campo esta sendo digitado. Sem isto o input
+     controlado reformatava a cada tecla e comia a virgula: "1" vira 1, a
+     virgula some porque paraNumero("1,") tambem da 1, e o "5" seguinte grudava
+     no "1" — quem digitava 1,5 gravava 15. Some ao sair do campo. */
+  const [minimoDigitado, setMinimoDigitado] = useState<Record<string, string>>({});
   const [rascunho, setRascunho] = useState<InsumoParaControle[]>([]);
   const [buscaControle, setBuscaControle] = useState("");
 
@@ -330,6 +335,8 @@ export function EstoquePanel() {
      O estado muda a cada tecla para a coluna Situacao reagir na hora; a gravacao
      acontece ao sair do campo. */
   function mudarMinimo(insumoId: string, texto: string) {
+    setMinimoDigitado((atual) => ({ ...atual, [insumoId]: texto }));
+
     const digitado = paraNumero(texto);
     const valor =
       texto.trim() === "" || !Number.isFinite(digitado) || digitado < 0 ? null : digitado;
@@ -344,6 +351,9 @@ export function EstoquePanel() {
   }
 
   async function salvarMinimo(insumoId: string) {
+    // Sai do modo "texto cru" e volta a exibir o numero formatado.
+    setMinimoDigitado(({ [insumoId]: _descartado, ...resto }) => resto);
+
     const linha = linhas.find((l) => l.insumo_id === insumoId);
     if (!linha) return;
     try {
@@ -622,9 +632,10 @@ export function EstoquePanel() {
 
                   <Input
                     value={
-                      linha.estoque_minimo === null
+                      minimoDigitado[linha.insumo_id] ??
+                      (linha.estoque_minimo === null
                         ? ""
-                        : String(linha.estoque_minimo).replace(".", ",")
+                        : String(linha.estoque_minimo).replace(".", ","))
                     }
                     onChange={(e) => mudarMinimo(linha.insumo_id, e.target.value)}
                     onBlur={() => salvarMinimo(linha.insumo_id)}
