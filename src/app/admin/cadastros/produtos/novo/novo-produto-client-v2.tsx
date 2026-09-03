@@ -588,17 +588,29 @@ export function NovoProdutoClient({
                 )}
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
-                    if (file) adicionarFoto(file);
+                    // Abre o recorte; quem envia e o onConfirmar do dialogo.
+                    if (file) setARecortar(file);
                     e.target.value = "";
                   }}
                 />
               </label>
             </div>
           </aside>
+
+          {aRecortar && (
+            <RecorteFoto
+              arquivo={aRecortar}
+              onCancelar={() => setARecortar(null)}
+              onConfirmar={(recortada) => {
+                setARecortar(null);
+                adicionarFoto(recortada);
+              }}
+            />
+          )}
         </div>
       </main>
 
