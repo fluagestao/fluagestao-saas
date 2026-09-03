@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
 const ROTAS_DIRETAS: Record<string, string> = {
@@ -133,16 +133,22 @@ function abrirEstadoDaRota(pathname: string) {
 
 export function AdminPathSync() {
   const pathname = usePathname();
-  const inicializado = useRef(false);
+  /* Este componente vive no layout raiz, entao sobrevive a toda navegacao do
+     lado do cliente. Com um ref de "uma vez por montagem", a primeira tela
+     abria certa e nenhuma outra: sair de /conta pelo cabecalho — que e <Link>
+     de verdade — mudava a URL, o efeito re-rodava e nao fazia nada, porque a
+     flag ja era true. A pessoa via o Inicio com o endereco dizendo Pedidos.
+
+     Nao guardo o ultimo pathname aberto: o clique dentro do painel reescreve a
+     URL com pushState cru, que o usePathname nao enxerga, entao a memoria
+     ficaria velha e o bug voltaria ao sair e retornar para a mesma rota.
+     Como o efeito so re-roda em navegacao real do Next — e navegacao real
+     remonta o AdminClient no Inicio — abrir sempre e o correto. */
 
   useEffect(() => {
     if (!ROTAS_PAINEL.has(pathname)) return;
 
-    let timer: number | undefined;
-    if (!inicializado.current) {
-      inicializado.current = true;
-      timer = window.setTimeout(() => abrirEstadoDaRota(pathname), 100);
-    }
+    const timer = window.setTimeout(() => abrirEstadoDaRota(pathname), 100);
 
     function aoClicar(evento: MouseEvent) {
       const alvo = evento.target as HTMLElement | null;
