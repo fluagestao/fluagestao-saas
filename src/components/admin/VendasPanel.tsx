@@ -736,7 +736,7 @@ export function VendasPanel({
             ? "Quem ainda não pagou, de qualquer mês. Os já entregues vêm primeiro."
             : sub === "realizadas"
               ? "Histórico do que já foi entregue. A coluna Pago em mostra o que entrou no caixa."
-              : "Pedidos do site entram sozinhos. Os que chegam por telefone ou Instagram, lance aqui."
+              : "O pedido feito no seu catálogo chega pelo WhatsApp. Lance aqui — esses, os do telefone e os do Instagram."
         }
       />
       {/* Em realizadas o desktop mostra tabela, sem card para clicar. */}
