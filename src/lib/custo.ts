@@ -152,14 +152,62 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     if (dia < de || dia > ate) continue;
 
     const itens = Array.isArray(pedido.itens)
-      ? (pedido.itens as { slug?: string | null; qtd?: number; preco?: number | null }[])
+      ? (pedido.itens as {
+          slug?: string | null;
+          nome?: string;
+          qtd?: number;
+          preco?: number | null;
+          custo?: number | null;
+        }[])
       : [];
 
     for (const item of itens) {
-      if (!item.slug) continue;
+      const qtd = Number(item.qtd ?? 0);
+
+      /* Item montado na hora nao tem slug, e ate agora era pulado: nem a
+         receita nem o custo dele entravam. Como sao as cestas corporativas em
+         quantidade, a Margem subestimava o faturamento — e discordava do
+         Dashboard, que sempre contou o avulso usando `slug ?? nome`.
+
+         O custo vem do que foi digitado NO PEDIDO, nao do insumo de hoje: e a
+         unica leitura fiel, porque insumo muda de preco e o pedido ja fechou.
+         Agrupa por nome, que e a identidade que o avulso tem. */
+      if (!item.slug) {
+        const chave = `avulso:${item.nome ?? "sem nome"}`;
+        const atual = porSlug.get(chave);
+        const custoUnit = item.custo == null ? null : Number(item.custo);
+
+        if (atual) {
+          atual.qtd += qtd;
+          atual.receita += Number(item.preco ?? 0) * qtd;
+          // Sem custo em alguma venda, o do grupo deixa de ser confiavel.
+          if (custoUnit == null) atual.custo = null;
+        } else {
+          porSlug.set(chave, {
+            id: chave,
+            slug: chave,
+            nome: item.nome ?? "Item avulso",
+            categoria: "Montado na hora",
+            colecao: null,
+            preco: item.preco == null ? null : Number(item.preco),
+            custo: custoUnit,
+            maoDeObraTotal: null,
+            descontosTotal: null,
+            sobraReal: null,
+            margemReal: null,
+            tempo_montagem_min: null,
+            qtd,
+            receita: Number(item.preco ?? 0) * qtd,
+            custoTotal: null,
+            lucro: null,
+            margem: null,
+          });
+        }
+        continue;
+      }
+
       const alvo = porSlug.get(item.slug);
       if (!alvo) continue;
-      const qtd = Number(item.qtd ?? 0);
       alvo.qtd += qtd;
       alvo.receita += Number(item.preco ?? 0) * qtd;
     }
