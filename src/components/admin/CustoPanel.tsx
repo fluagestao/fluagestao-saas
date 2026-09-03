@@ -122,8 +122,8 @@ export function CustoPanel() {
   return (
     <section data-tela-cheia className="min-w-0">
       <PageHeader
-        titulo="Custo"
-        descricao="Quanto cada produto custa para montar e quanto sobra depois de vender. O custo vem da composição de insumos cadastrada hoje."
+        titulo="Margem"
+        descricao="Quanto sobra em cada produto depois de pagar os insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro."
         acoes={
           <div className="flex flex-wrap items-end gap-2">
             <label className="grid gap-1 text-xs text-muted-foreground">

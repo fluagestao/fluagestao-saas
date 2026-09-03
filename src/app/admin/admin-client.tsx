@@ -151,7 +151,7 @@ const MENU: ItemMenu[] = [
     icon: Wallet,
     vistas: SUB_FINANCEIRO,
   },
-  { id: "custo", label: "Custo", icon: Calculator },
+  { id: "custo", label: "Margem", icon: Calculator },
   { id: "estoque", label: "Estoque", icon: Boxes },
   {
     id: "cadastros",
@@ -178,7 +178,7 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "dashboard", label: "Dashboard", icon: ChartPie },
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
-  { id: "custo", label: "Custo", icon: Calculator },
+  { id: "custo", label: "Margem", icon: Calculator },
   { id: "estoque", label: "Estoque", icon: Boxes },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },

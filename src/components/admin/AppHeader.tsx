@@ -45,7 +45,7 @@ const MENU: ItemMenu[] = [
       { label: "Previsão de caixa", href: "/financeiro/previsao" },
     ],
   },
-  { label: "Custo", href: "/custo" },
+  { label: "Margem", href: "/margem" },
   {
     label: "Cadastros",
     filhos: [

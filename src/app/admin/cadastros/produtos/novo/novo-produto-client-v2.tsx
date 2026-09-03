@@ -542,13 +542,13 @@ export function NovoProdutoClient({
                 <div className="min-w-0">
                   <p className="text-sm font-semibold">Custo do produto</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    Os insumos e quantidades agora ficam na tela de Custo, junto com a margem.
+                    Os insumos e quantidades agora ficam na tela de Margem, junto com o quanto sobra.
                   </p>
                 </div>
                 <Button type="button" variant="outline" asChild>
-                  <a href="/custo">
+                  <a href="/margem">
                     <Calculator className="mr-1.5 h-4 w-4" />
-                    Abrir Custo
+                    Abrir Margem
                   </a>
                 </Button>
               </div>

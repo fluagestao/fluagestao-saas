@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const ROTAS_DIRETAS: Record<string, string> = {
   "Início": "/inicio",
   Dashboard: "/dashboard",
-  Custo: "/custo",
+  Margem: "/margem",
   Estoque: "/estoque",
   Tarefas: "/tarefas",
   "Follow-up": "/followup",
@@ -47,7 +47,9 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/followup": { pai: "Vendas", filho: "Follow-up" },
 
   "/dashboard": { filho: "Dashboard" },
-  "/custo": { filho: "Custo" },
+  "/margem": { filho: "Margem" },
+  // Rota antiga: continua abrindo a mesma tela para nao quebrar link salvo.
+  "/custo": { filho: "Margem" },
   "/estoque": { filho: "Estoque" },
 
   "/financeiro/entradas": { pai: "Financeiro", filho: "Recebimentos" },
