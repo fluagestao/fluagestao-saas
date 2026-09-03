@@ -45,6 +45,7 @@ import {
 } from "@/lib/insumos";
 import { mensagemDeErro } from "@/lib/erros";
 import { PageHeader, useConfirmar } from "./shell";
+import { paraNumero as paraNumeroBase } from "@/lib/numero";
 
 const UNIDADES: { value: UnidadeInsumo; label: string }[] = [
   { value: "UN", label: "Unidade" },
@@ -100,10 +101,9 @@ function numeroBr(valor: number) {
 }
 
 /** Aceita "1.234,56" e "1234.56": vírgula manda quando existe. */
+// Contrato local preservado; a leitura vem de lib/numero.ts.
 function paraNumero(texto: string): number {
-  const bruto = texto.trim();
-  if (!bruto) return Number.NaN;
-  return Number(bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto);
+  return paraNumeroBase(texto) ?? Number.NaN;
 }
 
 function paraCampo(valor: number) {

@@ -18,17 +18,16 @@ import { registrarPagamento } from "@/lib/pedidos";
 import { formatBRL, subtotalItens, totalPedido, type Pedido } from "@/lib/vendas";
 import { Num } from "./shell";
 import { mensagemDeErro } from "@/lib/erros";
+import { paraNumero as paraNumeroBase } from "@/lib/numero";
 
 const FORMAS = ["Pix", "Cartão", "Dinheiro", "Cortesia", "Outro"] as const;
 
 const campoCls =
   "h-10 w-full rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground focus:border-[var(--terracotta)] focus:outline-none";
 
+// Contrato local preservado; a leitura vem de lib/numero.ts.
 function paraNumero(v: string): number | null {
-  const t = v.trim().replace(",", ".");
-  if (!t) return null;
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
+  return paraNumeroBase(v);
 }
 
 /**

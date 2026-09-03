@@ -29,12 +29,15 @@ import {
 import { porDia, resumoDoCaixa, type Movimento } from "@/lib/caixa";
 import { formatBRL } from "@/lib/vendas";
 import { Carregando, EstadoVazio, Num, PageHeader, useConfirmar, ValorCarregando } from "./shell";
+import { paraNumero as paraNumeroBase } from "@/lib/numero";
 
 type TipoDespesa = { id: string; nome: string };
 
-function paraNumero(v: string): number {
-  const n = Number(v.replace(/[^\d,.-]/g, "").replace(",", "."));
-  return Number.isFinite(n) ? n : 0;
+/* Contrato local preservado: esta tela ja tratava vazio como zero. A LEITURA
+   e que virou uma so, em lib/numero.ts — antes cada arquivo tinha a sua e tres
+   das quatro erravam o ponto de milhar. */
+function paraNumero(texto: string): number {
+  return paraNumeroBase(texto) ?? 0;
 }
 
 const inicioDoMes = () => `${hojeISO().slice(0, 8)}01`;

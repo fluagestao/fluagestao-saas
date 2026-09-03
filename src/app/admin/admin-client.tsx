@@ -272,7 +272,7 @@ export default function AdminClient({
     initialAba === "followup" ? "followup" : "pedidos",
   );
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
-  const [estadoFin, setEstadoFin] = useState<EstadoFinanceiro>("pendente");
+  const [estadoFin, setEstadoFin] = useState<EstadoFinanceiro>("concluido");
   // Terceiro nivel do menu do desktop. Fecha junto com o menu que o contem.
   const [grupoAberto, setGrupoAberto] = useState<string | null>(null);
   const [subCad, setSubCad] = useState<SubCadastros>("clientes");
@@ -779,8 +779,10 @@ export default function AdminClient({
               <div className="mb-4 flex gap-1 rounded-full border border-[var(--admin-border)] bg-card p-1 w-fit">
                 {(
                   [
+                    /* Passado antes do futuro: o que ja aconteceu vem
+                       primeiro, e e nele que a tela abre. */
+                    { v: "concluido", label: subFin === "entradas" ? "Recebidas" : "Pagos" },
                     { v: "pendente", label: subFin === "entradas" ? "A receber" : "A pagar" },
-                    { v: "concluido", label: subFin === "entradas" ? "Recebidas" : "Pagas" },
                   ] as const
                 ).map(({ v, label }) => (
                   <button
