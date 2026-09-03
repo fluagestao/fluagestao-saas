@@ -44,7 +44,7 @@ const DialogContent = React.forwardRef<
       {...props}
     >
       {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+      <DialogPrimitive.Close className="absolute right-2 top-2 grid h-11 w-11 cursor-pointer place-items-center rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground sm:right-4 sm:top-4 sm:h-auto sm:w-auto sm:rounded-sm">
         <X className="h-4 w-4" />
         <span className="sr-only">Fechar</span>
       </DialogPrimitive.Close>
@@ -60,7 +60,12 @@ DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex min-w-0 flex-col-reverse gap-2 sm:flex-row sm:flex-wrap sm:justify-end", className)}
+    className={cn(
+      // 44px de alvo no celular: o rodape empilha os botoes em largura cheia,
+      // mas a altura continuava a de desktop (h-9 = 36px).
+      "flex min-w-0 flex-col-reverse gap-2 [&>button]:h-11 sm:flex-row sm:flex-wrap sm:justify-end sm:[&>button]:h-9",
+      className,
+    )}
     {...props}
   />
 );

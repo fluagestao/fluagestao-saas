@@ -965,14 +965,19 @@ export function PedidoDialog({
   return (
     <>
       <style jsx global>{`
-        html body [data-pedido-dialog][role="dialog"] {
-          top: calc(50% + 14px) !important;
+        /* So no desktop. Sem a media query, este top vencia a regra do celular
+           (especificidade 0,2,2 contra 0,1,0) e o modal comecava depois da
+           metade da tela, com o Salvar fora do viewport. */
+        @media (min-width: 768px) {
+          html body [data-pedido-dialog][role="dialog"] {
+            top: calc(50% + 14px) !important;
+          }
         }
       `}</style>
       <Dialog open onOpenChange={(o) => !o && onClose()}>
         <DialogContent
           data-pedido-dialog
-          className="!flex !h-[calc(100dvh-88px)] !w-[calc(100vw-32px)] !max-h-[calc(100dvh-88px)] !max-w-[1760px] !min-h-0 !flex-col !overflow-hidden gap-2 px-6 py-2.5"
+          className="!flex !h-auto !max-h-none !w-auto !max-w-none !min-h-0 !flex-col !overflow-hidden gap-2 px-6 py-2.5 md:!h-[calc(100dvh-88px)] md:!max-h-[calc(100dvh-88px)] md:!w-[calc(100vw-32px)] md:!max-w-[1760px]"
         >
           {conteudo}
         </DialogContent>

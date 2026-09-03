@@ -179,6 +179,11 @@
     overflow-x: hidden !important;
     overflow-y: auto !important;
     border-radius: 22px !important;
+    /* O DialogContent e display:grid. Com top E bottom fixados a caixa fica com
+       a altura da tela inteira, e align-content normal em grid e `stretch`: as
+       faixas crescem juntas e um dialogo curto abre com um vao enorme entre
+       titulo, campos e rodape. `start` empacota tudo no topo. */
+    align-content: start !important;
   }
 
   [role="dialog"] > * {
@@ -200,15 +205,15 @@
   }
 
   /* Dashboard: primeiro KPI vira destaque e os dois seguintes ficam lado a lado. */
-  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] > div:first-child {
+  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] > div:first-child {
     grid-column: 1 / -1;
   }
 
-  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] > div {
+  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] > div {
     padding: 14px !important;
   }
 
-  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] p[class*="text-2xl"] {
+  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] p[class*="text-2xl"] {
     font-size: 1.45rem !important;
   }
 
@@ -273,7 +278,7 @@
     min-height: 52px;
   }
 
-  body:has(.mobile-admin-nav) main > section > div[class*="grid-cols-2"][class*="gap-3"] {
+  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] {
     gap: 10px !important;
   }
 
