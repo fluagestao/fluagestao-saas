@@ -1,27 +1,36 @@
 "use client";
 
-import { Calculator, Download, Pencil, TriangleAlert } from "lucide-react";
+import { Download, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { carregarMargemProdutos, type MargemProduto } from "@/lib/custo";
 import { mensagemDeErro } from "@/lib/erros";
-import { listarInsumos, type InsumoRow } from "@/lib/insumos";
-import { hojeISO } from "@/lib/prazo";
+import {
+  hojeISO,
+  intervaloAno,
+  intervaloMes,
+  intervaloSemana,
+  type Intervalo,
+} from "@/lib/prazo";
 import { cn } from "@/lib/utils";
 import { formatBRL } from "@/lib/vendas";
-import { ProdutoInsumosEditor } from "./ProdutoInsumosEditor";
 import { Carregando, EstadoVazio, Num, PageHeader, ValorCarregando } from "./shell";
 
 type Filtro = "vendidos" | "sem_custo" | "todos";
+
+type Atalho = "hoje" | "semana" | "mes" | "mes_passado" | "ano" | "escolher";
+
+/* Atalhos de calendario, nao janelas moveis: um relatorio precisa fechar com o
+   que a pessoa confere em outro lugar. "Ultimos 30 dias" nao bate com mes
+   nenhum. Mesma regra ja usada em Vendas realizadas. */
+const ATALHOS: { id: Atalho; label: string; intervalo: (hoje: string) => Intervalo }[] = [
+  { id: "hoje", label: "Hoje", intervalo: (h) => ({ de: h, ate: h }) },
+  { id: "semana", label: "Esta semana", intervalo: (h) => intervaloSemana(h, 0) },
+  { id: "mes", label: "Este mês", intervalo: (h) => intervaloMes(h, 0) },
+  { id: "mes_passado", label: "Mês passado", intervalo: (h) => intervaloMes(h, -1) },
+  { id: "ano", label: "Este ano", intervalo: (h) => intervaloAno(h, 0) },
+];
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -49,37 +58,29 @@ function corDaMargem(margem: number | null) {
  */
 export function CustoPanel() {
   const hoje = hojeISO();
-  const [mes, setMes] = useState(() => hoje.slice(0, 7));
+  const [atalho, setAtalho] = useState<Atalho>("mes");
+  const [periodo, setPeriodo] = useState<Intervalo>(() => intervaloMes(hoje, 0));
   const [dados, setDados] = useState<Awaited<ReturnType<typeof carregarMargemProdutos>> | null>(
     null,
   );
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>("vendidos");
-  const [insumos, setInsumos] = useState<InsumoRow[]>([]);
-  const [editando, setEditando] = useState<MargemProduto | null>(null);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
     setErro(null);
     try {
-      setDados(await carregarMargemProdutos({ data: { mes } }));
+      setDados(await carregarMargemProdutos({ data: periodo }));
     } catch (e) {
       setErro(mensagemDeErro(e, "calcular a margem"));
     }
     setCarregando(false);
-  }, [mes]);
+  }, [periodo]);
 
   useEffect(() => {
     recarregar();
   }, [recarregar]);
-
-  // Os insumos nao dependem do mes: carrega uma vez e serve todos os dialogos.
-  useEffect(() => {
-    listarInsumos()
-      .then(setInsumos)
-      .catch(() => setInsumos([]));
-  }, []);
 
   const visiveis = useMemo(() => {
     const lista = dados?.produtos ?? [];
@@ -112,7 +113,7 @@ export function CustoPanel() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `custo-e-margem-${mes}.csv`;
+    a.download = `margem-${periodo.de}-a-${periodo.ate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -123,36 +124,52 @@ export function CustoPanel() {
     <section data-tela-cheia className="min-w-0">
       <PageHeader
         titulo="Margem"
-        descricao="Quanto sobra em cada produto depois de pagar os insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro."
+        descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use a Calculadora."
         acoes={
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="grid gap-1 text-xs text-muted-foreground">
-              Mês
-              <select
-                value={mes.slice(5)}
-                onChange={(e) => setMes(`${mes.slice(0, 4)}-${e.target.value}`)}
-                className="h-9 min-w-36 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+          <div className="flex flex-wrap items-end gap-1.5">
+            {ATALHOS.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                onClick={() => {
+                  setAtalho(a.id);
+                  setPeriodo(a.intervalo(hoje));
+                }}
+                className={cn(
+                  "t-support h-9 rounded-lg border px-3 font-medium transition-colors",
+                  atalho === a.id
+                    ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
+                    : "border-[var(--cream-deep)] bg-card text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+                )}
               >
-                {MESES.map((nome, i) => (
-                  <option key={nome} value={String(i + 1).padStart(2, "0")}>
-                    {nome}
-                  </option>
-                ))}
-              </select>
+                {a.label}
+              </button>
+            ))}
+            <label className="ml-1 grid gap-1 text-xs text-muted-foreground">
+              De
+              <input
+                type="date"
+                value={periodo.de}
+                max={periodo.ate}
+                onChange={(e) => {
+                  setAtalho("escolher");
+                  setPeriodo((p) => ({ ...p, de: e.target.value }));
+                }}
+                className="h-9 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+              />
             </label>
             <label className="grid gap-1 text-xs text-muted-foreground">
-              Ano
-              <select
-                value={mes.slice(0, 4)}
-                onChange={(e) => setMes(`${e.target.value}-${mes.slice(5)}`)}
-                className="h-9 min-w-28 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
-              >
-                {anos.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
+              Até
+              <input
+                type="date"
+                value={periodo.ate}
+                min={periodo.de}
+                onChange={(e) => {
+                  setAtalho("escolher");
+                  setPeriodo((p) => ({ ...p, ate: e.target.value }));
+                }}
+                className="h-9 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+              />
             </label>
           </div>
         }
@@ -183,16 +200,11 @@ export function CustoPanel() {
           <div className="min-w-0 flex-1">
             <p className="t-support text-muted-foreground">
               {dados.semComposicao} produto(s) venderam sem custo cadastrado e ficam fora da
-              margem acima. Lance o custo deles aqui mesmo para a conta fechar.
+              margem acima. Lance o custo deles na Calculadora para a conta fechar.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setFiltro("sem_custo")}
-            className="h-8 shrink-0 rounded-lg"
-          >
-            Ver só esses
+          <Button variant="outline" size="sm" asChild className="h-8 shrink-0 rounded-lg">
+            <a href="/custo/calculadora">Abrir Calculadora</a>
           </Button>
         </div>
       )}
@@ -256,57 +268,21 @@ export function CustoPanel() {
       ) : (
         <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {visiveis.map((p) => (
-            <Linha key={p.slug} produto={p} onEditar={() => setEditando(p)} />
+            <Linha key={p.slug} produto={p} />
           ))}
         </ul>
       )}
 
-      <Dialog
-        open={editando !== null}
-        onOpenChange={(estado) => {
-          if (!estado) {
-            setEditando(null);
-            // O editor salva sozinho; recarrega para a margem refletir na hora.
-            recarregar();
-          }
-        }}
-      >
-        <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader className="pr-6 text-left">
-            <DialogTitle>Custo do produto</DialogTitle>
-            <DialogDescription>
-              Lance os insumos e as quantidades usados em <strong>{editando?.nome}</strong>. O
-              custo é a soma deles, e a margem sai do preço de venda.
-            </DialogDescription>
-          </DialogHeader>
-
-          {editando && (
-            <ProdutoInsumosEditor produtoId={editando.id} insumos={insumos} autoSave />
-          )}
-
-          <DialogFooter className="pt-1">
-            <Button
-              onClick={() => {
-                setEditando(null);
-                recarregar();
-              }}
-            >
-              Pronto
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
 
-function Linha({ produto: p, onEditar }: { produto: MargemProduto; onEditar: () => void }) {
+function Linha({ produto: p }: { produto: MargemProduto }) {
   const semCusto = p.custo == null;
   return (
     <li
-      onClick={onEditar}
       className={cn(
-        "grid cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--terracotta)] sm:flex sm:flex-wrap",
+        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap",
         semCusto ? "border-[var(--cream-deep)] bg-[var(--cream-soft)]" : "border-[var(--admin-border)]",
       )}
     >
@@ -348,19 +324,11 @@ function Linha({ produto: p, onEditar }: { produto: MargemProduto; onEditar: () 
         <p className={cn("t-item tabular-nums", corDaMargem(p.margem))}>{porcento(p.margem)}</p>
       </div>
 
-      <div className="shrink-0 pl-1">
-        {semCusto ? (
-          <span className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg bg-[var(--peach)] px-2.5 font-semibold text-[var(--coral)]">
-            <Calculator className="h-3.5 w-3.5" />
-            Lançar custo
-          </span>
-        ) : (
-          <span className="t-support inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-muted-foreground">
-            <Pencil className="h-3.5 w-3.5" />
-            Editar
-          </span>
-        )}
-      </div>
+      {semCusto && (
+        <span className="t-support shrink-0 rounded-lg bg-[var(--peach)] px-2.5 py-1 font-semibold text-[var(--coral)]">
+          sem custo
+        </span>
+      )}
     </li>
   );
 }

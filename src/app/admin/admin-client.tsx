@@ -33,6 +33,7 @@ import { CalendarioEntregasPanel } from "@/components/admin/CalendarioEntregasPa
 import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
+import { CalculadoraPanel } from "@/components/admin/CalculadoraPanel";
 import { CustoPanel } from "@/components/admin/CustoPanel";
 import { EmConstrucao } from "@/components/admin/EmConstrucao";
 import { EstoquePanel } from "@/components/admin/EstoquePanel";
@@ -654,10 +655,7 @@ export default function AdminClient({
           ) : aba === "custo" ? (
             <CustoPanel />
           ) : aba === "calculadora" ? (
-            <EmConstrucao
-              titulo="Calculadora"
-              descricao="Vai calcular o preço de venda a partir dos insumos e da margem que você quer."
-            />
+            <CalculadoraPanel />
           ) : aba === "simulador" ? (
             <EmConstrucao
               titulo="Simulador"

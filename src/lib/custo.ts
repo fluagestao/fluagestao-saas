@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireCompany } from "@/lib/company-context.server";
 import { dataLocalISO } from "@/lib/vendas";
 
-const MES = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/);
+const DATA = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
 export type MargemProduto = {
   /** Necessário para abrir o custo do produto direto daqui. */
@@ -35,14 +35,15 @@ export type MargemProduto = {
  * inventada é pior que margem faltando.
  */
 export async function carregarMargemProdutos(input: { data: unknown }) {
-  const { mes } = z.object({ mes: MES }).parse(input.data);
+  // Periodo livre, nao mais mes fechado: a tela virou relatorio e precisa
+  // responder "esta semana", "mes passado", "o ano todo" com o mesmo codigo.
+  const { de, ate } = z.object({ de: DATA, ate: DATA }).parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
-  const [ano, numeroMes] = mes.split("-").map(Number);
-  const proximo =
-    numeroMes === 12
-      ? `${ano + 1}-01-01`
-      : `${ano}-${String(numeroMes + 1).padStart(2, "0")}-01`;
+  // Fim do periodo e inclusivo na tela; a consulta usa o dia seguinte.
+  const depoisDoFim = new Date(`${ate}T12:00:00Z`);
+  depoisDoFim.setUTCDate(depoisDoFim.getUTCDate() + 1);
+  const limite = depoisDoFim.toISOString().slice(0, 10);
 
   const [pedidosRes, produtosRes, compRes, insumosRes, categoriasRes, catalogosRes] =
     await Promise.all([
@@ -51,8 +52,8 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
         .select("itens, created_at")
         .eq("company_id", companyId)
         .neq("status", "cancelado")
-        .gte("created_at", `${mes}-01T00:00:00-03:00`)
-        .lt("created_at", `${proximo}T00:00:00-03:00`)
+        .gte("created_at", `${de}T00:00:00-03:00`)
+        .lt("created_at", `${limite}T00:00:00-03:00`)
         .limit(5000),
       supabase
         .from("produtos")
@@ -126,7 +127,9 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
 
   for (const pedido of pedidosRes.data ?? []) {
     const criado = pedido.created_at as string | null;
-    if (!criado || !dataLocalISO(criado).startsWith(mes)) continue;
+    if (!criado) continue;
+    const dia = dataLocalISO(criado);
+    if (dia < de || dia > ate) continue;
 
     const itens = Array.isArray(pedido.itens)
       ? (pedido.itens as { slug?: string | null; qtd?: number; preco?: number | null }[])
@@ -167,7 +170,8 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
   const receitaComCusto = comCusto.reduce((t, p) => t + p.receita, 0);
 
   return {
-    mes,
+    de,
+    ate,
     produtos: todos,
     receita,
     custoTotal,
@@ -179,4 +183,28 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     semCustoTotal: todos.filter((p) => p.custo == null).length,
     totalProdutos: todos.length,
   };
+}
+
+/**
+ * Atualiza só o preço de venda.
+ *
+ * Existe separado do salvarProduto porque a Calculadora mexe em uma coisa só:
+ * mandar o produto inteiro de volta ali arriscaria sobrescrever campo que a
+ * tela nem carregou (foto, descrição, ordem).
+ */
+export async function atualizarPrecoProduto(input: { data: unknown }) {
+  const { id, preco } = z
+    .object({ id: z.string().uuid(), preco: z.number().nonnegative().max(1_000_000) })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+
+  const { error } = await supabase
+    .from("produtos")
+    .update({ preco })
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error) throw error;
+  return { ok: true as const };
 }
