@@ -560,23 +560,25 @@ function DialogoSimulacao({
 
           <label className="space-y-1.5 text-sm font-medium">
             Tempo de montagem
-            <div className="flex items-center gap-1.5">
+            <div className="relative">
               <Input
                 value={tempo}
                 onChange={(e) => setTempo(e.target.value)}
                 inputMode="numeric"
                 placeholder="40"
-                className="h-11"
+                className="h-11 pr-12"
               />
-              <span className="text-sm text-muted-foreground">min</span>
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                min
+              </span>
             </div>
           </label>
 
-          <div className="flex items-end">
-            <div className="w-full rounded-xl bg-[var(--cream-soft)] px-3.5 py-2.5">
-              <p className="t-support text-muted-foreground">Insumos</p>
-              <p className="t-item tabular-nums text-[var(--terracotta)]">{moeda(custoTotal)}</p>
-            </div>
+          <div className="space-y-1.5 text-sm font-medium">
+            <span className="block">Insumos</span>
+            <p className="flex h-11 items-center rounded-xl bg-[var(--cream-soft)] px-3.5 t-item tabular-nums text-[var(--terracotta)]">
+              {moeda(custoTotal)}
+            </p>
           </div>
         </div>
 

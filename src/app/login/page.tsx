@@ -15,7 +15,7 @@ import AuthShell from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { entrar as autenticar, reenviarConfirmacao } from "@/lib/auth-acoes";
 
 const EMAIL_STORAGE_KEY = "flua.login.email";
 
@@ -28,6 +28,8 @@ export default function LoginPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
+  const [precisaConfirmar, setPrecisaConfirmar] = useState(false);
+  const [reenviando, setReenviando] = useState(false);
 
   useEffect(() => {
     const emailSalvo = window.localStorage.getItem(EMAIL_STORAGE_KEY);
@@ -68,15 +70,14 @@ export default function LoginPage() {
     setCarregando(true);
 
     try {
-      const supabase = createClient();
+      /* Passa pela acao de servidor em vez de falar com o Supabase daqui: e o
+         que permite contar tentativa, exigir CAPTCHA e registrar abuso. Do
+         navegador direto, nada disso teria onde acontecer. */
+      const r = await autenticar({ data: { email: email.trim().toLowerCase(), senha } });
 
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password: senha,
-      });
-
-      if (error) {
-        setErro("E-mail ou senha inválidos.");
+      if (!r.ok) {
+        setErro(r.mensagem ?? "E-mail ou senha inválidos.");
+        setPrecisaConfirmar(Boolean(r.confirmarEmail));
         return;
       }
 
@@ -86,35 +87,7 @@ export default function LoginPage() {
         window.localStorage.removeItem(EMAIL_STORAGE_KEY);
       }
 
-      let destino = "/admin";
-      const userId = authData.user?.id;
-
-      if (userId) {
-        const { data: membro } = await supabase
-          .from("company_members")
-          .select("company_id, role")
-          .eq("user_id", userId)
-          .eq("status", "active")
-          .order("created_at", { ascending: true })
-          .limit(1)
-          .maybeSingle();
-
-        if (!membro) {
-          destino = "/onboarding";
-        } else if (membro.role === "owner") {
-          const { data: empresa } = await supabase
-            .from("companies")
-            .select("onboarding_completed_at")
-            .eq("id", membro.company_id)
-            .maybeSingle();
-
-          if (empresa && !empresa.onboarding_completed_at) {
-            destino = "/onboarding";
-          }
-        }
-      }
-
-      router.replace(destino);
+      router.replace(r.destino ?? "/inicio");
       router.refresh();
     } catch {
       setErro("Não foi possível entrar agora. Tente novamente em instantes.");
@@ -215,6 +188,25 @@ export default function LoginPage() {
             {erro}
           </div>
         )}
+
+              {precisaConfirmar && (
+                <button
+                  type="button"
+                  disabled={reenviando}
+                  onClick={async () => {
+                    setReenviando(true);
+                    const r = await reenviarConfirmacao({
+                      data: { email: email.trim().toLowerCase(), origem: window.location.origin },
+                    });
+                    setErro(null);
+                    setSucesso(r.mensagem ?? null);
+                    setReenviando(false);
+                  }}
+                  className="mt-2 text-sm font-medium text-[var(--terracotta)] underline underline-offset-2 disabled:opacity-60"
+                >
+                  {reenviando ? "Enviando..." : "Reenviar e-mail de confirmação"}
+                </button>
+              )}
 
         {sucesso && (
           <div
