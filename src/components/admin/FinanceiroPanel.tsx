@@ -20,7 +20,6 @@ import {
   carregarMovimentos,
   carregarSaldoAcumulado,
   carregarConfigFinanceiro,
-  conferirMovimento,
   salvarConfigFinanceiro,
   criarTipoDespesa,
   criarTipoReceita,
@@ -91,22 +90,6 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
   const resumo = useMemo(() => resumoDoCaixa(movimentos), [movimentos]);
   const daAba = useMemo(() => movimentos.filter((m) => m.tipo === tipo), [movimentos, tipo]);
   const dias = useMemo(() => porDia(daAba), [daAba]);
-
-  async function conferir(m: Movimento) {
-    const marcado = Boolean(m.conferido_em);
-    // Otimista: o circulo pinta na hora e volta sozinho se o banco recusar.
-    setMovimentos((atuais) =>
-      atuais.map((x) =>
-        x.id === m.id ? { ...x, conferido_em: marcado ? null : hojeISO() } : x,
-      ),
-    );
-    try {
-      await conferirMovimento({ data: { id: m.id, conferido: !marcado } });
-    } catch (e) {
-      toast.error(mensagemDeErro(e, "marcar o lançamento"));
-      recarregar();
-    }
-  }
 
   async function excluir(m: Movimento) {
     if (m.id.startsWith("pedido:")) {
@@ -282,13 +265,6 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
         </button>
       </div>
 
-      {daAba.length > 0 && (
-        <p className="mt-2 text-xs text-muted-foreground">
-          {daAba.filter((m) => m.conferido_em).length} de {daAba.length} conferidos com o
-          extrato
-        </p>
-      )}
-
       <DialogoSaldoInicial
         aberto={saldoAberto}
         onFechar={() => setSaldoAberto(false)}
@@ -390,24 +366,6 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
                   )}
                 </button>
                 <Num className="shrink-0 font-medium text-foreground">{formatBRL(m.valor)}</Num>
-                <button
-                  type="button"
-                  onClick={() => conferir(m)}
-                  title={
-                    m.conferido_em
-                      ? `Conferido em ${m.conferido_em}. Clique para desmarcar.`
-                      : "Marcar como conferido com o extrato"
-                  }
-                  aria-pressed={Boolean(m.conferido_em)}
-                  className={cn(
-                    "grid h-7 w-7 shrink-0 place-items-center rounded-full border transition-colors",
-                    m.conferido_em
-                      ? "border-[var(--whatsapp)] bg-[var(--whatsapp)] text-white"
-                      : "border-[var(--cream-deep)] text-foreground/25 hover:text-foreground/60",
-                  )}
-                >
-                  <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
-                </button>
                 <button
                   type="button"
                   aria-label="Excluir"
