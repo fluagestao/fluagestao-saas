@@ -469,7 +469,7 @@ function PainelCliente({
            alcanca essa faixa quando fica alto. Deslocando o centro em 2,5rem e
            reservando 9rem de altura, a borda de cima para em ~112px em
            qualquer tamanho de tela. */
-        className="top-[calc(50%+2.5rem)] flex max-h-[calc(100dvh-9rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+        className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
         <DialogHeader className="shrink-0 border-b border-[var(--cream-deep)] px-5 pb-4 pt-5 text-left sm:px-6">
           <DialogTitle className="flex items-center gap-3 text-left">

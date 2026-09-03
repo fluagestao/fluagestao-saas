@@ -193,10 +193,10 @@ export function AjustesCalculo({
                 ajuda="Cartão, maquininha"
               />
               <CampoPct
-                rotulo="Perdas"
+                rotulo="Outros"
                 valor={perdas}
                 onMudar={setPerdas}
-                ajuda="Estrago, quebra"
+                ajuda="Perda, estrago, quebra, embalagem, frete"
               />
             </div>
 

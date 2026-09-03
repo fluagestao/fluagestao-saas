@@ -95,7 +95,7 @@ export function CustoPanel() {
     if (!visiveis.length) return;
     const campo = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const linhas = [
-      ["Produto", "Categoria", "Coleção", "Vendidos", "Preço", "Custo", "Receita", "Lucro", "Margem", "Mão de obra", "Custo fixo", "Sobra real", "Margem real"],
+      ["Produto", "Categoria", "Coleção", "Vendidos", "Preço", "Custo", "Receita", "Lucro", "Margem bruta", "Markup", "Mão de obra", "Custo fixo", "Sobra real", "Margem líquida"],
       ...visiveis.map((p) => [
         p.nome,
         p.categoria ?? "",
@@ -106,6 +106,7 @@ export function CustoPanel() {
         p.receita.toFixed(2).replace(".", ","),
         p.lucro?.toFixed(2).replace(".", ",") ?? "",
         p.margem == null ? "" : `${Math.round(p.margem * 100)}%`,
+        markup(p.receita, p.custo != null ? p.custo * p.qtd : 0) ?? "",
         p.maoDeObraTotal?.toFixed(2).replace(".", ",") ?? "",
         p.descontosTotal?.toFixed(2).replace(".", ",") ?? "",
         p.sobraReal?.toFixed(2).replace(".", ",") ?? "",
@@ -196,10 +197,13 @@ export function CustoPanel() {
         <Cartao rotulo="Custo dos insumos" valor={formatBRL(dados?.custoTotal ?? 0)} cor="var(--terracotta)" carregando={carregando} />
         <Cartao rotulo="Sobrou" valor={formatBRL(dados?.lucro ?? 0)} cor="var(--green-ink)" carregando={carregando} />
         <Cartao
-          rotulo={dados?.calculoCompleto ? "Contribuição" : "Margem"}
+          rotulo={dados?.calculoCompleto ? "Margem bruta" : "Margem"}
           carregando={carregando}
           valor={porcento(dados?.margem ?? null)}
-          nota="sobre o que tem custo cadastrado"
+          nota="depois só dos insumos"
+          ladoRotulo="Markup"
+          ladoValor={markup(dados?.receita ?? 0, dados?.custoTotal ?? 0) ?? undefined}
+          ladoNota="sobre o insumo"
         />
       </div>
 
@@ -227,10 +231,15 @@ export function CustoPanel() {
             nota="depois de tudo"
           />
           <Cartao
-            rotulo="Margem real"
+            rotulo="Margem líquida"
             valor={porcento(dados.margemReal ?? null)}
             carregando={carregando}
-            nota="o que sobra de verdade"
+            nota="depois de mão de obra e fixos"
+            ladoRotulo="Markup"
+            ladoValor={
+              markup(dados.receita, dados.custoTotal + dados.maoDeObra + dados.descontos) ?? undefined
+            }
+            ladoNota="sobre o custo total"
           />
         </div>
       )}
@@ -363,14 +372,23 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
 
       <div className="w-20 text-right">
         <p className="t-support text-muted-foreground">
-          {p.margemReal == null ? "margem" : "contrib."}
+          {p.margemReal == null ? "margem" : "bruta"}
         </p>
         <p className={cn("t-item tabular-nums", corDaMargem(p.margem))}>{porcento(p.margem)}</p>
       </div>
 
+      {/* Markup ao lado da margem, no espaco que ja sobrava. Mesma relacao
+          vista do outro lado: por quanto o preco multiplica o custo. */}
+      <div className="hidden w-20 text-right sm:block">
+        <p className="t-support text-muted-foreground">markup</p>
+        <p className="t-item tabular-nums text-[var(--admin-ink-soft)]">
+          {markup(p.receita, p.custo != null ? p.custo * p.qtd : 0) ?? "—"}
+        </p>
+      </div>
+
       {p.margemReal != null && (
         <div className="w-24 text-right">
-          <p className="t-support text-muted-foreground">sobra real</p>
+          <p className="t-support text-muted-foreground">líquida</p>
           <p className={cn("t-item tabular-nums", corDaMargem(p.margemReal))}>
             {porcento(p.margemReal)}
           </p>
@@ -386,30 +404,58 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
   );
 }
 
+/** Por quanto o preço multiplica o custo. Null sem custo: ∞ não é informação. */
+function markup(receita: number, custo: number): string | null {
+  if (!custo || custo <= 0 || !receita) return null;
+  return `${(receita / custo).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×`;
+}
+
 function Cartao({
   rotulo,
   valor,
   cor,
   nota,
   carregando,
+  ladoRotulo,
+  ladoValor,
+  ladoNota,
 }: {
   rotulo: string;
   valor: string;
   cor?: string;
   nota?: string;
   carregando?: boolean;
+  /* Segunda leitura do MESMO numero, no espaco que sobrava a direita.
+     Margem responde "quanto do preco sobra"; markup responde "por quanto
+     multiplico o custo". Sao a mesma relacao vista dos dois lados, e quem
+     forma preco pensa no segundo. */
+  ladoRotulo?: string;
+  ladoValor?: string;
+  ladoNota?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-      <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
-      {carregando ? (
-        <ValorCarregando />
-      ) : (
-        <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
-          <Num>{valor}</Num>
-        </p>
+    <div className="flex items-start justify-between gap-3 rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+      <div className="min-w-0">
+        <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{rotulo}</p>
+        {carregando ? (
+          <ValorCarregando />
+        ) : (
+          <p className="mt-1 t-hero tabular-nums" style={{ color: cor ?? "var(--admin-ink)" }}>
+            <Num>{valor}</Num>
+          </p>
+        )}
+        {nota && <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>}
+      </div>
+
+      {!carregando && ladoValor && (
+        <div className="min-w-0 shrink-0 border-l border-[var(--cream-deep)] pl-3 text-right">
+          <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">{ladoRotulo}</p>
+          <p className="mt-1 t-hero tabular-nums text-[var(--admin-ink-soft)]">
+            <Num>{ladoValor}</Num>
+          </p>
+          {ladoNota && <p className="t-support mt-0.5 text-muted-foreground">{ladoNota}</p>}
+        </div>
       )}
-      {nota && <p className="t-support mt-0.5 text-muted-foreground">{nota}</p>}
     </div>
   );
 }

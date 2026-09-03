@@ -352,7 +352,7 @@ function DialogoReceita({
         <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3">
           <p className="mb-2 text-sm font-semibold text-foreground">Ingredientes</p>
 
-          <div className="max-h-[34vh] space-y-2 overflow-y-auto pr-1">
+          <div className="space-y-2">
             {linhas.map((linha) => (
               <div key={linha.chave} className="flex items-start gap-2">
                 <Input

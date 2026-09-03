@@ -95,7 +95,7 @@ export function CascataCusto({ cascata }: { cascata: Cascata }) {
                 {c.maoDeObra > 0 && <Linha rotulo="Mão de obra" valor={c.maoDeObra} negativo />}
                 {c.custoFixo > 0 && <Linha rotulo="Custo fixo" valor={c.custoFixo} negativo />}
                 {c.taxa > 0 && <Linha rotulo="Taxa de pagamento" valor={c.taxa} negativo />}
-                {c.perdas > 0 && <Linha rotulo="Perdas" valor={c.perdas} negativo />}
+                {c.perdas > 0 && <Linha rotulo="Outros" valor={c.perdas} negativo />}
               </div>
 
               <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-[var(--cream-deep)] pt-2">
