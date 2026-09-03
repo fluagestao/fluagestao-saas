@@ -161,11 +161,11 @@ function LinhaPedidoAgenda({
 
   return (
     <div
-      className={`grid grid-cols-[54px_70px_minmax(0,1fr)_auto] items-start gap-3 py-4 ${
+      className={`grid grid-cols-[54px_minmax(0,1fr)] items-start gap-x-3 gap-y-1 py-4 md:grid-cols-[54px_70px_minmax(0,1fr)_auto] md:gap-3 ${
         concluido ? "-mx-4 bg-[var(--green-soft)] px-4" : ""
       }`}
     >
-      <div>
+      <div className="row-span-3 md:row-auto">
         <p
           className={`t-support font-bold uppercase tracking-[0.08em] ${
             concluido ? "text-[var(--green-ink)]" : "text-[var(--coral)]"
@@ -177,11 +177,11 @@ function LinhaPedidoAgenda({
           {numeroDia}
         </p>
       </div>
-      <span className="t-body flex items-center gap-2 text-[var(--admin-muted)]">
+      <span className="t-body col-start-2 row-start-2 flex items-center gap-2 text-[var(--admin-muted)] md:col-auto md:row-auto">
         <span className="h-1 w-1 shrink-0 rounded-full bg-[var(--admin-muted)]" />
         {p.janela_entrega || "—"}
       </span>
-      <div className="min-w-0">
+      <div className="col-start-2 row-start-1 min-w-0 md:col-auto md:row-auto">
         <p className="t-item truncate text-[var(--admin-ink)]">
           #{p.numero} {p.cliente_nome || "Cliente"}
         </p>
@@ -190,9 +190,9 @@ function LinhaPedidoAgenda({
           {p.tipo === "retirada" ? "Retirada" : "Entrega"}
         </p>
       </div>
-      <div className="text-right">
+      <div className="col-start-2 row-start-3 text-left md:col-auto md:row-auto md:text-right">
         <p className="t-item text-[var(--admin-ink-soft)]">{formatBRL(p.total)}</p>
-        <div className="mt-1 flex flex-wrap justify-end gap-1">
+        <div className="mt-1 flex flex-wrap justify-start gap-1 md:justify-end">
           {concluido && (
             <span className="t-support inline-flex rounded-full bg-[var(--green-ink)] px-2 py-0.5 font-semibold text-white">
               Entregue

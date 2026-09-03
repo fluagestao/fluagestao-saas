@@ -195,8 +195,8 @@ function Pizza({
       {dados.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{vazio}</p>
       ) : (
-        <div className="mt-2 flex items-center gap-3">
-          <div className="h-32 w-32 shrink-0">
+        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="h-32 w-32 shrink-0 self-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

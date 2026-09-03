@@ -190,7 +190,7 @@ export function ProdutoInsumosEditor({
         )}
       </div>
 
-      <div className="mt-5 max-h-[360px] space-y-2.5 overflow-y-auto pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-5 space-y-2.5 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:max-h-[360px] sm:overflow-y-auto">
         {itens.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--admin-border)] px-4 py-8 text-center text-sm text-muted-foreground">
             Pesquise acima para adicionar os insumos deste produto.
@@ -204,7 +204,7 @@ export function ProdutoInsumosEditor({
             return (
               <div
                 key={item.insumoId}
-                className="grid grid-cols-[minmax(0,1fr)_130px_130px_40px] items-center gap-3 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3"
+                className="grid grid-cols-[minmax(0,1fr)_96px_44px] items-center gap-2 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-3 py-3 sm:grid-cols-[minmax(0,1fr)_130px_130px_40px] sm:gap-3 sm:px-4"
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold">{insumo.nome}</p>
@@ -213,7 +213,7 @@ export function ProdutoInsumosEditor({
                   </p>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground">
                     Quantidade
                   </p>
@@ -221,12 +221,12 @@ export function ProdutoInsumosEditor({
                     defaultValue={String(item.quantidade).replace(".", ",")}
                     onChange={(e) => alterarQuantidade(item.insumoId, e.target.value)}
                     inputMode="decimal"
-                    className="h-9 bg-white px-3 text-sm"
+                    className="h-11 bg-white px-3 text-sm sm:h-9"
                     aria-label={`Quantidade de ${insumo.nome}`}
                   />
                 </div>
 
-                <div className="text-right">
+                <div className="col-span-2 col-start-1 row-start-2 text-left sm:col-span-1 sm:col-start-auto sm:row-start-auto sm:text-right">
                   <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.07em] text-muted-foreground">
                     Custo
                   </p>
@@ -237,7 +237,7 @@ export function ProdutoInsumosEditor({
                   type="button"
                   onClick={() => remover(item.insumoId)}
                   disabled={salvando}
-                  className="grid h-9 w-9 place-items-center rounded-xl text-destructive transition hover:bg-red-50 disabled:opacity-50"
+                  className="col-start-3 row-start-1 grid h-11 w-11 place-items-center rounded-xl text-destructive transition hover:bg-red-50 disabled:opacity-50 sm:col-start-auto sm:row-start-auto sm:h-9 sm:w-9"
                   aria-label={`Remover ${insumo.nome}`}
                 >
                   <Trash2 className="h-4 w-4" />
