@@ -61,6 +61,8 @@ export function CustoPanel() {
   /* Comeca escondido. E a tela que ela abre com a cliente do lado, e margem e
      markup sao justamente o que nao se mostra para quem esta comprando. */
   const [mostrar, setMostrar] = useState(false);
+  /** Troca o valor por um traco quando a tela esta fechada. */
+  const oculta = (texto: string | null | undefined) => (mostrar ? (texto ?? "—") : "—");
   const [atalho, setAtalho] = useState<Atalho>("mes");
   const [periodo, setPeriodo] = useState<Intervalo>(() => intervaloMes(hoje, 0));
   const [dados, setDados] = useState<Awaited<ReturnType<typeof carregarMargemProdutos>> | null>(
@@ -129,7 +131,7 @@ export function CustoPanel() {
   }
 
   return (
-    <section data-tela-cheia className="min-w-0">
+    <section className="min-w-0">
       <PageHeader
         titulo="Margem"
         descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use a Precificação."
@@ -205,24 +207,17 @@ export function CustoPanel() {
         </div>
       )}
 
-      <div
-        className={cn(
-          "transition",
-          !mostrar && "pointer-events-none select-none blur-md",
-        )}
-        aria-hidden={!mostrar}
-      >
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <Cartao rotulo="Receita" valor={formatBRL(dados?.receita ?? 0)} carregando={carregando} />
-        <Cartao rotulo="Custo dos insumos" valor={formatBRL(dados?.custoTotal ?? 0)} cor="var(--terracotta)" carregando={carregando} />
-        <Cartao rotulo="Sobrou" valor={formatBRL(dados?.lucro ?? 0)} cor="var(--green-ink)" carregando={carregando} />
+        <Cartao rotulo="Receita" valor={oculta(formatBRL(dados?.receita ?? 0))} carregando={carregando} />
+        <Cartao rotulo="Custo dos insumos" valor={oculta(formatBRL(dados?.custoTotal ?? 0))} cor="var(--terracotta)" carregando={carregando} />
+        <Cartao rotulo="Sobrou" valor={oculta(formatBRL(dados?.lucro ?? 0))} cor="var(--green-ink)" carregando={carregando} />
         <Cartao
           rotulo={dados?.calculoCompleto ? "Margem bruta" : "Margem"}
           carregando={carregando}
-          valor={porcento(dados?.margem ?? null)}
+          valor={oculta(porcento(dados?.margem ?? null))}
           nota="depois só dos insumos"
           ladoRotulo="Markup"
-          ladoValor={markup(dados?.receita ?? 0, dados?.custoTotal ?? 0) ?? undefined}
+          ladoValor={oculta(markup(dados?.receita ?? 0, dados?.custoTotal ?? 0))}
           ladoNota="sobre o insumo"
         />
       </div>
@@ -233,31 +228,31 @@ export function CustoPanel() {
         <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <Cartao
             rotulo="Mão de obra"
-            valor={formatBRL(dados.maoDeObra)}
+            valor={oculta(formatBRL(dados.maoDeObra))}
             cor="var(--terracotta)"
             carregando={carregando}
           />
           <Cartao
             rotulo="Custo fixo e taxas"
-            valor={formatBRL(dados.descontos)}
+            valor={oculta(formatBRL(dados.descontos))}
             cor="var(--terracotta)"
             carregando={carregando}
           />
           <Cartao
             rotulo="Sobra real"
-            valor={formatBRL(dados.sobraReal ?? 0)}
+            valor={oculta(formatBRL(dados.sobraReal ?? 0))}
             cor={(dados.sobraReal ?? 0) < 0 ? "var(--destructive)" : "var(--green-ink)"}
             carregando={carregando}
             nota="depois de tudo"
           />
           <Cartao
             rotulo="Margem líquida"
-            valor={porcento(dados.margemReal ?? null)}
+            valor={oculta(porcento(dados.margemReal ?? null))}
             carregando={carregando}
             nota="depois de mão de obra e fixos"
             ladoRotulo="Markup"
             ladoValor={
-              markup(dados.receita, dados.custoTotal + dados.maoDeObra + dados.descontos) ?? undefined
+              oculta(markup(dados.receita, dados.custoTotal + dados.maoDeObra + dados.descontos))
             }
             ladoNota="sobre o custo total"
           />
@@ -422,17 +417,17 @@ export function CustoPanel() {
       ) : (
         <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {visiveis.map((p) => (
-            <Linha key={p.slug} produto={p} />
+            <Linha key={p.slug} produto={p} mostrar={mostrar} />
           ))}
         </ul>
       )}
-      </div>
 
     </section>
   );
 }
 
-function Linha({ produto: p }: { produto: MargemProduto }) {
+function Linha({ produto: p, mostrar }: { produto: MargemProduto; mostrar: boolean }) {
+  const oculta = (texto: string | null | undefined) => (mostrar ? (texto ?? "—") : "—");
   const semCusto = p.custo == null;
   return (
     <li
@@ -456,21 +451,21 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
       <div className="hidden w-28 text-right lg:block">
         <p className="t-support text-muted-foreground">custo un.</p>
         <p className="t-body tabular-nums text-foreground">
-          {p.custo == null ? "—" : formatBRL(p.custo)}
+          {oculta(p.custo == null ? null : formatBRL(p.custo))}
         </p>
       </div>
 
       <div className="w-28 text-right">
         <p className="t-support text-muted-foreground">receita</p>
         <p className="t-body tabular-nums text-foreground">
-          <Num>{formatBRL(p.receita)}</Num>
+          <Num>{oculta(formatBRL(p.receita))}</Num>
         </p>
       </div>
 
       <div className="w-28 text-right">
         <p className="t-support text-muted-foreground">sobrou</p>
         <p className="t-item tabular-nums text-foreground">
-          {p.lucro == null ? "—" : <Num>{formatBRL(p.lucro)}</Num>}
+          <Num>{oculta(p.lucro == null ? null : formatBRL(p.lucro))}</Num>
         </p>
       </div>
 
@@ -478,7 +473,7 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
         <p className="t-support text-muted-foreground">
           {p.margemReal == null ? "margem" : "bruta"}
         </p>
-        <p className={cn("t-item tabular-nums", corDaMargem(p.margem))}>{porcento(p.margem)}</p>
+        <p className={cn("t-item tabular-nums", mostrar && corDaMargem(p.margem))}>{oculta(porcento(p.margem))}</p>
       </div>
 
       {/* Markup ao lado da margem, no espaco que ja sobrava. Mesma relacao
@@ -486,15 +481,15 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
       <div className="hidden w-20 text-right sm:block">
         <p className="t-support text-muted-foreground">markup</p>
         <p className="t-item tabular-nums text-[var(--admin-ink-soft)]">
-          {markup(p.receita, p.custo != null ? p.custo * p.qtd : 0) ?? "—"}
+          {oculta(markup(p.receita, p.custo != null ? p.custo * p.qtd : 0))}
         </p>
       </div>
 
       {p.margemReal != null && (
         <div className="w-24 text-right">
           <p className="t-support text-muted-foreground">líquida</p>
-          <p className={cn("t-item tabular-nums", corDaMargem(p.margemReal))}>
-            {porcento(p.margemReal)}
+          <p className={cn("t-item tabular-nums", mostrar && corDaMargem(p.margemReal))}>
+            {oculta(porcento(p.margemReal))}
           </p>
         </div>
       )}
