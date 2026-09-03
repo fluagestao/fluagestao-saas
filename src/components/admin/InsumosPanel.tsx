@@ -124,7 +124,6 @@ type Formulario = {
   tipoEmbalagem: string;
   precoEmbalagem: string;
   fornecedorId: string;
-  frequencia: string;
   observacao: string;
   ativo: boolean;
 };
@@ -137,7 +136,6 @@ const FORMULARIO_VAZIO: Formulario = {
   tipoEmbalagem: "",
   precoEmbalagem: "",
   fornecedorId: SEM_VALOR,
-  frequencia: SEM_VALOR,
   observacao: "",
   ativo: true,
 };
@@ -224,7 +222,6 @@ export function InsumosPanel() {
       tipoEmbalagem: item.tipo_embalagem ?? "",
       precoEmbalagem: item.preco_embalagem.toFixed(2).replace(".", ","),
       fornecedorId: item.fornecedor_id ?? SEM_VALOR,
-      frequencia: item.frequencia_compra ?? SEM_VALOR,
       observacao: item.observacao ?? "",
       ativo: item.ativo,
     });
@@ -266,7 +263,6 @@ export function InsumosPanel() {
           categoria: form.categoria.trim() || null,
           tipo_embalagem: form.tipoEmbalagem.trim() || null,
           fornecedor_id: form.fornecedorId === SEM_VALOR ? null : form.fornecedorId,
-          frequencia_compra: form.frequencia === SEM_VALOR ? null : form.frequencia,
           observacao: form.observacao.trim() || null,
         },
       });
@@ -538,26 +534,6 @@ export function InsumosPanel() {
                   {dados.fornecedores.map((fornecedor) => (
                     <SelectItem key={fornecedor.id} value={fornecedor.id}>
                       {fornecedor.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-
-            <label className="space-y-1.5 text-sm font-medium">
-              Frequência de compra
-              <Select
-                value={form.frequencia}
-                onValueChange={(value) => setForm((f) => ({ ...f, frequencia: value }))}
-              >
-                <SelectTrigger className="h-11 w-full rounded-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={SEM_VALOR}>Não definida</SelectItem>
-                  {FREQUENCIAS.map((item) => (
-                    <SelectItem key={item.value} value={item.value}>
-                      {item.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

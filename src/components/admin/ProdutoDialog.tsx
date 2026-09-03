@@ -14,14 +14,12 @@ export function ProdutoDialog({
   produto,
   categorias,
   catalogos,
-  etiquetas,
   onClose,
   onSaved,
 }: {
   produto: ProdutoRow | null;
   categorias: CategoriaRow[];
   catalogos: CatalogoRow[];
-  etiquetas: EtiquetaRow[];
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -30,7 +28,6 @@ export function ProdutoDialog({
   useEffect(() => {
     void categorias;
     void catalogos;
-    void etiquetas;
     void onClose;
     void onSaved;
 
@@ -40,7 +37,7 @@ export function ProdutoDialog({
     }
 
     router.push("/admin/cadastros/produtos/novo");
-  }, [produto, categorias, catalogos, etiquetas, onClose, onSaved, router]);
+  }, [produto, categorias, catalogos, onClose, onSaved, router]);
 
   return null;
 }

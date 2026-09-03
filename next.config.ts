@@ -88,12 +88,10 @@ const nextConfig: NextConfig = {
       { source: "/produtos", destination: "/cadastros/produtos", permanent: false },
       { source: "/colecoes", destination: "/cadastros/colecoes", permanent: false },
       { source: "/categorias", destination: "/cadastros/categorias", permanent: false },
-      { source: "/etiquetas", destination: "/cadastros/etiquetas", permanent: false },
       { source: "/insumos", destination: "/cadastros/insumos", permanent: false },
       { source: "/clientes", destination: "/cadastros/clientes", permanent: false },
       { source: "/fornecedores", destination: "/cadastros/fornecedores", permanent: false },
       { source: "/bairros", destination: "/cadastros/bairros", permanent: false },
-      { source: "/horarios", destination: "/cadastros/horarios", permanent: false },
 
 
       { source: "/produtos/novo", destination: "/cadastros/produtos/novo", permanent: false },
@@ -159,14 +157,12 @@ const nextConfig: NextConfig = {
       { source: "/cadastros/produtos", destination: "/admin" },
       { source: "/cadastros/colecoes", destination: "/admin" },
       { source: "/cadastros/categorias", destination: "/admin" },
-      { source: "/cadastros/etiquetas", destination: "/admin" },
       { source: "/cadastros/insumos", destination: "/admin" },
       { source: "/cadastros/clientes", destination: "/admin" },
       { source: "/cadastros/fornecedores", destination: "/admin" },
       { source: "/cadastros/financeiro/receitas", destination: "/admin" },
       { source: "/cadastros/financeiro/despesas", destination: "/admin" },
       { source: "/cadastros/bairros", destination: "/admin" },
-      { source: "/cadastros/horarios", destination: "/admin" },
 
       { source: "/tarefas", destination: "/admin" },
 

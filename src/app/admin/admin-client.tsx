@@ -41,10 +41,8 @@ import { EstoquePanel } from "@/components/admin/EstoquePanel";
 import { SinoNotificacoes } from "@/components/admin/SinoNotificacoes";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
-import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
 import { FinanceiroPanel } from "@/components/admin/FinanceiroPanel";
 import { FollowupPanel } from "@/components/admin/FollowupPanel";
-import { HorariosPanel } from "@/components/admin/HorariosPanel";
 import { InicioPanel } from "@/components/admin/InicioPanel";
 import { InsumosPanel } from "@/components/admin/InsumosPanel";
 import { PerfilContaMenu } from "@/components/admin/PerfilContaMenu";
@@ -61,7 +59,6 @@ import {
 } from "@/components/admin/tipos";
 import { VendasPanel } from "@/components/admin/VendasPanel";
 import { carregarCatalogoAdmin } from "@/lib/admin";
-import { listarEtiquetas } from "@/lib/etiquetas";
 import { DIAS_PARA_AVISAR, type Assinatura } from "@/lib/assinatura-tipos";
 import { cn } from "@/lib/utils";
 
@@ -84,9 +81,8 @@ export type AbaId =
   | "cadastro-receitas"
   | "cadastro-despesas"
   | "categorias"
-  | "etiquetas"
   | "insumos"
-  | "horarios";
+;
 
 export type SubFinanceiro = "entradas" | "saidas";
 
@@ -199,9 +195,7 @@ const MELHOR_NO_COMPUTADOR: AbaId[] = [
   "produtos",
   "colecoes",
   "categorias",
-  "etiquetas",
   "insumos",
-  "horarios",
   "cadastro-receitas",
   "cadastro-despesas",
 ];
@@ -210,9 +204,7 @@ const DO_CATALOGO: AbaId[] = [
   "produtos",
   "colecoes",
   "categorias",
-  "etiquetas",
   "insumos",
-  "horarios",
   "cadastro-receitas",
   "cadastro-despesas",
 ];
@@ -270,7 +262,6 @@ export default function AdminClient({
   const [catalogos, setCatalogos] = useState<CatalogoRow[]>([]);
   const [categorias, setCategorias] = useState<CategoriaRow[]>([]);
   const [produtos, setProdutos] = useState<ProdutoRow[]>([]);
-  const [etiquetas, setEtiquetas] = useState<EtiquetaRow[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -292,14 +283,12 @@ export default function AdminClient({
     setErro(null);
 
     try {
-      const [res, listaEtiquetas] = await Promise.all([
+      const [res] = await Promise.all([
         carregarCatalogoAdmin(),
-        listarEtiquetas(),
       ]);
       setCatalogos((res.catalogos ?? []) as CatalogoRow[]);
       setCategorias((res.categorias ?? []) as CategoriaRow[]);
       setProdutos((res.produtos ?? []) as ProdutoRow[]);
-      setEtiquetas((listaEtiquetas ?? []) as EtiquetaRow[]);
     } catch (error) {
       setErro(
         error instanceof Error
@@ -862,12 +851,12 @@ export default function AdminClient({
             <ColecoesPanel catalogos={catalogos} categorias={categorias} onChange={recarregar} />
           ) : aba === "categorias" ? (
             <CategoriasPanel categorias={categorias} catalogos={catalogos} onChange={recarregar} />
-          ) : aba === "etiquetas" ? (
-            <EtiquetasPanel etiquetas={etiquetas} onChange={recarregar} />
           ) : aba === "insumos" ? (
             <InsumosPanel />
           ) : (
-            <HorariosPanel />
+            /* Fallback do encadeamento. Antes caia em Horarios, entao qualquer
+               aba sem branch abria a tela de horarios sem ninguem pedir. */
+            <InicioPanel onIrPara={setAba} />
           )}
         </main>
 
@@ -876,7 +865,6 @@ export default function AdminClient({
             produto={editando === "novo" ? null : editando}
             categorias={categorias}
             catalogos={catalogos}
-            etiquetas={etiquetas}
             onClose={() => setEditando(null)}
             onSaved={recarregar}
           />

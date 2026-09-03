@@ -31,7 +31,6 @@ export function CategoriasPanel({
 }) {
   const [nome, setNome] = useState("");
   const [catalogoId, setCatalogoId] = useState(SEM_COLECAO);
-  const [cor, setCor] = useState(COR_PADRAO);
   const [busca, setBusca] = useState("");
   const [salvando, setSalvando] = useState(false);
   const confirmar = useConfirmar();
@@ -81,13 +80,11 @@ export function CategoriasPanel({
           nome: nomeLimpo,
           ordem: categorias.length,
           ativa: true,
-          cor,
           catalogo_id: catalogoId === SEM_COLECAO ? null : catalogoId,
         },
       });
       setNome("");
       setCatalogoId(SEM_COLECAO);
-      setCor(COR_PADRAO);
       toast.success(`Categoria "${nomeLimpo}" criada.`);
       onChange();
     } finally {
@@ -165,25 +162,6 @@ export function CategoriasPanel({
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3 py-2">
-            {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
-              <button
-                key={item.nome}
-                type="button"
-                onClick={() => setCor(item.valor)}
-                title={item.nome}
-                aria-label={`Cor ${item.nome}`}
-                className={cn(
-                  "h-6 w-6 rounded-full border transition-transform hover:scale-110",
-                  cor === item.valor
-                    ? "ring-2 ring-foreground ring-offset-1"
-                    : "border-[var(--cream-deep)]",
-                )}
-                style={{ backgroundColor: item.valor }}
-              />
-            ))}
-          </div>
-
           <Button onClick={criarCategoria} disabled={salvando || !nome.trim()} className="h-11">
             <Plus className="mr-1.5 h-4 w-4" /> Adicionar categoria
           </Button>
@@ -254,24 +232,6 @@ export function CategoriasPanel({
                 className="h-10 text-sm"
               />
 
-              <div className="flex items-center gap-1.5">
-                {CORES_DESTAQUE.filter((item) => item.valor).map((item) => (
-                  <button
-                    key={item.nome}
-                    type="button"
-                    onClick={() => atualizarCategoria(categoria, { cor: item.valor })}
-                    title={item.nome}
-                    aria-label={`Cor ${item.nome}`}
-                    className={cn(
-                      "h-6 w-6 rounded-full border transition-transform hover:scale-110",
-                      (categoria.cor || COR_PADRAO) === item.valor
-                        ? "ring-2 ring-foreground ring-offset-1"
-                        : "border-[var(--cream-deep)]",
-                    )}
-                    style={{ backgroundColor: item.valor }}
-                  />
-                ))}
-              </div>
 
               <div className="flex items-center justify-end gap-2">
                 <label

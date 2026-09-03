@@ -23,14 +23,12 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Produtos: "/cadastros/produtos",
   Coleções: "/cadastros/colecoes",
   Categorias: "/cadastros/categorias",
-  Etiquetas: "/cadastros/etiquetas",
   Insumos: "/cadastros/insumos",
   Clientes: "/cadastros/clientes",
   Fornecedores: "/cadastros/fornecedores",
   "Tipos de receita": "/cadastros/financeiro/receitas",
   "Tipos de despesa": "/cadastros/financeiro/despesas",
   Bairros: "/cadastros/bairros",
-  Horários: "/cadastros/horarios",
 
 };
 
@@ -64,14 +62,12 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/cadastros/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/cadastros/colecoes": { pai: "Cadastros", filho: "Coleções" },
   "/cadastros/categorias": { pai: "Cadastros", filho: "Categorias" },
-  "/cadastros/etiquetas": { pai: "Cadastros", filho: "Etiquetas" },
   "/cadastros/insumos": { pai: "Cadastros", filho: "Insumos" },
   "/cadastros/clientes": { pai: "Cadastros", filho: "Clientes" },
   "/cadastros/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
   "/cadastros/financeiro/receitas": { pai: "Cadastros", filho: "Tipos de receita" },
   "/cadastros/financeiro/despesas": { pai: "Cadastros", filho: "Tipos de despesa" },
   "/cadastros/bairros": { pai: "Cadastros", filho: "Bairros" },
-  "/cadastros/horarios": { pai: "Cadastros", filho: "Horários" },
 
   "/tarefas": { filho: "Tarefas" },
 
@@ -84,12 +80,10 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/colecoes": { pai: "Cadastros", filho: "Coleções" },
   "/categorias": { pai: "Cadastros", filho: "Categorias" },
-  "/etiquetas": { pai: "Cadastros", filho: "Etiquetas" },
   "/insumos": { pai: "Cadastros", filho: "Insumos" },
   "/clientes": { pai: "Cadastros", filho: "Clientes" },
   "/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
   "/bairros": { pai: "Cadastros", filho: "Bairros" },
-  "/horarios": { pai: "Cadastros", filho: "Horários" },
 };
 
 const ROTAS_PAINEL = new Set(Object.keys(ESTADO_POR_ROTA));
