@@ -203,10 +203,7 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "dashboard", label: "Dashboard", icon: ChartPie },
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
-  { id: "custo", label: "Margem", icon: Calculator },
-  { id: "calculadora", label: "Calculadora", icon: Calculator },
-  { id: "simulador", label: "Simulador", icon: Calculator },
-  { id: "cozinha", label: "Cozinha", icon: Calculator },
+  { id: "custo", label: "Custo", icon: Calculator },
   { id: "estoque", label: "Estoque", icon: Boxes },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
@@ -634,6 +631,26 @@ export default function AdminClient({
                     "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                     (aba === "followup" && sub.id === "followup") ||
                       (aba === "vendas" && subVendas === sub.id)
+                      ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                      : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+                  )}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </nav>
+          )}
+
+          {DO_CUSTO.includes(aba) && (
+            <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SUB_CUSTO.map((sub) => (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => setAba(sub.id as AbaId)}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                    aba === sub.id
                       ? "bg-[var(--cream)] text-[var(--terracotta)]"
                       : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
                   )}

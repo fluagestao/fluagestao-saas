@@ -243,7 +243,7 @@ function Pizza({
                   type="button"
                   onClick={() => onSelecionar(selecionado === d.chave ? null : d.chave)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2 py-1 text-left text-sm transition-colors hover:bg-[var(--cream-soft)]",
+                    "flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-[var(--cream-soft)] sm:flex-nowrap sm:py-1",
                     selecionado === d.chave && "bg-[var(--cream-deep)]",
                   )}
                 >
@@ -251,7 +251,7 @@ function Pizza({
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: CORES[i % CORES.length] }}
                   />
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 basis-[calc(100%-1.375rem)] sm:basis-auto">
                     <span className="block leading-tight text-foreground">{d.nome}</span>
                     {d.sub && (
                       <span className="block text-[11px] leading-tight text-muted-foreground">
@@ -259,9 +259,11 @@ function Pizza({
                       </span>
                     )}
                   </span>
-                  <Num className="shrink-0 text-xs text-muted-foreground">{formatBRL(d.valor)}</Num>
-                  <span className="w-8 shrink-0 text-right text-xs text-muted-foreground/70">
-                    {total > 0 ? `${Math.round((d.valor / total) * 100)}%` : ""}
+                  <span className="ml-[1.375rem] flex shrink-0 items-baseline gap-2 sm:ml-0">
+                    <Num className="text-xs text-muted-foreground">{formatBRL(d.valor)}</Num>
+                    <span className="w-8 text-right text-xs text-muted-foreground/70">
+                      {total > 0 ? `${Math.round((d.valor / total) * 100)}%` : ""}
+                    </span>
                   </span>
                 </button>
               </li>

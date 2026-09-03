@@ -290,9 +290,9 @@ export function NovoProdutoClient({
               type="button"
               onClick={cancelar}
               disabled={cancelando}
-              className="inline-flex items-center gap-2 text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:text-[var(--terracotta)] disabled:opacity-50"
+              className="inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:text-[var(--terracotta)] disabled:opacity-50"
             >
-              <ArrowLeft className="h-4 w-4" /> Voltar aos produtos
+              <ArrowLeft className="h-4 w-4 shrink-0" /> Voltar aos produtos
             </button>
           </div>
 

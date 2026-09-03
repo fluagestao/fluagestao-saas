@@ -46,12 +46,14 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/followup": { pai: "Vendas", filho: "Follow-up" },
 
   "/dashboard": { filho: "Dashboard" },
-  "/margem": { filho: "Margem" },
-  "/custo/calculadora": { filho: "Calculadora" },
-  "/custo/simulador": { filho: "Simulador" },
-  "/custo/cozinha": { filho: "Cozinha" },
+  /* No celular estas quatro vivem sob o chip "Custo", entao a rota precisa
+     abrir o pai antes de achar a filha. No desktop o pai e o item de menu. */
+  "/margem": { pai: "Custo", filho: "Margem" },
+  "/custo/calculadora": { pai: "Custo", filho: "Calculadora" },
+  "/custo/simulador": { pai: "Custo", filho: "Simulador" },
+  "/custo/cozinha": { pai: "Custo", filho: "Cozinha" },
   // Rota antiga: continua abrindo a mesma tela para nao quebrar link salvo.
-  "/custo": { filho: "Margem" },
+  "/custo": { pai: "Custo", filho: "Margem" },
   "/estoque": { filho: "Estoque" },
 
   "/financeiro/entradas": { pai: "Financeiro", filho: "Entradas" },
@@ -178,7 +180,8 @@ export function AdminPathSync() {
       if (!destino) {
         const deveNavegarPai = window.innerWidth < 1024 || !dentroDoHeader;
         if (deveNavegarPai) {
-          if (texto === "Vendas") destino = "/vendas/pedidos";
+          if (texto === "Custo") destino = "/margem";
+          else if (texto === "Vendas") destino = "/vendas/pedidos";
           else if (texto === "Financeiro") destino = "/financeiro/entradas";
           else if (texto === "Cadastros") destino = "/cadastros/produtos";
         }
