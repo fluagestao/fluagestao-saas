@@ -866,9 +866,20 @@ export default function HomePage() {
               <div>
                 <strong>DOCUMENTOS</strong>
                 <Link href="/documentos/termos-de-uso">Termos de Uso</Link>
-                <Link href="/documentos/privacidade">Privacidade</Link>
-                <Link href="/documentos/cookies">Cookies</Link>
-                <Link href="/documentos/seguranca">Segurança</Link>
+                <Link href="/documentos/termos-de-uso/privacidade">Privacidade</Link>
+                <Link href="/documentos/termos-de-uso/cookies">Cookies</Link>
+                <Link href="/documentos/termos-de-uso/seguranca">Segurança</Link>
+                <button
+                  type="button"
+                  className="flua-cookie-settings-link"
+                  onClick={() =>
+                    window.dispatchEvent(
+                      new Event("flua:open-cookie-settings"),
+                    )
+                  }
+                >
+                  Configurar cookies
+                </button>
               </div>
             </nav>
           </div>
