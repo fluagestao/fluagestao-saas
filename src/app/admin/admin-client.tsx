@@ -186,6 +186,26 @@ const MENU: ItemMenu[] = [
 /** Telas que vivem sob o menu Custo. Mesma ideia do DO_CATALOGO. */
 const DO_CUSTO: AbaId[] = ["custo", "calculadora", "simulador", "cozinha"];
 
+/* Telas que a fileira do celular nao oferece. Alcancaveis por link, e quem
+   chegou nelas de proposito consegue usar — so avisamos que a tela foi
+   desenhada para uma janela maior, em vez de bloquear. Bloquear quem
+   realmente precisa fazer aquilo no telefone e pior do que uma tela apertada. */
+const MELHOR_NO_COMPUTADOR: AbaId[] = [
+  "calculadora",
+  "simulador",
+  "cozinha",
+  "financeiro",
+  "cadastros",
+  "produtos",
+  "colecoes",
+  "categorias",
+  "etiquetas",
+  "insumos",
+  "horarios",
+  "cadastro-receitas",
+  "cadastro-despesas",
+];
+
 const DO_CATALOGO: AbaId[] = [
   "produtos",
   "colecoes",
@@ -197,16 +217,34 @@ const DO_CATALOGO: AbaId[] = [
   "cadastro-despesas",
 ];
 
-const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
+/* O celular e para CONSULTAR e para as poucas acoes que acontecem longe da
+   mesa: lancar o pedido que chegou no WhatsApp, marcar entregue, dar o
+   "Recebi", mandar mensagem. Cadastrar produto com foto, montar composicao de
+   custo e importar planilha sao trabalho sentado.
+
+   `visivel` decide o que aparece na fileira. O que fica de fora CONTINUA no
+   DOM, so escondido: o AdminPathSync abre a tela achando o botao pelo rotulo,
+   e sem o botao um link salvo de /cadastros/produtos abriria o Inicio calado.
+   Escondido, ele ainda e clicavel por codigo — e a tela abre normal para quem
+   chegou nela de proposito. */
+const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon; visivel?: boolean }[] = [
+  // Estas tres ja vivem na barra de baixo; repetir aqui era ocupar tela a toa.
   { id: "inicio", label: "Início", icon: Home },
   { id: "vendas", label: "Vendas", icon: ShoppingCart },
   { id: "dashboard", label: "Dashboard", icon: ChartPie },
-  { id: "calendario", label: "Agenda", icon: CalendarDays },
+
+  { id: "calendario", label: "Agenda", icon: CalendarDays, visivel: true },
+  { id: "followup", label: "Follow-up", icon: ShoppingCart, visivel: true },
+  { id: "custo", label: "Margem", icon: Calculator, visivel: true },
+  { id: "estoque", label: "Estoque", icon: Boxes, visivel: true },
+  { id: "tarefas", label: "Tarefas", icon: CheckSquare, visivel: true },
+
+  // Melhores no computador. Ficam alcancaveis, fora do caminho.
   { id: "financeiro", label: "Financeiro", icon: Wallet },
-  { id: "custo", label: "Custo", icon: Calculator },
-  { id: "estoque", label: "Estoque", icon: Boxes },
   { id: "cadastros", label: "Cadastros", icon: Contact },
-  { id: "tarefas", label: "Tarefas", icon: CheckSquare },
+  { id: "calculadora", label: "Calculadora", icon: Calculator },
+  { id: "simulador", label: "Simulador", icon: Calculator },
+  { id: "cozinha", label: "Cozinha", icon: Calculator },
 ];
 
 export default function AdminClient({
@@ -606,6 +644,8 @@ export default function AdminClient({
                 }}
                 className={cn(
                   "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-xs font-semibold transition-colors",
+                  // Fora da fileira, mas no DOM: o AdminPathSync ainda acha.
+                  !item.visivel && "hidden",
                   itemAtivo(item)
                     ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
                     : "border-[var(--admin-border)] bg-white text-[var(--admin-ink-soft)]",
@@ -619,7 +659,7 @@ export default function AdminClient({
 
           {(aba === "vendas" || aba === "followup") && (
             <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {SUB_VENDAS.map((sub) => (
+              {SUB_VENDAS.filter((sub) => sub.id !== "realizadas").map((sub) => (
                 <button
                   key={sub.id}
                   type="button"
@@ -641,7 +681,9 @@ export default function AdminClient({
             </nav>
           )}
 
-          {DO_CUSTO.includes(aba) && (
+          {/* So quando a pessoa chegou numa das filhas por link: no celular a
+              fileira mostra apenas Margem. */}
+          {DO_CUSTO.includes(aba) && aba !== "custo" && (
             <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SUB_CUSTO.map((sub) => (
                 <button
@@ -713,6 +755,13 @@ export default function AdminClient({
         <main className="mx-auto min-w-0 max-w-[1680px] px-4 py-5 sm:px-6 lg:py-6 xl:px-8">
           {erro && (
             <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{erro}</div>
+          )}
+
+          {MELHOR_NO_COMPUTADOR.includes(aba) && (
+            <p className="mb-4 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-2.5 text-sm text-[var(--admin-ink-soft)] lg:hidden">
+              Esta tela foi feita para uma janela maior. Dá para usar aqui, mas
+              no computador fica bem mais confortável.
+            </p>
           )}
 
           {carregando ? (

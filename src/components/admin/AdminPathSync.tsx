@@ -120,10 +120,19 @@ function abrirEstadoDaRota(pathname: string) {
   const estado = ESTADO_POR_ROTA[pathname];
   if (!estado) return;
 
-  if (!estado.pai) {
-    encontrarBotaoNoHeader(estado.filho)?.click();
+  /* Direto primeiro, pai depois. As duas telas montam o cabecalho de um jeito:
+     no celular a fileira tem o botao de toda tela — as cortadas continuam la,
+     so escondidas — entao o filho e achado sem abrir pai nenhum. No desktop os
+     filhos vivem dentro do menu fechado, nao estao no DOM, e ai o pai e o
+     caminho. Tentar o pai primeiro quebrava o celular, onde "Custo" nao existe
+     mais como botao. */
+  const direto = encontrarBotaoNoHeader(estado.filho);
+  if (direto) {
+    direto.click();
     return;
   }
+
+  if (!estado.pai) return;
 
   const pai = encontrarBotaoNoHeader(estado.pai);
   if (!pai) return;
