@@ -307,7 +307,7 @@ function DialogoReceita({
   return (
     <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
       <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
-        <DialogHeader className="shrink-0 pr-6 text-left">
+        <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
           <DialogTitle>{receita ? "Editar receita" : "Nova receita"}</DialogTitle>
           <DialogDescription>
             Anote os ingredientes com o que você pagou. O custo por porção sai da divisão pelo

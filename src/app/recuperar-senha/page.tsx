@@ -8,12 +8,13 @@ import AuthShell from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { recuperarSenha } from "@/lib/auth-acoes";
 
 export default function RecuperarSenhaPage() {
   const [email, setEmail] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [enviado, setEnviado] = useState(false);
+  const [mensagemEnvio, setMensagemEnvio] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
 
   async function enviarRecuperacao(event: FormEvent<HTMLFormElement>) {
@@ -22,23 +23,20 @@ export default function RecuperarSenhaPage() {
     setCarregando(true);
 
     try {
-      const supabase = createClient();
-      const redirectTo = `${window.location.origin}/auth/callback?next=/redefinir-senha`;
+      /* Passa pela acao de servidor: e la que a tentativa e contada e que a
+         resposta e padronizada. A acao devolve SEMPRE a mesma mensagem, exista
+         a conta ou nao — qualquer diferenca viraria um jeito de descobrir quem
+         e cliente. */
+      const r = await recuperarSenha({
+        data: { email: email.trim().toLowerCase(), origem: window.location.origin },
+      });
 
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        email.trim().toLowerCase(),
-        { redirectTo }
-      );
-
-      if (error) {
-        if (error.status === 429) {
-          setErro("Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.");
-        } else {
-          setErro("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
-        }
+      if (!r.ok) {
+        setErro(r.mensagem ?? "Não foi possível enviar o e-mail agora.");
         return;
       }
 
+      setMensagemEnvio(r.mensagem ?? null);
       setEnviado(true);
     } catch {
       setErro("Não foi possível enviar o e-mail agora. Tente novamente em instantes.");
@@ -57,7 +55,8 @@ export default function RecuperarSenhaPage() {
           <div className="rounded-2xl border border-[#74745B]/25 bg-[#74745B]/10 p-4 text-sm leading-6 text-[#55553f]">
             <p className="font-semibold">Confira sua caixa de entrada.</p>
             <p className="mt-1">
-              Por segurança, mostramos a mesma confirmação mesmo quando o e-mail não existe no sistema.
+              {mensagemEnvio ??
+                "Se existir uma conta associada a este e-mail, enviaremos as instruções para recuperação de senha."}
             </p>
           </div>
 

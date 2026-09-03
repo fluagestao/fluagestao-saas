@@ -448,7 +448,7 @@ function DialogoSimulacao({
   return (
     <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
       <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-3xl">
-        <DialogHeader className="shrink-0 pr-6 text-left">
+        <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
           <DialogTitle>{simulacao ? "Editar simulação" : "Nova simulação"}</DialogTitle>
           <DialogDescription>
             Use insumos que você já tem ou digite itens na hora. Nada vira cadastro até você mandar.

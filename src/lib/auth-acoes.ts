@@ -164,10 +164,44 @@ export async function cadastrar(input: { data: unknown }): Promise<Resultado> {
     };
   }
 
-  await registrarEvento("cadastro", "ok", email);
+  /* O Supabase devolve sucesso mesmo para e-mail ja cadastrado, sinalizando com
+     `identities` vazio. A tela antiga lia isso e dizia "este e-mail ja possui
+     cadastro" — ou seja, desfazia a ofuscacao que o proprio Supabase faz de
+     proposito. Aqui o caso e tratado como sucesso, e quem ja tem conta recebe
+     o e-mail de aviso do proprio Supabase. */
+  const jaExistia = Array.isArray(data.user?.identities) && data.user.identities.length === 0;
+  await registrarEvento("cadastro", "ok", email, jaExistia ? "email ja cadastrado" : undefined);
 
-  // Sem sessão = o Supabase está exigindo confirmação, que é o esperado.
-  return { ok: true, confirmarEmail: !data.session, destino: "/inicio?onboarding=1" };
+  if (jaExistia) return { ok: true, confirmarEmail: true };
+
+  // Sem sessão = o projeto exige confirmação, que é o esperado.
+  if (!data.session) return { ok: true, confirmarEmail: true };
+
+  // Com sessão (confirmação desligada no projeto), a empresa nasce aqui.
+  const { error: onboardingError } = await supabase.rpc("complete_onboarding", {
+    p_full_name: nome,
+    p_cpf: documento.replace(/\D/g, "").length === 11 ? documento.replace(/\D/g, "") : "",
+    p_store_name: loja,
+    p_document_type: documento.replace(/\D/g, "").length === 14 ? "cnpj" : "cpf",
+    p_document: documento.replace(/\D/g, ""),
+    p_email: email,
+    p_phone: telefone ?? null,
+    p_postal_code: null,
+    p_street: null,
+    p_address_number: null,
+    p_complement: null,
+    p_district: null,
+    p_city: null,
+    p_state: null,
+  });
+
+  if (onboardingError) {
+    // Erro cru do Postgres nunca vai para a tela.
+    await registrarEvento("cadastro", "falha", email, onboardingError.message?.slice(0, 200));
+    return { ok: false, mensagem: ERRO_GENERICO };
+  }
+
+  return { ok: true, destino: "/inicio?onboarding=1" };
 }
 
 const recuperarSchema = z.object({

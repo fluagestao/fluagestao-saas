@@ -34,6 +34,32 @@ function paraPct(fracao: number) {
   return String(Math.round(fracao * 1000) / 10).replace(".", ",");
 }
 
+/* Fora do componente de proposito. Definido dentro, cada tecla criava um tipo
+   novo e o React desmontava e remontava o input — por isso so dava para digitar
+   um caractere por vez. */
+function CampoPct({
+  rotulo,
+  valor,
+  onMudar,
+  ajuda,
+}: {
+  rotulo: string;
+  valor: string;
+  onMudar: (v: string) => void;
+  ajuda: string;
+}) {
+  return (
+    <label className="space-y-1.5 text-sm font-medium">
+      {rotulo}
+      <div className="flex items-center gap-1.5">
+        <Input value={valor} onChange={(e) => onMudar(e.target.value)} inputMode="decimal" className="h-11" />
+        <span className="text-sm text-muted-foreground">%</span>
+      </div>
+      <span className="t-support block font-normal text-muted-foreground">{ajuda}</span>
+    </label>
+  );
+}
+
 export function AjustesCalculo({
   config,
   sugestao,
@@ -86,27 +112,6 @@ export function AjustesCalculo({
     }
   }
 
-  const CampoPct = ({
-    rotulo,
-    valor,
-    onMudar,
-    ajuda,
-  }: {
-    rotulo: string;
-    valor: string;
-    onMudar: (v: string) => void;
-    ajuda: string;
-  }) => (
-    <label className="space-y-1.5 text-sm font-medium">
-      {rotulo}
-      <div className="flex items-center gap-1.5">
-        <Input value={valor} onChange={(e) => onMudar(e.target.value)} inputMode="decimal" className="h-11" />
-        <span className="text-sm text-muted-foreground">%</span>
-      </div>
-      <span className="t-support block font-normal text-muted-foreground">{ajuda}</span>
-    </label>
-  );
-
   return (
     <>
       <Button variant="outline" onClick={() => setAberto(true)} className="h-11">
@@ -121,7 +126,7 @@ export function AjustesCalculo({
 
       <Dialog open={aberto} onOpenChange={(estado) => !estado && setAberto(false)}>
         <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-xl">
-          <DialogHeader className="shrink-0 pr-6 text-left">
+          <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
             <DialogTitle>Ajustes do cálculo</DialogTitle>
             <DialogDescription>
               O que entra na conta além dos insumos. Vale para a Calculadora e para o Simulador.

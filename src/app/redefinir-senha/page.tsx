@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { avaliarSenha, mensagemSenha } from "@/lib/senha";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,15 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-function senhaForte(senha: string) {
-  return (
-    senha.length >= 10 &&
-    /[a-z]/.test(senha) &&
-    /[A-Z]/.test(senha) &&
-    /[0-9]/.test(senha) &&
-    /[^A-Za-z0-9]/.test(senha)
-  );
-}
 
 export default function RedefinirSenhaPage() {
   const router = useRouter();
@@ -55,7 +47,7 @@ export default function RedefinirSenhaPage() {
     event.preventDefault();
     setErro(null);
 
-    if (!senhaForte(senha)) {
+    if (!avaliarSenha(senha).valida) {
       setErro(
         "Use pelo menos 10 caracteres, com letra maiúscula, minúscula, número e símbolo."
       );

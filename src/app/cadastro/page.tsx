@@ -20,7 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
+import { cadastrar as criarConta } from "@/lib/auth-acoes";
+import { avaliarSenha, mensagemSenha, MIN_SENHA, ROTULO_FORCA } from "@/lib/senha";
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
@@ -77,9 +78,31 @@ function mensagemAuth(mensagem: string) {
   return ERRO_CADASTRO_GENERICO;
 }
 
+/** Barra de força: mostra o que falta enquanto a pessoa digita, em vez de
+    reprovar só no envio. */
+function BarraForca({ senha, email }: { senha: string; email: string }) {
+  const forca = avaliarSenha(senha, email.trim().toLowerCase());
+  const cores = ["bg-destructive", "bg-destructive", "bg-[#B8893B]", "bg-[#B8893B]", "bg-[#4A6B4A]"];
+
+  return (
+    <div className="mt-1 space-y-1">
+      <div className="flex gap-1" aria-hidden>
+        {[0, 1, 2, 3].map((i) => (
+          <span
+            key={i}
+            className={`h-1 flex-1 rounded-full ${i < forca.nivel ? cores[forca.nivel] : "bg-[#D9C6B2]/50"}`}
+          />
+        ))}
+      </div>
+      <p className={`text-[11px] ${forca.valida ? "text-[#4A6B4A]" : "text-[#74745B]"}`}>
+        {forca.valida ? ROTULO_FORCA[forca.nivel] : (mensagemSenha(forca) ?? "")}
+      </p>
+    </div>
+  );
+}
+
 export default function CadastroPage() {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
 
   const [nomeLoja, setNomeLoja] = useState("");
   const [documento, setDocumento] = useState("");
@@ -132,8 +155,9 @@ export default function CadastroPage() {
       return;
     }
 
-    if (senha.length < 6) {
-      setErro("A senha precisa ter pelo menos 6 caracteres.");
+    const forca = avaliarSenha(senha, emailLimpo);
+    if (!forca.valida) {
+      setErro(mensagemSenha(forca) ?? "A senha não atende aos requisitos.");
       return;
     }
 
@@ -145,71 +169,32 @@ export default function CadastroPage() {
     setCarregando(true);
 
     try {
-      /* A consulta previa de disponibilidade saiu daqui.
-         Ela chamava check_signup_availability, concedida ao papel anon: com a
-         chave publicavel (que vai no bundle) qualquer um perguntava se um
-         e-mail ou CNPJ tinha cadastro na Flua, sem login e sem limite. Bastava
-         varrer listas publicas de CNPJ do setor para montar a lista de
-         clientes. O cadastro agora segue direto e a duplicidade e tratada como
-         erro generico. */
-      const tipoDocumento = documentoNumeros.length === 14 ? "cnpj" : "cpf";
+      /* Tudo passa pela acao de servidor: e la que a tentativa e contada, a
+         senha e revalidada e o abuso e registrado. Do navegador direto, nada
+         disso teria onde acontecer. A consulta previa de disponibilidade saiu
+         de vez — era ela que virava oraculo de enumeracao. */
       const siteUrl =
-        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-        "https://www.fluagestao.com.br";
+        process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://www.fluagestao.com.br";
 
-      const { data, error } = await supabase.auth.signUp({
-        email: emailLimpo,
-        password: senha,
-        options: {
-          emailRedirectTo: `${siteUrl}/auth/callback?next=/cadastro/sucesso`,
-          data: {
-            full_name: responsavelLimpo,
-            store_name: nomeLojaLimpo,
-            document: documentoNumeros,
-            document_type: tipoDocumento,
-            phone: whatsappNumeros,
-          },
+      const r = await criarConta({
+        data: {
+          email: emailLimpo,
+          senha,
+          nome: responsavelLimpo,
+          loja: nomeLojaLimpo,
+          documento: documentoNumeros,
+          telefone: whatsappNumeros,
+          origem: siteUrl,
         },
       });
 
-      if (error) {
-        setErro(mensagemAuth(error.message));
+      if (!r.ok) {
+        setErro(r.mensagem ?? "Não foi possível concluir o cadastro agora.");
         return;
       }
 
-      if (
-        data.user &&
-        Array.isArray(data.user.identities) &&
-        data.user.identities.length === 0
-      ) {
-        setErro("Este e-mail já possui cadastro na Flua.");
-        return;
-      }
-
-      if (data.session) {
-        const { error: onboardingError } = await supabase.rpc("complete_onboarding", {
-          p_full_name: responsavelLimpo,
-          p_cpf: tipoDocumento === "cpf" ? documentoNumeros : "",
-          p_store_name: nomeLojaLimpo,
-          p_document_type: tipoDocumento,
-          p_document: documentoNumeros,
-          p_email: emailLimpo,
-          p_phone: whatsappNumeros,
-          p_postal_code: null,
-          p_street: null,
-          p_address_number: null,
-          p_complement: null,
-          p_district: null,
-          p_city: null,
-          p_state: null,
-        });
-
-        if (onboardingError) {
-          setErro(mensagemAuth(onboardingError.message));
-          return;
-        }
-
-        router.replace("/inicio?onboarding=1");
+      if (r.destino) {
+        router.replace(r.destino);
         router.refresh();
         return;
       }
@@ -364,7 +349,8 @@ export default function CadastroPage() {
                     <Label htmlFor="senha" className={label}>Senha <span className="text-[#A94F45]">*</span></Label>
                     <div className="relative">
                       <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
-                      <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder="Mínimo 6 caracteres" required className={`${campos} px-9`} />
+                      <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder={`Mínimo ${MIN_SENHA} caracteres`} required className={`${campos} px-9`} />
+                      {senha && <BarraForca senha={senha} email={email} />}
                       <button type="button" onClick={() => setMostrarSenha((valor) => !valor)} className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#74745B] hover:bg-[#D9C6B2]/30" aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}>
                         {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
