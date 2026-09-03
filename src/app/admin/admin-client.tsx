@@ -455,11 +455,13 @@ export default function AdminClient({
               />
             </button>
 
-            <nav className="hidden min-w-0 flex-1 items-center justify-center gap-1 lg:flex">
+            <nav className="hidden min-w-0 flex-1 items-center justify-center lg:flex">
+              <div className="flex items-center gap-0.5 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream)] p-1">
               {MENU.map((item) => {
                 const filhos = item.vistas ?? item.abas;
                 const ativo = itemAtivo(item);
                 const aberta = Boolean(filhos) && expandida === item.id;
+                const Icone = item.icon;
 
                 return (
                   <div key={item.id} className="relative">
@@ -475,12 +477,21 @@ export default function AdminClient({
                         setExpandida(null);
                       }}
                       className={cn(
-                        "inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-[13px] font-semibold transition-all",
+                        "inline-flex h-9 items-center gap-1.5 rounded-xl px-2.5 text-[13px] font-semibold transition-all xl:px-2",
                         ativo
-                          ? "bg-[var(--cream)] text-[var(--terracotta)]"
-                          : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)] hover:text-[var(--wine)]",
+                          ? "bg-white text-[var(--terracotta)] shadow-[0_1px_3px_rgba(44,36,33,0.12)]"
+                          : "text-[var(--admin-ink-soft)] hover:bg-white/70 hover:text-[var(--wine)]",
                       )}
                     >
+                      {/* So a partir de xl: com sete itens, o icone somado ao
+                          rotulo e a seta estoura a largura em 1024 e a barra
+                          bate nos botoes da direita. */}
+                      <Icone
+                        className={cn(
+                          "hidden h-4 w-4 shrink-0 xl:block",
+                          ativo ? "text-[var(--terracotta)]" : "text-[var(--bronze)]",
+                        )}
+                      />
                       {item.label}
                       {filhos && (
                         <ChevronDown
@@ -550,6 +561,7 @@ export default function AdminClient({
                   </div>
                 );
               })}
+              </div>
             </nav>
 
             <div className="ml-auto hidden min-w-[220px] max-w-[300px] flex-1 xl:block">
