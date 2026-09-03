@@ -193,6 +193,21 @@
     align-content: start !important;
   }
 
+  /* Novo pedido no celular e TELA, nao cartao.
+     Precisa morar aqui e nao numa utility do componente: o minificador achata
+     as camadas, entao quem decide entre dois !important e a ordem no arquivo —
+     e esta folha vem depois de todas as utilities do Tailwind. Um
+     `max-md:!inset-0` no className nunca ganharia.
+     Colado nas bordas e sem raio, ele cobre o cabecalho (z-50 sobre z-40) e o
+     formulario deixa de abrir espremido numa faixa. */
+  [role="dialog"][data-pedido-dialog] {
+    top: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    border-radius: 0 !important;
+  }
+
   [role="dialog"] > * {
     min-width: 0 !important;
     max-width: 100% !important;
