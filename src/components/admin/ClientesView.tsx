@@ -458,7 +458,15 @@ function PainelCliente({
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+      <SheetContent
+        /* onOpenAutoFocus e a causa raiz: sem isto o Radix foca o botao do
+           WhatsApp, que fica abaixo da dobra, e o navegador rola o painel ate
+           ele — levando o nome do cliente para fora da tela. */
+        onOpenAutoFocus={(evento) => evento.preventDefault()}
+        /* overflow-y-hidden, e nao overflow-hidden: o twMerge so substitui
+           dentro do mesmo grupo, e a base do Sheet traz overflow-y-auto. */
+        className="flex flex-col gap-0 overflow-y-hidden p-0"
+      >
         <SheetHeader className="shrink-0 border-b border-[var(--cream-deep)] px-5 pb-4 pt-5 sm:px-6">
           <SheetTitle className="flex items-center gap-3 text-left">
             <span
