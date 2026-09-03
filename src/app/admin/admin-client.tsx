@@ -34,8 +34,9 @@ import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
 import { CalculadoraPanel } from "@/components/admin/CalculadoraPanel";
+import { CozinhaPanel } from "@/components/admin/CozinhaPanel";
 import { CustoPanel } from "@/components/admin/CustoPanel";
-import { EmConstrucao } from "@/components/admin/EmConstrucao";
+import { SimuladorPanel } from "@/components/admin/SimuladorPanel";
 import { EstoquePanel } from "@/components/admin/EstoquePanel";
 import { SinoNotificacoes } from "@/components/admin/SinoNotificacoes";
 import { PrevisaoCaixaPanel } from "@/components/admin/PrevisaoCaixaPanel";
@@ -657,15 +658,9 @@ export default function AdminClient({
           ) : aba === "calculadora" ? (
             <CalculadoraPanel />
           ) : aba === "simulador" ? (
-            <EmConstrucao
-              titulo="Simulador"
-              descricao="Vai responder “e se”: se o queijo subir, se eu vender o dobro, se eu baixar o preço."
-            />
+            <SimuladorPanel />
           ) : aba === "cozinha" ? (
-            <EmConstrucao
-              titulo="Cozinha"
-              descricao="Vai reunir o passo a passo de montagem e preparo de cada produto."
-            />
+            <CozinhaPanel />
           ) : aba === "estoque" ? (
             <EstoquePanel />
           ) : aba === "cadastro-receitas" || aba === "cadastro-despesas" ? (
