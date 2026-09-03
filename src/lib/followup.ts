@@ -104,51 +104,6 @@ export async function marcarAvaliacaoPedida(input: { data: unknown }) {
   return { ok: true as const };
 }
 
-/**
- * Quantos follow-ups estao no dia de chamar ou em atraso.
- *
- * Consulta propria, enxuta: o cabecalho so precisa do numero, e carregar a
- * lista inteira do follow-up para contar seria caro em toda abertura do painel.
- */
-export async function contarFollowupVencendo(): Promise<number> {
-  const { supabase, companyId } = await requireCompany();
-  const desde = somarDias(hojeISO(), -DIAS_JANELA);
-
-  const [entregasRes, ajustesRes] = await Promise.all([
-    supabase
-      .from("pedidos")
-      .select("data_entrega, created_at")
-      .eq("company_id", companyId)
-      .eq("status", "entregue")
-      .is("avaliacao_pedida_em", null)
-      .or(`data_entrega.gte.${desde},and(data_entrega.is.null,created_at.gte.${desde})`)
-      .limit(300),
-    supabase
-      .from("followup_review_templates")
-      .select("dias_para_avaliacao")
-      .eq("company_id", companyId)
-      .maybeSingle(),
-  ]);
-
-  if (entregasRes.error) throw entregasRes.error;
-
-  const prazo = Number(ajustesRes.data?.dias_para_avaliacao ?? DIAS_PARA_AVALIACAO_PADRAO);
-  const hoje = hojeISO();
-
-  return (entregasRes.data ?? []).filter((linha) => {
-    const entrega =
-      (linha.data_entrega as string | null) ??
-      ((linha.created_at as string | null)?.slice(0, 10) ?? null);
-    if (!entrega) return false;
-    const [a1, m1, d1] = hoje.split("-").map(Number);
-    const [a2, m2, d2] = entrega.split("-").map(Number);
-    const dias = Math.round(
-      (Date.UTC(a1, m1 - 1, d1) - Date.UTC(a2, m2 - 1, d2)) / 86_400_000,
-    );
-    return estadoFollowup(dias, prazo) !== "no_prazo";
-  }).length;
-}
-
 const ajustesSchema = z.object({
   presente: z.string().trim().min(1).max(2000),
   consumo_proprio: z.string().trim().min(1).max(2000),
