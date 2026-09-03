@@ -1,5 +1,4 @@
 import {
-  Clock3,
   MapPin,
   MessageCircle,
   PackageOpen,
@@ -8,11 +7,6 @@ import {
 import { notFound } from "next/navigation";
 
 import {
-  DIAS_LABEL,
-  ORDEM_DIAS,
-  formatarHora,
-  normalizarHorarios,
-  statusAtendimento,
   type HorariosConfig,
 } from "@/lib/horarios";
 import { createClient } from "@/lib/supabase/server";
@@ -201,8 +195,6 @@ export default async function CatalogoPublicoPage({
 
   const catalogo = data as CatalogoPublico;
   const empresa = catalogo.empresa;
-  const horarios = normalizarHorarios(catalogo.horarios);
-  const status = statusAtendimento(horarios, new Date());
   const endereco = enderecoEmpresa(empresa);
   const whatsapp = telefoneWhatsapp(empresa.telefone);
   const grupos = montarGrupos(catalogo);
@@ -233,12 +225,6 @@ export default async function CatalogoPublicoPage({
                 {empresa.nome}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#76655f]">
-                <span className="inline-flex items-center gap-1.5">
-                  <span
-                    className={`h-2 w-2 rounded-full ${status.aberto ? "bg-[#78875e]" : "bg-[#a65349]"}`}
-                  />
-                  {status.texto}
-                </span>
                 {endereco && (
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" /> {endereco}
@@ -249,30 +235,6 @@ export default async function CatalogoPublicoPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <details className="group relative">
-              <summary className="inline-flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-[#ddcfc5] bg-white px-4 text-sm font-semibold text-[#6f3936] shadow-sm transition hover:bg-[#fff7f0]">
-                <Clock3 className="h-4 w-4" /> Horários
-              </summary>
-              <div className="absolute right-0 z-30 mt-2 w-72 rounded-2xl border border-[#eadfd6] bg-white p-4 shadow-xl">
-                <p className="mb-3 text-sm font-semibold">Horário de atendimento</p>
-                <div className="space-y-2">
-                  {ORDEM_DIAS.map((dia) => {
-                    const item = horarios.dias[dia];
-                    return (
-                      <div key={dia} className="flex items-center justify-between gap-4 text-xs">
-                        <span className="font-medium text-[#5f4f49]">{DIAS_LABEL[dia]}</span>
-                        <span className="text-[#88746c]">
-                          {item.aberto
-                            ? `${formatarHora(item.abre)} às ${formatarHora(item.fecha)}`
-                            : "Fechado"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </details>
-
             {whatsapp && (
               <a
                 href={`https://wa.me/${whatsapp}?text=${encodeURIComponent(`Olá! Vim pelo catálogo da ${empresa.nome} e gostaria de fazer um pedido.`)}`}
