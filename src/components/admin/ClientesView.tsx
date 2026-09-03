@@ -751,6 +751,11 @@ export function ClienteDialog({
               required
             />,
           )}
+          {/* No celular o cadastro para aqui. Ela esta com a cliente na frente
+              e precisa do pedido, nao da ficha completa — endereco e CPF entram
+              depois, no computador. `sm:contents` devolve os campos a grade a
+              partir do tablet, sem duplicar marcacao. */}
+          <div className="hidden sm:contents">
           {campo("E-mail", <Input value={email} onChange={(e) => setEmail(e.target.value)} />)}
           {campo("CPF", <Input value={documento} onChange={(e) => setDocumento(e.target.value)} />)}
           {campo(
@@ -784,16 +789,26 @@ export function ClienteDialog({
               autoComplete="off"
             />,
           )}
+          </div>
         </div>
 
-        <p className="-mt-2 text-xs text-muted-foreground">
+        <p className="hidden text-xs text-muted-foreground sm:-mt-2 sm:block">
           O aniversário serve pra lembrar de oferecer no mês certo — é presente que se vende aqui.
         </p>
 
+        {/* No celular, o aviso de que a ficha ficou pela metade. Sem ele, a
+            base enche de cliente sem endereco e ninguem lembra por que. */}
+        <p className="rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-2.5 text-sm text-[var(--admin-ink-soft)] sm:hidden">
+          Nome e WhatsApp já bastam para o pedido. Endereço, CPF e o resto você
+          completa depois, em Cadastros → Clientes.
+        </p>
+
+        <div className="hidden sm:contents">
         {campo(
           "Observação",
           <Textarea rows={2} value={observacao} onChange={(e) => setObservacao(e.target.value)} />,
         )}
+        </div>
 
         {erro && <p className="text-sm text-destructive">{erro}</p>}
 
