@@ -236,7 +236,7 @@ function Pizza({
             </ResponsiveContainer>
           </div>
 
-          <ul className="max-h-32 min-w-0 flex-1 space-y-1 overflow-y-auto pr-1">
+          <ul className="min-w-0 space-y-1 overflow-y-auto pr-1 sm:max-h-32 sm:flex-1">
             {dados.map((d, i) => (
               <li key={d.chave}>
                 <button
@@ -344,10 +344,10 @@ export function DashboardPanel() {
         titulo="Dashboard"
         descricao="Dinheiro conta quando entra: faturamento e ticket usam a data do pagamento. Cestas contam quando saem: a data de entrega. Cancelados ficam fora."
         acoes={
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="grid w-full grid-cols-2 items-end gap-2 sm:flex sm:w-auto sm:flex-wrap">
             <label className="grid gap-1 text-xs text-muted-foreground">
               Período
-              <div className="flex h-9 gap-1 rounded-lg border border-[var(--cream-deep)] p-0.5">
+              <div className="flex h-11 gap-1 rounded-lg border border-[var(--cream-deep)] p-0.5 sm:h-9">
                 {(
                   [
                     { v: "mes", label: "Mês" },
@@ -377,7 +377,7 @@ export function DashboardPanel() {
                 <select
                   value={mesSelecionado}
                   onChange={(e) => setMes(`${anoSelecionado}-${e.target.value}`)}
-                  className="h-9 min-w-36 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+                  className="h-11 min-w-0 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-base text-foreground outline-none focus:border-[var(--terracotta)] sm:h-9 sm:min-w-36 sm:text-sm"
                 >
                   {MESES.map((nome, indice) => (
                     <option key={nome} value={String(indice + 1).padStart(2, "0")}>
@@ -392,7 +392,7 @@ export function DashboardPanel() {
               <select
                 value={anoSelecionado}
                 onChange={(e) => setMes(`${e.target.value}-${mesSelecionado}`)}
-                className="h-9 min-w-28 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+                className="h-11 min-w-0 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-base text-foreground outline-none focus:border-[var(--terracotta)] sm:h-9 sm:min-w-28 sm:text-sm"
               >
                 {anos.map((ano) => (
                   <option key={ano} value={ano}>

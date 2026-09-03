@@ -378,9 +378,9 @@ export function PedidoDialog({
         }
       >
         {/* Cliente cadastrado preenche tudo de uma vez; quem é novo, digita. */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <BuscaAdicionar
-            className="flex-1"
+            className="w-full md:w-auto md:flex-1"
             placeholder={
               clientes.find((c) => c.id === clienteId)?.nome ??
               (clienteRecemCriado?.id === clienteId
@@ -508,8 +508,8 @@ export function PedidoDialog({
           </div>
 
           {avulso && (
-            <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl border border-dashed border-[var(--cream-deep)] p-3">
-              <label className="block min-w-[10rem] flex-1">
+            <div className="mt-3 grid gap-2 rounded-xl border border-dashed border-[var(--cream-deep)] p-3 md:flex md:flex-wrap md:items-end">
+              <label className="block w-full md:w-auto md:min-w-[10rem] md:flex-1">
                 <span className="mb-1 block text-xs font-medium text-muted-foreground">
                   Descrição
                 </span>
@@ -566,11 +566,11 @@ export function PedidoDialog({
           {itens.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">Nenhum item ainda.</p>
           ) : (
-            <ul className="pedido-itens-lista mt-2 max-h-24 space-y-2 overflow-y-auto pr-1">
+            <ul className="pedido-itens-lista mt-2 max-h-none space-y-2 overflow-visible pr-1 md:max-h-24 md:overflow-y-auto">
               {itens.map((it, idx) => (
                 <li
                   key={`${it.slug ?? it.nome}-${idx}`}
-                  className="grid grid-cols-[1fr_4rem_6rem_2rem] items-center gap-2"
+                  className="grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-2 md:grid-cols-[1fr_4rem_6rem_2rem]"
                 >
                   <div className="min-w-0">
                     <Input

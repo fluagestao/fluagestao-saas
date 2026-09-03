@@ -139,7 +139,7 @@ function SeletorPeriodo({
             type="button"
             onClick={() => onMudar(a.de, a.ate)}
             className={cn(
-              "rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
+              "min-h-11 rounded-full px-3 py-2 text-xs font-medium transition-colors md:min-h-0 md:px-2.5 md:py-1",
               de === a.de && ate === a.ate
                 ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
                 : "border border-[var(--cream-deep)] text-muted-foreground hover:text-foreground",
@@ -227,7 +227,7 @@ function SeletorPeriodoRealizadas({
 }) {
   const livre = periodo === "escolher";
   return (
-    <div className="flex flex-wrap items-end gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)]">
+    <div className="grid gap-3 rounded-2xl bg-card p-3 shadow-[var(--shadow-card)] md:flex md:flex-wrap md:items-end">
       <label className="grid gap-1 text-sm text-muted-foreground">
         Período
         <select
@@ -804,7 +804,7 @@ export function VendasPanel({
       >
         <span className="t-support shrink-0 text-[var(--admin-muted)]">Mostrando</span>
         <Select value={status} onValueChange={(v) => setStatus(v as FiltroStatus)}>
-          <SelectTrigger className="h-9 w-[200px] rounded-xl">
+          <SelectTrigger className="h-11 w-full rounded-xl md:h-9 md:w-[200px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -895,7 +895,7 @@ export function VendasPanel({
                     <li
                       key={p.id}
                       className={cn(
-                        "flex flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-2 text-sm",
+                        "flex min-h-11 flex-wrap items-center gap-2 rounded-xl border bg-card px-3 py-3 text-sm md:min-h-0 md:py-2",
                         p.status === "entregue"
                           ? "border-destructive/40"
                           : "border-[var(--cream-deep)]",
@@ -903,6 +903,7 @@ export function VendasPanel({
                     >
                       <input
                         type="checkbox"
+                        className="h-5 w-5 shrink-0 md:h-auto md:w-auto"
                         aria-label={`Selecionar pedido ${p.numero}`}
                         checked={marcados.has(p.id)}
                         onChange={(e) =>
@@ -956,10 +957,19 @@ export function VendasPanel({
                       className="h-8 w-[9.5rem]"
                     />
                   </label>
-                  <Button size="sm" onClick={receberMarcados}>
+                  <Button
+                    size="sm"
+                    className="h-11 w-full md:h-8 md:w-auto"
+                    onClick={receberMarcados}
+                  >
                     Registrar recebimento
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setMarcados(new Set())}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-11 w-full md:h-8 md:w-auto"
+                    onClick={() => setMarcados(new Set())}
+                  >
                     Limpar
                   </Button>
                 </div>

@@ -230,17 +230,17 @@ export function ContasAPagarPanel() {
         />
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">Vencimento de</span>
-        <DatePickerField value={de} onChange={setDe} ariaLabel="Data inicial" className="h-9 w-[10.5rem]" />
-        <span className="text-sm text-muted-foreground">até</span>
-        <DatePickerField value={ate} onChange={setAte} ariaLabel="Data final" className="h-9 w-[10.5rem]" />
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:flex sm:flex-wrap">
+        <span className="col-span-3 text-sm text-muted-foreground sm:col-span-1">Vencimento de</span>
+        <DatePickerField value={de} onChange={setDe} ariaLabel="Data inicial" className="h-11 w-full sm:h-9 sm:w-[10.5rem]" />
+        <span className="text-center text-sm text-muted-foreground">até</span>
+        <DatePickerField value={ate} onChange={setAte} ariaLabel="Data final" className="h-11 w-full sm:h-9 sm:w-[10.5rem]" />
 
         <button
           type="button"
           onClick={() => baixarCsv(contas, hoje, de, ate)}
           disabled={contas.length === 0}
-          className="t-support ml-auto inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50"
+          className="t-support col-span-3 ml-auto inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50 sm:col-span-1 sm:h-9 sm:w-auto sm:justify-start"
         >
           <Download className="h-3.5 w-3.5" />
           Baixar CSV

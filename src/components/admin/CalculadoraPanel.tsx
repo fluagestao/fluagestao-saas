@@ -149,7 +149,7 @@ export function CalculadoraPanel() {
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <div className="flex h-11 min-w-[220px] flex-1 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5">
+        <div className="flex h-11 w-full items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 sm:w-auto sm:min-w-[220px] sm:flex-1">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             value={busca}
@@ -210,32 +210,34 @@ export function CalculadoraPanel() {
                     : "border-[var(--admin-border)]",
                 )}
               >
-                <div className="min-w-0 flex-1 sm:min-w-[14rem]">
+                <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:min-w-[14rem]">
                   <p className="t-item truncate text-foreground">{p.nome}</p>
                   <p className="t-support truncate text-muted-foreground">
                     {[p.colecao, p.categoria].filter(Boolean).join(" · ") || "sem categoria"}
                   </p>
                 </div>
 
-                <div className="w-28 text-right">
-                  <p className="t-support text-muted-foreground">custo</p>
-                  <p className="t-body tabular-nums text-foreground">
-                    {p.custo == null ? "—" : formatBRL(p.custo)}
-                  </p>
-                </div>
+                <div className="grid w-full grid-cols-3 gap-x-4 sm:contents">
+                  <div className="w-full text-right sm:w-28">
+                    <p className="t-support text-muted-foreground">custo</p>
+                    <p className="t-body tabular-nums text-foreground">
+                      {p.custo == null ? "—" : formatBRL(p.custo)}
+                    </p>
+                  </div>
 
-                <div className="w-28 text-right">
-                  <p className="t-support text-muted-foreground">preço</p>
-                  <p className="t-body tabular-nums text-foreground">
-                    {p.preco == null ? "—" : formatBRL(p.preco)}
-                  </p>
-                </div>
+                  <div className="w-full text-right sm:w-28">
+                    <p className="t-support text-muted-foreground">preço</p>
+                    <p className="t-body tabular-nums text-foreground">
+                      {p.preco == null ? "—" : formatBRL(p.preco)}
+                    </p>
+                  </div>
 
-                <div className="w-20 text-right">
-                  <p className="t-support text-muted-foreground">margem</p>
-                  <p className={cn("t-item tabular-nums", corDaMargem(margem))}>
-                    {margem == null ? "—" : `${Math.round(margem * 100)}%`}
-                  </p>
+                  <div className="w-full text-right sm:w-20">
+                    <p className="t-support text-muted-foreground">margem</p>
+                    <p className={cn("t-item tabular-nums", corDaMargem(margem))}>
+                      {margem == null ? "—" : `${Math.round(margem * 100)}%`}
+                    </p>
+                  </div>
                 </div>
 
                 <span
@@ -425,8 +427,8 @@ function DialogoCalculo({
         <CascataCusto cascata={cascata} />
 
         {/* O caminho inverso: a margem é o piso, o preço é a consequência. */}
-        <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4">
-          <Sparkles className="mb-2 h-4 w-4 shrink-0 text-[var(--bronze)]" />
+        <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <Sparkles className="mb-2 hidden h-4 w-4 shrink-0 text-[var(--bronze)] sm:block" />
           <label className="space-y-1.5 text-sm font-medium">
             Quero margem de
             <div className="flex items-center gap-1.5">

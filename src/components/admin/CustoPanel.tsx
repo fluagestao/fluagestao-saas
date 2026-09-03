@@ -131,8 +131,8 @@ export function CustoPanel() {
         titulo="Margem"
         descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use a Calculadora."
         acoes={
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="grid gap-1 text-xs text-muted-foreground">
+          <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
+            <label className="col-span-2 grid gap-1 text-xs text-muted-foreground">
               Período
               <select
                 value={atalho}
@@ -144,7 +144,7 @@ export function CustoPanel() {
                   const escolhido = ATALHOS.find((a) => a.id === id);
                   if (escolhido) setPeriodo(escolhido.intervalo(hoje));
                 }}
-                className="h-9 min-w-44 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+                className="h-11 w-full min-w-0 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)] sm:h-9 sm:w-auto sm:min-w-44"
               >
                 {ATALHOS.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -165,7 +165,7 @@ export function CustoPanel() {
                   setAtalho("escolher");
                   setPeriodo((p) => ({ ...p, de: e.target.value }));
                 }}
-                className="h-9 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+                className="h-11 w-full min-w-0 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)] sm:h-9 sm:w-auto"
               />
             </label>
 
@@ -179,7 +179,7 @@ export function CustoPanel() {
                   setAtalho("escolher");
                   setPeriodo((p) => ({ ...p, ate: e.target.value }));
                 }}
-                className="h-9 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+                className="h-11 w-full min-w-0 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)] sm:h-9 sm:w-auto"
               />
             </label>
           </div>
@@ -298,7 +298,7 @@ export function CustoPanel() {
 
       {dados && dados.semComposicao > 0 && (
         // Sem esse aviso, a margem do topo parece valer para tudo e nao vale.
-        <div className="mt-3 flex items-start gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">
+        <div className="mt-3 flex flex-wrap items-start gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">
           <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-[var(--bronze)]" />
           <div className="min-w-0 flex-1">
             <p className="t-support text-muted-foreground">
@@ -306,7 +306,7 @@ export function CustoPanel() {
               margem acima. Lance o custo deles na Calculadora para a conta fechar.
             </p>
           </div>
-          <Button variant="outline" size="sm" asChild className="h-8 shrink-0 rounded-lg">
+          <Button variant="outline" size="sm" asChild className="h-11 w-full shrink-0 rounded-lg sm:h-8 sm:w-auto">
             <a href="/custo/calculadora">Abrir Calculadora</a>
           </Button>
         </div>
@@ -328,7 +328,7 @@ export function CustoPanel() {
             type="button"
             onClick={() => setFiltro(id)}
             className={cn(
-              "t-support h-8 rounded-full border px-3 font-medium transition-colors",
+              "t-support h-11 rounded-full border px-4 font-medium transition-colors sm:h-8 sm:px-3",
               filtro === id
                 ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
                 : "border-[var(--cream-deep)] bg-card text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
@@ -385,11 +385,11 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
   return (
     <li
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap",
+        "grid grid-cols-2 items-start gap-x-3 gap-y-2 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] sm:flex sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-1",
         semCusto ? "border-[var(--cream-deep)] bg-[var(--cream-soft)]" : "border-[var(--admin-border)]",
       )}
     >
-      <div className="min-w-0 sm:min-w-[14rem] sm:flex-1">
+      <div className="col-span-2 min-w-0 sm:col-auto sm:min-w-[14rem] sm:flex-1">
         <p className="t-item truncate text-foreground">{p.nome}</p>
         <p className="t-support truncate text-muted-foreground">
           {[p.colecao, p.categoria].filter(Boolean).join(" · ") || "sem categoria"}

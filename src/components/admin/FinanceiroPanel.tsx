@@ -275,7 +275,7 @@ export function FinanceiroPanel({ vista }: { vista?: "entradas" | "saidas" }) {
           type="button"
           onClick={baixarCsv}
           disabled={daAba.length === 0}
-          className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50"
+          className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-[var(--cream-deep)] bg-card px-3 text-xs font-medium text-foreground transition-colors hover:bg-[var(--cream-soft)] disabled:opacity-50 sm:h-9 sm:w-auto sm:justify-start"
         >
           <Download className="h-3.5 w-3.5" />
           Baixar CSV
