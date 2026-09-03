@@ -11,6 +11,7 @@ import "./marketing-header.css";
 import "./responsive-system.css";
 import "./home-compact.css";
 import "./mobile-admin.css";
+import "./cookie-consent.css";
 // Por ultimo de proposito: admin-fill e panel-shell forcam height/overflow
 // no main com !important, e esta folha precisa vencer os dois.
 import "./painel-viewport.css";
@@ -19,6 +20,7 @@ import { AdminPathSync } from "@/components/admin/AdminPathSync";
 import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
 import { OnboardingPrompt } from "@/components/admin/OnboardingPrompt";
 import { MarketingHeader } from "@/components/MarketingHeader";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -101,6 +103,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <MarketingHeader />
         {children}
         <OnboardingPrompt />
+        <CookieConsent />
       </body>
     </html>
   );
