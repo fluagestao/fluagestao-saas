@@ -11,6 +11,14 @@ import {
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -692,7 +700,39 @@ export function VendasPanel({
     }));
   }, [pedidos]);
 
+  /* Cancelar um pedido JA PAGO e a unica acao aqui que o sistema nao consegue
+     decidir sozinho: so a cesteira sabe se devolveu o dinheiro. Enquanto
+     ninguem perguntava, o recebimento ficava no caixa e a venda sumia do
+     Dashboard — o faturamento ficava maior que as vendas, e as duas telas
+     discordavam sobre o mesmo pedido. */
+  const [cancelandoPago, setCancelandoPago] = useState<Pedido | null>(null);
+
+  async function aplicarCancelamento(p: Pedido, devolveu: boolean) {
+    try {
+      if (devolveu) {
+        // Some do caixa junto com a venda. Deixar so a entrada seria a
+        // contradicao que estamos consertando.
+        await marcarRecebimento({ data: { id: p.id, recebido_em: null } });
+      }
+      await mudarStatusPedido({ data: { id: p.id, status: "cancelado" } });
+      toast.success(
+        devolveu
+          ? `Pedido #${p.numero} cancelado e o recebimento saiu do caixa.`
+          : `Pedido #${p.numero} cancelado. O valor recebido continua no caixa.`,
+      );
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "cancelar o pedido"));
+    } finally {
+      recarregarTudo();
+    }
+  }
+
   async function cancelar(p: Pedido) {
+    if (p.recebido_em) {
+      setCancelandoPago(p);
+      return;
+    }
+
     const ok = await confirmar({
       titulo: `Cancelar o pedido #${p.numero}?`,
       descricao: "Ele sai do faturamento e das estatísticas, mas continua na lista.",
@@ -700,9 +740,7 @@ export function VendasPanel({
       destrutivo: true,
     });
     if (!ok) return;
-    await mudarStatusPedido({ data: { id: p.id, status: "cancelado" } });
-    toast.success(`Pedido #${p.numero} cancelado.`);
-    recarregarTudo();
+    await aplicarCancelamento(p, false);
   }
 
   async function excluir(p: Pedido) {
@@ -1135,6 +1173,63 @@ export function VendasPanel({
           onClose={() => setEditando(null)}
           onSaved={recarregarTudo}
         />
+      )}
+
+      {cancelandoPago && (
+        <Dialog open onOpenChange={(aberto) => !aberto && setCancelandoPago(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="text-left">
+              <DialogTitle>Cancelar o pedido #{cancelandoPago.numero}?</DialogTitle>
+              <DialogDescription>
+                Este pedido está pago:{" "}
+                <strong>{formatBRL(cancelandoPago.total)}</strong> entraram no caixa. O que
+                aconteceu com esse dinheiro?
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-2">
+              <Button
+                variant="outline"
+                className="h-auto justify-start whitespace-normal py-3 text-left"
+                onClick={() => {
+                  const alvo = cancelandoPago;
+                  setCancelandoPago(null);
+                  void aplicarCancelamento(alvo, true);
+                }}
+              >
+                <span>
+                  <span className="block font-semibold">Devolvi ao cliente</span>
+                  <span className="t-support block font-normal text-muted-foreground">
+                    O recebimento sai do caixa junto com a venda.
+                  </span>
+                </span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="h-auto justify-start whitespace-normal py-3 text-left"
+                onClick={() => {
+                  const alvo = cancelandoPago;
+                  setCancelandoPago(null);
+                  void aplicarCancelamento(alvo, false);
+                }}
+              >
+                <span>
+                  <span className="block font-semibold">Fiquei com o valor</span>
+                  <span className="t-support block font-normal text-muted-foreground">
+                    O pedido sai das vendas, mas o dinheiro continua no caixa.
+                  </span>
+                </span>
+              </Button>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCancelandoPago(null)}>
+                Não cancelar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
     </section>
   );
