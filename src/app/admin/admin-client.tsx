@@ -546,6 +546,29 @@ export default function AdminClient({
             </nav>
           )}
 
+          {aba === "financeiro" && (
+            <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {SUB_FINANCEIRO.map((sub) => (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => {
+                    setAba("financeiro");
+                    setSubFin(sub.id);
+                  }}
+                  className={cn(
+                    "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                    subFin === sub.id
+                      ? "bg-[var(--cream)] text-[var(--terracotta)]"
+                      : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+                  )}
+                >
+                  {sub.label}
+                </button>
+              ))}
+            </nav>
+          )}
+
           {(aba === "cadastros" || DO_CATALOGO.includes(aba)) && (
             <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SUB_CADASTROS.map((sub) => {

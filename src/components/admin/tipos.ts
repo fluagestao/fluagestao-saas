@@ -124,6 +124,56 @@ export function slugFromNome(nome: string): string {
     .replace(/(^-|-$)+/g, "");
 }
 
+/* O limite da server action e 4mb (next.config) e base64 infla o arquivo em
+   ~33%: uma foto de 3,2MB — tamanho comum de camera de celular — vira 4,3MB
+   de payload e e recusada. Reduzir antes resolve na origem, e ainda deixa o
+   catalogo mais leve para a cliente final. */
+const LADO_MAXIMO = 1600;
+const QUALIDADE = 0.82;
+
+/**
+ * Reduz e recomprime a imagem no navegador antes de subir.
+ *
+ * Devolve o arquivo original quando nao consegue processar (formato que o
+ * canvas nao abre, navegador sem suporte): melhor tentar subir o original e
+ * receber um erro claro do que descartar a foto da pessoa em silencio.
+ */
+export async function comprimirImagem(file: File): Promise<File> {
+  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    const escala = Math.min(1, LADO_MAXIMO / Math.max(bitmap.width, bitmap.height));
+
+    // Ja e pequena e leve: mexer so degradaria a imagem sem ganho.
+    if (escala === 1 && file.size <= 1_500_000) {
+      bitmap.close();
+      return file;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * escala);
+    canvas.height = Math.round(bitmap.height * escala);
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bitmap.close();
+      return file;
+    }
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", QUALIDADE),
+    );
+    if (!blob || blob.size >= file.size) return file;
+
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
 export function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

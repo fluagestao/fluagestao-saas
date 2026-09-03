@@ -548,7 +548,7 @@ export function OnboardingPrompt() {
       {boasVindas && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b2421]/55 p-4 backdrop-blur-sm">
           <section
-            className="w-full max-w-2xl rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_30px_90px_rgba(43,36,33,0.3)] sm:p-8"
+            className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_30px_90px_rgba(43,36,33,0.3)] sm:p-8"
             role="dialog"
             aria-modal="true"
             aria-labelledby="guia-boas-vindas"

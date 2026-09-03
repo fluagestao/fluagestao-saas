@@ -27,6 +27,7 @@ import {
 import { mensagemDeErro } from "@/lib/erros";
 import { cn } from "@/lib/utils";
 import {
+  comprimirImagem,
   fileToBase64,
   slugFromNome,
   type CatalogoRow,
@@ -158,7 +159,7 @@ export function NovoProdutoClient({
     setEnviando(true);
     setErro(null);
     try {
-      const base64 = await fileToBase64(file);
+      const base64 = await fileToBase64(await comprimirImagem(file));
       const nova = await enviarImagem({
         data: {
           produtoId: id,
