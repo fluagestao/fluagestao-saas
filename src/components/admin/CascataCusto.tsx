@@ -21,7 +21,7 @@ function corDaMargem(margem: number | null) {
 /**
  * A cascata do preço até o que sobra.
  *
- * Dois resultados de propósito. A margem de contribuição responde "esse produto
+ * Dois resultados de propósito. A margem bruta responde "esse produto
  * se paga?"; a sobra real responde "o negócio sobrevive?". Guardar só a segunda
  * esconderia qual produto vale empurrar; só a primeira é o que a tela mostrava
  * antes — e é otimista demais para quem monta à mão.
@@ -77,7 +77,7 @@ export function CascataCusto({ cascata }: { cascata: Cascata }) {
 
           <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-[var(--cream-deep)] pt-2">
             <span className="t-body font-semibold text-[var(--admin-ink)]">
-              Margem de contribuição
+              Margem bruta
             </span>
             <span className="flex shrink-0 items-baseline gap-2">
               <span className="t-body tabular-nums text-[var(--admin-ink)]">
