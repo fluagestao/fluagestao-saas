@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast, Toaster } from "sonner";
 
+import { RecorteFoto } from "@/components/admin/RecorteFoto";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -224,6 +225,12 @@ export function NovoProdutoClient({
     }
   }
 
+
+  /* O arquivo escolhido espera aqui ate o recorte ser confirmado. Subir direto
+     era o que fazia a foto chegar torta no catalogo: o card e quadrado e usava
+     object-cover, entao o navegador decidia o corte — quase sempre no lugar
+     errado, porque o assunto raramente esta no centro geometrico. */
+  const [aRecortar, setARecortar] = useState<File | null>(null);
 
   async function adicionarFoto(file: File) {
     setEnviando(true);
@@ -536,12 +543,15 @@ export function NovoProdutoClient({
                   <button
                     type="button"
                     onClick={() => excluirFoto(img)}
-                    className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100"
+                    /* Visivel no toque. Com opacity-0 o botao continua
+                       clicavel, entao no celular ele era invisivel E pegava o
+                       toque de quem so queria ver a foto maior. */
+                    className="absolute right-2 top-2 grid h-9 w-9 place-items-center rounded-full bg-black/60 text-white transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                     aria-label="Remover foto"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
-                  <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/45 opacity-0 transition group-hover:opacity-100">
+                  <div className="absolute inset-x-0 bottom-0 flex justify-between bg-black/45 transition [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100">
                     <button
                       type="button"
                       onClick={() => moverFoto(index, -1)}
