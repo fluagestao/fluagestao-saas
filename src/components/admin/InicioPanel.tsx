@@ -441,8 +441,10 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
             rotulo: `${String(d.dia).padStart(2, "0")}/${(faturamento?.mes ?? mesAtual).slice(5)}`,
             valor: d.valor,
           }));
-    const max = Math.max(...pontos.map((p) => p.valor), 1);
-    return { max, exibidos: pontos };
+    const maiorReal = Math.max(...pontos.map((p) => p.valor), 0);
+    // O piso de 1 existe so para nao dividir por zero ao desenhar a linha;
+    // `zerado` diz se ele e real ou muleta, e o eixo some quando e muleta.
+    return { max: Math.max(maiorReal, 1), exibidos: pontos, zerado: maiorReal <= 0 };
   }, [periodo, ano, faturamento, mesAtual]);
 
   const pontosLinha = useMemo(() => {
@@ -752,8 +754,12 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
 
             <div className="grid min-h-[105px] grid-cols-[38px_minmax(0,1fr)] gap-2">
               <div className="t-support flex flex-col justify-between pb-5 text-right text-[var(--admin-muted)]">
-                <span>{rotuloEixo(grafico.max)}</span>
-                <span>{rotuloEixo(grafico.max / 2)}</span>
+                {!grafico.zerado && (
+                  <>
+                    <span>{rotuloEixo(grafico.max)}</span>
+                    <span>{rotuloEixo(grafico.max / 2)}</span>
+                  </>
+                )}
                 <span>0</span>
               </div>
               <div className="flex min-w-0 flex-col">
