@@ -48,16 +48,21 @@ export default function LoginPage() {
     const erroParam = params.get("erro");
 
     if (erroParam === "link-invalido") {
+      /* A causa mais comum nao e expirar: e abrir o link num aparelho diferente
+         daquele em que o cadastro foi feito — quem cadastra no computador e abre
+         o e-mail no celular cai sempre aqui. O botao de reenviar aparece junto
+         porque, sem ele, a unica saida visivel era cadastrar de novo. */
       setErro(
-        "O link de confirmação expirou ou já foi utilizado. Se você já confirmou seu e-mail, entre normalmente abaixo.",
+        "Esse link não funcionou. Ele precisa ser aberto no mesmo aparelho e navegador em que você se cadastrou — ou pode já ter sido usado. Informe seu e-mail abaixo e peça um link novo.",
       );
+      setPrecisaConfirmar(true);
       window.history.replaceState({}, "", "/login");
       return;
     }
 
     if (erroParam === "preparacao-conta") {
       setErro(
-        "Seu e-mail foi confirmado, mas não conseguimos concluir a preparação da sua conta. Tente entrar novamente.",
+        "Seu e-mail foi confirmado, mas ainda não conseguimos criar sua loja. Entre abaixo que retomamos de onde parou.",
       );
       window.history.replaceState({}, "", "/login");
     }

@@ -1,48 +1,8 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
+import { prepararEmpresa } from "@/lib/preparar-empresa";
 import { createClient } from "@/lib/supabase/server";
-
-async function prepararEmpresa(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const { data: userData, error: userError } = await supabase.auth.getUser();
-  const user = userData.user;
-
-  if (userError || !user) {
-    return false;
-  }
-
-  const metadata = user.user_metadata ?? {};
-  const fullName =
-    typeof metadata.full_name === "string" && metadata.full_name.trim()
-      ? metadata.full_name.trim()
-      : user.email?.split("@")[0] || "Usuário";
-  const storeName =
-    typeof metadata.store_name === "string" && metadata.store_name.trim()
-      ? metadata.store_name.trim()
-      : "Minha empresa";
-  const document = typeof metadata.document === "string" ? metadata.document : "";
-  const documentType = metadata.document_type === "cpf" ? "cpf" : "cnpj";
-  const phone = typeof metadata.phone === "string" ? metadata.phone : null;
-
-  const { error } = await supabase.rpc("complete_onboarding", {
-    p_full_name: fullName,
-    p_cpf: "",
-    p_store_name: storeName,
-    p_document_type: documentType,
-    p_document: document,
-    p_email: user.email ?? "",
-    p_phone: phone,
-    p_postal_code: null,
-    p_street: null,
-    p_address_number: null,
-    p_complement: null,
-    p_district: null,
-    p_city: null,
-    p_state: null,
-  });
-
-  return !error;
-}
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);

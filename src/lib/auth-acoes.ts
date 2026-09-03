@@ -61,6 +61,24 @@ export async function entrar(input: { data: unknown }): Promise<Resultado> {
 
   if (error || !data.user) {
     await registrarEvento("login", "falha", email, error?.message?.slice(0, 200));
+
+    /* "E-mail nao confirmado" so acontece com a senha CERTA — com a senha
+       errada o Supabase responde credencial invalida. Como quem chega aqui ja
+       provou ser dono da conta, dizer o motivo nao entrega nada a estranho, e
+       e o que faz o botao de reenviar aparecer. Sem isso a pessoa lia "e-mail
+       ou senha invalidos", trocava a senha achando que errou, e nunca entrava. */
+    const naoConfirmado =
+      error?.code === "email_not_confirmed" ||
+      /email not confirmed/i.test(error?.message ?? "");
+
+    if (naoConfirmado) {
+      return {
+        ok: false,
+        mensagem: "Confirme seu e-mail para entrar. Enviamos um link quando você se cadastrou.",
+        confirmarEmail: true,
+      };
+    }
+
     return { ok: false, mensagem: ERRO_CREDENCIAL, exigirCaptcha: limite.exigirCaptcha };
   }
 

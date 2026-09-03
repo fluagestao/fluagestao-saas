@@ -27,8 +27,12 @@ export default async function AdminPage() {
     .limit(1)
     .maybeSingle();
 
+  /* Sem vinculo com empresa a pessoa vai para /onboarding, que tenta criar a
+     loja e mostra uma tela quando nao consegue. Mandar de volta para /login
+     fechava um laco: ela logava, caia aqui, voltava para o login, logava de
+     novo — com senha certa e e-mail confirmado, sem nunca entrar. */
   if (membroError || !membro) {
-    redirect("/login?erro=preparacao-conta");
+    redirect("/onboarding");
   }
 
   const { data: empresa } = await supabase
