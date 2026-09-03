@@ -687,6 +687,8 @@ const clienteSchema = z.object({
   ativo: z.boolean(),
 });
 
+const DUPLICADO = "Já existe um cliente com esse WhatsApp.";
+
 export async function salvarCliente(input: { data: unknown }) {
   const data = clienteSchema.parse(input.data);
   const { supabase, companyId } = await requireCompany();
@@ -715,9 +717,8 @@ export async function salvarCliente(input: { data: unknown }) {
       .maybeSingle();
 
     if (error) {
-      if (error.code === "23505") {
-        throw new Error("Já existe um cliente com esse WhatsApp.");
-      }
+      // Devolvido, nao lancado: ver a nota do insert abaixo.
+      if (error.code === "23505") return { id: null, erro: DUPLICADO };
       throw error;
     }
     return { id: salvo?.id ?? data.id };
@@ -729,14 +730,16 @@ export async function salvarCliente(input: { data: unknown }) {
     .select("id")
     .maybeSingle();
 
+  /* Duplicado e resposta, nao excecao. Erro LANCADO dentro de server action e
+     redigido pelo React em producao: a tela recebia "Minified React error #441"
+     no lugar da frase, e quem cadastrava nao tinha como saber que o problema
+     era um WhatsApp ja usado. A mensagem certa existia e nunca chegava. */
   if (error) {
-    if (error.code === "23505") {
-      throw new Error("Já existe um cliente com esse WhatsApp.");
-    }
+    if (error.code === "23505") return { id: null, erro: DUPLICADO };
     throw error;
   }
-  if (!salvo) throw new Error("Não foi possível salvar o cliente.");
-  return { id: salvo.id };
+  if (!salvo) return { id: null, erro: "Não foi possível salvar o cliente." };
+  return { id: salvo.id, erro: null };
 }
 
 export async function removerCliente(input: { data: unknown }) {

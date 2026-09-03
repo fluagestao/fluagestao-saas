@@ -689,6 +689,11 @@ export function ClienteDialog({
           ativo: true,
         },
       });
+      if (r.erro || !r.id) {
+        setErro(r.erro ?? "Não foi possível salvar o cliente.");
+        return;
+      }
+
       await salvarCidadeCliente({
         data: { id: r.id, cidade: cidade.trim() || null },
       });
@@ -701,8 +706,9 @@ export function ClienteDialog({
       onClose();
     } catch (e) {
       setErro(mensagemDeErro(e, "salvar"));
+    } finally {
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   const campo = (label: string, node: React.ReactNode) => (
