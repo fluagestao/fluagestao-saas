@@ -54,7 +54,7 @@ function Variacao({ atual, anterior, rotulo }: { atual: number; anterior: number
   if (!anterior) return null;
   const pct = Math.round(((atual - anterior) / anterior) * 100);
   const cor =
-    pct > 0 ? "text-[var(--green-ink,#4A6B4A)]" : pct < 0 ? "text-[var(--terracotta)]" : "text-muted-foreground";
+    pct > 0 ? "text-[var(--green-ink)]" : pct < 0 ? "text-[var(--terracotta)]" : "text-muted-foreground";
   return (
     <span className={cn("font-medium tabular-nums", cor)}>
       {pct > 0 ? "+" : ""}
