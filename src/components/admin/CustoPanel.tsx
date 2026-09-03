@@ -316,6 +316,37 @@ export function CustoPanel() {
         </p>
       </details>
 
+      {/* Zero de mao de obra com custo por hora definido nao e resultado, e
+          falta de dado — e um zero disfarcado de resultado infla a margem
+          liquida sem ninguem perceber. So aparece quando as duas condicoes se
+          encontram: ela configurou o custo por hora E os produtos vendidos nao
+          tem tempo. Se ela nao usa mao de obra, o aviso nao aparece. */}
+      {dados &&
+        dados.calculoCompleto &&
+        dados.custoHora > 0 &&
+        dados.maoDeObra === 0 &&
+        dados.vendidosSemTempo > 0 && (
+          <div className="mt-3 flex flex-wrap items-start gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">
+            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-[var(--bronze)]" />
+            <div className="min-w-0 flex-1">
+              <p className="t-support text-muted-foreground">
+                A mão de obra está zerada porque {dados.vendidosSemTempo} produto(s) vendidos não
+                têm tempo de montagem cadastrado — mesmo com o custo por hora em{" "}
+                {formatBRL(dados.custoHora)}. A margem líquida acima não desconta o seu tempo, então
+                ela parece melhor do que é. Informe o tempo de cada produto na Precificação.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              asChild
+              className="h-11 w-full shrink-0 rounded-lg sm:h-8 sm:w-auto"
+            >
+              <a href="/custo/calculadora">Abrir Precificação</a>
+            </Button>
+          </div>
+        )}
+
       {dados && dados.semComposicao > 0 && (
         // Sem esse aviso, a margem do topo parece valer para tudo e nao vale.
         <div className="mt-3 flex flex-wrap items-start gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">

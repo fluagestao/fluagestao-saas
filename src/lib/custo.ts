@@ -265,6 +265,13 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     /** true quando mão de obra e custo fixo estão entrando na conta. */
     calculoCompleto: ligado,
     maoDeObra: maoDeObraGeral,
+    /** Configurado nos Ajustes. Zero = ela nao usa mao de obra na conta. */
+    custoHora,
+    /** Vendidos com custo cadastrado mas SEM tempo de montagem: e por eles que
+        a mao de obra fica zerada mesmo com custo por hora definido. */
+    vendidosSemTempo: comCusto.filter(
+      (p) => p.tempo_montagem_min == null || p.tempo_montagem_min <= 0,
+    ).length,
     descontos: descontosGeral,
     sobraReal: ligado ? sobraRealGeral : null,
     margemReal: ligado && receitaComCusto > 0 ? sobraRealGeral / receitaComCusto : null,
