@@ -109,9 +109,9 @@ function CalculadoraHora({ onUsar }: { onUsar: (valor: string) => void }) {
   return (
     <div className="mt-2 space-y-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3.5">
       <div className="grid gap-3 sm:grid-cols-3">
-        <CampoNum rotulo="Quanto quer tirar por mês" valor={salario} onMudar={setSalario} sufixo="R$" placeholder="2.500" />
-        <CampoNum rotulo="Dias por semana" valor={dias} onMudar={setDias} sufixo="dias" />
-        <CampoNum rotulo="Horas por dia" valor={horas} onMudar={setHoras} sufixo="h" />
+        <CampoNum rotulo="Salário / mão de obra" valor={salario} onMudar={setSalario} sufixo="R$" placeholder="2.500" />
+        <CampoNum rotulo="Dias trabalhados na semana" valor={dias} onMudar={setDias} sufixo="dias" />
+        <CampoNum rotulo="Horas trabalhadas por dia" valor={horas} onMudar={setHoras} sufixo="h" />
       </div>
 
       {porHora != null ? (
@@ -262,7 +262,7 @@ export function AjustesCalculo({
           <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
             <DialogTitle>Ajustes do cálculo</DialogTitle>
             <DialogDescription>
-              O que entra na conta além dos insumos. Vale para a Calculadora e para o Simulador.
+              O que entra na conta além dos insumos. Vale para a Precificação e para o Simulador.
             </DialogDescription>
           </DialogHeader>
 
@@ -295,13 +295,13 @@ export function AjustesCalculo({
                   className="h-11 shrink-0"
                 >
                   <Calculator className="mr-1.5 h-4 w-4" />
-                  {calc === "hora" ? "Fechar" : "Calcular"}
+                  {calc === "hora" ? "Fechar calculadora" : "Calcular"}
                 </Button>
               </div>
 
               <span className="t-support block font-normal text-muted-foreground">
-                Multiplica o tempo de montagem de cada produto. Não é salário: é o que o negócio
-                precisa pagar pelo tempo para o preço fechar.
+                Multiplica o tempo de montagem de cada produto. É quanto o seu tempo precisa valer
+                para o preço fechar — mesmo que hoje você não retire esse valor todo mês.
               </span>
 
               {calc === "hora" && (
@@ -326,7 +326,7 @@ export function AjustesCalculo({
                 className="h-8"
               >
                 <Calculator className="mr-1.5 h-4 w-4" />
-                {calc === "fixo" ? "Fechar" : "Calcular na mão"}
+                {calc === "fixo" ? "Fechar calculadora" : "Calcular na mão"}
               </Button>
             </div>
 
@@ -343,9 +343,12 @@ export function AjustesCalculo({
               <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-3">
                 <Lightbulb className="h-4 w-4 shrink-0 text-[var(--bronze)]" />
                 <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
-                  Suas contas mensais somaram <strong>{moeda(sugestao.fixos)}</strong> sobre{" "}
-                  <strong>{moeda(sugestao.faturamento)}</strong> de faturamento no mês passado —{" "}
-                  <strong>{(sugestao.percentual * 100).toFixed(1).replace(".", ",")}%</strong>.
+                  <strong>
+                    {(sugestao.percentual * 100).toFixed(1).replace(".", ",")}%
+                  </strong>{" "}
+                  é o que o sistema apurou do que você mesma lançou: as contas mensais de{" "}
+                  <strong>{moeda(sugestao.fixos)}</strong> em A pagar, sobre{" "}
+                  <strong>{moeda(sugestao.faturamento)}</strong> recebidos no mês passado.
                 </p>
                 <Button
                   variant="outline"
@@ -369,13 +372,13 @@ export function AjustesCalculo({
                 rotulo="Taxa de pagamento"
                 valor={taxa}
                 onMudar={setTaxa}
-                ajuda="Cartão, maquininha"
+                ajuda="Cartão, maquininha. Se você cobra a taxa do cliente, deixe zerado."
               />
               <CampoPct
                 rotulo="Outros"
                 valor={perdas}
                 onMudar={setPerdas}
-                ajuda="Perda, estrago, quebra, embalagem, frete"
+                ajuda="Perda, estrago, quebra"
               />
             </div>
 

@@ -7,7 +7,7 @@ const ROTAS_DIRETAS: Record<string, string> = {
   "Início": "/inicio",
   Dashboard: "/dashboard",
   Margem: "/margem",
-  Calculadora: "/custo/calculadora",
+  "Precificação": "/custo/calculadora",
   Simulador: "/custo/simulador",
   Cozinha: "/custo/cozinha",
   Estoque: "/estoque",
@@ -47,7 +47,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   /* No celular estas quatro vivem sob o chip "Custo", entao a rota precisa
      abrir o pai antes de achar a filha. No desktop o pai e o item de menu. */
   "/margem": { pai: "Custo", filho: "Margem" },
-  "/custo/calculadora": { pai: "Custo", filho: "Calculadora" },
+  "/custo/calculadora": { pai: "Custo", filho: "Precificação" },
   "/custo/simulador": { pai: "Custo", filho: "Simulador" },
   "/custo/cozinha": { pai: "Custo", filho: "Cozinha" },
   // Rota antiga: continua abrindo a mesma tela para nao quebrar link salvo.

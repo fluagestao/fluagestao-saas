@@ -61,7 +61,7 @@ function corDaMargem(margem: number | null) {
 }
 
 /**
- * Calculadora: onde o custo é montado e o preço é decidido.
+ * Precificacao: onde o custo e montado e o preco e decidido.
  *
  * Separada da Margem de propósito. Aqui se trabalha — lança insumo, mexe no
  * preço, salva. Lá se lê o que aconteceu. Misturar as duas fazia a tela de
@@ -133,7 +133,7 @@ export function CalculadoraPanel() {
   return (
     <section data-tela-cheia className="min-w-0">
       <PageHeader
-        titulo="Calculadora"
+        titulo="Precificação"
         descricao="Monte o custo de cada produto e descubra por quanto precisa vender. É aqui que os insumos de cada produto são lançados."
         acoes={
           sugestao && (
