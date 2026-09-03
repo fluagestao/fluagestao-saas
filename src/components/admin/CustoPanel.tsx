@@ -244,6 +244,58 @@ export function CustoPanel() {
         </div>
       )}
 
+      {/* Recolhida por padrao: explica na primeira vez e sai do caminho depois.
+          <details> nativo — abre sem JS e o teclado alcanca sozinho. */}
+      <details className="group mt-2 rounded-2xl bg-card px-4 shadow-[var(--shadow-card)]">
+        <summary className="cursor-pointer list-none py-3 text-sm font-medium text-[var(--admin-ink-soft)] marker:content-none">
+          <span className="text-[var(--terracotta)] group-open:hidden">
+            O que significa cada número?
+          </span>
+          <span className="hidden text-[var(--terracotta)] group-open:inline">
+            Fechar explicação
+          </span>
+        </summary>
+
+        <div className="grid gap-3 border-t border-[var(--cream-deep)] py-3 sm:grid-cols-3">
+          <div>
+            <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">
+              Margem bruta
+            </p>
+            <p className="mt-1 text-sm text-[var(--admin-ink-soft)]">
+              De cada R$ 100 que você vende, quanto sobra depois de pagar{" "}
+              <strong>só os insumos</strong>. Não desconta o seu tempo nem aluguel e luz.
+            </p>
+          </div>
+
+          <div>
+            <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">
+              Margem líquida
+            </p>
+            <p className="mt-1 text-sm text-[var(--admin-ink-soft)]">
+              O mesmo, mas descontando também a <strong>mão de obra e os custos fixos</strong>.
+              É o que sobra de verdade — é por ela que se decide se o preço está de pé.
+            </p>
+          </div>
+
+          <div>
+            <p className="t-support uppercase tracking-[0.14em] text-[var(--bronze)]">Markup</p>
+            <p className="mt-1 text-sm text-[var(--admin-ink-soft)]">
+              Quanto você <strong>acrescenta em cima do custo</strong> para chegar no preço.
+              Custo de R$ 100 com markup de +150% vira preço de R$ 250.
+            </p>
+          </div>
+        </div>
+
+        <p className="border-t border-[var(--cream-deep)] py-3 text-sm text-[var(--admin-ink-soft)]">
+          <strong>Por que markup e margem dão números tão diferentes na mesma venda:</strong> eles
+          medem sobre bases distintas. Margem mede sobre o <strong>preço</strong>; markup mede
+          sobre o <strong>custo</strong>. Vender por R$ 250 o que custou R$ 100 é margem de 60%
+          (sobraram R$ 150 dos R$ 250) e markup de +150% (você somou R$ 150 sobre os R$ 100).
+          Mesma venda, duas perguntas: margem responde <em>quanto do preço fica comigo</em>,
+          markup responde <em>por quanto multiplico o custo na hora de precificar</em>.
+        </p>
+      </details>
+
       {dados && dados.semComposicao > 0 && (
         // Sem esse aviso, a margem do topo parece valer para tudo e nao vale.
         <div className="mt-3 flex items-start gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">
