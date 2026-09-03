@@ -77,15 +77,23 @@ div {
   -webkit-overflow-scrolling: touch;
 }
 
-[data-slot="dialog-content"],
-[role="dialog"] {
-  max-width: min(96vw, 1100px);
-  max-height: min(92dvh, 920px);
-}
+/* Em @layer base de proposito. Fora de layer, estas tres declaracoes venciam
+   qualquer utility do Tailwind v4 (que vive em @layer utilities), e todo
+   dialogo abria com 1100px ignorando o sm:max-w-* que pedia — junto com o
+   max-height e o overflow que cada painel define. Dentro de base elas seguem
+   valendo como rede de seguranca para dialogo que nao cuida do proprio
+   tamanho, e saem da frente de quem cuida. */
+@layer base {
+  [data-slot="dialog-content"],
+  [role="dialog"] {
+    max-width: min(96vw, 1100px);
+    max-height: min(92dvh, 920px);
+  }
 
-[role="dialog"] {
-  overflow: auto;
-  overscroll-behavior: contain;
+  [role="dialog"] {
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .break-responsive,

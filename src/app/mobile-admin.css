@@ -160,7 +160,11 @@
     max-width: none !important;
     max-height: none !important;
     height: auto !important;
+    /* O Tailwind v4 compila -translate-x-1/2 para a propriedade `translate`,
+       nao para `transform` — entao `transform: none` sozinho nao cancelava
+       nada e todo modal abria deslocado meia tela para cima e para a esquerda. */
     transform: none !important;
+    translate: none !important;
     margin: 0 !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;

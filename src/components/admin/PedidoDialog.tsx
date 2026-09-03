@@ -370,11 +370,11 @@ export function PedidoDialog({
         className={
           modoPagina
             ? "mx-auto w-full max-w-[1440px] space-y-4"
-            : `pedido-dialog-scroll min-h-0 w-full max-w-[1440px] self-center flex-1 space-y-2 overflow-x-hidden pr-1 ${
-                pedido || cartaoHabilitado
-                  ? "pedido-dialog-scroll-habilitado overflow-y-auto overscroll-contain"
-                  : "overflow-y-hidden"
-              }`
+            /* Rola sempre. O overflow-y-hidden condicional valia justamente
+               para o caso de CRIAR pedido, e abaixo de 1280px a grade de
+               entrega cai de 4 para 2 colunas: o formulario passa a nao caber
+               e o que sobra fica inalcancavel, sem barra para descer. */
+            : "pedido-dialog-scroll pedido-dialog-scroll-habilitado min-h-0 w-full max-w-[1440px] self-center flex-1 space-y-2 overflow-x-hidden overflow-y-auto overscroll-contain pr-1"
         }
       >
         {/* Cliente cadastrado preenche tudo de uma vez; quem é novo, digita. */}

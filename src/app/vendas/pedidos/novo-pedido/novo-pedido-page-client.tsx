@@ -59,6 +59,7 @@ export function NovoPedidoPageClient({
 
           margin: 0 !important;
           transform: translateX(-50%) !important;
+          translate: none !important;
           box-sizing: border-box !important;
           border: 0 !important;
           border-radius: 0 !important;
