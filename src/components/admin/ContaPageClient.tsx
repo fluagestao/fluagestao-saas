@@ -452,7 +452,7 @@ export function ContaPageClient({
   return (
     <ConfirmProvider>
       <Toaster position="bottom-right" richColors />
-      <div className="min-h-dvh bg-[var(--admin-bg)] text-[var(--admin-ink)]">
+      <div data-flua-painel className="min-h-dvh bg-[var(--admin-bg)] text-[var(--admin-ink)]">
         <header className="sticky top-0 z-40 border-b border-[var(--admin-border)] bg-white/96 backdrop-blur-xl">
           <div className="mx-auto flex h-[74px] max-w-[1540px] items-center justify-between gap-4 px-4 sm:px-6 xl:px-8">
             <div className="flex items-center gap-4">

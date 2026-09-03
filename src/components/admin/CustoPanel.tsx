@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, TriangleAlert } from "lucide-react";
+import { Download, Eye, EyeOff, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -58,6 +58,9 @@ function corDaMargem(margem: number | null) {
  */
 export function CustoPanel() {
   const hoje = hojeISO();
+  /* Comeca escondido. E a tela que ela abre com a cliente do lado, e margem e
+     markup sao justamente o que nao se mostra para quem esta comprando. */
+  const [mostrar, setMostrar] = useState(false);
   const [atalho, setAtalho] = useState<Atalho>("mes");
   const [periodo, setPeriodo] = useState<Intervalo>(() => intervaloMes(hoje, 0));
   const [dados, setDados] = useState<Awaited<ReturnType<typeof carregarMargemProdutos>> | null>(
@@ -132,6 +135,16 @@ export function CustoPanel() {
         descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use a Calculadora."
         acoes={
           <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
+            <button
+              type="button"
+              onClick={() => setMostrar((v) => !v)}
+              aria-pressed={mostrar}
+              className="col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--cream-deep)] px-3 text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:border-[var(--terracotta)] hover:text-[var(--terracotta)] sm:col-auto sm:h-9"
+            >
+              {mostrar ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {mostrar ? "Esconder" : "Mostrar"}
+            </button>
+
             <label className="col-span-2 grid gap-1 text-xs text-muted-foreground">
               Período
               <select
@@ -192,6 +205,13 @@ export function CustoPanel() {
         </div>
       )}
 
+      <div
+        className={cn(
+          "transition",
+          !mostrar && "pointer-events-none select-none blur-md",
+        )}
+        aria-hidden={!mostrar}
+      >
       <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
         <Cartao rotulo="Receita" valor={formatBRL(dados?.receita ?? 0)} carregando={carregando} />
         <Cartao rotulo="Custo dos insumos" valor={formatBRL(dados?.custoTotal ?? 0)} cor="var(--terracotta)" carregando={carregando} />
@@ -375,6 +395,7 @@ export function CustoPanel() {
           ))}
         </ul>
       )}
+      </div>
 
     </section>
   );

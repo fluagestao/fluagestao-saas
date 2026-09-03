@@ -16,7 +16,6 @@ import "./mobile-admin.css";
 import "./painel-viewport.css";
 
 import { AdminPathSync } from "@/components/admin/AdminPathSync";
-import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { NovoPedidoRouteBridge } from "@/components/admin/NovoPedidoRouteBridge";
 import { OnboardingPrompt } from "@/components/admin/OnboardingPrompt";
 import { MarketingHeader } from "@/components/MarketingHeader";
@@ -102,7 +101,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <MarketingHeader />
         {children}
         <OnboardingPrompt />
-        <MobileAdminNav />
       </body>
     </html>
   );

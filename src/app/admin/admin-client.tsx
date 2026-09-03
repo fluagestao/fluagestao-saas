@@ -228,10 +228,9 @@ const DO_CATALOGO: AbaId[] = [
    Escondido, ele ainda e clicavel por codigo — e a tela abre normal para quem
    chegou nela de proposito. */
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon; visivel?: boolean }[] = [
-  // Estas tres ja vivem na barra de baixo; repetir aqui era ocupar tela a toa.
-  { id: "inicio", label: "Início", icon: Home },
-  { id: "vendas", label: "Vendas", icon: ShoppingCart },
-  { id: "dashboard", label: "Dashboard", icon: ChartPie },
+  { id: "inicio", label: "Início", icon: Home, visivel: true },
+  { id: "vendas", label: "Pedidos", icon: ShoppingCart, visivel: true },
+  { id: "dashboard", label: "Dashboard", icon: ChartPie, visivel: true },
 
   { id: "calendario", label: "Agenda", icon: CalendarDays, visivel: true },
   { id: "followup", label: "Follow-up", icon: ShoppingCart, visivel: true },
@@ -396,7 +395,7 @@ export default function AdminClient({
   return (
     <ConfirmProvider>
       <Toaster position="bottom-right" richColors />
-      <div className="min-h-screen bg-[var(--admin-bg)] text-foreground">
+      <div data-flua-painel className="min-h-screen bg-[var(--admin-bg)] text-foreground">
         {/* Faixa do teste. Fica ACIMA do header sticky de propósito: ela some
             quando a pessoa rola, em vez de ocupar altura fixa para sempre —
             no celular o cabeçalho já come tela demais. */}

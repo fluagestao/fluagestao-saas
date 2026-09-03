@@ -279,7 +279,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
             type="button"
             variant="outline"
             onClick={() => setAjustesAberto(true)}
-            className="h-10 rounded-full"
+            className="hidden h-10 rounded-full lg:inline-flex"
           >
             <Settings2 className="mr-2 h-4 w-4" />
             Ajustes
@@ -488,7 +488,7 @@ export function FollowupPanel({ empresaNome }: { empresaNome: string }) {
                 setPedidoSelecionado(null);
                 setAjustesAberto(true);
               }}
-              className="w-full rounded-full sm:w-auto"
+              className="hidden w-full rounded-full sm:inline-flex sm:w-auto"
             >
               <Settings2 className="mr-2 h-4 w-4" />
               Editar mensagem

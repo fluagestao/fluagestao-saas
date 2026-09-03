@@ -472,11 +472,18 @@ export function EstoquePanel() {
         descricao="Cada entrada, baixa e contagem vira uma linha no histórico. O saldo é a soma delas — sempre dá para ver de onde veio."
         acoes={
           <>
-            <Button variant="outline" onClick={abrirControle} className="h-11">
+            <Button
+              variant="outline"
+              onClick={abrirControle}
+              className="hidden h-11 lg:inline-flex"
+            >
               <SlidersHorizontal className="mr-1.5 h-4 w-4" />
               Escolher insumos
             </Button>
-            <Button onClick={() => abrirMovimento("entrada")} className="h-11">
+            <Button
+              onClick={() => abrirMovimento("entrada")}
+              className="hidden h-11 lg:inline-flex"
+            >
               <Boxes className="mr-1.5 h-4 w-4" />
               Registrar movimento
             </Button>

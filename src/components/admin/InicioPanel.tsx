@@ -123,7 +123,7 @@ function CabecalhoCard({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-12 shrink-0 items-center justify-between gap-3 border-b border-[var(--admin-border)] px-4">
+    <div className="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border)] px-4 py-2">
       <h3 className="t-title text-[var(--admin-ink)]">{titulo}</h3>
       {children}
       {acao && onClick && (

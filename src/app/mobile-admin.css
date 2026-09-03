@@ -1,4 +1,10 @@
-/* Experiência principal do Flua no celular: Início, Pedidos e Dashboard. */
+/* Estilos de celular do painel.
+
+   Ancorados em [data-flua-painel], que é o shell — e não mais na presença da
+   barra de navegação. Enquanto dependiam da barra, a folha inteira caía em
+   qualquer rota que faltasse na lista dela: aconteceu com /margem, /estoque,
+   /custo/* e /followup, e agora que a barra deixou de existir teria levado
+   tudo junto. */
 .mobile-admin-nav {
   display: none;
 }
@@ -64,9 +70,10 @@
     transform: scale(.97);
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > main {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > main {
     padding-top: 16px !important;
-    padding-bottom: calc(102px + env(safe-area-inset-bottom)) !important;
+    /* Sem a barra flutuante sobra so o respiro do rodape e a area segura. */
+    padding-bottom: calc(24px + env(safe-area-inset-bottom)) !important;
     width: 100% !important;
     max-width: 100% !important;
     overflow-x: hidden !important;
@@ -81,7 +88,7 @@
      excedente era pintado por cima do próximo item flex: os botões de ação.
      Quebrava em toda tela de descrição longa e poupava Clientes, de uma linha
      só — que é exatamente o padrão dos prints. */
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
     position: relative;
     height: 64px !important;
     justify-content: flex-end;
@@ -89,7 +96,7 @@
     padding-right: 14px !important;
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :first-child {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :first-child {
     position: absolute;
     z-index: 2;
     left: 50%;
@@ -98,32 +105,32 @@
     margin: 0 !important;
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child {
     position: relative;
     z-index: 3;
     margin-left: auto !important;
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :first-child img {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :first-child img {
     width: 106px !important;
     max-height: 38px;
     object-position: center !important;
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child button {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child button {
     min-width: 44px;
     min-height: 44px;
     justify-content: center;
     padding: 4px !important;
   }
 
-  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child button > span:first-child {
+  body:has([data-flua-painel]) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child button > span:first-child {
     width: 40px !important;
     height: 40px !important;
   }
 
   /* Cabeçalho das páginas: título, descrição e ações sempre empilhados. */
-  body:has(.mobile-admin-nav) main > section > header {
+  body:has([data-flua-painel]) main > section > header {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
@@ -133,22 +140,22 @@
     position: static !important;
   }
 
-  body:has(.mobile-admin-nav) main > section > header > div:first-child {
+  body:has([data-flua-painel]) main > section > header > div:first-child {
     width: 100% !important;
     flex: none !important;
   }
 
-  body:has(.mobile-admin-nav) main > section > header h2 {
+  body:has([data-flua-painel]) main > section > header h2 {
     font-size: 1.35rem;
     line-height: 1.2;
   }
 
-  body:has(.mobile-admin-nav) main > section > header p {
+  body:has([data-flua-painel]) main > section > header p {
     max-width: 100%;
     line-height: 1.45;
   }
 
-  body:has(.mobile-admin-nav) main > section > header > div[class*="flex-wrap"] {
+  body:has([data-flua-painel]) main > section > header > div[class*="flex-wrap"] {
     width: 100% !important;
     margin: 0 !important;
   }
@@ -205,24 +212,24 @@
   }
 
   /* Dashboard: primeiro KPI vira destaque e os dois seguintes ficam lado a lado. */
-  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] > div:first-child {
+  body:has([data-flua-painel]) main > section > div[class~="grid-cols-2"][class~="gap-3"] > div:first-child {
     grid-column: 1 / -1;
   }
 
-  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] > div {
+  body:has([data-flua-painel]) main > section > div[class~="grid-cols-2"][class~="gap-3"] > div {
     padding: 14px !important;
   }
 
-  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] p[class*="text-2xl"] {
+  body:has([data-flua-painel]) main > section > div[class~="grid-cols-2"][class~="gap-3"] p[class*="text-2xl"] {
     font-size: 1.45rem !important;
   }
 
-  body:has(.mobile-admin-nav) input[type="month"] {
+  body:has([data-flua-painel]) input[type="month"] {
     width: 100% !important;
     max-width: 100% !important;
   }
 
-  body:has(.mobile-admin-nav) input[placeholder="Buscar por nome ou WhatsApp"] {
+  body:has([data-flua-painel]) input[placeholder="Buscar por nome ou WhatsApp"] {
     order: -1;
     flex: 0 0 100%;
     width: 100% !important;
@@ -230,36 +237,36 @@
     margin-left: 0 !important;
   }
 
-  body:has(.mobile-admin-nav) main button:has(> svg.lucide-plus) {
+  body:has([data-flua-painel]) main button:has(> svg.lucide-plus) {
     width: 100%;
     min-height: 44px;
     justify-content: center;
     margin-left: 0 !important;
   }
 
-  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] {
+  body:has([data-flua-painel]) main article[class*="rounded-2xl"] {
     max-width: 100%;
     overflow: hidden;
   }
 
-  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] > div:first-child {
+  body:has([data-flua-painel]) main article[class*="rounded-2xl"] > div:first-child {
     gap: 8px;
   }
 
-  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] p[class*="truncate"] {
+  body:has([data-flua-painel]) main article[class*="rounded-2xl"] p[class*="truncate"] {
     white-space: normal !important;
     overflow: visible !important;
     text-overflow: clip !important;
   }
 
-  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] > div[class*="border-t"] button,
-  body:has(.mobile-admin-nav) main article[class*="rounded-2xl"] > div[class*="border-t"] a {
+  body:has([data-flua-painel]) main article[class*="rounded-2xl"] > div[class*="border-t"] button,
+  body:has([data-flua-painel]) main article[class*="rounded-2xl"] > div[class*="border-t"] a {
     min-height: 38px;
   }
 
   /* Submenus horizontais rolam dentro do próprio eixo, sem alargar a página. */
-  body:has(.mobile-admin-nav) header nav,
-  body:has(.mobile-admin-nav) main nav {
+  body:has([data-flua-painel]) header nav,
+  body:has([data-flua-painel]) main nav {
     max-width: 100vw;
     overflow-x: auto;
     overscroll-behavior-inline: contain;
@@ -278,7 +285,7 @@
     min-height: 52px;
   }
 
-  body:has(.mobile-admin-nav) main > section > div[class~="grid-cols-2"][class~="gap-3"] {
+  body:has([data-flua-painel]) main > section > div[class~="grid-cols-2"][class~="gap-3"] {
     gap: 10px !important;
   }
 
