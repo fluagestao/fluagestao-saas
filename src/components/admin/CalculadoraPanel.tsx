@@ -19,6 +19,19 @@ import {
   carregarMargemProdutos,
   type MargemProduto,
 } from "@/lib/custo";
+import {
+  atualizarTempoMontagem,
+  carregarCalculoConfig,
+  type SugestaoFixo,
+} from "@/lib/calculo";
+import {
+  CONFIG_VAZIA,
+  calcular,
+  precoParaMargem,
+  type CalculoConfig,
+} from "@/lib/calculo-tipos";
+import { AjustesCalculo } from "./AjustesCalculo";
+import { CascataCusto } from "./CascataCusto";
 import { mensagemDeErro } from "@/lib/erros";
 import { listarInsumos, type InsumoRow } from "@/lib/insumos";
 import { hojeISO, intervaloAno } from "@/lib/prazo";
@@ -62,6 +75,18 @@ export function CalculadoraPanel() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [editando, setEditando] = useState<MargemProduto | null>(null);
+  const [config, setConfig] = useState<CalculoConfig>(CONFIG_VAZIA);
+  const [sugestao, setSugestao] = useState<SugestaoFixo | null>(null);
+
+  const recarregarConfig = useCallback(async () => {
+    try {
+      const r = await carregarCalculoConfig();
+      setConfig(r.config);
+      setSugestao(r.sugestao);
+    } catch {
+      // Sem config a tela funciona igual: cai no cálculo só de insumos.
+    }
+  }, []);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -88,6 +113,10 @@ export function CalculadoraPanel() {
       .catch(() => setInsumos([]));
   }, []);
 
+  useEffect(() => {
+    recarregarConfig();
+  }, [recarregarConfig]);
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
     return produtos.filter((p) => {
@@ -106,6 +135,11 @@ export function CalculadoraPanel() {
       <PageHeader
         titulo="Calculadora"
         descricao="Monte o custo de cada produto e descubra por quanto precisa vender. É aqui que os insumos de cada produto são lançados."
+        acoes={
+          sugestao && (
+            <AjustesCalculo config={config} sugestao={sugestao} onSalvo={recarregarConfig} />
+          )
+        }
       />
 
       {erro && (
@@ -225,6 +259,7 @@ export function CalculadoraPanel() {
         <DialogoCalculo
           produto={editando}
           insumos={insumos}
+          config={config}
           onFechar={() => {
             setEditando(null);
             recarregar();
@@ -238,10 +273,12 @@ export function CalculadoraPanel() {
 function DialogoCalculo({
   produto,
   insumos,
+  config,
   onFechar,
 }: {
   produto: MargemProduto;
   insumos: InsumoRow[];
+  config: CalculoConfig;
   onFechar: () => void;
 }) {
   // O editor salva sozinho e devolve o custo a cada mudança: a conta abaixo
@@ -251,6 +288,9 @@ function DialogoCalculo({
     produto.preco == null ? "" : produto.preco.toFixed(2).replace(".", ","),
   );
   const [margemAlvo, setMargemAlvo] = useState("60");
+  const [tempo, setTempo] = useState(
+    produto.tempo_montagem_min == null ? "" : String(produto.tempo_montagem_min),
+  );
   const [salvando, setSalvando] = useState(false);
 
   const receberCusto = useCallback(
@@ -262,13 +302,13 @@ function DialogoCalculo({
 
   const precoNumero = paraNumero(preco);
   const temPreco = Number.isFinite(precoNumero) && precoNumero > 0;
-  const margem = temPreco && custo > 0 ? (precoNumero - custo) / precoNumero : null;
+  const tempoMin = Number.isFinite(paraNumero(tempo)) ? paraNumero(tempo) : null;
+
+  const cascata = calcular(temPreco ? precoNumero : null, custo, tempoMin, config);
 
   const alvo = paraNumero(margemAlvo);
   const temAlvo = Number.isFinite(alvo) && alvo >= 0 && alvo < 100;
-  // Preço para atingir a margem: custo / (1 - margem). Margem é sobre a venda,
-  // não sobre o custo — é assim que se lê "70% de margem" no comércio.
-  const precoSugerido = temAlvo && custo > 0 ? custo / (1 - alvo / 100) : null;
+  const precoSugerido = temAlvo ? precoParaMargem(custo, tempoMin, alvo / 100, config) : null;
 
   async function usarPreco(valor: number) {
     setSalvando(true);
@@ -283,6 +323,24 @@ function DialogoCalculo({
     }
   }
 
+  async function salvarTempo() {
+    const minutos = paraNumero(tempo);
+    const valor = tempo.trim() === "" ? null : Math.round(minutos);
+    if (valor != null && (!Number.isFinite(minutos) || minutos < 0)) {
+      toast.error("Informe o tempo em minutos.");
+      return;
+    }
+    setSalvando(true);
+    try {
+      await atualizarTempoMontagem({ data: { id: produto.id, minutos: valor } });
+      toast.success("Tempo de montagem salvo.");
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "salvar o tempo"));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   async function salvarPrecoDigitado() {
     if (!temPreco) return;
     await usarPreco(precoNumero);
@@ -290,14 +348,15 @@ function DialogoCalculo({
 
   return (
     <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader className="pr-6 text-left">
+      <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-3xl">
+        <DialogHeader className="shrink-0 pr-6 text-left">
           <DialogTitle>{produto.nome}</DialogTitle>
           <DialogDescription>
             Lance os insumos e as quantidades. O custo soma sozinho e a margem acompanha.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 py-2">
         <ProdutoInsumosEditor
           produtoId={produto.id}
           insumos={insumos}
@@ -305,12 +364,7 @@ function DialogoCalculo({
           onChange={receberCusto}
         />
 
-        <div className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-4 sm:grid-cols-3">
-          <div>
-            <p className="t-support text-muted-foreground">Custo dos insumos</p>
-            <p className="t-hero tabular-nums text-[var(--terracotta)]">{moeda(custo)}</p>
-          </div>
-
+        <div className="grid gap-3 sm:grid-cols-3">
           <label className="space-y-1.5 text-sm font-medium">
             Preço de venda (R$)
             <div className="flex gap-1.5">
@@ -319,7 +373,7 @@ function DialogoCalculo({
                 onChange={(e) => setPreco(e.target.value)}
                 inputMode="decimal"
                 placeholder="0,00"
-                className="h-11 bg-white"
+                className="h-11"
               />
               <Button
                 variant="outline"
@@ -333,18 +387,40 @@ function DialogoCalculo({
             </div>
           </label>
 
-          <div>
-            <p className="t-support text-muted-foreground">Sobra</p>
-            <p className={cn("t-hero tabular-nums", corDaMargem(margem))}>
-              {margem == null ? "—" : `${Math.round(margem * 100)}%`}
-            </p>
-            {margem != null && temPreco && (
-              <p className="t-support text-muted-foreground">
-                {moeda(precoNumero - custo)} por unidade
-              </p>
-            )}
+          <label className="space-y-1.5 text-sm font-medium">
+            Tempo de montagem
+            <div className="flex gap-1.5">
+              <Input
+                value={tempo}
+                onChange={(e) => setTempo(e.target.value)}
+                inputMode="numeric"
+                placeholder="40"
+                className="h-11"
+              />
+              <span className="flex h-11 shrink-0 items-center text-sm text-muted-foreground">
+                min
+              </span>
+              <Button
+                variant="outline"
+                onClick={salvarTempo}
+                disabled={salvando}
+                className="h-11 shrink-0"
+                title="Salvar o tempo no produto"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            </div>
+          </label>
+
+          <div className="flex items-end">
+            <div className="w-full rounded-xl bg-[var(--cream-soft)] px-3.5 py-2.5">
+              <p className="t-support text-muted-foreground">Insumos</p>
+              <p className="t-item tabular-nums text-[var(--terracotta)]">{moeda(custo)}</p>
+            </div>
           </div>
         </div>
+
+        <CascataCusto cascata={cascata} />
 
         {/* O caminho inverso: a margem é o piso, o preço é a consequência. */}
         <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4">
@@ -363,7 +439,9 @@ function DialogoCalculo({
           </label>
 
           <div className="min-w-0 flex-1">
-            <p className="t-support text-muted-foreground">Preço sugerido</p>
+            <p className="t-support text-muted-foreground">
+              Preço sugerido{config.incluir_no_calculo ? " (já com montagem e fixos)" : ""}
+            </p>
             <p className="t-item tabular-nums text-[var(--wine)]">
               {precoSugerido == null ? "—" : moeda(precoSugerido)}
             </p>
@@ -378,8 +456,9 @@ function DialogoCalculo({
             Usar este preço
           </Button>
         </div>
+        </div>
 
-        <DialogFooter className="pt-1">
+        <DialogFooter className="shrink-0 border-t border-[var(--admin-border)] pt-3">
           <Button onClick={onFechar}>Pronto</Button>
         </DialogFooter>
       </DialogContent>

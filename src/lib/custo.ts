@@ -17,6 +17,8 @@ export type MargemProduto = {
   preco: number | null;
   /** Soma dos insumos da composição. null = produto sem composição cadastrada. */
   custo: number | null;
+  /** Minutos de montagem; entra na conta como mão de obra. */
+  tempo_montagem_min: number | null;
   qtd: number;
   receita: number;
   custoTotal: number | null;
@@ -57,7 +59,7 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
         .limit(5000),
       supabase
         .from("produtos")
-        .select("id, slug, nome, preco, categoria_id")
+        .select("id, slug, nome, preco, categoria_id, tempo_montagem_min")
         .eq("company_id", companyId)
         .limit(1000),
       supabase
@@ -117,6 +119,8 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
       colecao: categoria?.catalogo_id ? (catalogos.get(categoria.catalogo_id) ?? null) : null,
       preco: p.preco == null ? null : Number(p.preco),
       custo: custoProduto.has(p.id as string) ? custoProduto.get(p.id as string)! : null,
+      tempo_montagem_min:
+        p.tempo_montagem_min == null ? null : Number(p.tempo_montagem_min),
       qtd: 0,
       receita: 0,
       custoTotal: null,
