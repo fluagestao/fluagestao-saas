@@ -280,7 +280,7 @@ function Ranking({ itens }: { itens: VendaAgrupada[] }) {
   const topo = itens[0]?.qtd || 1;
   return (
     <ul className="mt-3 space-y-2">
-      {itens.slice(0, 12).map((i, idx) => (
+      {itens.map((i, idx) => (
         <li key={i.chave} className="flex items-center gap-2 text-sm">
           <span className="w-5 shrink-0 text-xs tabular-nums text-[var(--bronze)]">{idx + 1}º</span>
           <span className="min-w-0 flex-1 truncate text-foreground">{i.nome}</span>
@@ -339,7 +339,7 @@ export function DashboardPanel() {
   const lista = aba === "produtos" ? (dados?.produtos ?? []) : (dados?.adicionais ?? []);
 
   return (
-    <section data-tela-cheia>
+    <section>
       <PageHeader
         titulo="Dashboard"
         descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta pelo dia em que o pedido entrou, e ignora os cancelados."
@@ -447,9 +447,10 @@ export function DashboardPanel() {
       )}
 
       {!carregando && dados && dados.totalPedidos > 0 && (
-        // Nada aqui rola: quem rola e a lista dentro do card de Mais vendidos.
-        // Rolar o miolo inteiro cortava o card de KPI na metade.
-        <div className="flex min-h-0 flex-1 flex-col">
+        // Rola a pagina inteira, nao o miolo. Com o ranking preso a uma altura
+        // fixa, os ultimos colocados ficavam escondidos atras de uma barra de
+        // rolagem interna que ninguem via.
+        <div className="flex flex-col">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Cartao
               titulo={modo === "ano" ? "Vendido no ano" : "Vendido no mês"}
@@ -543,7 +544,7 @@ export function DashboardPanel() {
             />
           </div>
 
-          <div className="mt-3 flex min-h-0 flex-1 flex-col rounded-2xl bg-card p-4 shadow-[var(--shadow-card)] lg:min-h-[232px]">
+          <div className="mt-3 flex flex-col rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
             <div className="flex shrink-0 flex-wrap items-center gap-2">
               <h3 className="text-lg font-semibold text-foreground">Mais vendidos</h3>
               <div className="ml-auto flex gap-1 rounded-full border border-[var(--cream-deep)] p-0.5">
@@ -569,9 +570,7 @@ export function DashboardPanel() {
                 ))}
               </div>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-              <Ranking itens={lista} />
-            </div>
+            <Ranking itens={lista} />
 
             {/* Taxa de anexo: o numero que diz se vale empurrar adicional.
                 Fica sob a aba de Adicionais porque so faz sentido junto dela. */}
