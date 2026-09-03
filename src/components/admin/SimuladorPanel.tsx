@@ -318,9 +318,37 @@ function DialogoSimulacao({
 
   const alvo = paraNumero(margemAlvo);
   const temAlvo = Number.isFinite(alvo) && alvo >= 0 && alvo < 100;
-  const precoSugerido = temAlvo
-    ? precoParaMargem(custoTotal, tempoMin, alvo / 100, config)
-    : null;
+  /* Preco e margem sao duas leituras do MESMO ponto: dado o custo, escolher um
+     determina o outro. Por isso cada campo escreve no outro, e nunca em si
+     mesmo — reformatar o campo em foco a cada tecla comeria a virgula, que e o
+     defeito que fez 1,5 virar 15 no campo Minimo.
+
+     A margem aqui e a LIQUIDA: e a que o precoParaMargem resolve
+     (preco x (1 - percentuais - margem) = insumos + mao de obra), e a mesma
+     que a cascata mostra como "sobra real". */
+  function escreverPreco(texto: string) {
+    setPreco(texto);
+
+    const n = paraNumero(texto);
+    if (!Number.isFinite(n) || n <= 0) return;
+
+    const nova = calcular(n, custoTotal, tempoMin, config).margemReal;
+    // Margem negativa existe (preco abaixo do custo) e a cascata ja mostra o
+    // prejuizo; no campo, um alvo negativo nao teria preco correspondente.
+    if (nova == null || nova < 0) return;
+    setMargemAlvo((nova * 100).toFixed(1).replace(".", ",").replace(",0", ""));
+  }
+
+  function escreverMargem(texto: string) {
+    setMargemAlvo(texto);
+
+    const n = paraNumero(texto);
+    if (!Number.isFinite(n) || n < 0 || n >= 100) return;
+
+    const novo = precoParaMargem(custoTotal, tempoMin, n / 100, config);
+    if (novo == null) return;
+    setPreco(novo.toFixed(2).replace(".", ","));
+  }
 
   const avulsos = linhas.filter((l) => !l.insumoId && l.descricao.trim());
 
@@ -619,7 +647,7 @@ function DialogoSimulacao({
             Preço de venda (R$)
             <Input
               value={preco}
-              onChange={(e) => setPreco(e.target.value)}
+              onChange={(e) => escreverPreco(e.target.value)}
               inputMode="decimal"
               placeholder="0,00"
               className="h-11"
@@ -659,7 +687,7 @@ function DialogoSimulacao({
             <div className="flex items-center gap-1.5">
               <Input
                 value={margemAlvo}
-                onChange={(e) => setMargemAlvo(e.target.value)}
+                onChange={(e) => escreverMargem(e.target.value)}
                 inputMode="decimal"
                 className="h-10 w-20 text-center"
               />
@@ -667,23 +695,10 @@ function DialogoSimulacao({
             </div>
           </label>
 
-          <div className="min-w-0 flex-1">
-            <p className="t-support text-muted-foreground">
-              Preço sugerido{config.incluir_no_calculo ? " (já com montagem e fixos)" : ""}
-            </p>
-            <p className="t-item tabular-nums text-[var(--wine)]">
-              {precoSugerido == null ? "—" : moeda(precoSugerido)}
-            </p>
-          </div>
-
-          <Button
-            variant="outline"
-            disabled={precoSugerido == null}
-            onClick={() => precoSugerido != null && setPreco(precoSugerido.toFixed(2).replace(".", ","))}
-            className="h-10"
-          >
-            Usar este preço
-          </Button>
+          <p className="t-support min-w-0 flex-1 text-muted-foreground">
+            Os dois campos andam juntos: mude o preço e a margem acompanha, mude a margem e o preço
+            se ajusta{config.incluir_no_calculo ? " — já com montagem e fixos" : ""}.
+          </p>
         </div>
 
         {/* Virar produto exige que todo item já seja insumo. */}
