@@ -32,7 +32,6 @@ export function MarketingHeader() {
           <Link href="/nosso-saas" aria-current={pathname === "/nosso-saas" ? "page" : undefined}>NOSSO SAAS</Link>
           <Link href="/a-flua" aria-current={pathname === "/a-flua" ? "page" : undefined}>A FLUA</Link>
           <Link href="/#contato">CONTATO</Link>
-          <Link href="/catalogo">MINHA LOJA</Link>
           <Link href="/#documentos">DOCUMENTOS</Link>
           <Link href="/como-funciona" aria-current={pathname === "/como-funciona" ? "page" : undefined}>COMO FUNCIONA</Link>
         </nav>

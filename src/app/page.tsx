@@ -421,7 +421,6 @@ export default function HomePage() {
               <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
               <a href="#para-quem">A FLUA</a>
               <a href="#contato">CONTATO</a>
-              <Link href="/catalogo">MINHA LOJA</Link>
               <a href="#documentos">DOCUMENTOS</a>
               <Link href="/login">PORTAL</Link>
             </nav>
@@ -851,7 +850,7 @@ export default function HomePage() {
                 <Link href="/funcionalidades/controle-de-vendas">
                   Nosso SaaS
                 </Link>
-                <Link href="/catalogo">Minha Loja</Link>
+                
                 <Link href="/cadastro">Teste grátis</Link>
                 <Link href="/login">Portal</Link>
               </div>

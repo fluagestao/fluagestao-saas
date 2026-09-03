@@ -132,17 +132,6 @@ export async function carregarNotificacoes() {
     destino: "/vendas/pedidos",
   });
 
-  const doSite = pedidos.filter((p) => p.origem === "site" && p.status === "novo").length;
-  juntar({
-    tipo: "pedido_site",
-    familia: "operacao",
-    titulo: `${doSite} pedido(s) do site esperando`,
-    detalhe: "Chegaram sozinhos e ainda não foram confirmados.",
-    quantidade: doSite,
-    urgente: false,
-    destino: "/vendas/pedidos",
-  });
-
   // ---------- dinheiro ----------
   const vencendo = contas.filter((c) => (c.vencimento as string) <= hoje);
   const totalVencendo = vencendo.reduce((t, c) => t + Number(c.valor ?? 0), 0);

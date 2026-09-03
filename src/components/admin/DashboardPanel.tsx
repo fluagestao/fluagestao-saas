@@ -160,7 +160,7 @@ function EvolucaoAno({
                   <Cell
                     key={m.mes}
                     fill={mesAtivo === m.mes ? "var(--terracotta)" : "var(--cream-deep)"}
-                    style={{ cursor: "pointer", outline: "none" }}
+                    style={{ outline: "none" }}
                   />
                 ))}
               </Bar>
@@ -206,17 +206,13 @@ function Pizza({
                   innerRadius={30}
                   outerRadius={58}
                   paddingAngle={2}
-                  onClick={(d: { payload?: VendaAgrupada }) => {
-                    const chave = d?.payload?.chave ?? null;
-                    onSelecionar(selecionado === chave ? null : chave);
-                  }}
                 >
                   {dados.map((d, i) => (
                     <Cell
                       key={d.chave}
                       fill={CORES[i % CORES.length]}
                       opacity={selecionado && selecionado !== d.chave ? 0.35 : 1}
-                      style={{ cursor: "pointer", outline: "none" }}
+                      style={{ outline: "none" }}
                     />
                   ))}
                 </Pie>
@@ -239,14 +235,7 @@ function Pizza({
           <ul className="min-w-0 space-y-1 overflow-y-auto pr-1 sm:max-h-32 sm:flex-1">
             {dados.map((d, i) => (
               <li key={d.chave}>
-                <button
-                  type="button"
-                  onClick={() => onSelecionar(selecionado === d.chave ? null : d.chave)}
-                  className={cn(
-                    "flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-[var(--cream-soft)] sm:flex-nowrap sm:py-1",
-                    selecionado === d.chave && "bg-[var(--cream-deep)]",
-                  )}
-                >
+                <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 px-2 py-1.5 text-left text-sm sm:flex-nowrap sm:py-1">
                   <span
                     className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: CORES[i % CORES.length] }}
@@ -265,7 +254,7 @@ function Pizza({
                       {total > 0 ? `${Math.round((d.valor / total) * 100)}%` : ""}
                     </span>
                   </span>
-                </button>
+                </div>
               </li>
             ))}
           </ul>

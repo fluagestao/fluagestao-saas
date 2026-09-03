@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { mensagemDeErro } from "@/lib/erros";
-import { carregarUsuarios, criarUsuario, removerUsuario, trocarSenhaUsuario } from "@/lib/usuarios";
+import { carregarUsuarios, criarUsuario, removerUsuario } from "@/lib/usuarios";
 import type { Usuario } from "@/lib/usuarios-ops.server";
 import { Carregando, PageHeader, TabelaEnvelope, useConfirmar } from "./shell";
 
@@ -69,22 +69,6 @@ export function UsuariosView() {
     setSalvando(false);
   }
 
-  async function novaSenha(u: Usuario) {
-    const senha = senhaSugerida();
-    const ok = await confirmar({
-      titulo: `Trocar a senha de ${u.nome ?? u.email}?`,
-      descricao: `A senha nova será "${senha}". A atual para de funcionar na hora.`,
-      confirmar: "Trocar senha",
-    });
-    if (!ok) return;
-    try {
-      await trocarSenhaUsuario({ data: { email: u.email, senha } });
-      toast.success(`Senha trocada para "${senha}".`, { duration: 12000 });
-    } catch (e) {
-      toast.error(mensagemDeErro(e, "trocar a senha"));
-    }
-  }
-
   async function remover(u: Usuario) {
     const ok = await confirmar({
       titulo: `Tirar o acesso de ${u.nome ?? u.email}?`,
@@ -123,7 +107,6 @@ export function UsuariosView() {
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead>Pessoa</TableHead>
-                  <TableHead className="hidden sm:table-cell">Último acesso</TableHead>
                   <TableHead className="w-[6rem]" />
                 </TableRow>
               </TableHeader>
@@ -144,23 +127,8 @@ export function UsuariosView() {
                       )}
                       <span className="block text-xs text-muted-foreground">{u.email}</span>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <span className="text-sm text-muted-foreground">
-                        {u.ultimoAcesso
-                          ? new Date(u.ultimoAcesso).toLocaleDateString("pt-BR")
-                          : "nunca entrou"}
-                      </span>
-                    </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
-                        <button
-                          type="button"
-                          title="Gerar nova senha"
-                          onClick={() => novaSenha(u)}
-                          className="rounded-full p-1.5 text-foreground/40 hover:text-[var(--terracotta)]"
-                        >
-                          <KeyRound className="h-4 w-4" />
-                        </button>
                         {u.email.toLowerCase() !== eu.toLowerCase() && (
                           <button
                             type="button"

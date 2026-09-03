@@ -662,15 +662,6 @@ export function ContaPageClient({
                   <ImportacaoConfig />
                   <AvisosConfig />
                   <div className="rounded-2xl border border-[var(--admin-border)] bg-white p-5 sm:p-6 xl:col-span-2">
-                    <label>
-                      <span className="mb-1.5 block text-xs font-semibold text-[var(--admin-ink-soft)]">Fuso horário da empresa</span>
-                      <select value={timezone} onChange={(e) => setTimezone(e.target.value)} className="h-11 w-full rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm outline-none focus:border-[var(--terracotta)]">
-                        <option value="America/Sao_Paulo">Brasília — America/Sao_Paulo</option>
-                        <option value="America/Manaus">Manaus — America/Manaus</option>
-                        <option value="America/Cuiaba">Cuiabá — America/Cuiaba</option>
-                        <option value="America/Rio_Branco">Rio Branco — America/Rio_Branco</option>
-                      </select>
-                    </label>
 
                     <div className="mt-6 flex justify-end">
                       <button type="button" onClick={salvarConfiguracoes} disabled={salvando} className="inline-flex h-11 items-center gap-2 rounded-xl bg-[var(--terracotta)] px-5 text-sm font-semibold text-white transition hover:bg-[var(--wine)] disabled:opacity-60">

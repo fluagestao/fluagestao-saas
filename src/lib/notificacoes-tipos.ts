@@ -13,7 +13,6 @@ export const DIAS_DATA_ESPECIAL = 10;
 export type TipoAviso =
   | "entregas_hoje"
   | "entrega_atrasada"
-  | "pedido_site"
   | "boleto"
   | "cobranca"
   | "caixa_negativo"
@@ -41,7 +40,6 @@ export const CATALOGO_AVISOS: {
 }[] = [
   { tipo: "entregas_hoje", familia: "operacao", rotulo: "Entregas de hoje", ajuda: "Quantos pedidos precisam sair hoje." },
   { tipo: "entrega_atrasada", familia: "operacao", rotulo: "Entrega atrasada", ajuda: "A data passou e o pedido não saiu." },
-  { tipo: "pedido_site", familia: "operacao", rotulo: "Pedido do site esperando", ajuda: "Chegou sozinho e ainda não foi confirmado." },
   { tipo: "boleto", familia: "dinheiro", rotulo: "Boleto vencendo", ajuda: "Contas a pagar que vencem hoje ou já venceram." },
   { tipo: "cobranca", familia: "dinheiro", rotulo: "Cobrança", ajuda: `Entregue e sem pagamento há mais de ${DIAS_PARA_COBRAR} dias.` },
   { tipo: "caixa_negativo", familia: "dinheiro", rotulo: "Caixa no vermelho", ajuda: "A projeção mostra o caixa negativo em algum dia à frente." },
