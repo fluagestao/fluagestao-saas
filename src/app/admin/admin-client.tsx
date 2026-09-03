@@ -39,7 +39,6 @@ import { CustoPanel } from "@/components/admin/CustoPanel";
 import { SimuladorPanel } from "@/components/admin/SimuladorPanel";
 import { EstoquePanel } from "@/components/admin/EstoquePanel";
 import { SinoNotificacoes } from "@/components/admin/SinoNotificacoes";
-import { PrevisaoCaixaPanel } from "@/components/admin/PrevisaoCaixaPanel";
 import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
 import { EtiquetasPanel } from "@/components/admin/EtiquetasPanel";
@@ -88,7 +87,7 @@ export type AbaId =
   | "insumos"
   | "horarios";
 
-export type SubFinanceiro = "entradas" | "saidas" | "apagar" | "previsao";
+export type SubFinanceiro = "entradas" | "saidas" | "apagar";
 export type SubVendas = "pedidos" | "areceber" | "realizadas" | "followup";
 export type SubCadastros =
   | "clientes"
@@ -100,7 +99,6 @@ const SUB_FINANCEIRO: { id: SubFinanceiro; label: string }[] = [
   { id: "entradas", label: "Recebimentos" },
   { id: "saidas", label: "Pagamentos" },
   { id: "apagar", label: "A pagar" },
-  { id: "previsao", label: "Previsão de caixa" },
 ];
 
 const SUB_VENDAS: { id: SubVendas; label: string }[] = [
@@ -601,8 +599,6 @@ export default function AdminClient({
           ) : aba === "financeiro" ? (
             subFin === "apagar" ? (
               <ContasAPagarPanel />
-            ) : subFin === "previsao" ? (
-              <PrevisaoCaixaPanel />
             ) : (
               <FinanceiroPanel vista={subFin} />
             )

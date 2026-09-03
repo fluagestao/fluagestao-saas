@@ -200,7 +200,7 @@ export async function carregarNotificacoes() {
     detalhe: `Somando o que entra e o que sai, sobra R$ ${projetado.toFixed(2).replace(".", ",")}.`,
     quantidade: projetado < 0 ? 1 : 0,
     urgente: true,
-    destino: "/financeiro/previsao",
+    destino: "/financeiro/a-pagar",
   });
 
   // ---------- relacionamento ----------

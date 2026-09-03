@@ -155,7 +155,6 @@ const nextConfig: NextConfig = {
       { source: "/financeiro/entradas", destination: "/admin" },
       { source: "/financeiro/saidas", destination: "/admin" },
       { source: "/financeiro/a-pagar", destination: "/admin" },
-      { source: "/financeiro/previsao", destination: "/admin" },
 
       { source: "/cadastros/produtos", destination: "/admin" },
       { source: "/cadastros/colecoes", destination: "/admin" },
