@@ -404,10 +404,18 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
   );
 }
 
-/** Por quanto o preço multiplica o custo. Null sem custo: ∞ não é informação. */
+/**
+ * Quanto se acrescenta ao custo, em porcentagem: 2,2x de preco sobre custo e
+ * +120% em cima dele.
+ *
+ * Vai com o sinal de mais de proposito. Sem ele, "120%" na mesma linha de uma
+ * margem de "65%" parece a mesma unidade e nao e — margem mede sobre o preco,
+ * markup mede sobre o custo. Null sem custo: dividir por zero daria infinito.
+ */
 function markup(receita: number, custo: number): string | null {
   if (!custo || custo <= 0 || !receita) return null;
-  return `${(receita / custo).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}×`;
+  const pct = (receita / custo - 1) * 100;
+  return `+${pct.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}%`;
 }
 
 function Cartao({
