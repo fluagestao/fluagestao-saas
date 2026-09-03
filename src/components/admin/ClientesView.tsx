@@ -29,7 +29,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -457,18 +456,18 @@ function PainelCliente({
   const marca = selo(c.pedidos);
 
   return (
-    <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent
-        /* onOpenAutoFocus e a causa raiz: sem isto o Radix foca o botao do
-           WhatsApp, que fica abaixo da dobra, e o navegador rola o painel ate
-           ele — levando o nome do cliente para fora da tela. */
+    /* Cartao centralizado, e nao mais painel lateral. O Sheet nasce com
+       inset-y-0 e z-50: o cabecalho do painel tem z-index igual ou maior e
+       pintava por cima dos primeiros pixels, escondendo justamente o nome do
+       cliente. Centralizado com max-height, o cartao nunca encosta no topo. */
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        // Sem isto o Radix foca o botao do WhatsApp e rola o miolo ao abrir.
         onOpenAutoFocus={(evento) => evento.preventDefault()}
-        /* overflow-y-hidden, e nao overflow-hidden: o twMerge so substitui
-           dentro do mesmo grupo, e a base do Sheet traz overflow-y-auto. */
-        className="flex flex-col gap-0 overflow-y-hidden p-0"
+        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
-        <SheetHeader className="shrink-0 border-b border-[var(--cream-deep)] px-5 pb-4 pt-5 sm:px-6">
-          <SheetTitle className="flex items-center gap-3 text-left">
+        <DialogHeader className="shrink-0 border-b border-[var(--cream-deep)] px-5 pb-4 pt-5 text-left sm:px-6">
+          <DialogTitle className="flex items-center gap-3 text-left">
             <span
               aria-hidden
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
@@ -484,8 +483,8 @@ function PainelCliente({
                 </span>
               )}
             </span>
-          </SheetTitle>
-        </SheetHeader>
+          </DialogTitle>
+        </DialogHeader>
 
         {/* So o miolo rola. Com o cabecalho dentro do scroll, abrir o painel
             jogava o nome do cliente para fora da tela. */}
@@ -581,8 +580,8 @@ function PainelCliente({
           </>
         )}
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
