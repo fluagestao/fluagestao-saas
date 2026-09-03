@@ -458,8 +458,8 @@ function PainelCliente({
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
-      <SheetContent className="w-full overflow-y-auto sm:max-w-md">
-        <SheetHeader>
+      <SheetContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <SheetHeader className="shrink-0 border-b border-[var(--cream-deep)] px-5 pb-4 pt-5 sm:px-6">
           <SheetTitle className="flex items-center gap-3 text-left">
             <span
               aria-hidden
@@ -479,6 +479,9 @@ function PainelCliente({
           </SheetTitle>
         </SheetHeader>
 
+        {/* So o miolo rola. Com o cabecalho dentro do scroll, abrir o painel
+            jogava o nome do cliente para fora da tela. */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 sm:px-6">
         <div className="mt-4 space-y-1 text-sm">
           {c.whatsapp && <p className="text-muted-foreground">📱 {c.whatsapp}</p>}
           {(c.endereco || c.bairro) && (
@@ -569,6 +572,7 @@ function PainelCliente({
             </p>
           </>
         )}
+        </div>
       </SheetContent>
     </Sheet>
   );
