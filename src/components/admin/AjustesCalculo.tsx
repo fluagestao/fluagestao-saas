@@ -1,6 +1,6 @@
 "use client";
 
-import { Lightbulb, SlidersHorizontal } from "lucide-react";
+import { Calculator, Lightbulb, SlidersHorizontal } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -60,6 +60,138 @@ function CampoPct({
   );
 }
 
+/** Campo de numero que guarda o texto cru: sem isto a virgula some ao digitar. */
+function CampoNum({
+  rotulo,
+  valor,
+  onMudar,
+  sufixo,
+  placeholder,
+}: {
+  rotulo: string;
+  valor: string;
+  onMudar: (v: string) => void;
+  sufixo?: string;
+  placeholder?: string;
+}) {
+  return (
+    <label className="space-y-1 text-sm font-medium">
+      {rotulo}
+      <div className="flex items-center gap-1.5">
+        <Input
+          value={valor}
+          onChange={(e) => onMudar(e.target.value)}
+          inputMode="decimal"
+          placeholder={placeholder}
+          className="h-10"
+        />
+        {sufixo && <span className="shrink-0 text-sm text-muted-foreground">{sufixo}</span>}
+      </div>
+    </label>
+  );
+}
+
+/* 52 semanas / 12 meses. Usar 4 encurtaria o mes em 7%, o custo por hora sairia
+   alto demais e o preco fecharia acima do necessario. */
+const SEMANAS_NO_MES = 52 / 12;
+
+function CalculadoraHora({ onUsar }: { onUsar: (valor: string) => void }) {
+  const [salario, setSalario] = useState("");
+  const [dias, setDias] = useState("5");
+  const [horas, setHoras] = useState("6");
+
+  const s = paraNumero(salario);
+  const d = paraNumero(dias);
+  const h = paraNumero(horas);
+  const horasMes = Number.isFinite(d) && Number.isFinite(h) ? d * h * SEMANAS_NO_MES : Number.NaN;
+  const porHora = Number.isFinite(s) && horasMes > 0 ? s / horasMes : null;
+
+  return (
+    <div className="mt-2 space-y-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3.5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <CampoNum rotulo="Quanto quer tirar por mês" valor={salario} onMudar={setSalario} sufixo="R$" placeholder="2.500" />
+        <CampoNum rotulo="Dias por semana" valor={dias} onMudar={setDias} sufixo="dias" />
+        <CampoNum rotulo="Horas por dia" valor={horas} onMudar={setHoras} sufixo="h" />
+      </div>
+
+      {porHora != null ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
+            São <strong>{horasMes.toFixed(0)} horas por mês</strong> — dá{" "}
+            <strong>{moeda(porHora)} por hora</strong>. Conte só as horas que você realmente
+            produz; incluir o dia inteiro derruba o número e o preço fecha baixo.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => onUsar(porHora.toFixed(2).replace(".", ","))} className="h-8 shrink-0">
+            Usar
+          </Button>
+        </div>
+      ) : (
+        <p className="t-support text-muted-foreground">
+          Preencha os três para ver o valor por hora.
+        </p>
+      )}
+    </div>
+  );
+}
+
+const CONTAS_FIXAS = ["Aluguel", "Luz e água", "Internet e telefone", "Contador", "Outras"];
+
+function CalculadoraFixo({ onUsar }: { onUsar: (valor: string) => void }) {
+  const [contas, setContas] = useState<string[]>(() => CONTAS_FIXAS.map(() => ""));
+  const [faturamento, setFaturamento] = useState("");
+
+  const soma = contas.reduce((t, c) => {
+    const n = paraNumero(c);
+    return t + (Number.isFinite(n) ? n : 0);
+  }, 0);
+  const fat = paraNumero(faturamento);
+  const pct = Number.isFinite(fat) && fat > 0 ? (soma / fat) * 100 : null;
+
+  return (
+    <div className="mt-2 space-y-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3.5">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {CONTAS_FIXAS.map((nome, i) => (
+          <CampoNum
+            key={nome}
+            rotulo={nome}
+            valor={contas[i]}
+            onMudar={(v) => setContas((atual) => atual.map((c, j) => (j === i ? v : c)))}
+            sufixo="R$"
+          />
+        ))}
+        <CampoNum
+          rotulo="Faturamento por mês"
+          valor={faturamento}
+          onMudar={setFaturamento}
+          sufixo="R$"
+          placeholder="8.000"
+        />
+      </div>
+
+      {pct != null ? (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
+            <strong>{moeda(soma)}</strong> de contas sobre <strong>{moeda(fat)}</strong> de
+            faturamento — <strong>{pct.toFixed(1).replace(".", ",")}%</strong>.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onUsar(String(Math.round(pct * 10) / 10).replace(".", ","))}
+            className="h-8 shrink-0"
+          >
+            Usar
+          </Button>
+        </div>
+      ) : (
+        <p className="t-support text-muted-foreground">
+          Informe o faturamento do mês para ver a porcentagem.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function AjustesCalculo({
   config,
   sugestao,
@@ -76,6 +208,7 @@ export function AjustesCalculo({
   const [perdas, setPerdas] = useState(paraPct(config.percentual_perdas));
   const [incluir, setIncluir] = useState(config.incluir_no_calculo);
   const [salvando, setSalvando] = useState(false);
+  const [calc, setCalc] = useState<"hora" | "fixo" | null>(null);
 
   const soma =
     (paraNumero(fixo) || 0) + (paraNumero(taxa) || 0) + (paraNumero(perdas) || 0);
@@ -144,22 +277,68 @@ export function AjustesCalculo({
               </span>
             </label>
 
-            <label className="space-y-1.5 text-sm font-medium">
-              Custo por hora de produção (R$)
-              <Input
-                value={custoHora}
-                onChange={(e) => setCustoHora(e.target.value)}
-                inputMode="decimal"
-                placeholder="25,00"
-                className="h-11"
-              />
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-end justify-between gap-2">
+                <label className="flex-1 space-y-1.5 text-sm font-medium">
+                  Custo por hora de produção (R$)
+                  <Input
+                    value={custoHora}
+                    onChange={(e) => setCustoHora(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="25,00"
+                    className="h-11"
+                  />
+                </label>
+                <Button
+                  variant="outline"
+                  onClick={() => setCalc(calc === "hora" ? null : "hora")}
+                  className="h-11 shrink-0"
+                >
+                  <Calculator className="mr-1.5 h-4 w-4" />
+                  {calc === "hora" ? "Fechar" : "Calcular"}
+                </Button>
+              </div>
+
               <span className="t-support block font-normal text-muted-foreground">
                 Multiplica o tempo de montagem de cada produto. Não é salário: é o que o negócio
                 precisa pagar pelo tempo para o preço fechar.
               </span>
-            </label>
 
-            {/* A sugestão é o coração deste card: o sistema já sabe os fixos. */}
+              {calc === "hora" && (
+                <CalculadoraHora
+                  onUsar={(v) => {
+                    setCustoHora(v);
+                    setCalc(null);
+                  }}
+                />
+              )}
+            </div>
+
+            {/* Dois caminhos de propósito: quem lança as contas no Financeiro
+                puxa pronto; quem não lança calcula na mão sem precisar
+                cadastrar nada antes. */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-medium">Custo fixo</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCalc(calc === "fixo" ? null : "fixo")}
+                className="h-8"
+              >
+                <Calculator className="mr-1.5 h-4 w-4" />
+                {calc === "fixo" ? "Fechar" : "Calcular na mão"}
+              </Button>
+            </div>
+
+            {calc === "fixo" && (
+              <CalculadoraFixo
+                onUsar={(v) => {
+                  setFixo(v);
+                  setCalc(null);
+                }}
+              />
+            )}
+
             {sugestao.percentual != null && (
               <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-3">
                 <Lightbulb className="h-4 w-4 shrink-0 text-[var(--bronze)]" />
