@@ -88,7 +88,11 @@ export type AbaId =
   | "insumos"
   | "horarios";
 
-export type SubFinanceiro = "entradas" | "saidas" | "apagar";
+export type SubFinanceiro = "entradas" | "saidas";
+
+/* Em que ponto do ciclo a lista esta. "pendente" e o padrao nas duas abas
+   porque e o trabalho que sobrou: o que falta receber, o que falta pagar. */
+export type EstadoFinanceiro = "pendente" | "concluido";
 export type SubVendas = "pedidos" | "areceber" | "realizadas" | "followup";
 export type SubCadastros =
   | "clientes"
@@ -96,15 +100,18 @@ export type SubCadastros =
   | "bairros"
   | "usuarios";
 
+/* Entradas e Saidas, cada uma com os dois momentos do MESMO fato. Antes,
+   "A pagar" e "Pagamentos" eram abas separadas — voce pagava numa e ia
+   procurar o registro na outra. Sao o mesmo objeto: pagar uma conta cria o
+   movimento e guarda o elo (contas.ts:216). Do lado da entrada era pior: o
+   que te devem morava em Vendas e o que entrou morava aqui. */
 const SUB_FINANCEIRO: { id: SubFinanceiro; label: string }[] = [
-  { id: "entradas", label: "Recebimentos" },
-  { id: "saidas", label: "Pagamentos" },
-  { id: "apagar", label: "A pagar" },
+  { id: "entradas", label: "Entradas" },
+  { id: "saidas", label: "Saídas" },
 ];
 
 const SUB_VENDAS: { id: SubVendas; label: string }[] = [
   { id: "pedidos", label: "Pedidos" },
-  { id: "areceber", label: "A receber" },
   { id: "realizadas", label: "Realizadas" },
   { id: "followup", label: "Follow-up" },
 ];
@@ -240,6 +247,7 @@ export default function AdminClient({
     initialAba === "followup" ? "followup" : "pedidos",
   );
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
+  const [estadoFin, setEstadoFin] = useState<EstadoFinanceiro>("pendente");
   // Terceiro nivel do menu do desktop. Fecha junto com o menu que o contem.
   const [grupoAberto, setGrupoAberto] = useState<string | null>(null);
   const [subCad, setSubCad] = useState<SubCadastros>("clientes");
@@ -314,6 +322,41 @@ export default function AdminClient({
     setSubCad("usuarios");
     setExpandida(null);
   }
+
+  /* Uma definicao so: a mesma tela de 'A receber' agora vive no Financeiro,
+     e repetir estas trinta linhas de props seria garantir que as duas
+     divirjam na primeira mudanca. */
+  const painelVendas = (vista: "pedidos" | "areceber" | "realizadas") => (
+              <VendasPanel
+      vista={vista}
+      onVista={setSubVendas}
+      empresaNome={companyName}
+      abrirNovoAoMontar={initialNovoPedido}
+      categorias={categorias.map((categoria) => ({
+        id: categoria.id,
+        nome: categoria.nome,
+        ordem: categoria.ordem,
+      }))}
+      onCatalogoChange={recarregar}
+      produtos={produtos.map((produto) => {
+        const categoria = categorias.find((item) => item.id === produto.categoria_id);
+        const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
+
+        return {
+          slug: produto.slug,
+          nome: produto.nome,
+          preco: produto.preco,
+          precos_extra: asPrecosExtra(produto.precos_extra),
+          grupo: categoria
+            ? catalogo
+              ? `${categoria.nome} · ${catalogo.nome}`
+              : categoria.nome
+            : "Sem categoria",
+          ordemGrupo: (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
+        };
+      })}
+    />
+  );
 
   return (
     <ConfirmProvider>
@@ -675,11 +718,43 @@ export default function AdminClient({
               }}
             />
           ) : aba === "financeiro" ? (
-            subFin === "apagar" ? (
-              <ContasAPagarPanel />
-            ) : (
-              <FinanceiroPanel vista={subFin} />
-            )
+            <>
+              {/* Cada estado tem o seu eixo de tempo: o que falta ordena por
+                  vencimento, o que ja aconteceu ordena pela data do fato. Por
+                  isso sao paineis diferentes, e nao um filtro na mesma lista. */}
+              <div className="mb-4 flex gap-1 rounded-full border border-[var(--admin-border)] bg-card p-1 w-fit">
+                {(
+                  [
+                    { v: "pendente", label: subFin === "entradas" ? "A receber" : "A pagar" },
+                    { v: "concluido", label: subFin === "entradas" ? "Recebidas" : "Pagas" },
+                  ] as const
+                ).map(({ v, label }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setEstadoFin(v)}
+                    className={cn(
+                      "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+                      estadoFin === v
+                        ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
+                        : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {estadoFin === "pendente" ? (
+                subFin === "entradas" ? (
+                  painelVendas("areceber")
+                ) : (
+                  <ContasAPagarPanel />
+                )
+              ) : (
+                <FinanceiroPanel vista={subFin} />
+              )}
+            </>
           ) : aba === "cadastros" ? (
             <CadastrosPanel vista={subCad} />
           ) : aba === "tarefas" ? (
@@ -688,35 +763,7 @@ export default function AdminClient({
             subVendas === "followup" ? (
               <FollowupPanel empresaNome={companyName} />
             ) : (
-              <VendasPanel
-                vista={subVendas}
-                onVista={setSubVendas}
-                empresaNome={companyName}
-                abrirNovoAoMontar={initialNovoPedido}
-                categorias={categorias.map((categoria) => ({
-                  id: categoria.id,
-                  nome: categoria.nome,
-                  ordem: categoria.ordem,
-                }))}
-                onCatalogoChange={recarregar}
-                produtos={produtos.map((produto) => {
-                  const categoria = categorias.find((item) => item.id === produto.categoria_id);
-                  const catalogo = catalogos.find((item) => item.id === categoria?.catalogo_id);
-
-                  return {
-                    slug: produto.slug,
-                    nome: produto.nome,
-                    preco: produto.preco,
-                    precos_extra: asPrecosExtra(produto.precos_extra),
-                    grupo: categoria
-                      ? catalogo
-                        ? `${categoria.nome} · ${catalogo.nome}`
-                        : categoria.nome
-                      : "Sem categoria",
-                    ordemGrupo: (catalogo?.ordem ?? 99) * 100 + (categoria?.ordem ?? 99),
-                  };
-                })}
-              />
+              painelVendas(subVendas as "pedidos" | "areceber" | "realizadas")
             )
           ) : aba === "produtos" ? (
             <ProdutosPanel

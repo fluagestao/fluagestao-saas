@@ -30,7 +30,6 @@ const MENU: ItemMenu[] = [
     label: "Vendas",
     filhos: [
       { label: "Pedidos", href: "/vendas/pedidos" },
-      { label: "A receber", href: "/vendas/a-receber" },
       { label: "Realizadas", href: "/vendas/realizadas" },
       { label: "Follow-up", href: "/followup" },
     ],
@@ -39,9 +38,8 @@ const MENU: ItemMenu[] = [
   {
     label: "Financeiro",
     filhos: [
-      { label: "Recebimentos", href: "/financeiro/entradas" },
-      { label: "Pagamentos", href: "/financeiro/saidas" },
-      { label: "A pagar", href: "/financeiro/a-pagar" },
+      { label: "Entradas", href: "/financeiro/entradas" },
+      { label: "Saídas", href: "/financeiro/saidas" },
     ],
   },
   { label: "Margem", href: "/margem" },

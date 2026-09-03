@@ -15,12 +15,10 @@ const ROTAS_DIRETAS: Record<string, string> = {
   "Follow-up": "/followup",
 
   Pedidos: "/vendas/pedidos",
-  "A receber": "/vendas/a-receber",
   Realizadas: "/vendas/realizadas",
 
-  Recebimentos: "/financeiro/entradas",
-  Pagamentos: "/financeiro/saidas",
-  "A pagar": "/financeiro/a-pagar",
+  Entradas: "/financeiro/entradas",
+  "Saídas": "/financeiro/saidas",
 
   Produtos: "/cadastros/produtos",
   Coleções: "/cadastros/colecoes",
@@ -41,7 +39,9 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/admin": { filho: "Início" },
 
   "/vendas/pedidos": { pai: "Vendas", filho: "Pedidos" },
-  "/vendas/a-receber": { pai: "Vendas", filho: "A receber" },
+  /* Rota antiga: "A receber" mudou de Vendas para Financeiro > Entradas.
+     Continua abrindo, para nao quebrar link salvo nem atalho do guia. */
+  "/vendas/a-receber": { pai: "Financeiro", filho: "Entradas" },
   "/vendas/realizadas": { pai: "Vendas", filho: "Realizadas" },
   "/followup": { pai: "Vendas", filho: "Follow-up" },
 
@@ -54,9 +54,10 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/custo": { filho: "Margem" },
   "/estoque": { filho: "Estoque" },
 
-  "/financeiro/entradas": { pai: "Financeiro", filho: "Recebimentos" },
-  "/financeiro/saidas": { pai: "Financeiro", filho: "Pagamentos" },
-  "/financeiro/a-pagar": { pai: "Financeiro", filho: "A pagar" },
+  "/financeiro/entradas": { pai: "Financeiro", filho: "Entradas" },
+  "/financeiro/saidas": { pai: "Financeiro", filho: "Saídas" },
+  // "A pagar" virou um estado dentro de Saidas, nao mais uma aba propria.
+  "/financeiro/a-pagar": { pai: "Financeiro", filho: "Saídas" },
 
   "/cadastros/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/cadastros/colecoes": { pai: "Cadastros", filho: "Coleções" },
@@ -74,10 +75,10 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
 
 
   "/pedidos": { pai: "Vendas", filho: "Pedidos" },
-  "/a-receber": { pai: "Vendas", filho: "A receber" },
+  "/a-receber": { pai: "Financeiro", filho: "Entradas" },
   "/realizadas": { pai: "Vendas", filho: "Realizadas" },
-  "/entradas": { pai: "Financeiro", filho: "Recebimentos" },
-  "/saidas": { pai: "Financeiro", filho: "Pagamentos" },
+  "/entradas": { pai: "Financeiro", filho: "Entradas" },
+  "/saidas": { pai: "Financeiro", filho: "Saídas" },
   "/produtos": { pai: "Cadastros", filho: "Produtos" },
   "/colecoes": { pai: "Cadastros", filho: "Coleções" },
   "/categorias": { pai: "Cadastros", filho: "Categorias" },
