@@ -206,9 +206,6 @@
     bottom: 0 !important;
     left: 0 !important;
     border-radius: 0 !important;
-    /* Acima do cabecalho sticky, sem depender de quem ganha a disputa de
-       empilhamento — que ja me custou duas tentativas. */
-    z-index: 70 !important;
   }
 
   /* E o cabecalho sai do caminho de vez enquanto o pedido esta aberto.
