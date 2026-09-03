@@ -34,6 +34,7 @@ import { CategoriasPanel } from "@/components/admin/CategoriasPanel";
 import { CategoriasFinanceirasPanel } from "@/components/admin/CategoriasFinanceirasPanel";
 import { ContasAPagarPanel } from "@/components/admin/ContasAPagarPanel";
 import { CustoPanel } from "@/components/admin/CustoPanel";
+import { EmConstrucao } from "@/components/admin/EmConstrucao";
 import { EstoquePanel } from "@/components/admin/EstoquePanel";
 import { SinoNotificacoes } from "@/components/admin/SinoNotificacoes";
 import { PrevisaoCaixaPanel } from "@/components/admin/PrevisaoCaixaPanel";
@@ -74,6 +75,9 @@ export type AbaId =
   | "produtos"
   | "colecoes"
   | "custo"
+  | "calculadora"
+  | "simulador"
+  | "cozinha"
   | "estoque"
   | "cadastro-receitas"
   | "cadastro-despesas"
@@ -102,6 +106,16 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
   { id: "areceber", label: "A receber" },
   { id: "realizadas", label: "Realizadas" },
   { id: "followup", label: "Follow-up" },
+];
+
+/* Custo virou guarda-chuva. Cada filho e uma tela propria (uma AbaId), e nao
+   uma "vista" de um painel so — por isso entram tambem em DO_CUSTO e em
+   ABAS_PLANAS, que e onde o AdminPathSync acha o botao pelo rotulo. */
+const SUB_CUSTO: { id: string; label: string }[] = [
+  { id: "custo", label: "Margem" },
+  { id: "calculadora", label: "Calculadora" },
+  { id: "simulador", label: "Simulador" },
+  { id: "cozinha", label: "Cozinha" },
 ];
 
 const SUB_CADASTROS: { id: string; label: string; grupo?: string }[] = [
@@ -151,7 +165,7 @@ const MENU: ItemMenu[] = [
     icon: Wallet,
     vistas: SUB_FINANCEIRO,
   },
-  { id: "custo", label: "Margem", icon: Calculator },
+  { id: "custo", label: "Custo", icon: Calculator, vistas: SUB_CUSTO },
   { id: "estoque", label: "Estoque", icon: Boxes },
   {
     id: "cadastros",
@@ -160,6 +174,9 @@ const MENU: ItemMenu[] = [
     vistas: SUB_CADASTROS,
   },
 ];
+
+/** Telas que vivem sob o menu Custo. Mesma ideia do DO_CATALOGO. */
+const DO_CUSTO: AbaId[] = ["custo", "calculadora", "simulador", "cozinha"];
 
 const DO_CATALOGO: AbaId[] = [
   "produtos",
@@ -179,6 +196,9 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon }[] = [
   { id: "calendario", label: "Agenda", icon: CalendarDays },
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "custo", label: "Margem", icon: Calculator },
+  { id: "calculadora", label: "Calculadora", icon: Calculator },
+  { id: "simulador", label: "Simulador", icon: Calculator },
+  { id: "cozinha", label: "Cozinha", icon: Calculator },
   { id: "estoque", label: "Estoque", icon: Boxes },
   { id: "cadastros", label: "Cadastros", icon: Contact },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare },
@@ -254,11 +274,19 @@ export default function AdminClient({
     if (item.id === "cadastros") {
       return aba === "cadastros" || DO_CATALOGO.includes(aba);
     }
+    if (item.id === "custo") return DO_CUSTO.includes(aba);
     if (item.id === "vendas" && aba === "followup") return true;
     return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
   }
 
   function selecionarSub(item: ItemMenu, subId: string) {
+    // Filho de Custo e tela propria, nao vista de um painel.
+    if (item.id === "custo" && DO_CUSTO.includes(subId as AbaId)) {
+      setAba(subId as AbaId);
+      setExpandida(null);
+      return;
+    }
+
     if (item.id === "cadastros" && DO_CATALOGO.includes(subId as AbaId)) {
       setAba(subId as AbaId);
       setExpandida(null);
@@ -625,6 +653,21 @@ export default function AdminClient({
             />
           ) : aba === "custo" ? (
             <CustoPanel />
+          ) : aba === "calculadora" ? (
+            <EmConstrucao
+              titulo="Calculadora"
+              descricao="Vai calcular o preço de venda a partir dos insumos e da margem que você quer."
+            />
+          ) : aba === "simulador" ? (
+            <EmConstrucao
+              titulo="Simulador"
+              descricao="Vai responder “e se”: se o queijo subir, se eu vender o dobro, se eu baixar o preço."
+            />
+          ) : aba === "cozinha" ? (
+            <EmConstrucao
+              titulo="Cozinha"
+              descricao="Vai reunir o passo a passo de montagem e preparo de cada produto."
+            />
           ) : aba === "estoque" ? (
             <EstoquePanel />
           ) : aba === "cadastro-receitas" || aba === "cadastro-despesas" ? (

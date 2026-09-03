@@ -7,6 +7,9 @@ const ROTAS_DIRETAS: Record<string, string> = {
   "Início": "/inicio",
   Dashboard: "/dashboard",
   Margem: "/margem",
+  Calculadora: "/custo/calculadora",
+  Simulador: "/custo/simulador",
+  Cozinha: "/custo/cozinha",
   Estoque: "/estoque",
   Tarefas: "/tarefas",
   "Follow-up": "/followup",
@@ -32,7 +35,8 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Bairros: "/cadastros/bairros",
   Horários: "/cadastros/horarios",
 
-  Simulador: "/bia/simulador",
+  // "Simulador" agora e a tela de Custo (acima). O BIA nao esta no menu, entao
+  // nao ha botao dele para clicar — a entrada antiga nao abria nada.
   Conversas: "/bia/conversas",
   Ajustes: "/bia/ajustes",
 };
@@ -48,6 +52,9 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
 
   "/dashboard": { filho: "Dashboard" },
   "/margem": { filho: "Margem" },
+  "/custo/calculadora": { filho: "Calculadora" },
+  "/custo/simulador": { filho: "Simulador" },
+  "/custo/cozinha": { filho: "Cozinha" },
   // Rota antiga: continua abrindo a mesma tela para nao quebrar link salvo.
   "/custo": { filho: "Margem" },
   "/estoque": { filho: "Estoque" },
@@ -71,7 +78,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
 
   "/tarefas": { filho: "Tarefas" },
 
-  "/bia/simulador": { pai: "BIA", filho: "Simulador" },
+  // /bia/simulador ficou sem destino: o rotulo "Simulador" e da tela de Custo.
   "/bia/conversas": { pai: "BIA", filho: "Conversas" },
   "/bia/ajustes": { pai: "BIA", filho: "Ajustes" },
 
