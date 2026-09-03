@@ -1,6 +1,15 @@
 "use client";
 
-import { AlertTriangle, ArrowRight, Package, Plus, Sparkles, Trash2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  ListChecks,
+  Package,
+  Plus,
+  Sparkles,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -44,6 +53,12 @@ import { CascataCusto } from "./CascataCusto";
 import { Carregando, EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
 const AVULSO = "__avulso__";
+
+/* Mesma grade no cabecalho e nas linhas — e o que mantem a coluna alinhada.
+   As duas constantes guardam a classe INTEIRA, e nao um pedaco montado depois:
+   o Tailwind so gera o que encontra literal no arquivo. */
+const GRADE_CABECALHO = "grid-cols-[minmax(0,1fr)_72px_92px_96px_36px]";
+const GRADE_LINHA = "sm:grid-cols-[minmax(0,1fr)_72px_92px_96px_36px]";
 
 type Linha = {
   chave: string;
@@ -463,87 +478,140 @@ function DialogoSimulacao({
           </label>
         </div>
 
-        <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3">
-          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+        <div className="overflow-hidden rounded-2xl border border-[var(--cream-deep)] bg-card">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-2.5">
             <p className="text-sm font-semibold text-foreground">O que vai dentro</p>
             <p className="t-support text-muted-foreground">
-              Escolha um insumo cadastrado ou digite um avulso
+              {linhas.filter((l) => l.descricao.trim()).length} insumo(s)
             </p>
           </div>
 
-          <div className="max-h-[32vh] space-y-2 overflow-y-auto pr-1">
-            {linhas.map((linha) => (
-              <div key={linha.chave} className="flex items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <Select
-                    value={linha.insumoId ?? AVULSO}
-                    onValueChange={(v) => escolherInsumo(linha.chave, v)}
-                  >
-                    <SelectTrigger className="h-10 w-full rounded-xl bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={AVULSO}>Insumo avulso (digitar)</SelectItem>
-                      {ativos.map((i) => (
-                        <SelectItem key={i.id} value={i.id}>
-                          {i.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {!linha.insumoId && (
-                    <Input
-                      value={linha.descricao}
-                      onChange={(e) => mudar(linha.chave, { descricao: e.target.value })}
-                      placeholder="Nome do insumo avulso"
-                      className="mt-1.5 h-10 bg-white"
-                    />
-                  )}
-                </div>
-
-                <Input
-                  value={linha.quantidade}
-                  onChange={(e) => mudar(linha.chave, { quantidade: e.target.value })}
-                  inputMode="decimal"
-                  placeholder="qtd"
-                  className="h-10 w-20 shrink-0 bg-white text-center"
-                />
-                <Input
-                  value={linha.valor}
-                  onChange={(e) => mudar(linha.chave, { valor: e.target.value })}
-                  inputMode="decimal"
-                  placeholder="R$ un."
-                  disabled={Boolean(linha.insumoId)}
-                  title={linha.insumoId ? "Vem do cadastro do insumo" : undefined}
-                  className="h-10 w-24 shrink-0 bg-white text-center"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  onClick={() =>
-                    setLinhas((atual) =>
-                      atual.length === 1 ? [linhaVazia()] : atual.filter((l) => l.chave !== linha.chave),
-                    )
-                  }
-                  aria-label="Remover insumo"
-                  className="h-10 w-9 shrink-0"
-                >
-                  <X className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </div>
-            ))}
+          {/* Cabecalho de coluna: sem ele, "1" e "R$ un." nao dizem o que sao. */}
+          <div className={`hidden ${GRADE_CABECALHO} items-center gap-2 border-b border-[var(--cream-deep)] px-4 py-1.5 sm:grid`}>
+            <span className="t-support uppercase tracking-[0.08em] text-muted-foreground">Insumo</span>
+            <span className="t-support text-center uppercase tracking-[0.08em] text-muted-foreground">Qtd</span>
+            <span className="t-support text-center uppercase tracking-[0.08em] text-muted-foreground">Valor un.</span>
+            <span className="t-support text-right uppercase tracking-[0.08em] text-muted-foreground">Total</span>
+            <span />
           </div>
 
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setLinhas((atual) => [...atual, linhaVazia()])}
-            className="mt-2 h-9 w-full rounded-lg border border-dashed border-[var(--cream-deep)] text-[var(--admin-ink-soft)]"
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            Adicionar insumo
-          </Button>
+          <div className="max-h-[32vh] divide-y divide-[var(--cream-deep)] overflow-y-auto">
+            {linhas.map((linha) => {
+              const q = paraNumero(linha.quantidade);
+              const v = paraNumero(linha.valor);
+              const total = Number.isFinite(q) && Number.isFinite(v) ? q * v : null;
+
+              return (
+                <div
+                  key={linha.chave}
+                  className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 ${GRADE_LINHA}`}
+                >
+                  {/* O avulso ocupa a MESMA celula do seletor. Antes ele abria
+                      uma segunda linha embaixo, solta, e a lista perdia o
+                      alinhamento de coluna. */}
+                  <div className="col-span-2 min-w-0 sm:col-span-1">
+                    {linha.insumoId ? (
+                      <Select
+                        value={linha.insumoId}
+                        onValueChange={(v) => escolherInsumo(linha.chave, v)}
+                      >
+                        <SelectTrigger className="h-10 w-full rounded-lg border-[var(--cream-deep)] bg-white [&>span]:flex-1 [&>span]:text-left">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={AVULSO}>Digitar um insumo avulso…</SelectItem>
+                          {ativos.map((i) => (
+                            <SelectItem key={i.id} value={i.id}>
+                              {i.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          value={linha.descricao}
+                          onChange={(e) => mudar(linha.chave, { descricao: e.target.value })}
+                          placeholder="Nome do insumo avulso"
+                          className="h-10 min-w-0 flex-1 rounded-lg bg-white"
+                        />
+                        <Select value={AVULSO} onValueChange={(v) => escolherInsumo(linha.chave, v)}>
+                          <SelectTrigger
+                            aria-label="Escolher um insumo cadastrado"
+                            title="Escolher um insumo cadastrado"
+                            className="h-10 w-10 shrink-0 justify-center rounded-lg border-[var(--cream-deep)] bg-white p-0 [&>span]:hidden"
+                          >
+                            <ListChecks className="h-4 w-4 text-muted-foreground" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={AVULSO}>Continuar avulso</SelectItem>
+                            {ativos.map((i) => (
+                              <SelectItem key={i.id} value={i.id}>
+                                {i.nome}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  <Input
+                    value={linha.quantidade}
+                    onChange={(e) => mudar(linha.chave, { quantidade: e.target.value })}
+                    inputMode="decimal"
+                    aria-label="Quantidade"
+                    className="h-10 w-16 rounded-lg bg-white text-center sm:w-full"
+                  />
+
+                  <Input
+                    value={linha.valor}
+                    onChange={(e) => mudar(linha.chave, { valor: e.target.value })}
+                    inputMode="decimal"
+                    aria-label="Valor unitário"
+                    disabled={Boolean(linha.insumoId)}
+                    title={linha.insumoId ? "Vem do cadastro do insumo" : undefined}
+                    className="h-10 w-20 rounded-lg bg-white text-center disabled:bg-[var(--cream-soft)] sm:w-full"
+                  />
+
+                  <span className="t-body shrink-0 text-right tabular-nums text-[var(--admin-ink)]">
+                    {total == null ? "—" : moeda(total)}
+                  </span>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() =>
+                      setLinhas((atual) =>
+                        atual.length === 1 ? [linhaVazia()] : atual.filter((l) => l.chave !== linha.chave),
+                      )
+                    }
+                    aria-label="Remover insumo"
+                    className="h-9 w-8 shrink-0"
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--cream-deep)] px-4 py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setLinhas((atual) => [...atual, linhaVazia()])}
+              className="h-9 px-2 text-[var(--terracotta)]"
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              Adicionar insumo
+            </Button>
+            <span className="t-body tabular-nums text-[var(--admin-ink)]">
+              Total dos insumos{" "}
+              <strong className="font-bold text-[var(--terracotta)]">{moeda(custoTotal)}</strong>
+            </span>
+          </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
