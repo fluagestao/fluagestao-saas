@@ -126,26 +126,31 @@ export function CustoPanel() {
         titulo="Margem"
         descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use a Calculadora."
         acoes={
-          <div className="flex flex-wrap items-end gap-1.5">
-            {ATALHOS.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => {
-                  setAtalho(a.id);
-                  setPeriodo(a.intervalo(hoje));
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="grid gap-1 text-xs text-muted-foreground">
+              Período
+              <select
+                value={atalho}
+                onChange={(e) => {
+                  const id = e.target.value as Atalho;
+                  setAtalho(id);
+                  // "escolher" só libera os campos e preserva o intervalo, para
+                  // dar pra partir de um atalho e ajustar só a ponta.
+                  const escolhido = ATALHOS.find((a) => a.id === id);
+                  if (escolhido) setPeriodo(escolhido.intervalo(hoje));
                 }}
-                className={cn(
-                  "t-support h-9 rounded-lg border px-3 font-medium transition-colors",
-                  atalho === a.id
-                    ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
-                    : "border-[var(--cream-deep)] bg-card text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
-                )}
+                className="h-9 min-w-44 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
               >
-                {a.label}
-              </button>
-            ))}
-            <label className="ml-1 grid gap-1 text-xs text-muted-foreground">
+                {ATALHOS.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.label}
+                  </option>
+                ))}
+                <option value="escolher">Escolher datas</option>
+              </select>
+            </label>
+
+            <label className="grid gap-1 text-xs text-muted-foreground">
               De
               <input
                 type="date"
@@ -158,6 +163,7 @@ export function CustoPanel() {
                 className="h-9 rounded-lg border border-[var(--cream-deep)] bg-background px-2 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
               />
             </label>
+
             <label className="grid gap-1 text-xs text-muted-foreground">
               Até
               <input
@@ -215,7 +221,7 @@ export function CustoPanel() {
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         {(
           [
-            ["vendidos", `Vendidos no mês${dados ? ` (${dados.produtos.filter((p) => p.qtd > 0).length})` : ""}`],
+            ["vendidos", `Vendidos no período${dados ? ` (${dados.produtos.filter((p) => p.qtd > 0).length})` : ""}`],
             ["sem_custo", `Sem custo${dados ? ` (${dados.semCustoTotal})` : ""}`],
             ["todos", `Todos${dados ? ` (${dados.totalProdutos})` : ""}`],
           ] as [Filtro, string][]
@@ -261,7 +267,7 @@ export function CustoPanel() {
           }
           descricao={
             filtro === "vendidos"
-              ? "A conta usa os pedidos do mês com produto do catálogo. Item avulso, digitado à mão no pedido, não entra."
+              ? "A conta usa os pedidos do período com produto do catálogo. Item avulso, digitado à mão no pedido, não entra."
               : "Cadastre produtos em Cadastros → Produtos."
           }
         />
