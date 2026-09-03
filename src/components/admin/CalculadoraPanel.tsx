@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator, Check, Search, Sparkles } from "lucide-react";
+import { Calculator, Search, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -289,7 +289,15 @@ function DialogoCalculo({
   const [preco, setPreco] = useState(
     produto.preco == null ? "" : produto.preco.toFixed(2).replace(".", ","),
   );
-  const [margemAlvo, setMargemAlvo] = useState("60");
+  /* A margem NAO e estado proprio: ela e o preco lido de outro angulo. Guardar
+     as duas separadas era o que fazia a tela abrir dizendo "60%" com um preco
+     que dava 77% — dois numeros na tela discordando um do outro.
+
+     O unico estado aqui e o texto cru enquanto o campo esta em foco. Sem ele o
+     input controlado reescreveria o valor formatado a cada tecla e comeria a
+     virgula (foi o que fez 1,5 virar 15 no campo Minimo). Ao sair do campo
+     volta a ser derivado, e a formatacao se acerta sozinha. */
+  const [margemDigitada, setMargemDigitada] = useState<string | null>(null);
   const [tempo, setTempo] = useState(
     produto.tempo_montagem_min == null ? "" : String(produto.tempo_montagem_min),
   );
@@ -308,44 +316,54 @@ function DialogoCalculo({
 
   const cascata = calcular(temPreco ? precoNumero : null, custo, tempoMin, config);
 
-  const alvo = paraNumero(margemAlvo);
-  const temAlvo = Number.isFinite(alvo) && alvo >= 0 && alvo < 100;
-  const precoSugerido = temAlvo ? precoParaMargem(custo, tempoMin, alvo / 100, config) : null;
+  /* Enquanto digita, manda o texto cru. Fora do foco, mostra a margem que o
+     preco atual realmente da — inclusive na abertura, sem precisar de effect. */
+  const margemMostrada =
+    margemDigitada ??
+    (cascata.margemReal == null
+      ? ""
+      : (cascata.margemReal * 100).toFixed(1).replace(".", ",").replace(",0", ""));
 
-  async function usarPreco(valor: number) {
-    setSalvando(true);
-    try {
-      await atualizarPrecoProduto({ data: { id: produto.id, preco: Number(valor.toFixed(2)) } });
-      setPreco(valor.toFixed(2).replace(".", ","));
-      toast.success("Preço atualizado.");
-    } catch (e) {
-      toast.error(mensagemDeErro(e, "atualizar o preço"));
-    } finally {
-      setSalvando(false);
-    }
+  /* Escrever a margem escreve o preco. O contrario nao existe: a margem ja e
+     derivada do preco, entao o campo se atualiza sozinho quando o preco muda. */
+  function escreverMargem(texto: string) {
+    setMargemDigitada(texto);
+    const n = paraNumero(texto);
+    if (n == null || n < 0 || n >= 100) return;
+    const novo = precoParaMargem(custo, tempoMin, n / 100, config);
+    if (novo == null) return;
+    setPreco(novo.toFixed(2).replace(".", ","));
   }
 
-  async function salvarTempo() {
+  /* Uma gravacao so. Antes eram dois tiques identicos pendurados nos campos,
+     cada um salvando uma coisa diferente, sem dizer o que salvava — e dava para
+     sair da tela achando que o preco tinha ido junto com o tempo. */
+  async function salvarPrecoETempo() {
+    if (!temPreco) return;
+
     const minutos = paraNumero(tempo);
-    const valor = tempo.trim() === "" ? null : Math.round(minutos);
-    if (valor != null && (!Number.isFinite(minutos) || minutos < 0)) {
+    const tempoValor = tempo.trim() === "" ? null : Math.round(minutos ?? NaN);
+    if (tempoValor != null && !Number.isFinite(tempoValor)) {
       toast.error("Informe o tempo em minutos.");
       return;
     }
+    if (tempoValor != null && tempoValor < 0) {
+      toast.error("O tempo não pode ser negativo.");
+      return;
+    }
+
     setSalvando(true);
     try {
-      await atualizarTempoMontagem({ data: { id: produto.id, minutos: valor } });
-      toast.success("Tempo de montagem salvo.");
+      await atualizarPrecoProduto({
+        data: { id: produto.id, preco: Number(precoNumero.toFixed(2)) },
+      });
+      await atualizarTempoMontagem({ data: { id: produto.id, minutos: tempoValor } });
+      toast.success("Preço e tempo salvos.");
     } catch (e) {
-      toast.error(mensagemDeErro(e, "salvar o tempo"));
+      toast.error(mensagemDeErro(e, "salvar o produto"));
     } finally {
       setSalvando(false);
     }
-  }
-
-  async function salvarPrecoDigitado() {
-    if (!temPreco) return;
-    await usarPreco(precoNumero);
   }
 
   return (
@@ -366,53 +384,53 @@ function DialogoCalculo({
           onChange={receberCusto}
         />
 
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <label className="space-y-1.5 text-sm font-medium">
-            Preço de venda (R$)
-            <div className="flex gap-1.5">
+            <span className="block">Preço de venda</span>
+            <div className="relative">
               <Input
                 value={preco}
                 onChange={(e) => setPreco(e.target.value)}
                 inputMode="decimal"
                 placeholder="0,00"
-                className="h-11"
+                className="h-11 pl-9"
               />
-              <Button
-                variant="outline"
-                onClick={salvarPrecoDigitado}
-                disabled={!temPreco || salvando}
-                className="h-11 shrink-0"
-                title="Salvar este preço no produto"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
+              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                R$
+              </span>
             </div>
           </label>
 
           <label className="space-y-1.5 text-sm font-medium">
-            Tempo de montagem
-            <div className="flex gap-1.5">
-              <div className="relative min-w-0 flex-1">
-                <Input
-                  value={tempo}
-                  onChange={(e) => setTempo(e.target.value)}
-                  inputMode="numeric"
-                  placeholder="40"
-                  className="h-11 pr-12"
-                />
-                <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  min
-                </span>
-              </div>
-              <Button
-                variant="outline"
-                onClick={salvarTempo}
-                disabled={salvando}
-                className="h-11 shrink-0"
-                title="Salvar o tempo no produto"
-              >
-                <Check className="h-4 w-4" />
-              </Button>
+            <span className="block">Margem líquida</span>
+            <div className="relative">
+              <Input
+                value={margemMostrada}
+                onChange={(e) => escreverMargem(e.target.value)}
+                onBlur={() => setMargemDigitada(null)}
+                inputMode="decimal"
+                placeholder="60"
+                className="h-11 pr-9"
+              />
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                %
+              </span>
+            </div>
+          </label>
+
+          <label className="space-y-1.5 text-sm font-medium">
+            <span className="block">Tempo de montagem</span>
+            <div className="relative">
+              <Input
+                value={tempo}
+                onChange={(e) => setTempo(e.target.value)}
+                inputMode="numeric"
+                placeholder="40"
+                className="h-11 pr-12"
+              />
+              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                min
+              </span>
             </div>
           </label>
 
@@ -426,44 +444,30 @@ function DialogoCalculo({
 
         <CascataCusto cascata={cascata} />
 
-        {/* O caminho inverso: a margem é o piso, o preço é a consequência. */}
-        <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:flex-row sm:flex-wrap sm:items-end">
-          <Sparkles className="mb-2 hidden h-4 w-4 shrink-0 text-[var(--bronze)] sm:block" />
-          <label className="space-y-1.5 text-sm font-medium">
-            Quero margem de
-            <div className="flex items-center gap-1.5">
-              <Input
-                value={margemAlvo}
-                onChange={(e) => setMargemAlvo(e.target.value)}
-                inputMode="decimal"
-                className="h-10 w-20 bg-white text-center"
-              />
-              <span className="text-sm text-muted-foreground">%</span>
-            </div>
-          </label>
-
-          <div className="min-w-0 flex-1">
-            <p className="t-support text-muted-foreground">
-              Preço sugerido{config.incluir_no_calculo ? " (já com montagem e fixos)" : ""}
-            </p>
-            <p className="t-item tabular-nums text-[var(--wine)]">
-              {precoSugerido == null ? "—" : moeda(precoSugerido)}
-            </p>
-          </div>
-
+        {/* Nada acima grava. Os dois ✓ que ficavam pendurados nos campos
+            viraram uma acao so, com nome — antes ninguem sabia o que aquele
+            tique salvava, nem que eram duas gravacoes diferentes. */}
+        <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:flex-row sm:items-center">
+          <Sparkles className="hidden h-4 w-4 shrink-0 text-[var(--bronze)] sm:block" />
+          <p className="t-support min-w-0 flex-1 text-muted-foreground">
+            Preço e margem andam juntos: mude um e o outro acompanha
+            {config.incluir_no_calculo ? " — já com montagem e fixos" : ""}. Nada é salvo até você
+            mandar.
+          </p>
           <Button
-            variant="outline"
-            disabled={precoSugerido == null || salvando}
-            onClick={() => precoSugerido != null && usarPreco(precoSugerido)}
-            className="h-10"
+            disabled={!temPreco || salvando}
+            onClick={salvarPrecoETempo}
+            className="h-11 shrink-0"
           >
-            Usar este preço
+            Salvar no produto
           </Button>
         </div>
         </div>
 
         <DialogFooter className="shrink-0 border-t border-[var(--admin-border)] pt-3">
-          <Button onClick={onFechar}>Pronto</Button>
+          <Button variant="outline" onClick={onFechar}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
