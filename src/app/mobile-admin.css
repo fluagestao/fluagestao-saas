@@ -6,7 +6,10 @@
 @media (max-width: 767px) {
   .mobile-admin-nav {
     position: fixed;
-    z-index: 90;
+    /* Acima do cabeçalho sticky (z-40) e ABAIXO do overlay de diálogo (z-50).
+       Em 90 ela era desenhada e clicável por cima do rodapé Salvar/Cancelar de
+       todo modal — a folha estica o modal até 12px do fundo, bem onde ela fica. */
+    z-index: 45;
     right: 12px;
     bottom: calc(10px + env(safe-area-inset-bottom));
     left: 12px;
@@ -69,8 +72,16 @@
     overflow-x: hidden !important;
   }
 
-  /* Cabeçalho móvel: Flua exatamente no centro e logo/conta do cliente à direita. */
-  body:has(.mobile-admin-nav) header > div:first-child {
+  /* Cabeçalho móvel: Flua exatamente no centro e logo/conta do cliente à direita.
+
+     O seletor precisa nomear o shell. Escrito como `header > div:first-child`,
+     ele casava com QUALQUER <header> — inclusive o do PageHeader de cada tela,
+     cujo primeiro filho é o bloco de título e descrição. O `height: 64px` então
+     travava um bloco de 91px (Dashboard) a 111px (Margem) numa caixa de 64, e o
+     excedente era pintado por cima do próximo item flex: os botões de ação.
+     Quebrava em toda tela de descrição longa e poupava Clientes, de uma linha
+     só — que é exatamente o padrão dos prints. */
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child {
     position: relative;
     height: 64px !important;
     justify-content: flex-end;
@@ -78,7 +89,7 @@
     padding-right: 14px !important;
   }
 
-  body:has(.mobile-admin-nav) header > div:first-child > :first-child {
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :first-child {
     position: absolute;
     z-index: 2;
     left: 50%;
@@ -87,26 +98,26 @@
     margin: 0 !important;
   }
 
-  body:has(.mobile-admin-nav) header > div:first-child > :last-child {
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child {
     position: relative;
     z-index: 3;
     margin-left: auto !important;
   }
 
-  body:has(.mobile-admin-nav) header > div:first-child > :first-child img {
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :first-child img {
     width: 106px !important;
     max-height: 38px;
     object-position: center !important;
   }
 
-  body:has(.mobile-admin-nav) header > div:first-child > :last-child button {
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child button {
     min-width: 44px;
     min-height: 44px;
     justify-content: center;
     padding: 4px !important;
   }
 
-  body:has(.mobile-admin-nav) header > div:first-child > :last-child button > span:first-child {
+  body:has(.mobile-admin-nav) div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > :last-child button > span:first-child {
     width: 40px !important;
     height: 40px !important;
   }
@@ -128,21 +139,13 @@
   }
 
   body:has(.mobile-admin-nav) main > section > header h2 {
-    position: static !important;
-    inset: auto !important;
-    transform: none !important;
-    margin: 0 !important;
-    text-align: left !important;
-    font-size: 1.35rem !important;
-    line-height: 1.2 !important;
+    font-size: 1.35rem;
+    line-height: 1.2;
   }
 
   body:has(.mobile-admin-nav) main > section > header p {
-    position: static !important;
-    transform: none !important;
-    margin-top: 6px !important;
-    max-width: 100% !important;
-    line-height: 1.45 !important;
+    max-width: 100%;
+    line-height: 1.45;
   }
 
   body:has(.mobile-admin-nav) main > section > header > div[class*="flex-wrap"] {
