@@ -181,6 +181,42 @@ const ETAPAS: Etapa[] = [
 ];
 
 const ETAPAS_IDS = new Set<EtapaId>(ETAPAS.map((etapa) => etapa.id));
+
+/* Quem foi convidada nao configura a empresa: nao mexe em insumo, custo,
+   produto nem financeiro. O guia dela e o trabalho que ela faz de fato —
+   atender, lancar, entregar, pedir avaliacao. Quatro etapas, tamanho de quem
+   le em pe. */
+const ETAPAS_AJUDANTE: EtapaId[] = ["cliente", "pedido", "entregas", "followup"];
+
+/* O progresso do dono mora em `companies`, ou seja, e da EMPRESA. Se a
+   ajudante marcasse etapas la, apagaria o do dono e vice-versa. Como isto e um
+   passo a passo de boas-vindas — roda uma vez e acabou —, o dela fica no
+   proprio aparelho: trocar de celular custa rever quatro cartoes, e nao uma
+   coluna nova no banco. */
+const CHAVE_AJUDANTE = "flua:guia-ajudante";
+
+function lerProgressoAjudante(): { concluidas: EtapaId[]; introducaoConcluida: boolean } {
+  try {
+    const cru = window.localStorage.getItem(CHAVE_AJUDANTE);
+    if (!cru) return { concluidas: [], introducaoConcluida: false };
+    const dado = JSON.parse(cru) as { concluidas?: unknown; introducaoConcluida?: unknown };
+    return {
+      concluidas: idsValidos(dado.concluidas).filter((id) => ETAPAS_AJUDANTE.includes(id)),
+      introducaoConcluida: dado.introducaoConcluida === true,
+    };
+  } catch {
+    // Aba anonima, armazenamento bloqueado: o guia so reaparece.
+    return { concluidas: [], introducaoConcluida: false };
+  }
+}
+
+function gravarProgressoAjudante(dado: { concluidas: EtapaId[]; introducaoConcluida: boolean }) {
+  try {
+    window.localStorage.setItem(CHAVE_AJUDANTE, JSON.stringify(dado));
+  } catch {
+    // Nao poder lembrar nao pode impedir de usar.
+  }
+}
 const ROTAS_DO_SISTEMA = [
   "/admin",
   "/inicio",
@@ -241,6 +277,7 @@ export function OnboardingPrompt() {
   const [abertoPelaCentral, setAbertoPelaCentral] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [ehAjudante, setEhAjudante] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
@@ -280,7 +317,23 @@ export function OnboardingPrompt() {
           .maybeSingle();
 
         if (membroError) throw membroError;
-        if (!membro || membro.role !== "owner") return;
+        if (!membro) return;
+
+        if (membro.role !== "owner") {
+          if (!ativo) return;
+          const guardado = lerProgressoAjudante();
+          setEhAjudante(true);
+          setProgresso({
+            companyId: membro.company_id,
+            introducaoConcluida: guardado.introducaoConcluida,
+            habilitado: true,
+            concluidas: guardado.concluidas,
+            puladas: [],
+          });
+          setBoasVindas(!guardado.introducaoConcluida);
+          setCarregando(false);
+          return;
+        }
 
         const [empresa, insumo, produto, cliente, pedido, movimento, followup] =
           await Promise.all([
@@ -443,8 +496,15 @@ export function OnboardingPrompt() {
       ]),
     [progresso],
   );
-  const percentual = Math.round((contabilizadas.size / ETAPAS.length) * 100);
-  const etapa = ETAPAS.find((item) => item.id === etapaAberta) ?? null;
+  /* A lista muda com quem esta olhando: o dono ve as nove, a ajudante ve as
+     quatro operacionais. Tudo que conta progresso passa por aqui, senao ela
+     ficaria eternamente em 44% por causa de etapas que nao sao dela. */
+  const etapasVisiveis = useMemo(
+    () => (ehAjudante ? ETAPAS.filter((e) => ETAPAS_AJUDANTE.includes(e.id)) : ETAPAS),
+    [ehAjudante],
+  );
+  const percentual = Math.round((contabilizadas.size / etapasVisiveis.length) * 100);
+  const etapa = etapasVisiveis.find((item) => item.id === etapaAberta) ?? null;
   const EtapaIcon = etapa?.icon;
 
   async function atualizarEmpresa(
@@ -456,6 +516,18 @@ export function OnboardingPrompt() {
     },
   ) {
     if (!progresso) return false;
+
+    /* A ajudante nunca escreve em `companies`: aquilo e progresso da empresa e
+       apagaria o do dono. O dela fica no aparelho. */
+    if (ehAjudante) {
+      gravarProgressoAjudante({
+        concluidas: alteracoes.concluidas ?? progresso.concluidas,
+        introducaoConcluida:
+          alteracoes.introducaoConcluida ?? progresso.introducaoConcluida,
+      });
+      return true;
+    }
+
     setSalvando(true);
     setErro(null);
     const resultado = await atualizarGuiaFlua({ data: alteracoes });
@@ -518,7 +590,7 @@ export function OnboardingPrompt() {
     setEtapaAberta(null);
 
     const totalContabilizado = new Set([...concluidas, ...puladas]).size;
-    if (totalContabilizado === ETAPAS.length) {
+    if (totalContabilizado === etapasVisiveis.length) {
       setAbertoPelaCentral(false);
       setExpandido(false);
       window.localStorage.setItem("flua-guia-recolhido", "1");
@@ -560,11 +632,12 @@ export function OnboardingPrompt() {
               id="guia-boas-vindas"
               className="mt-4 text-2xl font-bold sm:text-3xl"
             >
-              Vamos preparar seu Flua juntos
+              {ehAjudante ? "Bem-vinda ao Flua" : "Vamos preparar seu Flua juntos"}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--admin-muted)] sm:text-base">
-              Um passo a passo curto vai ajudar você a configurar a empresa,
-              calcular custos, cadastrar produtos e registrar sua primeira venda.
+              {ehAjudante
+                ? "Um passo a passo curto para você aprender o dia a dia: atender um cliente, lançar um pedido, organizar as entregas e pedir a avaliação depois."
+                : "Um passo a passo curto vai ajudar você a configurar a empresa, calcular custos, cadastrar produtos e registrar sua primeira venda."}
             </p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               {["Aprenda fazendo", "Continue quando quiser", "Pule qualquer etapa"].map(
@@ -753,7 +826,7 @@ export function OnboardingPrompt() {
               </div>
             ) : (
               <div className="space-y-1.5">
-                {ETAPAS.map((item) => {
+                {etapasVisiveis.map((item) => {
                   const concluida = progresso.concluidas.includes(item.id);
                   const pulada = progresso.puladas.includes(item.id);
                   const Icon = concluida ? Check : pulada ? ChevronUp : Circle;
