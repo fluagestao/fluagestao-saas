@@ -206,6 +206,16 @@
     bottom: 0 !important;
     left: 0 !important;
     border-radius: 0 !important;
+    /* Acima do cabecalho sticky, sem depender de quem ganha a disputa de
+       empilhamento — que ja me custou duas tentativas. */
+    z-index: 70 !important;
+  }
+
+  /* E o cabecalho sai do caminho de vez enquanto o pedido esta aberto.
+     Cobrir com z-index resolve o visual; tirar do layout resolve tambem o
+     toque, que continuava indo para as abas mortas atras do modal. */
+  body:has([data-pedido-dialog][data-state="open"]) [data-flua-painel] > header {
+    display: none !important;
   }
 
   [role="dialog"] > * {
