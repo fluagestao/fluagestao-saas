@@ -346,10 +346,22 @@ export function resumoVendas(pedidos: Pedido[], now = new Date()) {
   const desdeMes = inicioDoMesISO(now);
   const validos = pedidos.filter((p) => p.status !== "cancelado");
   // Comparação lexicográfica de YYYY-MM-DD é equivalente à cronológica.
-  const doMes = validos.filter((p) => p.created_at && dataLocalISO(p.created_at) >= desdeMes);
-  const faturamentoMes = doMes.reduce((t, p) => t + (p.total || 0), 0);
-  const numMes = doMes.length;
+  /* DOIS RELOGIOS, iguais aos do Dashboard e do Financeiro.
+   *
+   * Faturamento e o dinheiro que ENTROU: pedido sem recebido_em nao conta, por
+   * mais que ja tenha sido entregue. Antes disto o Inicio contava pela entrada
+   * do pedido enquanto o Financeiro contava pelo recebimento, e o mesmo mes
+   * dava dois valores conforme a tela em que voce olhasse. */
+  const recebidosNoMes = validos.filter((p) => p.recebido_em && p.recebido_em >= desdeMes);
+  const faturamentoMes = recebidosNoMes.reduce((t, p) => t + (p.total || 0), 0);
+  const numMes = recebidosNoMes.length;
   const ticketMedio = numMes ? faturamentoMes / numMes : 0;
+
+  // Producao conta pela saida: o que foi entregue no mes, pago ou nao.
+  const produzidosNoMes = validos.filter((p) => {
+    const dia = p.data_entrega || (p.created_at ? dataLocalISO(p.created_at) : "");
+    return dia >= desdeMes;
+  });
   const pendentes = validos.filter(
     (p) => p.status === "novo" || p.status === "producao" || p.status === "pronto",
   ).length;
@@ -361,7 +373,7 @@ export function resumoVendas(pedidos: Pedido[], now = new Date()) {
 
   // Mais vendidos (mês) por quantidade
   const contagem = new Map<string, { nome: string; qtd: number }>();
-  for (const p of doMes) {
+  for (const p of produzidosNoMes) {
     for (const i of p.itens || []) {
       const chave = i.slug || i.nome;
       const atual = contagem.get(chave) ?? { nome: i.nome, qtd: 0 };
@@ -371,9 +383,9 @@ export function resumoVendas(pedidos: Pedido[], now = new Date()) {
   }
   const maisVendidos = [...contagem.values()].sort((a, b) => b.qtd - a.qtd).slice(0, 5);
 
-  // Por forma de pagamento (mês)
+  // Forma de pagamento é dinheiro: segue o recebimento.
   const porPagamento = new Map<string, number>();
-  for (const p of doMes) {
+  for (const p of recebidosNoMes) {
     const k = p.forma_pagamento || "a combinar";
     porPagamento.set(k, (porPagamento.get(k) ?? 0) + (p.total || 0));
   }

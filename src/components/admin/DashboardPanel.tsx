@@ -342,7 +342,7 @@ export function DashboardPanel() {
     <section>
       <PageHeader
         titulo="Dashboard"
-        descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta pelo dia em que o pedido entrou, e ignora os cancelados."
+        descricao="Dinheiro conta quando entra: faturamento e ticket usam a data do pagamento. Cestas contam quando saem: a data de entrega. Cancelados ficam fora."
         acoes={
           <div className="flex flex-wrap items-end gap-2">
             <label className="grid gap-1 text-xs text-muted-foreground">
@@ -442,7 +442,7 @@ export function DashboardPanel() {
       {!carregando && dados && dados.totalPedidos === 0 && (
         <EstadoVazio
           titulo="Nenhuma venda no período"
-          descricao="Entram todos os pedidos que entraram no período, entregues ou não — só os cancelados ficam de fora."
+          descricao="Nada recebido nem entregue neste período. Pedido em aberto só aparece aqui quando o dinheiro entra ou a cesta sai."
         />
       )}
 
@@ -453,7 +453,7 @@ export function DashboardPanel() {
         <div className="flex flex-col">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <Cartao
-              titulo={modo === "ano" ? "Vendido no ano" : "Vendido no mês"}
+              titulo={modo === "ano" ? "Recebido no ano" : "Recebido no mês"}
               valor={formatBRL(dados.totalVendido)}
               variacao={
                 dados.anterior ? (
@@ -466,7 +466,7 @@ export function DashboardPanel() {
               }
             />
             <Cartao
-              titulo="Pedidos"
+              titulo="Pedidos pagos"
               valor={String(dados.totalPedidos)}
               variacao={
                 dados.anterior ? (
@@ -480,7 +480,7 @@ export function DashboardPanel() {
             />
             {/* O numero sobre o qual se estipula meta: unidades, nao reais. */}
             <Cartao
-              titulo="Cestas vendidas"
+              titulo="Cestas entregues"
               valor={String(dados.unidades.principais)}
               nota={
                 dados.unidades.adicionais > 0

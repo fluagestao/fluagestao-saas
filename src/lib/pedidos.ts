@@ -773,7 +773,7 @@ export async function carregarDashboard(input: { data: unknown }) {
     await Promise.all([
       supabase
         .from("pedidos")
-        .select("itens, total, data_entrega, created_at, forma_pagamento, status")
+        .select("itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status")
         .eq("company_id", companyId)
         .neq("status", "cancelado")
         .limit(3000),
@@ -829,16 +829,34 @@ export async function carregarDashboard(input: { data: unknown }) {
     produtosLinhas.map((produto) => [produto.slug, produto]),
   );
 
-  /* O pedido conta no dia em que entrou. Sem created_at, cai na data de
-     entrega — e a tela diz isso, para ninguem achar que e faturamento. */
-  const diaDoPedido = (pedido: { created_at?: unknown; data_entrega?: unknown }) =>
-    String(pedido.created_at ?? "").slice(0, 10) || String(pedido.data_entrega ?? "") || "";
+  /* DOIS RELOGIOS, de proposito.
+   *
+   * Dinheiro conta quando ENTRA: pedido sem recebido_em nao virou faturamento,
+   * por mais que ja tenha saido da cozinha. E o mesmo criterio do Financeiro,
+   * que sempre usou recebido_em — antes disto o Inicio e o Dashboard contavam
+   * pela entrada do pedido e os tres se contradiziam na mesma tela.
+   *
+   * Producao conta quando SAI: e a data de entrega que diz em que mes a cesta
+   * foi feita. Contar cesta pela data do pagamento mandaria o Plano de Compras
+   * comprar em setembro o ingrediente de um trabalho feito em agosto — e cesta
+   * entregue e nao paga sumiria da contagem, mostrando menos trabalho do que
+   * de fato houve. */
+  type LinhaPedido = { created_at?: unknown; data_entrega?: unknown; recebido_em?: unknown };
+
+  const diaDoDinheiro = (pedido: LinhaPedido) =>
+    String(pedido.recebido_em ?? "").slice(0, 10);
+
+  // Sem data de entrega cai na entrada do pedido: aproximar e melhor do que
+  // sumir com a cesta da contagem.
+  const diaDaProducao = (pedido: LinhaPedido) =>
+    String(pedido.data_entrega ?? "") || String(pedido.created_at ?? "").slice(0, 10) || "";
+
+  const dentro = (dia: string) => Boolean(dia) && dia >= filtro.de && dia <= filtro.ate;
 
   const todos = pedidosRes.data ?? [];
-  const noPeriodo = todos.filter((pedido) => {
-    const dia = diaDoPedido(pedido);
-    return dia >= filtro.de && dia <= filtro.ate;
-  });
+  const noPeriodo = todos.filter(
+    (pedido) => dentro(diaDoDinheiro(pedido)) || dentro(diaDaProducao(pedido)),
+  );
 
   const somar = (
     mapa: Map<string, VendaAgrupada>,
@@ -910,31 +928,32 @@ export async function carregarDashboard(input: { data: unknown }) {
 
     if (!relevante) continue;
 
-    totalPedidos += 1;
-    totalVendido += Number(pedido.total ?? 0);
+    const contaDinheiro = dentro(diaDoDinheiro(pedido));
+    const contaProducao = dentro(diaDaProducao(pedido));
+
+    if (contaDinheiro) {
+      totalPedidos += 1;
+      totalVendido += Number(pedido.total ?? 0);
+    }
 
     const temAdicional = itens.some((item) => adicional(categoriaDoItem(item)));
     const temPrincipal = itens.some((item) => !adicional(categoriaDoItem(item)));
     const valorPedido = Number(pedido.total ?? 0);
 
-    if (temAdicional && temPrincipal) {
-      pedidosComAdicional += 1;
-      valorComAdicional += valorPedido;
-    } else if (temAdicional) {
-      pedidosSoAdicional += 1;
-    } else if (temPrincipal) {
-      pedidosSemAdicional += 1;
-      valorSemAdicional += valorPedido;
-    }
+    if (contaDinheiro) {
+      if (temAdicional && temPrincipal) {
+        pedidosComAdicional += 1;
+        valorComAdicional += valorPedido;
+      } else if (temAdicional) {
+        pedidosSoAdicional += 1;
+      } else if (temPrincipal) {
+        pedidosSemAdicional += 1;
+        valorSemAdicional += valorPedido;
+      }
 
-    const forma = pedido.forma_pagamento || "A combinar";
-    somar(
-      porPagamento,
-      forma,
-      forma,
-      1,
-      Number(pedido.total ?? 0),
-    );
+      const forma = pedido.forma_pagamento || "A combinar";
+      somar(porPagamento, forma, forma, 1, Number(pedido.total ?? 0));
+    }
 
     for (const item of itens) {
       const produto = item.slug ? produtos.get(item.slug) : undefined;
@@ -953,40 +972,29 @@ export async function carregarDashboard(input: { data: unknown }) {
       const nome = produto?.nome ?? item.nome;
       const ehAdicional = adicional(categoria);
 
-      if (ehAdicional) unidadesAdicionais += item.qtd;
-      else unidadesPrincipais += item.qtd;
+      /* Cada bloco da tela tem UM relogio, nunca os dois. Unidades e o ranking
+         "Mais vendidos" sao producao; as pizzas mostram R$ e seguem o dinheiro.
+         Misturar as bases dentro do mesmo par (qtd e valor na mesma linha)
+         produziria uma cesta que soma unidade num mes e reais em outro. */
+      if (contaProducao) {
+        if (ehAdicional) unidadesAdicionais += item.qtd;
+        else unidadesPrincipais += item.qtd;
 
-      somar(
-        ehAdicional ? adicionais : porProduto,
-        item.slug ?? nome,
-        nome,
-        item.qtd,
-        valor,
-      );
-
-      const colecao = categoria?.catalogo_id
-        ? catalogos.get(categoria.catalogo_id)
-        : undefined;
-
-      if (categoria) {
-        somar(
-          porCategoria,
-          categoria.id,
-          categoria.nome,
-          item.qtd,
-          valor,
-          colecao?.nome,
-        );
+        somar(ehAdicional ? adicionais : porProduto, item.slug ?? nome, nome, item.qtd, valor);
       }
 
-      if (colecao) {
-        somar(
-          porColecao,
-          colecao.id,
-          colecao.nome,
-          item.qtd,
-          valor,
-        );
+      if (contaDinheiro) {
+        const colecao = categoria?.catalogo_id
+          ? catalogos.get(categoria.catalogo_id)
+          : undefined;
+
+        if (categoria) {
+          somar(porCategoria, categoria.id, categoria.nome, item.qtd, valor, colecao?.nome);
+        }
+
+        if (colecao) {
+          somar(porColecao, colecao.id, colecao.nome, item.qtd, valor);
+        }
       }
     }
   }
@@ -1026,8 +1034,10 @@ export async function carregarDashboard(input: { data: unknown }) {
     valor: 0,
   }));
 
+  // O grafico e "cestas por mes": producao, e e dele que sai a media que vira
+  // meta. Por data de pagamento, a barra de agosto contaria trabalho de julho.
   for (const pedido of todos) {
-    const dia = diaDoPedido(pedido);
+    const dia = diaDaProducao(pedido);
     if (dia.slice(0, 4) !== String(anoBase)) continue;
     const resumo = resumir(pedido);
     if (!resumo) continue;
@@ -1069,14 +1079,22 @@ export async function carregarDashboard(input: { data: unknown }) {
     let pedidosAnt = 0;
     let principaisAnt = 0;
     let valorAnt = 0;
+    /* Compara o que os cartoes mostram: pedidos e valor sao caixa. As
+       "principais" aqui alimentam a variacao do cartao de cestas, que e
+       producao — por isso as duas datas convivem neste laco. */
     for (const pedido of todos) {
-      const dia = diaDoPedido(pedido);
-      if (dia < antDe || dia > antAte) continue;
+      const diaMoeda = diaDoDinheiro(pedido);
+      const diaObra = diaDaProducao(pedido);
+      const noCaixa = Boolean(diaMoeda) && diaMoeda >= antDe && diaMoeda <= antAte;
+      const naObra = Boolean(diaObra) && diaObra >= antDe && diaObra <= antAte;
+      if (!noCaixa && !naObra) continue;
       const resumo = resumir(pedido);
       if (!resumo) continue;
-      pedidosAnt += 1;
-      principaisAnt += resumo.principais;
-      valorAnt += resumo.valor;
+      if (noCaixa) {
+        pedidosAnt += 1;
+        valorAnt += resumo.valor;
+      }
+      if (naObra) principaisAnt += resumo.principais;
     }
     // Sem nada no periodo anterior nao ha comparacao: "+100%" sobre zero e
     // um numero que nao significa nada.

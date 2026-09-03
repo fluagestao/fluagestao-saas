@@ -577,9 +577,9 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           carregando={carregando}
-          titulo="Faturamento do mês"
+          titulo="Recebido no mês"
           valor={formatBRL(resumo.faturamentoMes)}
-          nota=""
+          nota={resumo.numMes ? `${resumo.numMes} pedido(s) pagos` : "nada recebido ainda"}
           icon={CircleDollarSign}
         />
         <Kpi
