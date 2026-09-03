@@ -977,7 +977,7 @@ export function PedidoDialog({
       <Dialog open onOpenChange={(o) => !o && onClose()}>
         <DialogContent
           data-pedido-dialog
-          className="!flex !h-auto !max-h-none !w-auto !max-w-none !min-h-0 !flex-col !overflow-hidden gap-2 px-6 py-2.5 md:!h-[calc(100dvh-88px)] md:!max-h-[calc(100dvh-88px)] md:!w-[calc(100vw-32px)] md:!max-w-[1760px]"
+          className="!flex !min-h-0 !flex-col !overflow-hidden gap-2 py-2.5 max-md:!inset-0 max-md:!h-full max-md:!max-h-none max-md:!w-full max-md:!max-w-none max-md:!rounded-none max-md:px-4 md:px-6 md:!h-[calc(100dvh-88px)] md:!max-h-[calc(100dvh-88px)] md:!w-[calc(100vw-32px)] md:!max-w-[1760px]"
         >
           {conteudo}
         </DialogContent>
