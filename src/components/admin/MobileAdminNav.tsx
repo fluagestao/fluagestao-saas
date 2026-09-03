@@ -12,7 +12,6 @@ const ROTAS_PAINEL = [
   "/financeiro",
   "/cadastros",
   "/tarefas",
-  "/bia",
   "/conta",
 ];
 

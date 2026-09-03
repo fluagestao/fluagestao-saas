@@ -53,7 +53,6 @@ const nextConfig: NextConfig = {
       { source: "/bairros", destination: "/cadastros/bairros", permanent: false },
       { source: "/horarios", destination: "/cadastros/horarios", permanent: false },
 
-      { source: "/bia", destination: "/bia/simulador", permanent: false },
 
       { source: "/produtos/novo", destination: "/cadastros/produtos/novo", permanent: false },
       {
@@ -130,9 +129,6 @@ const nextConfig: NextConfig = {
 
       { source: "/tarefas", destination: "/admin" },
 
-      { source: "/bia/simulador", destination: "/admin" },
-      { source: "/bia/conversas", destination: "/admin" },
-      { source: "/bia/ajustes", destination: "/admin" },
 
       {
         source: "/cadastros/produtos/novo",

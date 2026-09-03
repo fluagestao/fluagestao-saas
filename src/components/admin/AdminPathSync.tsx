@@ -35,10 +35,6 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Bairros: "/cadastros/bairros",
   Horários: "/cadastros/horarios",
 
-  // "Simulador" agora e a tela de Custo (acima). O BIA nao esta no menu, entao
-  // nao ha botao dele para clicar — a entrada antiga nao abria nada.
-  Conversas: "/bia/conversas",
-  Ajustes: "/bia/ajustes",
 };
 
 const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
@@ -78,9 +74,6 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
 
   "/tarefas": { filho: "Tarefas" },
 
-  // /bia/simulador ficou sem destino: o rotulo "Simulador" e da tela de Custo.
-  "/bia/conversas": { pai: "BIA", filho: "Conversas" },
-  "/bia/ajustes": { pai: "BIA", filho: "Ajustes" },
 
   "/pedidos": { pai: "Vendas", filho: "Pedidos" },
   "/a-receber": { pai: "Vendas", filho: "A receber" },
@@ -96,7 +89,6 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
   "/bairros": { pai: "Cadastros", filho: "Bairros" },
   "/horarios": { pai: "Cadastros", filho: "Horários" },
-  "/bia": { pai: "BIA", filho: "Simulador" },
 };
 
 const ROTAS_PAINEL = new Set(Object.keys(ESTADO_POR_ROTA));
@@ -177,7 +169,6 @@ export function AdminPathSync() {
           if (texto === "Vendas") destino = "/vendas/pedidos";
           else if (texto === "Financeiro") destino = "/financeiro/entradas";
           else if (texto === "Cadastros") destino = "/cadastros/produtos";
-          else if (texto === "BIA") destino = "/bia/simulador";
         }
       }
 
