@@ -59,7 +59,11 @@ export function NovoPedidoPageClient({
 
           margin: 0 !important;
           transform: translateX(-50%) !important;
-          translate: none !important;
+          /* Zera a variavel em vez do valor inicial "none", que o
+             minificador apaga por considerar redundante. */
+          --tw-translate-x: 0px !important;
+          --tw-translate-y: 0px !important;
+          translate: 0 0 !important;
           box-sizing: border-box !important;
           border: 0 !important;
           border-radius: 0 !important;

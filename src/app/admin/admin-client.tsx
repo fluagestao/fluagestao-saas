@@ -62,6 +62,7 @@ import {
 import { VendasPanel } from "@/components/admin/VendasPanel";
 import { carregarCatalogoAdmin } from "@/lib/admin";
 import { listarEtiquetas } from "@/lib/etiquetas";
+import { DIAS_PARA_AVISAR, type Assinatura } from "@/lib/assinatura-tipos";
 import { cn } from "@/lib/utils";
 
 export type AbaId =
@@ -211,6 +212,7 @@ export default function AdminClient({
   companyLogoUrl,
   companyAddress,
   companyCityState,
+  assinatura,
   initialAba = "inicio",
   initialNovoPedido = false,
 }: {
@@ -220,6 +222,7 @@ export default function AdminClient({
   companyLogoUrl?: string | null;
   companyAddress?: string | null;
   companyCityState?: string | null;
+  assinatura?: Assinatura | null;
   initialAba?: AbaId;
   initialNovoPedido?: boolean;
 }) {
@@ -316,6 +319,58 @@ export default function AdminClient({
     <ConfirmProvider>
       <Toaster position="bottom-right" richColors />
       <div className="min-h-screen bg-[var(--admin-bg)] text-foreground">
+        {/* Faixa do teste. Fica ACIMA do header sticky de propósito: ela some
+            quando a pessoa rola, em vez de ocupar altura fixa para sempre —
+            no celular o cabeçalho já come tela demais. */}
+        {assinatura?.emTeste &&
+          assinatura.diasRestantes !== null &&
+          assinatura.diasRestantes <= DIAS_PARA_AVISAR && (
+            <div
+              className={cn(
+                "px-4 py-2 text-center text-sm sm:px-6",
+                assinatura.expirada
+                  ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
+                  : "bg-[var(--cream)] text-[var(--admin-ink)]",
+              )}
+            >
+              {assinatura.expirada ? (
+                <>
+                  <strong>Seu teste terminou.</strong> Tudo que você cadastrou continua aqui para
+                  consultar — para voltar a lançar,{" "}
+                  <a
+                    href="https://wa.me/5548996510100"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold underline underline-offset-2"
+                  >
+                    fale com a gente
+                  </a>
+                  .
+                </>
+              ) : (
+                <>
+                  Seu teste termina{" "}
+                  <strong>
+                    {assinatura.diasRestantes <= 0
+                      ? "hoje"
+                      : assinatura.diasRestantes === 1
+                        ? "amanhã"
+                        : `em ${assinatura.diasRestantes} dias`}
+                  </strong>
+                  .{" "}
+                  <a
+                    href="https://wa.me/5548996510100"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-semibold text-[var(--terracotta)] underline underline-offset-2"
+                  >
+                    Quero continuar
+                  </a>
+                </>
+              )}
+            </div>
+          )}
+
         <header className="sticky top-0 z-40 border-b border-[var(--admin-border)] bg-white/96 shadow-[0_6px_24px_rgba(112,61,58,0.04)] backdrop-blur-xl">
           <div className="mx-auto flex h-[74px] max-w-[1680px] items-center gap-4 px-4 sm:px-6 xl:px-8">
             <button

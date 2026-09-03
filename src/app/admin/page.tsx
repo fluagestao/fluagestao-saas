@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { lerAssinatura } from "@/lib/assinatura";
 import { createClient } from "@/lib/supabase/server";
 
 import AdminClient from "./admin-client";
@@ -41,6 +42,8 @@ export default async function AdminPage() {
     .eq("id", membro.company_id)
     .maybeSingle();
 
+  const assinatura = await lerAssinatura(supabase, membro.company_id);
+
   const enderecoEmpresa =
     [
       empresa?.street,
@@ -61,6 +64,7 @@ export default async function AdminPage() {
       companyLogoUrl={empresa?.logo_url ?? null}
       companyAddress={enderecoEmpresa}
       companyCityState={cidadeEstadoEmpresa}
+      assinatura={assinatura}
     />
   );
 }

@@ -161,10 +161,17 @@
     max-height: none !important;
     height: auto !important;
     /* O Tailwind v4 compila -translate-x-1/2 para a propriedade `translate`,
-       nao para `transform` — entao `transform: none` sozinho nao cancelava
-       nada e todo modal abria deslocado meia tela para cima e para a esquerda. */
+       nao para `transform` — entao `transform: none` sozinho nao cancela nada
+       e todo modal abre deslocado meia tela para cima e para a esquerda. */
     transform: none !important;
-    translate: none !important;
+    /* NAO usar `translate: none`: o minificador trata `none` como valor
+       inicial e apaga a declaracao inteira do CSS final — foi o que aconteceu
+       na primeira tentativa, e o modal seguiu deslocado meia tela. Zerar as
+       variaveis que a utility do Tailwind le e o que sobrevive a minificacao,
+       porque custom property nunca e descartada como redundante. */
+    --tw-translate-x: 0px !important;
+    --tw-translate-y: 0px !important;
+    translate: 0 0 !important;
     margin: 0 !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
