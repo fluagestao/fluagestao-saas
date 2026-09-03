@@ -27,10 +27,29 @@ export type VendaAgrupada = {
   valor: number;
 };
 
+/** Um mês da série do ano. Sempre os 12, mesmo os sem venda. */
+export type MesDaSerie = {
+  /** 1 a 12. */
+  mes: number;
+  pedidos: number;
+  /** Cestas, tábuas, cafés — o que dá para virar meta. */
+  principais: number;
+  adicionais: number;
+  valor: number;
+};
+
 export type DashboardVendas = {
   totalVendido: number;
   totalPedidos: number;
   ticketMedio: number;
+  /** Quantas unidades saíram, separadas: meta se estipula sobre a principal. */
+  unidades: { principais: number; adicionais: number };
+  /** Os 12 meses do ano selecionado, para enxergar sazonalidade. */
+  serieMensal: MesDaSerie[];
+  /** Mesmo período anterior (mês passado ou ano passado). Null se não houver. */
+  anterior: { pedidos: number; principais: number; valor: number } | null;
+  /** Rótulo pronto do período anterior: "agosto", "2025". */
+  rotuloAnterior: string;
   produtos: VendaAgrupada[];
   adicionais: VendaAgrupada[];
   porCategoria: VendaAgrupada[];

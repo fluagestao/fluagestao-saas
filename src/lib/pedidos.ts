@@ -14,6 +14,7 @@ import type {
   Cliente,
   ClienteComHistorico,
   DashboardVendas,
+  MesDaSerie,
   VendaAgrupada,
 } from "@/lib/pedidos-ops.server";
 import {
@@ -752,6 +753,11 @@ export async function removerCliente(input: { data: unknown }) {
   return { ok: true as const };
 }
 
+const NOMES_MES = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
 export async function carregarDashboard(input: { data: unknown }) {
   const filtro = z
     .object({
@@ -823,11 +829,14 @@ export async function carregarDashboard(input: { data: unknown }) {
     produtosLinhas.map((produto) => [produto.slug, produto]),
   );
 
-  const noPeriodo = (pedidosRes.data ?? []).filter((pedido) => {
-    const dia =
-      String(pedido.created_at ?? "").slice(0, 10) ||
-      pedido.data_entrega ||
-      "";
+  /* O pedido conta no dia em que entrou. Sem created_at, cai na data de
+     entrega — e a tela diz isso, para ninguem achar que e faturamento. */
+  const diaDoPedido = (pedido: { created_at?: unknown; data_entrega?: unknown }) =>
+    String(pedido.created_at ?? "").slice(0, 10) || String(pedido.data_entrega ?? "") || "";
+
+  const todos = pedidosRes.data ?? [];
+  const noPeriodo = todos.filter((pedido) => {
+    const dia = diaDoPedido(pedido);
     return dia >= filtro.de && dia <= filtro.ate;
   });
 
@@ -881,6 +890,8 @@ export async function carregarDashboard(input: { data: unknown }) {
 
   let totalVendido = 0;
   let totalPedidos = 0;
+  let unidadesPrincipais = 0;
+  let unidadesAdicionais = 0;
 
   for (const pedido of noPeriodo) {
     const itens = Array.isArray(pedido.itens)
@@ -942,6 +953,9 @@ export async function carregarDashboard(input: { data: unknown }) {
       const nome = produto?.nome ?? item.nome;
       const ehAdicional = adicional(categoria);
 
+      if (ehAdicional) unidadesAdicionais += item.qtd;
+      else unidadesPrincipais += item.qtd;
+
       somar(
         ehAdicional ? adicionais : porProduto,
         item.slug ?? nome,
@@ -977,6 +991,100 @@ export async function carregarDashboard(input: { data: unknown }) {
     }
   }
 
+  /* Conta um pedido sem montar ranking: serve para os 12 meses do ano e para o
+     periodo anterior, que so precisam de totais. Respeita o filtro de colecao —
+     um grafico que ignorasse a colecao contradiria os cartoes acima dele. */
+  const resumir = (pedido: (typeof todos)[number]) => {
+    const itens = Array.isArray(pedido.itens) ? (pedido.itens as unknown as ItemPedido[]) : [];
+
+    const daColecao = (item: ItemPedido) => {
+      if (!filtro.colecaoId) return true;
+      const produto = item.slug ? produtos.get(item.slug) : undefined;
+      const categoria = produto?.categoria_id ? categorias.get(produto.categoria_id) : undefined;
+      return categoria?.catalogo_id === filtro.colecaoId;
+    };
+
+    if (filtro.colecaoId && !itens.some(daColecao)) return null;
+
+    let principais = 0;
+    let adicionaisQtd = 0;
+    for (const item of itens) {
+      if (!daColecao(item)) continue;
+      if (adicional(categoriaDoItem(item))) adicionaisQtd += item.qtd;
+      else principais += item.qtd;
+    }
+
+    return { principais, adicionais: adicionaisQtd, valor: Number(pedido.total ?? 0) };
+  };
+
+  const anoBase = Number(filtro.de.slice(0, 4));
+  const serieMensal: MesDaSerie[] = Array.from({ length: 12 }, (_, i) => ({
+    mes: i + 1,
+    pedidos: 0,
+    principais: 0,
+    adicionais: 0,
+    valor: 0,
+  }));
+
+  for (const pedido of todos) {
+    const dia = diaDoPedido(pedido);
+    if (dia.slice(0, 4) !== String(anoBase)) continue;
+    const resumo = resumir(pedido);
+    if (!resumo) continue;
+    const alvo = serieMensal[Number(dia.slice(5, 7)) - 1];
+    if (!alvo) continue;
+    alvo.pedidos += 1;
+    alvo.principais += resumo.principais;
+    alvo.adicionais += resumo.adicionais;
+    alvo.valor += resumo.valor;
+  }
+
+  /* Periodo anterior. O cliente sempre manda mes cheio ou ano cheio, entao dá
+     para devolver o mes/ano calendario anterior de verdade em vez de deslocar
+     por dias — o que compararia fevereiro com "os 28 dias antes de fevereiro". */
+  const mesCheio = filtro.de.endsWith("-01") && filtro.ate.slice(0, 7) === filtro.de.slice(0, 7);
+  const anoCheio = filtro.de.endsWith("-01-01") && filtro.ate.endsWith("-12-31");
+
+  let antDe = "";
+  let antAte = "";
+  let rotuloAnterior = "";
+
+  if (anoCheio) {
+    antDe = `${anoBase - 1}-01-01`;
+    antAte = `${anoBase - 1}-12-31`;
+    rotuloAnterior = String(anoBase - 1);
+  } else if (mesCheio) {
+    const mesBase = Number(filtro.de.slice(5, 7));
+    const ano = mesBase === 1 ? anoBase - 1 : anoBase;
+    const mes = mesBase === 1 ? 12 : mesBase - 1;
+    const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+    const mm = String(mes).padStart(2, "0");
+    antDe = `${ano}-${mm}-01`;
+    antAte = `${ano}-${mm}-${ultimo}`;
+    rotuloAnterior = `${NOMES_MES[mes - 1]}${ano !== anoBase ? `/${ano}` : ""}`;
+  }
+
+  let anterior: DashboardVendas["anterior"] = null;
+  if (antDe) {
+    let pedidosAnt = 0;
+    let principaisAnt = 0;
+    let valorAnt = 0;
+    for (const pedido of todos) {
+      const dia = diaDoPedido(pedido);
+      if (dia < antDe || dia > antAte) continue;
+      const resumo = resumir(pedido);
+      if (!resumo) continue;
+      pedidosAnt += 1;
+      principaisAnt += resumo.principais;
+      valorAnt += resumo.valor;
+    }
+    // Sem nada no periodo anterior nao ha comparacao: "+100%" sobre zero e
+    // um numero que nao significa nada.
+    if (pedidosAnt > 0) {
+      anterior = { pedidos: pedidosAnt, principais: principaisAnt, valor: valorAnt };
+    }
+  }
+
   const ordenar = (mapa: Map<string, VendaAgrupada>) =>
     [...mapa.values()].sort(
       (a, b) => b.qtd - a.qtd || b.valor - a.valor,
@@ -986,6 +1094,10 @@ export async function carregarDashboard(input: { data: unknown }) {
     totalVendido,
     totalPedidos,
     ticketMedio: totalPedidos ? totalVendido / totalPedidos : 0,
+    unidades: { principais: unidadesPrincipais, adicionais: unidadesAdicionais },
+    serieMensal,
+    anterior,
+    rotuloAnterior,
     produtos: ordenar(porProduto),
     adicionais: ordenar(adicionais),
     porCategoria: ordenar(porCategoria).sort((a, b) => b.valor - a.valor),

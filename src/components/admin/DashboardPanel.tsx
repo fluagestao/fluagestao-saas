@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 import { cn } from "@/lib/utils";
 import { hojeISO } from "@/lib/prazo";
 import { carregarDashboard } from "@/lib/pedidos";
-import type { DashboardVendas, VendaAgrupada } from "@/lib/pedidos-ops.server";
+import type { DashboardVendas, MesDaSerie, VendaAgrupada } from "@/lib/pedidos-ops.server";
 import { formatBRL } from "@/lib/vendas";
 import { Carregando, EstadoVazio, Num, PageHeader } from "./shell";
 
@@ -35,6 +35,12 @@ const MESES = [
   "Dezembro",
 ];
 
+const MESES_CURTOS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+
+function anoDe(ano: string) {
+  return { de: `${ano}-01-01`, ate: `${ano}-12-31` };
+}
+
 function mesDe(iso: string) {
   const [ano, mes] = iso.split("-").map(Number);
   const ultimo = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
@@ -42,12 +48,126 @@ function mesDe(iso: string) {
   return { de: `${ano}-${mm}-01`, ate: `${ano}-${mm}-${ultimo}` };
 }
 
-function Cartao({ titulo, valor, nota }: { titulo: string; valor: string; nota?: string }) {
+/* A variacao so aparece quando ha periodo anterior com venda. Comparar com um
+   mes vazio devolveria "+100%", que nao diz nada sobre o negocio. */
+function Variacao({ atual, anterior, rotulo }: { atual: number; anterior: number; rotulo: string }) {
+  if (!anterior) return null;
+  const pct = Math.round(((atual - anterior) / anterior) * 100);
+  const cor =
+    pct > 0 ? "text-[var(--green-ink,#4A6B4A)]" : pct < 0 ? "text-[var(--terracotta)]" : "text-muted-foreground";
+  return (
+    <span className={cn("font-medium tabular-nums", cor)}>
+      {pct > 0 ? "+" : ""}
+      {pct}% vs. {rotulo}
+    </span>
+  );
+}
+
+function Cartao({
+  titulo,
+  valor,
+  nota,
+  variacao,
+}: {
+  titulo: string;
+  valor: string;
+  nota?: React.ReactNode;
+  variacao?: React.ReactNode;
+}) {
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
       <p className="text-xs uppercase tracking-[0.14em] text-[var(--bronze)]">{titulo}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{valor}</p>
-      {nota && <p className="mt-0.5 text-xs text-muted-foreground">{nota}</p>}
+      {(nota || variacao) && (
+        <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
+          {nota}
+          {variacao}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* Quantas unidades sairam por mes no ano. E o grafico que permite estipular
+   meta: sem ver a sazonalidade, qualquer numero de meta e chute. */
+function EvolucaoAno({
+  serie,
+  ano,
+  mesAtivo,
+  onEscolherMes,
+}: {
+  serie: MesDaSerie[];
+  ano: string;
+  /** 1 a 12, ou null quando o periodo e o ano inteiro. */
+  mesAtivo: number | null;
+  onEscolherMes: (mes: number) => void;
+}) {
+  const totalAno = serie.reduce((t, m) => t + m.principais, 0);
+  const meses = serie.filter((m) => m.pedidos > 0).length;
+  const media = meses ? totalAno / meses : 0;
+  const dados = serie.map((m) => ({ ...m, rotulo: MESES_CURTOS[m.mes - 1] }));
+
+  return (
+    <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h3 className="text-lg font-semibold text-foreground">Cestas por mês em {ano}</h3>
+        <p className="t-support text-muted-foreground">
+          <Num className="font-semibold text-foreground">{totalAno}</Num> no ano
+          {meses > 0 && (
+            <>
+              {" · média de "}
+              <Num className="font-semibold text-foreground">
+                {media.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+              </Num>
+              {" por mês com venda"}
+            </>
+          )}
+        </p>
+      </div>
+
+      {totalAno === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">Nenhuma unidade vendida em {ano}.</p>
+      ) : (
+        <div className="mt-3 h-40">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={dados} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+              <XAxis
+                dataKey="rotulo"
+                tickLine={false}
+                axisLine={false}
+                tick={{ fontSize: 11, fill: "var(--admin-muted)" }}
+              />
+              <Tooltip
+                cursor={{ fill: "var(--cream-soft)" }}
+                formatter={(v: number, _n, item: { payload?: MesDaSerie }) => [
+                  `${v} ${v === 1 ? "unidade" : "unidades"} · ${item?.payload?.pedidos ?? 0} pedido(s) · ${formatBRL(item?.payload?.valor ?? 0)}`,
+                  "",
+                ]}
+                labelFormatter={(r: string) => String(r).toUpperCase()}
+                contentStyle={{
+                  background: "var(--cream-soft)",
+                  border: "1px solid var(--cream-deep)",
+                  borderRadius: "0.75rem",
+                  fontSize: "0.8rem",
+                }}
+              />
+              <Bar
+                dataKey="principais"
+                radius={[6, 6, 0, 0]}
+                onClick={(d: { payload?: MesDaSerie }) => d?.payload && onEscolherMes(d.payload.mes)}
+              >
+                {dados.map((m) => (
+                  <Cell
+                    key={m.mes}
+                    fill={mesAtivo === m.mes ? "var(--terracotta)" : "var(--cream-deep)"}
+                    style={{ cursor: "pointer", outline: "none" }}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
@@ -184,6 +304,7 @@ function Ranking({ itens }: { itens: VendaAgrupada[] }) {
 
 export function DashboardPanel() {
   const [mes, setMes] = useState(() => hojeISO().slice(0, 7));
+  const [modo, setModo] = useState<"mes" | "ano">("mes");
   const [colecaoId, setColecaoId] = useState<string | null>(null);
   const [dados, setDados] = useState<DashboardVendas | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -191,8 +312,11 @@ export function DashboardPanel() {
   const [categoriaSel, setCategoriaSel] = useState<string | null>(null);
   const [formaSel, setFormaSel] = useState<string | null>(null);
 
-  const periodo = useMemo(() => mesDe(`${mes}-01`), [mes]);
   const [anoSelecionado, mesSelecionado] = mes.split("-");
+  const periodo = useMemo(
+    () => (modo === "ano" ? anoDe(anoSelecionado) : mesDe(`${mes}-01`)),
+    [modo, anoSelecionado, mes],
+  );
   const anos = useMemo(() => {
     const atual = Number(hojeISO().slice(0, 4));
     return Array.from({ length: 6 }, (_, indice) => String(atual - indice));
@@ -218,23 +342,51 @@ export function DashboardPanel() {
     <section data-tela-cheia>
       <PageHeader
         titulo="Dashboard"
-        descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta todo pedido do período, menos os cancelados."
+        descricao="O que vendeu no período, separado por coleção, categoria e tipo de item. Conta pelo dia em que o pedido entrou, e ignora os cancelados."
         acoes={
           <div className="flex flex-wrap items-end gap-2">
             <label className="grid gap-1 text-xs text-muted-foreground">
-              Mês
-              <select
-                value={mesSelecionado}
-                onChange={(e) => setMes(`${anoSelecionado}-${e.target.value}`)}
-                className="h-9 min-w-36 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
-              >
-                {MESES.map((nome, indice) => (
-                  <option key={nome} value={String(indice + 1).padStart(2, "0")}>
-                    {nome}
-                  </option>
+              Período
+              <div className="flex h-9 gap-1 rounded-lg border border-[var(--cream-deep)] p-0.5">
+                {(
+                  [
+                    { v: "mes", label: "Mês" },
+                    { v: "ano", label: "Ano" },
+                  ] as const
+                ).map(({ v, label }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setModo(v)}
+                    className={cn(
+                      "rounded-md px-3 text-sm font-medium transition-colors",
+                      modo === v
+                        ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {label}
+                  </button>
                 ))}
-              </select>
+              </div>
             </label>
+
+            {modo === "mes" && (
+              <label className="grid gap-1 text-xs text-muted-foreground">
+                Mês
+                <select
+                  value={mesSelecionado}
+                  onChange={(e) => setMes(`${anoSelecionado}-${e.target.value}`)}
+                  className="h-9 min-w-36 rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground outline-none focus:border-[var(--terracotta)]"
+                >
+                  {MESES.map((nome, indice) => (
+                    <option key={nome} value={String(indice + 1).padStart(2, "0")}>
+                      {nome}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <label className="grid gap-1 text-xs text-muted-foreground">
               Ano
               <select
@@ -290,7 +442,7 @@ export function DashboardPanel() {
       {!carregando && dados && dados.totalPedidos === 0 && (
         <EstadoVazio
           titulo="Nenhuma venda no período"
-          descricao="Só entram pedidos entregues. Se vendeu e ainda não marcou como entregue, ele não aparece aqui."
+          descricao="Entram todos os pedidos que entraram no período, entregues ou não — só os cancelados ficam de fora."
         />
       )}
 
@@ -298,10 +450,73 @@ export function DashboardPanel() {
         // Nada aqui rola: quem rola e a lista dentro do card de Mais vendidos.
         // Rolar o miolo inteiro cortava o card de KPI na metade.
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-            <Cartao titulo="Vendido no mês" valor={formatBRL(dados.totalVendido)} />
-            <Cartao titulo="Pedidos" valor={String(dados.totalPedidos)} />
-            <Cartao titulo="Ticket médio" valor={formatBRL(dados.ticketMedio)} />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <Cartao
+              titulo={modo === "ano" ? "Vendido no ano" : "Vendido no mês"}
+              valor={formatBRL(dados.totalVendido)}
+              variacao={
+                dados.anterior ? (
+                  <Variacao
+                    atual={dados.totalVendido}
+                    anterior={dados.anterior.valor}
+                    rotulo={dados.rotuloAnterior}
+                  />
+                ) : null
+              }
+            />
+            <Cartao
+              titulo="Pedidos"
+              valor={String(dados.totalPedidos)}
+              variacao={
+                dados.anterior ? (
+                  <Variacao
+                    atual={dados.totalPedidos}
+                    anterior={dados.anterior.pedidos}
+                    rotulo={dados.rotuloAnterior}
+                  />
+                ) : null
+              }
+            />
+            {/* O numero sobre o qual se estipula meta: unidades, nao reais. */}
+            <Cartao
+              titulo="Cestas vendidas"
+              valor={String(dados.unidades.principais)}
+              nota={
+                dados.unidades.adicionais > 0
+                  ? `+ ${dados.unidades.adicionais} adicionais`
+                  : undefined
+              }
+              variacao={
+                dados.anterior ? (
+                  <Variacao
+                    atual={dados.unidades.principais}
+                    anterior={dados.anterior.principais}
+                    rotulo={dados.rotuloAnterior}
+                  />
+                ) : null
+              }
+            />
+            <Cartao
+              titulo="Ticket médio"
+              valor={formatBRL(dados.ticketMedio)}
+              nota={
+                dados.totalPedidos
+                  ? `${(dados.unidades.principais / dados.totalPedidos).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} cesta(s) por pedido`
+                  : undefined
+              }
+            />
+          </div>
+
+          <div className="mt-3">
+            <EvolucaoAno
+              serie={dados.serieMensal}
+              ano={anoSelecionado}
+              mesAtivo={modo === "ano" ? null : Number(mesSelecionado)}
+              onEscolherMes={(m) => {
+                setModo("mes");
+                setMes(`${anoSelecionado}-${String(m).padStart(2, "0")}`);
+              }}
+            />
           </div>
 
           <div className="mt-3 grid gap-3 lg:grid-cols-3">
