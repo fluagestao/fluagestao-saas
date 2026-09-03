@@ -24,6 +24,13 @@ export type MargemProduto = {
   custoTotal: number | null;
   lucro: number | null;
   margem: number | null;
+  /** Mão de obra do período: tempo × custo/hora × unidades vendidas. */
+  maoDeObraTotal: number | null;
+  /** Percentuais (fixo + taxa + perdas) aplicados sobre a receita do produto. */
+  descontosTotal: number | null;
+  /** O que sobra depois de insumos, mão de obra e percentuais. */
+  sobraReal: number | null;
+  margemReal: number | null;
 };
 
 /**
@@ -47,7 +54,7 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
   depoisDoFim.setUTCDate(depoisDoFim.getUTCDate() + 1);
   const limite = depoisDoFim.toISOString().slice(0, 10);
 
-  const [pedidosRes, produtosRes, compRes, insumosRes, categoriasRes, catalogosRes] =
+  const [pedidosRes, produtosRes, compRes, insumosRes, categoriasRes, catalogosRes, configRes] =
     await Promise.all([
       supabase
         .from("pedidos")
@@ -82,6 +89,11 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
         .select("id, nome")
         .eq("company_id", companyId)
         .limit(200),
+      supabase
+        .from("calculo_config")
+        .select("custo_hora, percentual_fixo, percentual_taxa, percentual_perdas, incluir_no_calculo")
+        .eq("company_id", companyId)
+        .maybeSingle(),
     ]);
 
   if (pedidosRes.error) throw pedidosRes.error;
@@ -119,6 +131,10 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
       colecao: categoria?.catalogo_id ? (catalogos.get(categoria.catalogo_id) ?? null) : null,
       preco: p.preco == null ? null : Number(p.preco),
       custo: custoProduto.has(p.id as string) ? custoProduto.get(p.id as string)! : null,
+      maoDeObraTotal: null,
+      descontosTotal: null,
+      sobraReal: null,
+      margemReal: null,
       tempo_montagem_min:
         p.tempo_montagem_min == null ? null : Number(p.tempo_montagem_min),
       qtd: 0,
@@ -149,6 +165,18 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     }
   }
 
+  /* Mesma conta da Calculadora, aplicada ao que foi vendido. Desligada, tudo
+     abaixo fica nulo e o relatorio mostra so a margem sobre insumos — o que
+     ele fazia antes. */
+  const cfg = configRes.data;
+  const ligado = cfg?.incluir_no_calculo === true;
+  const custoHora = Number(cfg?.custo_hora ?? 0);
+  const fracao = ligado
+    ? Number(cfg?.percentual_fixo ?? 0) +
+      Number(cfg?.percentual_taxa ?? 0) +
+      Number(cfg?.percentual_perdas ?? 0)
+    : 0;
+
   const todos = [...porSlug.values()];
   const vendidos = todos.filter((p) => p.qtd > 0);
   for (const p of vendidos) {
@@ -156,6 +184,12 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
     p.custoTotal = p.custo * p.qtd;
     p.lucro = p.receita - p.custoTotal;
     p.margem = p.receita > 0 ? p.lucro / p.receita : null;
+
+    if (!ligado) continue;
+    p.maoDeObraTotal = custoHora * ((p.tempo_montagem_min ?? 0) / 60) * p.qtd;
+    p.descontosTotal = p.receita * fracao;
+    p.sobraReal = p.receita - p.custoTotal - p.maoDeObraTotal - p.descontosTotal;
+    p.margemReal = p.receita > 0 ? p.sobraReal / p.receita : null;
   }
 
   /* Vendidos primeiro, por lucro; depois os que nao venderam, por nome. A tela
@@ -173,9 +207,19 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
   const custoTotal = comCusto.reduce((t, p) => t + (p.custoTotal ?? 0), 0);
   const receitaComCusto = comCusto.reduce((t, p) => t + p.receita, 0);
 
+  const maoDeObraGeral = comCusto.reduce((t, p) => t + (p.maoDeObraTotal ?? 0), 0);
+  const descontosGeral = comCusto.reduce((t, p) => t + (p.descontosTotal ?? 0), 0);
+  const sobraRealGeral = receitaComCusto - custoTotal - maoDeObraGeral - descontosGeral;
+
   return {
     de,
     ate,
+    /** true quando mão de obra e custo fixo estão entrando na conta. */
+    calculoCompleto: ligado,
+    maoDeObra: maoDeObraGeral,
+    descontos: descontosGeral,
+    sobraReal: ligado ? sobraRealGeral : null,
+    margemReal: ligado && receitaComCusto > 0 ? sobraRealGeral / receitaComCusto : null,
     produtos: todos,
     receita,
     custoTotal,

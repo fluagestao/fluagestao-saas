@@ -95,7 +95,7 @@ export function CustoPanel() {
     if (!visiveis.length) return;
     const campo = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const linhas = [
-      ["Produto", "Categoria", "Coleção", "Vendidos", "Preço", "Custo", "Receita", "Lucro", "Margem"],
+      ["Produto", "Categoria", "Coleção", "Vendidos", "Preço", "Custo", "Receita", "Lucro", "Margem", "Mão de obra", "Custo fixo", "Sobra real", "Margem real"],
       ...visiveis.map((p) => [
         p.nome,
         p.categoria ?? "",
@@ -106,6 +106,10 @@ export function CustoPanel() {
         p.receita.toFixed(2).replace(".", ","),
         p.lucro?.toFixed(2).replace(".", ",") ?? "",
         p.margem == null ? "" : `${Math.round(p.margem * 100)}%`,
+        p.maoDeObraTotal?.toFixed(2).replace(".", ",") ?? "",
+        p.descontosTotal?.toFixed(2).replace(".", ",") ?? "",
+        p.sobraReal?.toFixed(2).replace(".", ",") ?? "",
+        p.margemReal == null ? "" : `${Math.round(p.margemReal * 100)}%`,
       ]),
     ];
     const csv = linhas.map((l) => l.map(campo).join(";")).join("\r\n");
@@ -192,12 +196,44 @@ export function CustoPanel() {
         <Cartao rotulo="Custo dos insumos" valor={formatBRL(dados?.custoTotal ?? 0)} cor="var(--terracotta)" carregando={carregando} />
         <Cartao rotulo="Sobrou" valor={formatBRL(dados?.lucro ?? 0)} cor="var(--green-ink)" carregando={carregando} />
         <Cartao
-          rotulo="Margem"
+          rotulo={dados?.calculoCompleto ? "Contribuição" : "Margem"}
           carregando={carregando}
           valor={porcento(dados?.margem ?? null)}
           nota="sobre o que tem custo cadastrado"
         />
       </div>
+
+      {/* So aparece com a conta completa ligada: sem mao de obra e sem fixo,
+          repetir os mesmos numeros com outro nome seria enganoso. */}
+      {dados?.calculoCompleto && (
+        <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <Cartao
+            rotulo="Mão de obra"
+            valor={formatBRL(dados.maoDeObra)}
+            cor="var(--terracotta)"
+            carregando={carregando}
+          />
+          <Cartao
+            rotulo="Custo fixo e taxas"
+            valor={formatBRL(dados.descontos)}
+            cor="var(--terracotta)"
+            carregando={carregando}
+          />
+          <Cartao
+            rotulo="Sobra real"
+            valor={formatBRL(dados.sobraReal ?? 0)}
+            cor={(dados.sobraReal ?? 0) < 0 ? "var(--destructive)" : "var(--green-ink)"}
+            carregando={carregando}
+            nota="depois de tudo"
+          />
+          <Cartao
+            rotulo="Margem real"
+            valor={porcento(dados.margemReal ?? null)}
+            carregando={carregando}
+            nota="o que sobra de verdade"
+          />
+        </div>
+      )}
 
       {dados && dados.semComposicao > 0 && (
         // Sem esse aviso, a margem do topo parece valer para tudo e nao vale.
@@ -326,9 +362,20 @@ function Linha({ produto: p }: { produto: MargemProduto }) {
       </div>
 
       <div className="w-20 text-right">
-        <p className="t-support text-muted-foreground">margem</p>
+        <p className="t-support text-muted-foreground">
+          {p.margemReal == null ? "margem" : "contrib."}
+        </p>
         <p className={cn("t-item tabular-nums", corDaMargem(p.margem))}>{porcento(p.margem)}</p>
       </div>
+
+      {p.margemReal != null && (
+        <div className="w-24 text-right">
+          <p className="t-support text-muted-foreground">sobra real</p>
+          <p className={cn("t-item tabular-nums", corDaMargem(p.margemReal))}>
+            {porcento(p.margemReal)}
+          </p>
+        </div>
+      )}
 
       {semCusto && (
         <span className="t-support shrink-0 rounded-lg bg-[var(--peach)] px-2.5 py-1 font-semibold text-[var(--coral)]">

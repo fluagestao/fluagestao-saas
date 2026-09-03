@@ -37,6 +37,8 @@ export type Simulacao = {
   preco: number | null;
   margem_alvo: number | null;
   observacao: string | null;
+  /** Minutos de montagem, para a mão de obra entrar na conta. */
+  tempo_montagem_min: number | null;
   produto_id: string | null;
   virou_produto_em: string | null;
   itens: ItemSimulacao[];
@@ -53,6 +55,7 @@ const simulacaoSchema = z.object({
   preco: z.number().nonnegative().nullish(),
   margem_alvo: z.number().min(0).max(0.99).nullish(),
   observacao: z.string().trim().max(500).nullish().transform((v) => (v ? v : null)),
+  tempo_montagem_min: z.number().int().min(0).max(6000).nullish(),
   itens: z
     .array(
       z.object({
@@ -71,7 +74,7 @@ export async function carregarSimulacoes(): Promise<Simulacao[]> {
   const [simRes, itensRes, insumosRes] = await Promise.all([
     supabase
       .from("simulacoes")
-      .select("id, nome, colecao, preco, margem_alvo, observacao, produto_id, virou_produto_em")
+      .select("id, nome, colecao, preco, margem_alvo, observacao, tempo_montagem_min, produto_id, virou_produto_em")
       .eq("company_id", companyId)
       .order("created_at", { ascending: false }),
     supabase
@@ -128,6 +131,8 @@ export async function carregarSimulacoes(): Promise<Simulacao[]> {
       preco: s.preco == null ? null : Number(s.preco),
       margem_alvo: s.margem_alvo == null ? null : Number(s.margem_alvo),
       observacao: (s.observacao as string | null) ?? null,
+      tempo_montagem_min:
+        s.tempo_montagem_min == null ? null : Number(s.tempo_montagem_min),
       produto_id: (s.produto_id as string | null) ?? null,
       virou_produto_em: (s.virou_produto_em as string | null) ?? null,
       itens,
@@ -148,6 +153,7 @@ export async function salvarSimulacao(input: ActionInput<unknown>) {
     preco: data.preco ?? null,
     margem_alvo: data.margem_alvo ?? null,
     observacao: data.observacao,
+    tempo_montagem_min: data.tempo_montagem_min ?? null,
     updated_at: new Date().toISOString(),
   };
 
@@ -291,7 +297,7 @@ export async function virarProduto(input: ActionInput<unknown>) {
 
   const { data: simulacao, error } = await supabase
     .from("simulacoes")
-    .select("id, nome, preco, produto_id")
+    .select("id, nome, preco, tempo_montagem_min, produto_id")
     .eq("id", id)
     .eq("company_id", companyId)
     .single();
@@ -341,6 +347,9 @@ export async function virarProduto(input: ActionInput<unknown>) {
       slug,
       categoria_id: categoriaId ?? null,
       preco: simulacao.preco,
+      // Herda o tempo: sem isso o preço simulado sai por uma conta e o
+      // produto criado por outra.
+      tempo_montagem_min: simulacao.tempo_montagem_min ?? null,
       preco_label: null,
       serve: null,
       itens: [],

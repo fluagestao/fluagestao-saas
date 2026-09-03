@@ -21,6 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { carregarCalculoConfig, type SugestaoFixo } from "@/lib/calculo";
+import {
+  CONFIG_VAZIA,
+  calcular,
+  precoParaMargem,
+  type CalculoConfig,
+} from "@/lib/calculo-tipos";
 import { mensagemDeErro } from "@/lib/erros";
 import { listarInsumos, type InsumoRow } from "@/lib/insumos";
 import {
@@ -32,6 +39,8 @@ import {
   type Simulacao,
 } from "@/lib/simulador";
 import { cn } from "@/lib/utils";
+import { AjustesCalculo } from "./AjustesCalculo";
+import { CascataCusto } from "./CascataCusto";
 import { Carregando, EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
 const AVULSO = "__avulso__";
@@ -80,7 +89,19 @@ export function SimuladorPanel() {
   const [insumos, setInsumos] = useState<InsumoRow[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [editando, setEditando] = useState<Simulacao | "nova" | null>(null);
+  const [config, setConfig] = useState<CalculoConfig>(CONFIG_VAZIA);
+  const [sugestao, setSugestao] = useState<SugestaoFixo | null>(null);
   const confirmar = useConfirmar();
+
+  async function recarregarConfig() {
+    try {
+      const r = await carregarCalculoConfig();
+      setConfig(r.config);
+      setSugestao(r.sugestao);
+    } catch {
+      // Sem config, a conta cai no modo antigo: só insumos.
+    }
+  }
 
   async function carregar() {
     setCarregando(true);
@@ -95,6 +116,7 @@ export function SimuladorPanel() {
 
   useEffect(() => {
     carregar();
+    recarregarConfig();
     listarInsumos()
       .then(setInsumos)
       .catch(() => setInsumos([]));
@@ -126,10 +148,15 @@ export function SimuladorPanel() {
         titulo="Simulador"
         descricao="Monte uma cesta que ainda não existe e veja quanto custaria. Nada daqui vira cadastro até você mandar."
         acoes={
-          <Button onClick={() => setEditando("nova")} className="h-11">
-            <Plus className="mr-1.5 h-4 w-4" />
-            Nova simulação
-          </Button>
+          <>
+            {sugestao && (
+              <AjustesCalculo config={config} sugestao={sugestao} onSalvo={recarregarConfig} />
+            )}
+            <Button onClick={() => setEditando("nova")} className="h-11">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Nova simulação
+            </Button>
+          </>
         }
       />
 
@@ -143,8 +170,8 @@ export function SimuladorPanel() {
       ) : (
         <ul className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {simulacoes.map((s) => {
-            const margem =
-              s.preco != null && s.preco > 0 ? (s.preco - s.custo_total) / s.preco : null;
+            const c = calcular(s.preco, s.custo_total, s.tempo_montagem_min, config);
+            const margem = config.incluir_no_calculo ? c.margemReal : c.margemContribuicao;
             return (
               <li
                 key={s.id}
@@ -211,6 +238,7 @@ export function SimuladorPanel() {
         <DialogoSimulacao
           simulacao={editando === "nova" ? null : editando}
           insumos={insumos}
+          config={config}
           onFechar={() => setEditando(null)}
           onMudou={carregar}
         />
@@ -222,11 +250,13 @@ export function SimuladorPanel() {
 function DialogoSimulacao({
   simulacao,
   insumos,
+  config,
   onFechar,
   onMudou,
 }: {
   simulacao: Simulacao | null;
   insumos: InsumoRow[];
+  config: CalculoConfig;
   onFechar: () => void;
   onMudou: () => Promise<void>;
 }) {
@@ -249,6 +279,9 @@ function DialogoSimulacao({
         }))
       : [linhaVazia()],
   );
+  const [tempo, setTempo] = useState(
+    simulacao?.tempo_montagem_min == null ? "" : String(simulacao.tempo_montagem_min),
+  );
   const [salvando, setSalvando] = useState(false);
   const [id, setId] = useState(simulacao?.id ?? null);
   const [viroouProduto, setVirouProduto] = useState(Boolean(simulacao?.produto_id));
@@ -264,11 +297,15 @@ function DialogoSimulacao({
 
   const precoNumero = paraNumero(preco);
   const temPreco = Number.isFinite(precoNumero) && precoNumero > 0;
-  const margem = temPreco && custoTotal > 0 ? (precoNumero - custoTotal) / precoNumero : null;
+  const tempoMin = Number.isFinite(paraNumero(tempo)) ? paraNumero(tempo) : null;
+
+  const cascata = calcular(temPreco ? precoNumero : null, custoTotal, tempoMin, config);
 
   const alvo = paraNumero(margemAlvo);
   const temAlvo = Number.isFinite(alvo) && alvo >= 0 && alvo < 100;
-  const precoSugerido = temAlvo && custoTotal > 0 ? custoTotal / (1 - alvo / 100) : null;
+  const precoSugerido = temAlvo
+    ? precoParaMargem(custoTotal, tempoMin, alvo / 100, config)
+    : null;
 
   const avulsos = linhas.filter((l) => !l.insumoId && l.descricao.trim());
 
@@ -336,6 +373,7 @@ function DialogoSimulacao({
           colecao: colecao.trim() || null,
           preco: temPreco ? precoNumero : null,
           margem_alvo: temAlvo ? alvo / 100 : null,
+          tempo_montagem_min: tempoMin == null ? null : Math.round(tempoMin),
           observacao: null,
           itens: montado.itens,
         },
@@ -508,12 +546,7 @@ function DialogoSimulacao({
           </Button>
         </div>
 
-        <div className="grid gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:grid-cols-3">
-          <div>
-            <p className="t-support text-muted-foreground">Custo da cesta</p>
-            <p className="t-hero tabular-nums text-[var(--terracotta)]">{moeda(custoTotal)}</p>
-          </div>
-
+        <div className="grid gap-3 sm:grid-cols-3">
           <label className="space-y-1.5 text-sm font-medium">
             Preço de venda (R$)
             <Input
@@ -525,18 +558,29 @@ function DialogoSimulacao({
             />
           </label>
 
-          <div>
-            <p className="t-support text-muted-foreground">Sobra</p>
-            <p className={cn("t-hero tabular-nums", corDaMargem(margem))}>
-              {margem == null ? "—" : `${Math.round(margem * 100)}%`}
-            </p>
-            {margem != null && (
-              <p className="t-support text-muted-foreground">
-                {moeda(precoNumero - custoTotal)} por cesta
-              </p>
-            )}
+          <label className="space-y-1.5 text-sm font-medium">
+            Tempo de montagem
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={tempo}
+                onChange={(e) => setTempo(e.target.value)}
+                inputMode="numeric"
+                placeholder="40"
+                className="h-11"
+              />
+              <span className="text-sm text-muted-foreground">min</span>
+            </div>
+          </label>
+
+          <div className="flex items-end">
+            <div className="w-full rounded-xl bg-[var(--cream-soft)] px-3.5 py-2.5">
+              <p className="t-support text-muted-foreground">Insumos</p>
+              <p className="t-item tabular-nums text-[var(--terracotta)]">{moeda(custoTotal)}</p>
+            </div>
           </div>
         </div>
+
+        <CascataCusto cascata={cascata} />
 
         <div className="flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4">
           <Sparkles className="mb-2 h-4 w-4 shrink-0 text-[var(--bronze)]" />
@@ -554,7 +598,9 @@ function DialogoSimulacao({
           </label>
 
           <div className="min-w-0 flex-1">
-            <p className="t-support text-muted-foreground">Preço sugerido</p>
+            <p className="t-support text-muted-foreground">
+              Preço sugerido{config.incluir_no_calculo ? " (já com montagem e fixos)" : ""}
+            </p>
             <p className="t-item tabular-nums text-[var(--wine)]">
               {precoSugerido == null ? "—" : moeda(precoSugerido)}
             </p>
