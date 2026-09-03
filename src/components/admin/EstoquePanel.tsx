@@ -3,6 +3,8 @@
 import {
   AlertTriangle,
   ArrowDownRight,
+  ChevronDown,
+  ChevronUp,
   ArrowUpRight,
   Boxes,
   CheckCheck,
@@ -58,6 +60,22 @@ const ROTULO_ACAO: Record<Acao, string> = {
   contagem: "Contagem",
 };
 
+const TODAS = "__todas__";
+const SEM_CATEGORIA = "Sem categoria";
+
+type CampoOrdem = "nome" | "saldo" | "minimo" | "situacao" | "parado" | "ultima";
+type Ordem = { campo: CampoOrdem; desc: boolean };
+
+/* Ordem de gravidade, nao alfabetica: ordenar por "situacao" tem que trazer o
+   que precisa de compra primeiro, nao "Acabou" depois de "No mínimo" por causa
+   da letra. */
+const PESO_SITUACAO: Record<SituacaoEstoque, number> = {
+  zerado: 0,
+  baixo: 1,
+  sem_minimo: 2,
+  ok: 3,
+};
+
 const SITUACAO: Record<SituacaoEstoque, { texto: string; classe: string }> = {
   ok: { texto: "Ok", classe: "bg-[var(--green-soft)] text-[var(--green-ink)]" },
   baixo: { texto: "No mínimo", classe: "bg-[#fdf1e3] text-[#a3651f]" },
@@ -106,6 +124,9 @@ export function EstoquePanel() {
   const [carregando, setCarregando] = useState(true);
   const [busca, setBusca] = useState("");
   const [soAlerta, setSoAlerta] = useState(false);
+  const [categoria, setCategoria] = useState(TODAS);
+  const [ordem, setOrdem] = useState<Ordem>({ campo: "nome", desc: false });
+  const [catControle, setCatControle] = useState(TODAS);
   const [salvando, setSalvando] = useState(false);
 
   const [movAberto, setMovAberto] = useState(false);
@@ -148,14 +169,48 @@ export function EstoquePanel() {
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
-    return linhas.filter((linha) => {
+    const lista = linhas.filter((linha) => {
       if (soAlerta && linha.situacao !== "baixo" && linha.situacao !== "zerado") return false;
+      if (categoria !== TODAS && (linha.categoria ?? SEM_CATEGORIA) !== categoria) return false;
       if (!termo) return true;
       return `${linha.nome} ${linha.categoria ?? ""}`
         .toLocaleLowerCase("pt-BR")
         .includes(termo);
     });
-  }, [busca, linhas, soAlerta]);
+
+    /* Vazio vai sempre para o fim, suba ou desça a ordenacao: um traco no topo
+       nao e informacao, e so ruido antes do que interessa. */
+    const valor = (l: LinhaEstoque): string | number | null => {
+      switch (ordem.campo) {
+        case "saldo": return l.saldo;
+        case "minimo": return l.estoque_minimo;
+        case "situacao": return PESO_SITUACAO[l.situacao];
+        case "parado": return Math.max(0, l.saldo) * l.custo_atual;
+        case "ultima": return l.ultimo_movimento;
+        default: return l.nome.toLocaleLowerCase("pt-BR");
+      }
+    };
+
+    return lista.sort((a, b) => {
+      const va = valor(a);
+      const vb = valor(b);
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      const cmp = typeof va === "number" && typeof vb === "number"
+        ? va - vb
+        : String(va).localeCompare(String(vb), "pt-BR");
+      return ordem.desc ? -cmp : cmp;
+    });
+  }, [busca, linhas, soAlerta, categoria, ordem]);
+
+  /** Categorias existentes, para os dois filtros. */
+  const categorias = useMemo(
+    () =>
+      Array.from(new Set(insumos.map((i) => i.categoria ?? SEM_CATEGORIA)))
+        .sort((a, b) => a.localeCompare(b, "pt-BR")),
+    [insumos],
+  );
 
   const indicadores = useMemo(() => {
     const alerta = linhas.filter((l) => l.situacao === "baixo" || l.situacao === "zerado").length;
@@ -326,11 +381,36 @@ export function EstoquePanel() {
 
   const rascunhoFiltrado = useMemo(() => {
     const termo = buscaControle.trim().toLocaleLowerCase("pt-BR");
-    if (!termo) return rascunho;
-    return rascunho.filter((i) =>
-      `${i.nome} ${i.categoria ?? ""}`.toLocaleLowerCase("pt-BR").includes(termo),
+    return rascunho.filter((i) => {
+      if (catControle !== TODAS && (i.categoria ?? SEM_CATEGORIA) !== catControle) return false;
+      if (!termo) return true;
+      return `${i.nome} ${i.categoria ?? ""}`.toLocaleLowerCase("pt-BR").includes(termo);
+    });
+  }, [buscaControle, rascunho, catControle]);
+
+  /* Agrupado por categoria: com trinta insumos, uma lista corrida obriga a ler
+     tudo para achar as embalagens. O cabecalho tambem serve de alvo para
+     ligar a categoria inteira de uma vez. */
+  const gruposControle = useMemo(() => {
+    const mapa = new Map<string, InsumoParaControle[]>();
+    for (const item of rascunhoFiltrado) {
+      const chave = item.categoria ?? SEM_CATEGORIA;
+      mapa.set(chave, [...(mapa.get(chave) ?? []), item]);
+    }
+    return [...mapa.entries()].sort((a, b) => {
+      // "Sem categoria" por ultimo; o resto em ordem alfabetica.
+      if (a[0] === SEM_CATEGORIA) return 1;
+      if (b[0] === SEM_CATEGORIA) return -1;
+      return a[0].localeCompare(b[0], "pt-BR");
+    });
+  }, [rascunhoFiltrado]);
+
+  function marcarCategoria(nomes: InsumoParaControle[], valor: boolean) {
+    const alvos = new Set(nomes.map((i) => i.id));
+    setRascunho((atual) =>
+      atual.map((i) => (alvos.has(i.id) ? { ...i, controlar_estoque: valor } : i)),
     );
-  }, [buscaControle, rascunho]);
+  }
 
   const selecionados = rascunho.filter((i) => i.controlar_estoque).length;
   const todosMarcados =
@@ -390,6 +470,22 @@ export function EstoquePanel() {
             className="min-w-0 flex-1 bg-transparent text-sm outline-none"
           />
         </div>
+        {categorias.length > 1 && (
+          <Select value={categoria} onValueChange={setCategoria}>
+            <SelectTrigger className="h-11 w-[190px] rounded-xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODAS}>Todas as categorias</SelectItem>
+              {categorias.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         <button
           type="button"
           onClick={() => setSoAlerta((v) => !v)}
@@ -410,12 +506,39 @@ export function EstoquePanel() {
             <div
               className={`sticky top-0 z-10 grid ${colunas} gap-3 border-b border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-2.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground`}
             >
-              <span>Insumo</span>
-              <span>Saldo</span>
-              <span>Mínimo</span>
-              <span>Situação</span>
-              <span>Parado</span>
-              <span>Última mov.</span>
+              {(
+                [
+                  ["nome", "Insumo"],
+                  ["saldo", "Saldo"],
+                  ["minimo", "Mínimo"],
+                  ["situacao", "Situação"],
+                  ["parado", "Parado"],
+                  ["ultima", "Última mov."],
+                ] as [CampoOrdem, string][]
+              ).map(([campo, rotulo]) => (
+                <button
+                  key={campo}
+                  type="button"
+                  onClick={() =>
+                    setOrdem((atual) =>
+                      atual.campo === campo
+                        ? { campo, desc: !atual.desc }
+                        : { campo, desc: false },
+                    )
+                  }
+                  className={`inline-flex items-center gap-1 text-left uppercase tracking-[0.08em] transition-colors hover:text-[var(--terracotta)] ${
+                    ordem.campo === campo ? "text-[var(--terracotta)]" : ""
+                  }`}
+                >
+                  {rotulo}
+                  {ordem.campo === campo &&
+                    (ordem.desc ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronUp className="h-3 w-3" />
+                    ))}
+                </button>
+              ))}
               <span>Ações</span>
             </div>
 
@@ -709,14 +832,32 @@ export function EstoquePanel() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex h-11 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              value={buscaControle}
-              onChange={(e) => setBuscaControle(e.target.value)}
-              placeholder="Buscar insumo"
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-            />
+          <div className="flex flex-wrap gap-2">
+            <div className="flex h-11 min-w-[180px] flex-1 items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={buscaControle}
+                onChange={(e) => setBuscaControle(e.target.value)}
+                placeholder="Buscar insumo"
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+              />
+            </div>
+
+            {categorias.length > 1 && (
+              <Select value={catControle} onValueChange={setCatControle}>
+                <SelectTrigger className="h-11 w-[190px] rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TODAS}>Todas as categorias</SelectItem>
+                  {categorias.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -753,58 +894,83 @@ export function EstoquePanel() {
                 Nenhum insumo encontrado.
               </p>
             ) : (
-              rascunhoFiltrado.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 border-b border-[var(--cream-deep)] px-3.5 py-2.5 last:border-b-0"
-                >
-                  <Switch
-                    checked={item.controlar_estoque}
-                    onCheckedChange={(valor) =>
-                      setRascunho((atual) =>
-                        atual.map((i) =>
-                          i.id === item.id ? { ...i, controlar_estoque: valor } : i,
-                        ),
-                      )
-                    }
-                    aria-label={`Controlar estoque de ${item.nome}`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-foreground">{item.nome}</p>
-                    {item.categoria && (
-                      <p className="truncate text-xs text-muted-foreground">{item.categoria}</p>
-                    )}
+              gruposControle.map(([nomeCategoria, itens]) => {
+                const ligados = itens.filter((i) => i.controlar_estoque).length;
+                return (
+                  <div key={nomeCategoria}>
+                    {/* O cabecalho liga a categoria inteira: com trinta insumos,
+                        marcar de um em um e o que faz a pessoa desistir. */}
+                    <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-2">
+                      <p className="t-support font-bold uppercase tracking-[0.08em] text-[var(--bronze)]">
+                        {nomeCategoria}
+                        <span className="ml-1.5 font-normal normal-case tracking-normal text-muted-foreground">
+                          {ligados} de {itens.length}
+                        </span>
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => marcarCategoria(itens, ligados < itens.length)}
+                        className="t-support font-medium text-[var(--terracotta)] hover:underline"
+                      >
+                        {ligados < itens.length ? "Ligar todos" : "Desligar todos"}
+                      </button>
+                    </div>
+
+                    {itens.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-3 border-b border-[var(--cream-deep)] px-3.5 py-2.5 last:border-b-0"
+                    >
+                      <Switch
+                        checked={item.controlar_estoque}
+                        onCheckedChange={(valor) =>
+                          setRascunho((atual) =>
+                            atual.map((i) =>
+                              i.id === item.id ? { ...i, controlar_estoque: valor } : i,
+                            ),
+                          )
+                        }
+                        aria-label={`Controlar estoque de ${item.nome}`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{item.nome}</p>
+                        {item.categoria && (
+                          <p className="truncate text-xs text-muted-foreground">{item.categoria}</p>
+                        )}
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <span className="t-support text-[var(--admin-muted)]">Mínimo</span>
+                        <Input
+                          value={item.estoque_minimo === null ? "" : String(item.estoque_minimo).replace(".", ",")}
+                          onChange={(e) => {
+                            const bruto = e.target.value;
+                            const numero = paraNumero(bruto);
+                            setRascunho((atual) =>
+                              atual.map((i) =>
+                                i.id === item.id
+                                  ? {
+                                      ...i,
+                                      estoque_minimo:
+                                        bruto.trim() === "" || !Number.isFinite(numero)
+                                          ? null
+                                          : numero,
+                                    }
+                                  : i,
+                              ),
+                            );
+                          }}
+                          disabled={!item.controlar_estoque}
+                          inputMode="decimal"
+                          placeholder="—"
+                          className="h-9 w-20 text-center"
+                        />
+                        <span className="t-support w-8 text-[var(--admin-muted)]">{item.unidade}</span>
+                      </div>
+                    </div>
+                    ))}
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="t-support text-[var(--admin-muted)]">Mínimo</span>
-                    <Input
-                      value={item.estoque_minimo === null ? "" : String(item.estoque_minimo).replace(".", ",")}
-                      onChange={(e) => {
-                        const bruto = e.target.value;
-                        const numero = paraNumero(bruto);
-                        setRascunho((atual) =>
-                          atual.map((i) =>
-                            i.id === item.id
-                              ? {
-                                  ...i,
-                                  estoque_minimo:
-                                    bruto.trim() === "" || !Number.isFinite(numero)
-                                      ? null
-                                      : numero,
-                                }
-                              : i,
-                          ),
-                        );
-                      }}
-                      disabled={!item.controlar_estoque}
-                      inputMode="decimal"
-                      placeholder="—"
-                      className="h-9 w-20 text-center"
-                    />
-                    <span className="t-support w-8 text-[var(--admin-muted)]">{item.unidade}</span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 
