@@ -141,7 +141,7 @@ export function CookieConsent() {
           <div className="flua-cookie-actions">
             <button
               type="button"
-              className="flua-cookie-button flua-cookie-button-secondary"
+              className="flua-cookie-button flua-cookie-button-reject"
               onClick={() => save(false, false)}
             >
               Recusar opcionais

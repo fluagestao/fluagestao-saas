@@ -1,6 +1,8 @@
+import "./documento.css";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { CookieSettingsButton } from "./CookieSettingsButton";
 
 type LegalSection = {
   title: string;
@@ -132,9 +134,10 @@ export default function LegalDocumentPage({
 
           <nav>
             <Link href="/documentos/termos-de-uso">Termos</Link>
-            <Link href="/documentos/privacidade">Privacidade</Link>
-            <Link href="/documentos/cookies">Cookies</Link>
-            <Link href="/documentos/seguranca">Segurança</Link>
+            <Link href="/documentos/termos-de-uso/privacidade">Privacidade</Link>
+            <Link href="/documentos/termos-de-uso/cookies">Cookies</Link>
+            <Link href="/documentos/termos-de-uso/seguranca">Segurança</Link>
+            <CookieSettingsButton />
           </nav>
         </div>
       </footer>
