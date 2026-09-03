@@ -57,26 +57,24 @@ function formatarWhatsapp(valor: string) {
     .replace(/(\d{5})(\d)/, "$1-$2");
 }
 
-function mensagemDuplicidade(emailExiste: boolean, documentoExiste: boolean) {
-  if (emailExiste && documentoExiste) {
-    return "Este CPF/CNPJ e este e-mail já possuem cadastro na Flua.";
-  }
-  if (documentoExiste) {
-    return "Este CPF/CNPJ já possui cadastro na Flua.";
-  }
-  return "Este e-mail já possui cadastro na Flua.";
-}
+/* Mensagem unica para qualquer falha de cadastro.
+   Dizer "este e-mail ja possui cadastro" confirma para um estranho que aquela
+   pessoa e cliente da Flua. Quem realmente ja tem conta descobre pelo caminho
+   certo: tenta entrar, ou usa o esqueci minha senha. */
+const ERRO_CADASTRO_GENERICO =
+  "Não foi possível concluir o cadastro com esses dados. Se você já tem conta, entre ou use “Esqueci minha senha”.";
 
 function mensagemAuth(mensagem: string) {
   const normalizada = mensagem.toLowerCase();
-  if (
-    normalizada.includes("already registered") ||
-    normalizada.includes("already exists") ||
-    normalizada.includes("user already")
-  ) {
-    return "Este e-mail já possui cadastro na Flua.";
+  // Erros de formato ajudam e nao vazam nada; o resto vira mensagem unica para
+  // nunca devolver texto cru do Postgres ou do Supabase para a tela.
+  if (normalizada.includes("password")) {
+    return "A senha não atende aos requisitos mínimos.";
   }
-  return mensagem;
+  if (normalizada.includes("invalid") && normalizada.includes("email")) {
+    return "Confira o e-mail digitado.";
+  }
+  return ERRO_CADASTRO_GENERICO;
 }
 
 export default function CadastroPage() {
@@ -147,30 +145,13 @@ export default function CadastroPage() {
     setCarregando(true);
 
     try {
-      const { data: disponibilidade, error: disponibilidadeError } = await supabase
-        .rpc("check_signup_availability", {
-          p_email: emailLimpo,
-          p_document: documentoNumeros,
-        })
-        .single();
-
-      if (disponibilidadeError) {
-        setErro("Não foi possível validar seus dados agora. Tente novamente.");
-        return;
-      }
-
-      const disponibilidadeValidada = disponibilidade as {
-        email_exists?: boolean;
-        document_exists?: boolean;
-      } | null;
-      const emailExiste = Boolean(disponibilidadeValidada?.email_exists);
-      const documentoExiste = Boolean(disponibilidadeValidada?.document_exists);
-
-      if (emailExiste || documentoExiste) {
-        setErro(mensagemDuplicidade(emailExiste, documentoExiste));
-        return;
-      }
-
+      /* A consulta previa de disponibilidade saiu daqui.
+         Ela chamava check_signup_availability, concedida ao papel anon: com a
+         chave publicavel (que vai no bundle) qualquer um perguntava se um
+         e-mail ou CNPJ tinha cadastro na Flua, sem login e sem limite. Bastava
+         varrer listas publicas de CNPJ do setor para montar a lista de
+         clientes. O cadastro agora segue direto e a duplicidade e tratada como
+         erro generico. */
       const tipoDocumento = documentoNumeros.length === 14 ? "cnpj" : "cpf";
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||

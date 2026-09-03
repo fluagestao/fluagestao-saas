@@ -1,0 +1,12 @@
+-- Fecha o oraculo de enumeracao de contas.
+--
+-- check_signup_availability e security definer, le auth.users e responde se um
+-- e-mail ou documento ja tem cadastro. Concedida ao papel `anon`, ela respondia
+-- a qualquer um que tivesse a chave publicavel — que vai no bundle JS. Bastava
+-- varrer listas publicas de CNPJ do setor para montar a lista de clientes da
+-- Flua, e a lista de e-mails validados alimentava ataque de senha no login.
+--
+-- A tela de cadastro parou de chamar a funcao. O grant para `authenticated`
+-- fica: ali ja existe sessao, e e onde a checagem pode voltar no futuro com
+-- limite e captcha.
+revoke execute on function public.check_signup_availability(text, text) from anon;

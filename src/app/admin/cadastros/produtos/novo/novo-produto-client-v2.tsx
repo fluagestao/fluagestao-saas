@@ -15,10 +15,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast, Toaster } from "sonner";
 
-import {
-  ProdutoInsumosEditor,
-  type ItemComposicaoProduto,
-} from "@/components/admin/ProdutoInsumosEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,12 +65,6 @@ type ProdutoInicial = {
   imagens: ImagemRow[];
 };
 
-function moeda(valor: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(valor || 0);
-}
 
 const TODAS_COLECOES = "__todas__";
 const SEM_COLECAO = "__sem__";
@@ -137,11 +127,6 @@ export function NovoProdutoClient({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [custoAberto, setCustoAberto] = useState(false);
-  const [custoPronto, setCustoPronto] = useState(false);
-  const [salvandoCusto, setSalvandoCusto] = useState(false);
-  const [itensCusto, setItensCusto] = useState<ItemComposicaoProduto[]>([]);
-  const [custoAtual, setCustoAtual] = useState(custoInicial);
   const [custoSalvo, setCustoSalvo] = useState(custoInicial);
   const [temCusto, setTemCusto] = useState(temCustoInicial);
 
@@ -169,14 +154,6 @@ export function NovoProdutoClient({
     return categoriasOrdenadas.filter((c) => c.catalogo_id === filtroColecao);
   }, [categoriasOrdenadas, filtroColecao]);
 
-  const receberCusto = useCallback(
-    ({ itens, custoTotal }: { itens: ItemComposicaoProduto[]; custoTotal: number }) => {
-      setItensCusto(itens);
-      setCustoAtual(custoTotal);
-      setCustoPronto(true);
-    },
-    [],
-  );
 
   function rotuloCategoria(categoria: CategoriaRow) {
     const colecao = catalogos.find((catalogo) => catalogo.id === categoria.catalogo_id);
@@ -246,26 +223,6 @@ export function NovoProdutoClient({
     }
   }
 
-  async function salvarCusto() {
-    if (!custoPronto) return;
-
-    setSalvandoCusto(true);
-    try {
-      await salvarComposicaoProduto({
-        data: { produtoId: draft.id, itens: itensCusto },
-      });
-
-      const possuiItens = itensCusto.length > 0;
-      setCustoSalvo(possuiItens ? custoAtual : 0);
-      setTemCusto(possuiItens);
-      setCustoAberto(false);
-      toast.success(possuiItens ? "Custo do produto salvo." : "Custo do produto removido.");
-    } catch (e) {
-      toast.error(mensagemDeErro(e, "salvar custo do produto"));
-    } finally {
-      setSalvandoCusto(false);
-    }
-  }
 
   async function adicionarFoto(file: File) {
     setEnviando(true);
