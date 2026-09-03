@@ -464,7 +464,12 @@ function PainelCliente({
       <DialogContent
         // Sem isto o Radix foca o botao do WhatsApp e rola o miolo ao abrir.
         onOpenAutoFocus={(evento) => evento.preventDefault()}
-        className="flex max-h-[85dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
+        /* Centralizado ABAIXO do cabecalho, nao no meio da janela: o cabecalho
+           fixo ocupa os primeiros ~75px, e um card centrado na janela inteira
+           alcanca essa faixa quando fica alto. Deslocando o centro em 2,5rem e
+           reservando 9rem de altura, a borda de cima para em ~112px em
+           qualquer tamanho de tela. */
+        className="top-[calc(50%+2.5rem)] flex max-h-[calc(100dvh-9rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg"
       >
         <DialogHeader className="shrink-0 border-b border-[var(--cream-deep)] px-5 pb-4 pt-5 text-left sm:px-6">
           <DialogTitle className="flex items-center gap-3 text-left">
