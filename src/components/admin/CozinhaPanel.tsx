@@ -306,8 +306,8 @@ function DialogoReceita({
 
   return (
     <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader className="pr-6 text-left">
+      <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
+        <DialogHeader className="shrink-0 pr-6 text-left">
           <DialogTitle>{receita ? "Editar receita" : "Nova receita"}</DialogTitle>
           <DialogDescription>
             Anote os ingredientes com o que você pagou. O custo por porção sai da divisão pelo
@@ -315,6 +315,7 @@ function DialogoReceita({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 py-2">
         <div className="grid gap-3 sm:grid-cols-4">
           <label className="space-y-1.5 text-sm font-medium sm:col-span-2">
             Nome
@@ -456,8 +457,9 @@ function DialogoReceita({
             className="h-11"
           />
         </label>
+        </div>
 
-        <DialogFooter className="pt-1">
+        <DialogFooter className="shrink-0 border-t border-[var(--admin-border)] pt-3">
           <Button variant="outline" onClick={onFechar} disabled={salvando}>
             Cancelar
           </Button>

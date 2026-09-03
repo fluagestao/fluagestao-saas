@@ -301,7 +301,7 @@ function DialogoSimulacao({
 
     for (const l of linhas) {
       if (!l.descricao.trim() && !l.valor.trim()) continue;
-      if (!l.descricao.trim()) return { erro: "Tem um item sem nome." };
+      if (!l.descricao.trim()) return { erro: "Tem um insumo avulso sem nome." };
       const q = paraNumero(l.quantidade);
       const v = paraNumero(l.valor);
       if (!Number.isFinite(q) || q <= 0) return { erro: `Quantidade inválida em "${l.descricao}".` };
@@ -394,14 +394,15 @@ function DialogoSimulacao({
 
   return (
     <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader className="pr-6 text-left">
+      <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-3xl">
+        <DialogHeader className="shrink-0 pr-6 text-left">
           <DialogTitle>{simulacao ? "Editar simulação" : "Nova simulação"}</DialogTitle>
           <DialogDescription>
             Use insumos que você já tem ou digite itens na hora. Nada vira cadastro até você mandar.
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 py-2">
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="space-y-1.5 text-sm font-medium">
             Nome da cesta
@@ -425,7 +426,12 @@ function DialogoSimulacao({
         </div>
 
         <div className="rounded-2xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] p-3">
-          <p className="mb-2 text-sm font-semibold text-foreground">O que vai dentro</p>
+          <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-semibold text-foreground">O que vai dentro</p>
+            <p className="t-support text-muted-foreground">
+              Escolha um insumo cadastrado ou digite um avulso
+            </p>
+          </div>
 
           <div className="max-h-[32vh] space-y-2 overflow-y-auto pr-1">
             {linhas.map((linha) => (
@@ -439,7 +445,7 @@ function DialogoSimulacao({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={AVULSO}>Item avulso (digitar)</SelectItem>
+                      <SelectItem value={AVULSO}>Insumo avulso (digitar)</SelectItem>
                       {ativos.map((i) => (
                         <SelectItem key={i.id} value={i.id}>
                           {i.nome}
@@ -451,7 +457,7 @@ function DialogoSimulacao({
                     <Input
                       value={linha.descricao}
                       onChange={(e) => mudar(linha.chave, { descricao: e.target.value })}
-                      placeholder="Nome do item"
+                      placeholder="Nome do insumo avulso"
                       className="mt-1.5 h-10 bg-white"
                     />
                   )}
@@ -482,7 +488,7 @@ function DialogoSimulacao({
                       atual.length === 1 ? [linhaVazia()] : atual.filter((l) => l.chave !== linha.chave),
                     )
                   }
-                  aria-label="Remover item"
+                  aria-label="Remover insumo"
                   className="h-10 w-9 shrink-0"
                 >
                   <X className="h-4 w-4 text-muted-foreground" />
@@ -498,7 +504,7 @@ function DialogoSimulacao({
             className="mt-2 h-9 w-full rounded-lg border border-dashed border-[var(--cream-deep)] text-[var(--admin-ink-soft)]"
           >
             <Plus className="mr-1.5 h-4 w-4" />
-            Adicionar item
+            Adicionar insumo
           </Button>
         </div>
 
@@ -576,7 +582,10 @@ function DialogoSimulacao({
           <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#f0dcc0] bg-[#fdf1e3] px-4 py-3">
             <AlertTriangle className="h-5 w-5 shrink-0 text-[#a3651f]" />
             <p className="t-support min-w-0 flex-1 text-[#a3651f]">
-              {avulsos.length} item(ns) ainda não são insumos cadastrados:{" "}
+              {avulsos.length === 1
+                ? "1 insumo avulso ainda não está cadastrado"
+                : `${avulsos.length} insumos avulsos ainda não estão cadastrados`}
+              :{" "}
               {avulsos.map((a) => a.descricao.trim()).join(", ")}. Sem eles, o produto nasceria com
               o custo pela metade.
             </p>
@@ -587,7 +596,7 @@ function DialogoSimulacao({
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3">
             <p className="t-support text-[var(--admin-ink-soft)]">
-              Todo item já é insumo cadastrado — dá para virar produto.
+              Todo insumo já está cadastrado — dá para virar produto.
             </p>
             <Button onClick={promover} disabled={salvando || !nome.trim()} className="h-9">
               Virar produto
@@ -595,8 +604,9 @@ function DialogoSimulacao({
             </Button>
           </div>
         )}
+        </div>
 
-        <DialogFooter className="pt-1">
+        <DialogFooter className="shrink-0 border-t border-[var(--admin-border)] pt-3">
           <Button variant="outline" onClick={onFechar} disabled={salvando}>
             Fechar
           </Button>
