@@ -311,6 +311,30 @@ export async function removerInsumo(input: ActionInput<unknown>) {
     };
   }
 
+  /* Movimento de estoque cai por cascade junto com o insumo. Sem esta
+     checagem, excluir o cadastro apagava toda entrada, baixa e contagem
+     daquele insumo — em silencio e sem volta. A pessoa limpava a lista de um
+     insumo que parou de usar e perdia o registro de quanto comprou, quando e
+     por quanto; o "Parado em estoque" mudava de valor sem explicacao.
+
+     Mesma forma da checagem de produto_insumos acima: contar antes e devolver
+     motivo, em vez de confiar que ela sabe o que o cascade faz. */
+  const { count: movimentos, error: histError } = await supabase
+    .from("estoque_movimentos")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", companyId)
+    .eq("insumo_id", id);
+  if (histError) throw histError;
+
+  if ((movimentos ?? 0) > 0) {
+    return {
+      ok: false as const,
+      motivo:
+        `Este insumo tem ${movimentos} movimento(s) de estoque no histórico, e excluir apagaria todos. ` +
+        "Se você só parou de comprá-lo, desligue-o do controle de estoque em vez de excluir.",
+    };
+  }
+
   const { error } = await supabase
     .from("insumos")
     .delete()
