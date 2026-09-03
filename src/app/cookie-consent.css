@@ -96,6 +96,16 @@
   background: #913a32;
 }
 
+.flua-cookie-button-reject {
+  border-color: #ad4c41;
+  color: #913a32;
+  background: #fffaf6;
+}
+
+.flua-cookie-button-reject:hover {
+  background: #f7e6df;
+}
+
 .flua-cookie-button-secondary {
   border-color: #ddc9bf;
   color: #5d3731;
