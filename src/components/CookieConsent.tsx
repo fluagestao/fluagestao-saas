@@ -79,13 +79,15 @@ export function CookieConsent() {
 
   useEffect(() => {
     const saved = readPreferences();
-    if (saved) {
-      setAnalytics(saved.analytics);
-      setMarketing(saved.marketing);
-      applyPreferences(saved);
-    } else {
-      setView("banner");
-    }
+    const hydrationTimer = window.setTimeout(() => {
+      if (saved) {
+        setAnalytics(saved.analytics);
+        setMarketing(saved.marketing);
+        applyPreferences(saved);
+      } else {
+        setView("banner");
+      }
+    }, 0);
 
     const openSettings = () => {
       const current = readPreferences();
@@ -95,8 +97,10 @@ export function CookieConsent() {
     };
 
     window.addEventListener("flua:open-cookie-settings", openSettings);
-    return () =>
+    return () => {
+      window.clearTimeout(hydrationTimer);
       window.removeEventListener("flua:open-cookie-settings", openSettings);
+    };
   }, []);
 
   function save(nextAnalytics: boolean, nextMarketing: boolean) {
