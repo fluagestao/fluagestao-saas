@@ -30,6 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { carregarCalculoConfig, type SugestaoFixo } from "@/lib/calculo";
 import {
   CONFIG_VAZIA,
@@ -564,13 +570,21 @@ function DialogoSimulacao({
                           className="h-10 min-w-0 flex-1 rounded-lg bg-white"
                         />
                         <Select value={AVULSO} onValueChange={(v) => escolherInsumo(linha.chave, v)}>
-                          <SelectTrigger
-                            aria-label="Escolher um insumo cadastrado"
-                            title="Escolher um insumo cadastrado"
-                            className="h-10 w-10 shrink-0 justify-center rounded-lg border-[var(--cream-deep)] bg-white p-0 [&>span]:hidden"
-                          >
-                            <ListChecks className="h-4 w-4 text-muted-foreground" />
-                          </SelectTrigger>
+                          <TooltipProvider delayDuration={200}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SelectTrigger
+                                  aria-label="Escolher um insumo já cadastrado"
+                                  className="h-10 w-10 shrink-0 justify-center rounded-lg border-[var(--cream-deep)] bg-white p-0 [&>span]:hidden"
+                                >
+                                  <ListChecks className="h-4 w-4 text-muted-foreground" />
+                                </SelectTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs text-center leading-5">
+                                Escolher um insumo já cadastrado, com o custo puxado da ficha
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           <SelectContent>
                             <SelectItem value={AVULSO}>Continuar avulso</SelectItem>
                             {ativos.map((i) => (
