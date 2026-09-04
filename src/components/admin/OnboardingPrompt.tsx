@@ -40,7 +40,8 @@ type EtapaId =
   | "pedido"
   | "financeiro"
   | "entregas"
-  | "followup";
+  | "followup"
+  | "relacionamento";
 
 type Etapa = {
   id: EtapaId;
@@ -88,19 +89,6 @@ const ETAPAS: Etapa[] = [
     icon: PackagePlus,
   },
   {
-    id: "custos",
-    titulo: "Entenda o cálculo de custos",
-    resumo: "Aprenda como o Flua calcula o custo de cada produto.",
-    orientacoes: [
-      "Adicione os insumos utilizados e informe a quantidade consumida.",
-      "Exemplo: se 1 kg custa R$ 100 e você usa 250 g, o custo será R$ 25.",
-      "O custo total é atualizado automaticamente conforme a composição.",
-    ],
-    destino: "/cadastros/produtos/novo?guiaEtapa=custos",
-    acao: "Ver cálculo no produto",
-    icon: CircleDollarSign,
-  },
-  {
     id: "produto",
     titulo: "Cadastre seu produto",
     resumo: "Prepare o catálogo usado nos pedidos e nas vendas.",
@@ -114,6 +102,19 @@ const ETAPAS: Etapa[] = [
     icon: ReceiptText,
   },
   {
+    id: "custos",
+    titulo: "Monte o custo e veja a margem",
+    resumo: "Descubra quanto sobra de verdade em cada produto.",
+    orientacoes: [
+      "Clique no produto e lance os insumos com a quantidade que ele consome.",
+      "Exemplo: se 1 kg custa R$ 100 e você usa 250 g, o custo será R$ 25.",
+      "A margem bruta desconta só os insumos; a líquida desconta também seu tempo e os custos fixos.",
+    ],
+    destino: "/custo/calculadora?guiaEtapa=custos",
+    acao: "Abrir Precificação",
+    icon: CircleDollarSign,
+  },
+  {
     id: "cliente",
     titulo: "Cadastre um cliente",
     resumo: "Salve os dados para não digitá-los em cada venda.",
@@ -122,7 +123,7 @@ const ETAPAS: Etapa[] = [
       "O endereço pode ser preenchido automaticamente a partir do CEP.",
       "Depois, basta buscar o cliente ao abrir um novo pedido.",
     ],
-    destino: "/admin?guiaEtapa=cliente",
+    destino: "/cadastros/clientes?guiaEtapa=cliente",
     acao: "Abrir clientes",
     icon: Contact,
   },
@@ -145,10 +146,10 @@ const ETAPAS: Etapa[] = [
     resumo: "Acompanhe entradas, valores a receber e despesas.",
     orientacoes: [
       "Pedidos pagos aparecem automaticamente entre as entradas.",
-      "Pedidos ainda não pagos ficam disponíveis em A receber.",
+      "Os que ainda não foram pagos ficam em Entradas, na aba A receber.",
       "Use Saídas para registrar fornecedores e despesas do negócio.",
     ],
-    destino: "/admin?guiaEtapa=financeiro",
+    destino: "/financeiro/entradas?guiaEtapa=financeiro",
     acao: "Abrir financeiro",
     icon: CircleDollarSign,
   },
@@ -161,7 +162,7 @@ const ETAPAS: Etapa[] = [
       "Atualize o status do pedido conforme ele avança.",
       "Assim você acompanha produção, retirada e entrega sem se perder.",
     ],
-    destino: "/admin?guiaEtapa=entregas",
+    destino: "/tarefas?guiaEtapa=entregas",
     acao: "Abrir agenda",
     icon: Truck,
   },
@@ -170,6 +171,7 @@ const ETAPAS: Etapa[] = [
     titulo: "Use o Follow-up",
     resumo: "Peça avaliações depois que o pedido for entregue.",
     orientacoes: [
+      "Só aparece depois que o primeiro pedido for marcado como entregue.",
       "Pedidos entregues aparecem automaticamente nesta área.",
       "Você pode revisar a mensagem antes de abrir o WhatsApp.",
       "Depois do envio, marque o cliente como já chamado.",
@@ -177,6 +179,19 @@ const ETAPAS: Etapa[] = [
     destino: "/followup?guiaEtapa=followup",
     acao: "Abrir Follow-up",
     icon: Send,
+  },
+  {
+    id: "relacionamento",
+    titulo: "Volte a falar com quem sumiu",
+    resumo: "Reative quem comprou e parou de aparecer.",
+    orientacoes: [
+      "A lista mostra há quanto tempo cada cliente não compra e o que ela costuma levar.",
+      "A mensagem sai pronta, com o nome e a próxima data comemorativa — você lê, ajusta e manda.",
+      "Em Por ocasião dá para ver quem comprou no Natal passado e oferecer de novo.",
+    ],
+    destino: "/relacionamento?guiaEtapa=relacionamento",
+    acao: "Abrir Relacionamento",
+    icon: Contact,
   },
 ];
 
@@ -245,16 +260,6 @@ function idsValidos(valor: unknown): EtapaId[] {
 
 function textoElemento(elemento: Element) {
   return (elemento.textContent ?? "").replace(/\s+/g, " ").trim();
-}
-
-function clicarNoHeader(rotulo: string) {
-  const header = document.querySelector("header");
-  const botao = header
-    ? Array.from(header.querySelectorAll<HTMLButtonElement>("button")).find(
-        (item) => textoElemento(item) === rotulo,
-      )
-    : null;
-  botao?.click();
 }
 
 function mensagemErro(error: unknown) {
@@ -440,28 +445,20 @@ export function OnboardingPrompt() {
   // de aba. Recarregamos apenas ao entrar ou sair da área autenticada.
   }, [dentroDoSistema]);
 
-  useEffect(() => {
-    if (pathname !== "/admin") return;
-    const etapa = new URLSearchParams(window.location.search).get("guiaEtapa");
-    if (etapa === "cliente") {
-      window.setTimeout(() => {
-        clicarNoHeader("Cadastros");
-        window.setTimeout(() => clicarNoHeader("Clientes"), 80);
-      }, 120);
-    } else if (etapa === "financeiro") {
-      window.setTimeout(() => {
-        clicarNoHeader("Financeiro");
-        window.setTimeout(() => clicarNoHeader("Entradas"), 80);
-      }, 120);
-    } else if (etapa === "entregas") {
-      window.setTimeout(() => {
-        const agenda = document.querySelector<HTMLButtonElement>(
-          'button[aria-label="Agenda"]',
-        );
-        agenda?.click();
-      }, 120);
-    }
-  }, [pathname]);
+  /* Aqui existia um efeito que abria a tela clicando em botao do cabecalho
+     pelo texto — "Cadastros", depois "Clientes", com 80ms de espera entre um e
+     outro. Saiu inteiro, por dois motivos.
+
+     O primeiro: o AdminPathSync ja faz exatamente isso, e melhor. Dois
+     mecanismos disputando a mesma tela e uma corrida que uma hora alguem perde.
+
+     O segundo: a etapa das entregas nunca funcionou. Ela procurava
+     `button[aria-label="Agenda"]`, e o unico elemento com esse rotulo e um
+     <Link> — tag <a>, nao <button> — dentro do AppHeader, que so aparece nas
+     paginas de conta. O seletor nunca casou com nada, em nenhuma tela.
+
+     Agora as tres etapas apontam para rota de verdade, e quem abre a tela e o
+     AdminPathSync. */
 
   useEffect(() => {
     async function abrirPelaCentral(event: Event) {

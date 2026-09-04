@@ -14,14 +14,15 @@ const etapaSchema = z.enum([
   "financeiro",
   "entregas",
   "followup",
+  "relacionamento",
 ]);
 
 const atualizacaoSchema = z
   .object({
     habilitado: z.boolean().optional(),
     introducaoConcluida: z.boolean().optional(),
-    concluidas: z.array(etapaSchema).max(9).optional(),
-    puladas: z.array(etapaSchema).max(9).optional(),
+    concluidas: z.array(etapaSchema).max(30).optional(),
+    puladas: z.array(etapaSchema).max(30).optional(),
   })
   .refine(
     (valor) => Object.values(valor).some((item) => item !== undefined),
