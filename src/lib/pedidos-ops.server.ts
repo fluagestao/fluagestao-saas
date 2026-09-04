@@ -44,6 +44,8 @@ export type DashboardVendas = {
      do orcamento, inflaria a aquisicao justo no mes em que a pessoa nao
      comprou. */
   clientes: { novos: number; recorrentes: number; total: number };
+  /** Slugs de ocasião presentes no histórico, para o seletor. */
+  ocasioes: string[];
   totalVendido: number;
   totalPedidos: number;
   ticketMedio: number;

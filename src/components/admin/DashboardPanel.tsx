@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { rotuloOcasiao } from "@/lib/datas-comemorativas";
 import { hojeISO } from "@/lib/prazo";
 import { carregarDashboard } from "@/lib/pedidos";
 import type { DashboardVendas, MesDaSerie, VendaAgrupada } from "@/lib/pedidos-ops.server";
@@ -365,6 +366,7 @@ export function DashboardPanel() {
   const [mes, setMes] = useState(() => hojeISO().slice(0, 7));
   const [modo, setModo] = useState<"mes" | "ano">("mes");
   const [colecaoId, setColecaoId] = useState<string | null>(null);
+  const [ocasiao, setOcasiao] = useState<string | null>(null);
   const [dados, setDados] = useState<DashboardVendas | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [aba, setAba] = useState<"produtos" | "adicionais">("produtos");
@@ -384,12 +386,14 @@ export function DashboardPanel() {
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
-      setDados((await carregarDashboard({ data: { ...periodo, colecaoId } })) as DashboardVendas);
+      setDados(
+        (await carregarDashboard({ data: { ...periodo, colecaoId, ocasiao } })) as DashboardVendas,
+      );
     } catch {
       setDados(null);
     }
     setCarregando(false);
-  }, [periodo, colecaoId]);
+  }, [periodo, colecaoId, ocasiao]);
 
   useEffect(() => {
     carregar();
@@ -464,35 +468,59 @@ export function DashboardPanel() {
         }
       />
 
-      {dados && dados.colecoes.length > 0 && (
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setColecaoId(null)}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-              !colecaoId
-                ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
-                : "border border-[var(--cream-deep)] bg-card text-foreground",
-            )}
-          >
-            Todas as coleções
-          </button>
-          {dados.colecoes.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setColecaoId(c.id)}
-              className={cn(
-                "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-                colecaoId === c.id
-                  ? "bg-[var(--terracotta)] text-[var(--cream-soft)]"
-                  : "border border-[var(--cream-deep)] bg-card text-foreground",
-              )}
+      {/* Seletores, e nao chips: eram quatro colecoes e ja ocupavam uma
+          fileira inteira; com ocasiao entrando ao lado, viraria um mural. E o
+          seletor diz o que esta filtrado mesmo quando a lista e longa. */}
+      {dados && (dados.colecoes.length > 0 || dados.ocasioes.length > 0) && (
+        <div className="mb-4 flex flex-wrap items-end gap-3">
+          {dados.colecoes.length > 0 && (
+            <label className="min-w-0 flex-1 space-y-1.5 text-sm font-medium sm:max-w-56">
+              <span className="block">Coleção</span>
+              <select
+                value={colecaoId ?? ""}
+                onChange={(e) => setColecaoId(e.target.value || null)}
+                className="h-10 w-full rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+              >
+                <option value="">Todas as coleções</option>
+                {dados.colecoes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nome}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {dados.ocasioes.length > 0 && (
+            <label className="min-w-0 flex-1 space-y-1.5 text-sm font-medium sm:max-w-56">
+              <span className="block">Ocasião</span>
+              <select
+                value={ocasiao ?? ""}
+                onChange={(e) => setOcasiao(e.target.value || null)}
+                className="h-10 w-full rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+              >
+                <option value="">Todas as ocasiões</option>
+                {dados.ocasioes.map((slug) => (
+                  <option key={slug} value={slug}>
+                    {rotuloOcasiao(slug) ?? slug}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {(colecaoId || ocasiao) && (
+            <Button
+              variant="outline"
+              className="h-10"
+              onClick={() => {
+                setColecaoId(null);
+                setOcasiao(null);
+              }}
             >
-              {c.nome}
-            </button>
-          ))}
+              Limpar
+            </Button>
+          )}
         </div>
       )}
 

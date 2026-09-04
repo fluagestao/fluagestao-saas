@@ -769,6 +769,13 @@ export async function carregarDashboard(input: { data: unknown }) {
       de: DATA,
       ate: DATA,
       colecaoId: z.string().uuid().nullable().default(null),
+      /* Slug, nao rotulo — o mesmo que pedidos.ocasiao guarda. */
+      ocasiao: z
+        .string()
+        .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/)
+        .max(40)
+        .nullable()
+        .default(null),
     })
     .parse(input.data);
 
@@ -778,7 +785,7 @@ export async function carregarDashboard(input: { data: unknown }) {
     await Promise.all([
       supabase
         .from("pedidos")
-        .select("cliente_id, itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status")
+        .select("cliente_id, itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status, ocasiao")
         .eq("company_id", companyId)
         .neq("status", "cancelado")
         .limit(3000),
@@ -897,7 +904,15 @@ export async function carregarDashboard(input: { data: unknown }) {
     total: compraramNoPeriodo.size,
   };
 
-  const todos = pedidosRes.data ?? [];
+  /* O filtro de ocasiao corta ANTES de tudo, porque a pergunta muda: "como foi
+     o Dia das Maes" nao e um recorte de periodo, e sim de intencao. Fica fora
+     da contagem de clientes novas de proposito — "primeira compra" e sobre a
+     relacao inteira, nao sobre uma data. */
+  const todos = (pedidosRes.data ?? []).filter(
+    (pedido) =>
+      !filtro.ocasiao ||
+      (pedido as { ocasiao?: string | null }).ocasiao === filtro.ocasiao,
+  );
   const noPeriodo = todos.filter(
     (pedido) => dentro(diaDoDinheiro(pedido)) || dentro(diaDaProducao(pedido)),
   );
@@ -1180,6 +1195,15 @@ export async function carregarDashboard(input: { data: unknown }) {
       id: catalogo.id,
       nome: catalogo.nome,
     })),
+    /* So as ocasioes que existem no historico da empresa: um seletor com as
+       dezenove do calendario encheria a tela de opcoes que devolvem nada. */
+    ocasioes: [
+      ...new Set(
+        (pedidosRes.data ?? [])
+          .map((p) => (p as { ocasiao?: string | null }).ocasiao)
+          .filter((o): o is string => Boolean(o)),
+      ),
+    ].sort(),
     clientes,
   };
 
