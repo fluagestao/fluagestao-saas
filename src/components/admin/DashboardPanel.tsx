@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { hojeISO } from "@/lib/prazo";
 import { carregarDashboard } from "@/lib/pedidos";
@@ -173,6 +182,38 @@ function EvolucaoAno({
 }
 
 /** Pizza clicável: escolher uma fatia filtra a lista ao lado. */
+/** As linhas da legenda. Extraída para o cartão e o card cheio nunca divergirem. */
+function LinhasPizza({ dados, total }: { dados: VendaAgrupada[]; total: number }) {
+  return (
+    <>
+      {dados.map((d, i) => (
+        <li key={d.chave}>
+          <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 px-2 py-1.5 text-left text-sm sm:flex-nowrap sm:py-1">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: CORES[i % CORES.length] }}
+            />
+            <span className="min-w-0 flex-1 basis-[calc(100%-1.375rem)] sm:basis-auto">
+              <span className="block leading-tight text-foreground">{d.nome}</span>
+              {d.sub && (
+                <span className="block text-[11px] leading-tight text-muted-foreground">
+                  {d.sub}
+                </span>
+              )}
+            </span>
+            <span className="ml-[1.375rem] flex shrink-0 items-baseline gap-2 sm:ml-0">
+              <Num className="text-xs text-muted-foreground">{formatBRL(d.valor)}</Num>
+              <span className="w-8 text-right text-xs text-muted-foreground/70">
+                {total > 0 ? `${Math.round((d.valor / total) * 100)}%` : ""}
+              </span>
+            </span>
+          </div>
+        </li>
+      ))}
+    </>
+  );
+}
+
 function Pizza({
   titulo,
   dados,
@@ -187,10 +228,28 @@ function Pizza({
   vazio: string;
 }) {
   const total = dados.reduce((t, d) => t + d.valor, 0);
+  const [aberto, setAberto] = useState(false);
+
+  /* O cartao mostra o suficiente para comparar as fatias principais; o resto
+     ficava atras de um scroll de 128px que ninguem percebe que existe. O botao
+     so aparece quando ha o que revelar. */
+  const CABEM = 4;
+  const sobram = Math.max(0, dados.length - CABEM);
 
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
-      <h3 className="text-lg font-semibold text-foreground">{titulo}</h3>
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-lg font-semibold text-foreground">{titulo}</h3>
+        {sobram > 0 && (
+          <button
+            type="button"
+            onClick={() => setAberto(true)}
+            className="shrink-0 text-xs font-semibold text-[var(--terracotta)] hover:text-[var(--wine)]"
+          >
+            ver {dados.length}
+          </button>
+        )}
+      </div>
 
       {dados.length === 0 ? (
         <p className="mt-3 text-sm text-muted-foreground">{vazio}</p>
@@ -232,34 +291,43 @@ function Pizza({
             </ResponsiveContainer>
           </div>
 
-          <ul className="min-w-0 space-y-1 overflow-y-auto pr-1 sm:max-h-32 sm:flex-1">
-            {dados.map((d, i) => (
-              <li key={d.chave}>
-                <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-0.5 px-2 py-1.5 text-left text-sm sm:flex-nowrap sm:py-1">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: CORES[i % CORES.length] }}
-                  />
-                  <span className="min-w-0 flex-1 basis-[calc(100%-1.375rem)] sm:basis-auto">
-                    <span className="block leading-tight text-foreground">{d.nome}</span>
-                    {d.sub && (
-                      <span className="block text-[11px] leading-tight text-muted-foreground">
-                        {d.sub}
-                      </span>
-                    )}
-                  </span>
-                  <span className="ml-[1.375rem] flex shrink-0 items-baseline gap-2 sm:ml-0">
-                    <Num className="text-xs text-muted-foreground">{formatBRL(d.valor)}</Num>
-                    <span className="w-8 text-right text-xs text-muted-foreground/70">
-                      {total > 0 ? `${Math.round((d.valor / total) * 100)}%` : ""}
-                    </span>
-                  </span>
-                </div>
-              </li>
-            ))}
+          <ul className="min-w-0 space-y-1 pr-1 sm:flex-1">
+            <LinhasPizza dados={dados.slice(0, CABEM)} total={total} />
           </ul>
         </div>
       )}
+
+      {sobram > 0 && (
+        <button
+          type="button"
+          onClick={() => setAberto(true)}
+          className="mt-2 w-full rounded-lg bg-[var(--cream)] px-3 py-2 text-xs font-semibold text-[var(--wine)] transition-colors hover:bg-[var(--cream-deep)]"
+        >
+          + {sobram} {sobram === 1 ? "outro" : "outros"}
+        </button>
+      )}
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader className="text-left">
+            <DialogTitle>{titulo}</DialogTitle>
+            <DialogDescription>
+              {dados.length} {dados.length === 1 ? "item" : "itens"} · {formatBRL(total)} no
+              período
+            </DialogDescription>
+          </DialogHeader>
+
+          <ul className="max-h-[60dvh] space-y-1 overflow-y-auto pr-1">
+            <LinhasPizza dados={dados} total={total} />
+          </ul>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAberto(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
