@@ -193,10 +193,17 @@ export function CalculadoraPanel() {
       ) : (
         <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
           {visiveis.map((p) => {
-            const margem =
-              p.custo != null && p.preco != null && p.preco > 0
-                ? (p.preco - p.custo) / p.preco
-                : null;
+            /* A lista mostrava um numero so, chamado "margem", que era a
+               BRUTA — preco menos insumos. Dava 80% num produto cuja sobra
+               real e bem menor, e era esse 80% que decidia preco. Agora as
+               duas aparecem lado a lado, pela mesma conta da tela de Margem. */
+            const temCusto = p.custo != null && p.preco != null && p.preco > 0;
+            const cascata = calcular(p.preco, p.custo ?? 0, p.tempo_montagem_min, config);
+            const bruta = temCusto ? cascata.margemContribuicao : null;
+            /* Sem os Ajustes ligados nao da para saber a liquida: mao de obra e
+               custo fixo entram como zero e ela sairia igual a bruta. Dois
+               numeros identicos mentem mais que um traco. */
+            const liquida = temCusto && cascata.completa ? cascata.margemReal : null;
             const faltaCusto = p.custo == null;
 
             return (
@@ -217,7 +224,9 @@ export function CalculadoraPanel() {
                   </p>
                 </div>
 
-                <div className="grid w-full grid-cols-3 gap-x-4 sm:contents">
+                {/* Quatro valores nao cabem em quatro colunas num telefone:
+                    2x2 no celular, fileira unica a partir do sm. */}
+                <div className="grid w-full grid-cols-2 gap-x-4 gap-y-2 sm:contents">
                   <div className="w-full text-right sm:w-28">
                     <p className="t-support text-muted-foreground">custo</p>
                     <p className="t-body tabular-nums text-foreground">
@@ -232,10 +241,30 @@ export function CalculadoraPanel() {
                     </p>
                   </div>
 
-                  <div className="w-full text-right sm:w-20">
-                    <p className="t-support text-muted-foreground">margem</p>
-                    <p className={cn("t-item tabular-nums", corDaMargem(margem))}>
-                      {margem == null ? "—" : `${Math.round(margem * 100)}%`}
+                  <div className="w-full text-right sm:w-24">
+                    <p className="t-support whitespace-nowrap text-muted-foreground">
+                      margem bruta
+                    </p>
+                    <p className="t-body tabular-nums text-foreground">
+                      {bruta == null ? "—" : `${Math.round(bruta * 100)}%`}
+                    </p>
+                  </div>
+
+                  {/* So esta e colorida. Duas cores competindo tirariam o peso
+                      justamente da que diz se o negocio se paga. */}
+                  <div className="w-full text-right sm:w-24">
+                    <p className="t-support whitespace-nowrap text-muted-foreground">
+                      margem líquida
+                    </p>
+                    <p
+                      className={cn("t-item tabular-nums", corDaMargem(liquida))}
+                      title={
+                        liquida == null && temCusto
+                          ? "Ligue os Ajustes do cálculo para ver a margem líquida."
+                          : undefined
+                      }
+                    >
+                      {liquida == null ? "—" : `${Math.round(liquida * 100)}%`}
                     </p>
                   </div>
                 </div>
