@@ -82,7 +82,7 @@ export default function ControleDeVendasPage() {
             <nav className="cv-nav-links marketing-nav-simple-links" aria-label="Navegação principal">
               <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
               <Link href="/#para-quem">A FLUA</Link>
-              <Link href="/#contato">CONTATO</Link>
+              <Link href="/contato">CONTATO</Link>
               <Link href="/login">PORTAL</Link>
             </nav>
           </div>

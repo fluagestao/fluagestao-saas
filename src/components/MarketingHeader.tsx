@@ -11,6 +11,7 @@ export function MarketingHeader() {
     pathname === "/nosso-saas" ||
     pathname === "/a-flua" ||
     pathname === "/como-funciona" ||
+    pathname === "/contato" ||
     pathname.startsWith("/funcionalidades/");
 
   if (!visible) return null;
@@ -31,7 +32,8 @@ export function MarketingHeader() {
         <nav className="marketing-global-nav" aria-label="Navegação institucional">
           <Link href="/nosso-saas" aria-current={pathname === "/nosso-saas" ? "page" : undefined}>NOSSO SAAS</Link>
           <Link href="/a-flua" aria-current={pathname === "/a-flua" ? "page" : undefined}>A FLUA</Link>
-          <Link href="/#contato">CONTATO</Link>
+          <Link href="/contato" aria-current={pathname === "/contato" ? "page" : undefined}>CONTATO</Link>
+          <Link href="/login">MINHA LOJA</Link>
           <Link href="/como-funciona" aria-current={pathname === "/como-funciona" ? "page" : undefined}>COMO FUNCIONA</Link>
         </nav>
 
