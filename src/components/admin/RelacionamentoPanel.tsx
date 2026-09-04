@@ -28,12 +28,28 @@ import { Carregando, EstadoVazio, PageHeader } from "./shell";
  * de alguns meses o próprio histórico diz qual é o intervalo real.
  */
 const FAIXAS = [
+  { id: "todos", label: "Todos", de: 0, ate: Infinity },
   { id: "30", label: "30 a 60 dias", de: 30, ate: 60 },
   { id: "60", label: "60 a 120 dias", de: 60, ate: 120 },
   { id: "120", label: "Mais de 120 dias", de: 120, ate: Infinity },
 ] as const;
 
 type FaixaId = (typeof FAIXAS)[number]["id"];
+
+/* Descanso depois de chamar. Sem ele a lista de acao se repete: quem esta
+   parada ha 80 dias continua parada ha 81 amanha, entao reapareceria todo dia e
+   receberia a mesma mensagem toda semana. Trinta dias e o intervalo em que uma
+   segunda mensagem ainda soa como lembrete, e nao como insistencia.
+
+   Vale so nas FAIXAS. Em "Todos" ninguem some — la o objetivo e acompanhar, e
+   esconder quem foi chamada seria esconder justamente o que se quer ver. */
+const DESCANSO_DIAS = 30;
+
+function diasDesde(iso: string | null): number | null {
+  if (!iso) return null;
+  const [a, m, d] = iso.split("-").map(Number);
+  return Math.max(0, Math.round((Date.now() - Date.UTC(a, m - 1, d)) / 86_400_000));
+}
 
 function moeda(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -43,7 +59,7 @@ export function RelacionamentoPanel() {
   const [clientes, setClientes] = useState<ClienteParado[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
-  const [faixa, setFaixa] = useState<FaixaId>("30");
+  const [faixa, setFaixa] = useState<FaixaId>("todos");
   /* Quem foi chamada AGORA continua na tela, marcada, ate a proxima recarga.
      Sumir na hora esconderia o que ela acabou de fazer, e tiraria o caminho de
      volta se ela abriu o WhatsApp e desistiu de mandar. */
@@ -68,20 +84,30 @@ export function RelacionamentoPanel() {
   // Calculada uma vez: é a mesma para todas as linhas da tela.
   const proxima = useMemo(() => proximaDataComemorativa(), []);
 
-  const porFaixa = useMemo(() => {
-    const f = FAIXAS.find((x) => x.id === faixa)!;
-    return clientes.filter((c) => c.diasParado >= f.de && c.diasParado < f.ate);
-  }, [clientes, faixa]);
+  /* "Todos" mostra a base inteira, para acompanhar. As faixas sao a lista de
+     ACAO, e por isso tiram quem nao deve ser chamada agora: quem tem pedido a
+     caminho e quem ja foi chamada dentro do descanso. */
+  const filtrar = useCallback((lista: ClienteParado[], id: FaixaId) => {
+    const f = FAIXAS.find((x) => x.id === id)!;
+    if (id === "todos") return lista;
+    return lista.filter((c) => {
+      if (c.diasParado < f.de || c.diasParado >= f.ate) return false;
+      if (c.temPedidoAberto) return false;
+      const desdeContato = diasDesde(c.contatadoEm);
+      if (desdeContato !== null && desdeContato < DESCANSO_DIAS && !c.chamadaHoje) return false;
+      return true;
+    });
+  }, []);
+
+  const porFaixa = useMemo(() => filtrar(clientes, faixa), [clientes, faixa, filtrar]);
 
   const contagens = useMemo(
     () =>
-      Object.fromEntries(
-        FAIXAS.map((f) => [
-          f.id,
-          clientes.filter((c) => c.diasParado >= f.de && c.diasParado < f.ate).length,
-        ]),
-      ) as Record<FaixaId, number>,
-    [clientes],
+      Object.fromEntries(FAIXAS.map((f) => [f.id, filtrar(clientes, f.id).length])) as Record<
+        FaixaId,
+        number
+      >,
+    [clientes, filtrar],
   );
 
   async function chamar(c: ClienteParado) {
@@ -186,8 +212,12 @@ export function RelacionamentoPanel() {
         <Carregando texto="carregando os clientes…" />
       ) : porFaixa.length === 0 ? (
         <EstadoVazio
-          titulo="Ninguém nesta faixa"
-          descricao="Nenhuma cliente parada nesse intervalo. Quem tem pedido a caminho não entra aqui."
+          titulo={faixa === "todos" ? "Nenhuma cliente com compra ainda" : "Ninguém nesta faixa"}
+          descricao={
+            faixa === "todos"
+              ? "Assim que o primeiro pedido for entregue, a cliente aparece aqui e o histórico começa."
+              : "Ninguém parada nesse intervalo. Quem tem pedido a caminho ou já foi chamada nos últimos 30 dias fica de fora — veja em Todos."
+          }
         />
       ) : (
         <ul className="mt-3 space-y-2">
@@ -228,7 +258,11 @@ export function RelacionamentoPanel() {
                 <p className="t-support text-muted-foreground sm:hidden">
                   última em {formatarDataCurta(c.ultimaCompraEm)}
                 </p>
-                {chamadas.has(c.id) || c.chamadaHoje ? (
+                {c.temPedidoAberto ? (
+                  <span className="t-support shrink-0 rounded-lg bg-[var(--cream)] px-2.5 py-1.5 text-[var(--bronze)]">
+                    Pedido a caminho
+                  </span>
+                ) : chamadas.has(c.id) || c.chamadaHoje ? (
                   <span className="t-support flex shrink-0 items-center gap-2 text-[var(--green-ink)]">
                     <Check className="h-4 w-4" />
                     Chamada hoje
@@ -241,10 +275,17 @@ export function RelacionamentoPanel() {
                     </button>
                   </span>
                 ) : (
-                  <Button onClick={() => chamar(c)} className="h-10 shrink-0">
-                    <MessageCircle className="mr-1.5 h-4 w-4" />
-                    Chamar
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {c.contatadoEm && (
+                      <span className="t-support whitespace-nowrap text-muted-foreground">
+                        chamada há {diasDesde(c.contatadoEm)}d
+                      </span>
+                    )}
+                    <Button onClick={() => chamar(c)} className="h-10 shrink-0">
+                      <MessageCircle className="mr-1.5 h-4 w-4" />
+                      Chamar
+                    </Button>
+                  </div>
                 )}
               </div>
             </li>

@@ -3,7 +3,7 @@
 import { z } from "zod";
 
 import { requireCompany } from "@/lib/company-context.server";
-import { hojeISO, somarDias } from "@/lib/prazo";
+import { hojeISO } from "@/lib/prazo";
 import type { ItemPedido } from "@/lib/vendas";
 
 /**
@@ -23,13 +23,6 @@ import type { ItemPedido } from "@/lib/vendas";
 /** Teto das duas consultas. Mesmo valor que o Follow-up usa. */
 const TETO = 5000;
 
-/* Descanso depois de chamar. Sem ele a lista se repete: quem esta parado ha 80
-   dias continua parado ha 81 amanha, entao reapareceria todo dia e receberia a
-   mesma mensagem toda semana — destruindo o relacionamento que a aba existe
-   para recuperar. Trinta dias e o intervalo em que uma segunda mensagem ainda
-   soa como insistencia, e nao como lembrete. */
-const DESCANSO_DIAS = 30;
-
 /** Pedido em aberto: ela ainda vai receber. Não é hora de chamar de volta. */
 const EM_ABERTO = new Set(["novo", "producao", "pronto"]);
 
@@ -44,7 +37,11 @@ export type ClienteParado = {
   totalGasto: number;
   /** O que ela mais leva, somando quantidades. Null quando não dá para dizer. */
   produtoFrequente: string | null;
-  /** Chamada hoje: fica na lista, marcada, para o "desfazer" existir. */
+  /** Tem pedido a caminho. Não é hora de chamar de volta. */
+  temPedidoAberto: boolean;
+  /** Quando foi chamada pela última vez. Null = nunca. */
+  contatadoEm: string | null;
+  /** Chamada hoje: o "desfazer" ainda vale. */
   chamadaHoje: boolean;
 };
 
@@ -115,6 +112,11 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
   if (pedidosRes.error) throw pedidosRes.error;
 
   const comAberto = new Set<string>();
+  /* Antes esta funcao ja descartava quem tinha pedido a caminho e quem foi
+     chamada ha pouco. Passou a devolver todos, com o estado marcado: a aba
+     tambem serve para ACOMPANHAR a base, e uma lista que so mostra quem pode
+     ser chamado hoje aparece vazia justamente em quem esta indo bem. Quem
+     decide o que esconder e a tela, que sabe qual faixa esta aberta. */
   const porCliente = new Map<
     string,
     { ultima: string; compras: number; total: number; produtos: Map<string, number> }
@@ -161,22 +163,12 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
   }
 
   const clientes: ClienteParado[] = [];
-  const limiteDescanso = somarDias(hoje, -DESCANSO_DIAS);
 
   for (const c of clientesRes.data ?? []) {
     const id = String(c.id);
-
-    /* Chamada ha pouco sai da lista — MENOS quem foi chamada hoje. Cortar hoje
-       tambem fazia o "desfazer" viver so ate a tela remontar: bastava trocar de
-       aba e voltar para a cliente sumir por trinta dias sem nenhum caminho de
-       volta, ja que e desta lista que ela some. */
     const contatada = (c.contatado_em as string | null) ?? null;
-    if (contatada && contatada >= limiteDescanso && contatada !== hoje) continue;
 
-    // Tem pedido a caminho: receber "faz tempo que você não compra" enquanto
-    // espera a entrega mostra um sistema que não sabe o que está fazendo.
-    if (comAberto.has(id)) continue;
-
+    // Sem compra concluída não há relacionamento para acompanhar.
     const dados = porCliente.get(id);
     if (!dados) continue;
 
@@ -198,6 +190,8 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
       compras: dados.compras,
       totalGasto: dados.total,
       produtoFrequente,
+      temPedidoAberto: comAberto.has(id),
+      contatadoEm: contatada,
       chamadaHoje: contatada === hoje,
     });
   }
