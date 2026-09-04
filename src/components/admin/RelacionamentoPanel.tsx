@@ -409,8 +409,8 @@ export function RelacionamentoPanel() {
       </div>
 
       {faixa !== "ocasiao" && (ocasioesUsadas.length > 0 || temRecorte) && (
-        <div className="mt-3 flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-3">
-          <label className="min-w-0 flex-1 space-y-1.5 text-sm font-medium sm:max-w-56">
+        <div className="mt-3 grid grid-cols-1 gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-3 sm:grid-cols-[minmax(0,14rem)_minmax(10.5rem,1fr)_minmax(10.5rem,1fr)_auto] sm:items-end">
+          <label className="min-w-0 space-y-1.5 text-sm font-medium">
             <span className="block">Comprou na ocasião</span>
             <select
               value={filtroOcasiao}
@@ -426,30 +426,30 @@ export function RelacionamentoPanel() {
             </select>
           </label>
 
-          <label className="space-y-1.5 text-sm font-medium">
+          <label className="min-w-0 space-y-1.5 text-sm font-medium">
             <span className="block">Comprou de</span>
             <input
               type="date"
               value={de}
               onChange={(e) => setDe(e.target.value)}
-              className="h-10 min-w-[10.5rem] rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
             />
           </label>
 
-          <label className="space-y-1.5 text-sm font-medium">
-            <span className="block">até</span>
+          <label className="min-w-0 space-y-1.5 text-sm font-medium">
+            <span className="block">Até</span>
             <input
               type="date"
               value={ate}
               onChange={(e) => setAte(e.target.value)}
-              className="h-10 min-w-[10.5rem] rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
             />
           </label>
 
           {temRecorte && (
             <Button
               variant="outline"
-              className="h-10"
+              className="h-10 w-full sm:w-auto"
               onClick={() => {
                 setFiltroOcasiao("");
                 setDe("");
