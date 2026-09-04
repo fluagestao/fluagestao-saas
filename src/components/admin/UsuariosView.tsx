@@ -55,9 +55,14 @@ export function UsuariosView() {
     if (!novo.email.trim() || salvando) return;
     setSalvando(true);
     try {
-      await criarUsuario({
+      const r = await criarUsuario({
         data: { email: novo.email.trim(), senha: novo.senha, nome: novo.nome.trim() },
       });
+      // O erro esperado vem no retorno; o catch fica para rede e sessao.
+      if (r?.erro) {
+        toast.error(r.erro, { duration: 8000 });
+        return;
+      }
       toast.success(`Acesso criado. Passe o e-mail e a senha "${novo.senha}" para a pessoa.`, {
         duration: 12000,
       });
@@ -65,8 +70,9 @@ export function UsuariosView() {
       recarregar();
     } catch (e) {
       toast.error(mensagemDeErro(e, "criar o acesso"), { duration: 10000 });
+    } finally {
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   async function remover(u: Usuario) {
@@ -78,7 +84,11 @@ export function UsuariosView() {
     });
     if (!ok) return;
     try {
-      await removerUsuario({ data: { email: u.email } });
+      const r = await removerUsuario({ data: { email: u.email } });
+      if (r?.erro) {
+        toast.error(r.erro, { duration: 8000 });
+        return;
+      }
       toast.success("Acesso removido.");
       recarregar();
     } catch (e) {

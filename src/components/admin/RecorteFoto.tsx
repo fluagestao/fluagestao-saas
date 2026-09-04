@@ -52,7 +52,24 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
     return () => URL.revokeObjectURL(url);
   }, [arquivo]);
 
-  const lado = molduraRef.current?.clientWidth ?? 0;
+  /* O lado vem de estado, e nao de `ref.current.clientWidth` lido no render.
+     Ler ref durante o render e proibido pelo React (o lint acusa) e, pior,
+     nao avisa quando o tamanho muda: o dialogo abre com animacao e a moldura
+     nasce com uma largura e termina com outra, entao a conta do zoom era
+     feita sobre um numero velho. */
+  const [lado, setLado] = useState(0);
+
+  useEffect(() => {
+    const alvo = molduraRef.current;
+    if (!alvo) return;
+
+    const medir = () => setLado(alvo.clientWidth);
+    medir();
+
+    const observador = new ResizeObserver(medir);
+    observador.observe(alvo);
+    return () => observador.disconnect();
+  }, []);
 
   /* Fator que faz a imagem COBRIR a moldura. É a base do zoom: em 1x a foto
      preenche o quadrado sem sobrar borda, e daí só cresce. */
@@ -158,17 +175,17 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
           onPointerUp={aoSoltar}
           onPointerCancel={aoSoltar}
           className="relative aspect-square w-full touch-none select-none overflow-hidden rounded-2xl bg-[var(--cream-deep)]"
-          style={{ cursor: arrasto.current ? "grabbing" : "grab" }}
+          style={{
+            cursor: arrasto.current ? "grabbing" : "grab",
+            /* A foto vai como FUNDO, e nao num <img>: nenhuma regra global de
+               `img { ... }` alcanca um background, e `background-size` recebe
+               as duas dimensoes explicitas — nada externo consegue esticar. */
+            backgroundImage: img ? `url(${img.src})` : undefined,
+            backgroundSize: img ? `${largura}px ${altura}px` : undefined,
+            backgroundPosition: `${pos.x}px ${pos.y}px`,
+            backgroundRepeat: "no-repeat",
+          }}
         >
-          {img && (
-            <img
-              src={img.src}
-              alt=""
-              draggable={false}
-              className="absolute max-w-none origin-top-left"
-              style={{ width: largura, height: altura, left: pos.x, top: pos.y }}
-            />
-          )}
           {/* Guias de terço: ajudam a centrar o assunto sem tapar a foto. */}
           <div className="pointer-events-none absolute inset-0 grid grid-cols-3 grid-rows-3">
             {Array.from({ length: 9 }, (_, i) => (

@@ -44,9 +44,16 @@ export async function criarUsuario(input: { data: unknown }) {
     })
     .parse(input.data);
 
+/* Erro ESPERADO volta no retorno, nao lancado.
+
+   Em producao o React descarta a mensagem de um Error vindo de arquivo
+   "use server" e manda so um digest — "Somente o proprietario pode criar
+   usuarios" virava um codigo, e a pessoa nao descobria por que o botao nao
+   funcionou. Falha de infraestrutura continua sendo lancada: para essa o texto
+   generico serve, e nao ha o que a pessoa possa fazer com ele. */
   const { supabase, companyId, role } = await requireCompany();
   if (role !== "owner") {
-    throw new Error("Somente o proprietário da empresa pode criar usuários.");
+    return { ok: false as const, erro: "Somente o proprietário da empresa pode criar usuários." };
   }
 
   const email = data.email.trim().toLowerCase();
@@ -95,7 +102,7 @@ export async function criarUsuario(input: { data: unknown }) {
 
   if (membroError) {
     if (membroError.code === "23505") {
-      throw new Error("Esse usuário já está vinculado à empresa.");
+      return { ok: false as const, erro: "Esse usuário já está vinculado à empresa." };
     }
     throw membroError;
   }
@@ -121,7 +128,7 @@ export async function trocarSenhaUsuario(input: { data: unknown }) {
 
   const { error } = await supabase.auth.updateUser({ password: data.senha });
   if (error) throw error;
-  return { ok: true as const };
+  return { ok: true as const, erro: null };
 }
 
 export async function removerUsuario(input: { data: unknown }) {
@@ -131,11 +138,11 @@ export async function removerUsuario(input: { data: unknown }) {
 
   const { supabase, companyId, email, role } = await requireCompany();
   if (role !== "owner") {
-    throw new Error("Somente o proprietário da empresa pode remover usuários.");
+    return { ok: false as const, erro: "Somente o proprietário da empresa pode remover usuários." };
   }
 
   if (alvo.toLowerCase() === email.toLowerCase()) {
-    throw new Error("Você não pode remover o seu próprio acesso.");
+    return { ok: false as const, erro: "Você não pode remover o seu próprio acesso." };
   }
 
   const { data: membro, error: buscaError } = await supabase
@@ -146,9 +153,9 @@ export async function removerUsuario(input: { data: unknown }) {
     .maybeSingle();
 
   if (buscaError) throw buscaError;
-  if (!membro) return { ok: true as const };
+  if (!membro) return { ok: true as const, erro: null };
   if (membro.role === "owner") {
-    throw new Error("O proprietário da empresa não pode ser removido.");
+    return { ok: false as const, erro: "O proprietário da empresa não pode ser removido." };
   }
 
   const { error } = await supabase
@@ -158,5 +165,5 @@ export async function removerUsuario(input: { data: unknown }) {
     .eq("company_id", companyId);
 
   if (error) throw error;
-  return { ok: true as const };
+  return { ok: true as const, erro: null };
 }
