@@ -2,8 +2,10 @@
 
 import { z } from "zod";
 
+import { getConfig, setConfig } from "@/lib/admin-ops.server";
 import { requireCompany } from "@/lib/company-context.server";
 import { hojeISO } from "@/lib/prazo";
+import { MODELO_PADRAO } from "@/lib/relacionamento-mensagem";
 import type { ItemPedido } from "@/lib/vendas";
 
 /**
@@ -245,5 +247,26 @@ export async function desfazerContato(input: { data: unknown }) {
     .eq("company_id", companyId);
 
   if (error) throw error;
+  return { ok: true as const };
+}
+
+/* Chave em `configuracoes`, a tabela generica de chave/valor por empresa — o
+   mesmo lugar onde os horarios ja moram. Nao precisou de migration nenhuma. */
+const CHAVE_MODELO = "relacionamento_modelo";
+
+export async function carregarModeloRelacionamento(): Promise<{ modelo: string }> {
+  const { supabase, companyId } = await requireCompany();
+  const valor = await getConfig(supabase, companyId, CHAVE_MODELO);
+  const texto = typeof valor === "string" ? valor : (valor as { texto?: string } | null)?.texto;
+  return { modelo: texto && texto.trim() ? texto : MODELO_PADRAO };
+}
+
+export async function salvarModeloRelacionamento(input: { data: unknown }) {
+  const { modelo } = z
+    .object({ modelo: z.string().trim().min(1).max(1200) })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+  await setConfig(supabase, companyId, CHAVE_MODELO, { texto: modelo });
   return { ok: true as const };
 }

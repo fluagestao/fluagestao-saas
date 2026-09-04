@@ -1,20 +1,37 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, HeartHandshake, MessageCircle } from "lucide-react";
+import { Check, HeartHandshake, MessageCircle, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataCurta } from "@/lib/prazo";
 import {
+  carregarModeloRelacionamento,
   carregarRelacionamento,
   desfazerContato,
   marcarContatado,
+  salvarModeloRelacionamento,
   type ClienteParado,
 } from "@/lib/relacionamento";
-import { linkWhatsApp, montarMensagem, tempoParado } from "@/lib/relacionamento-mensagem";
+import {
+  MARCADORES,
+  MODELO_PADRAO,
+  aplicarModelo,
+  linkWhatsApp,
+  tempoParado,
+} from "@/lib/relacionamento-mensagem";
 import { cn } from "@/lib/utils";
 
 import { Carregando, EstadoVazio, PageHeader } from "./shell";
@@ -64,6 +81,10 @@ export function RelacionamentoPanel() {
      Sumir na hora esconderia o que ela acabou de fazer, e tiraria o caminho de
      volta se ela abriu o WhatsApp e desistiu de mandar. */
   const [chamadas, setChamadas] = useState<Set<string>>(new Set());
+  const [modelo, setModelo] = useState(MODELO_PADRAO);
+  const [ajustesAberto, setAjustesAberto] = useState(false);
+  const [rascunho, setRascunho] = useState(MODELO_PADRAO);
+  const [salvando, setSalvando] = useState(false);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -80,6 +101,16 @@ export function RelacionamentoPanel() {
   useEffect(() => {
     recarregar();
   }, [recarregar]);
+
+  useEffect(() => {
+    carregarModeloRelacionamento()
+      .then((r) => {
+        setModelo(r.modelo);
+        setRascunho(r.modelo);
+      })
+      // Sem modelo salvo a tela funciona igual: cai no padrão.
+      .catch(() => undefined);
+  }, []);
 
   // Calculada uma vez: é a mesma para todas as linhas da tela.
   const proxima = useMemo(() => proximaDataComemorativa(), []);
@@ -110,8 +141,36 @@ export function RelacionamentoPanel() {
     [clientes, filtrar],
   );
 
+  /* Prévia com quem está no topo da lista; sem lista, um exemplo plausível —
+     ela precisa ver o resultado mesmo antes de ter cliente parada. */
+  const previa = useMemo(() => {
+    const c = porFaixa[0] ?? clientes[0];
+    return {
+      nome: c?.nome ?? "Ana Beatriz",
+      dias: c?.diasParado ?? 62,
+      produto: c?.produtoFrequente ?? "Tábua de frios pra 6",
+      dataNome: proxima.nome,
+      dataArtigo: proxima.artigo,
+      dataDiasRestantes: proxima.diasRestantes,
+    };
+  }, [porFaixa, clientes, proxima]);
+
+  async function salvarModelo() {
+    setSalvando(true);
+    try {
+      await salvarModeloRelacionamento({ data: { modelo: rascunho } });
+      setModelo(rascunho);
+      setAjustesAberto(false);
+      toast.success("Modelo salvo.");
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "salvar o modelo"));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   async function chamar(c: ClienteParado) {
-    const mensagem = montarMensagem({
+    const mensagem = aplicarModelo(modelo, {
       nome: c.nome,
       dias: c.diasParado,
       produto: c.produtoFrequente,
@@ -163,6 +222,19 @@ export function RelacionamentoPanel() {
       <PageHeader
         titulo="Relacionamento"
         descricao="Quem comprou e parou de aparecer. A mensagem sai pronta — você lê, ajusta e manda."
+        acoes={
+          <Button
+            variant="outline"
+            className="h-11"
+            onClick={() => {
+              setRascunho(modelo);
+              setAjustesAberto(true);
+            }}
+          >
+            <Settings2 className="mr-1.5 h-4 w-4" />
+            Modelo da mensagem
+          </Button>
+        }
       />
 
       {erro && (
@@ -292,6 +364,59 @@ export function RelacionamentoPanel() {
           ))}
         </ul>
       )}
+
+      <Dialog open={ajustesAberto} onOpenChange={setAjustesAberto}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader className="text-left">
+            <DialogTitle>Modelo da mensagem</DialogTitle>
+            <DialogDescription>
+              Escreva do seu jeito. Os marcadores viram os dados de cada cliente na hora de
+              chamar.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Textarea value={rascunho} onChange={(e) => setRascunho(e.target.value)} rows={5} />
+
+          <div className="flex flex-wrap gap-1.5">
+            {MARCADORES.map((m) => (
+              <button
+                key={m.chave}
+                type="button"
+                onClick={() => setRascunho((v) => `${v}${m.chave}`)}
+                title={m.descricao}
+                className="rounded-lg bg-[var(--cream)] px-2.5 py-1.5 text-xs font-semibold text-[var(--wine)] transition-colors hover:bg-[var(--cream-deep)]"
+              >
+                {m.chave}
+              </button>
+            ))}
+          </div>
+
+          <p className="t-support text-muted-foreground">
+            Você escreve a frase inteira, então a concordância é sua: escolha “sua última” ou
+            “seu último” conforme o que vende. Quando não houver data comemorativa por perto, a
+            linha que usa <b>{"{data}"}</b> some sozinha.
+          </p>
+
+          {/* Prévia: editar marcador sem ver o resultado é escrever no escuro. */}
+          <div className="rounded-xl bg-[var(--cream-soft)] p-3.5">
+            <p className="t-support mb-1.5 text-muted-foreground">
+              Como sai para {previa.nome}:
+            </p>
+            <p className="whitespace-pre-line text-sm text-[var(--admin-ink)]">
+              {aplicarModelo(rascunho, previa)}
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRascunho(MODELO_PADRAO)} disabled={salvando}>
+              Voltar ao padrão
+            </Button>
+            <Button onClick={salvarModelo} disabled={salvando || !rascunho.trim()}>
+              {salvando ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

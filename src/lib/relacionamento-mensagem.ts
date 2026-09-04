@@ -88,3 +88,59 @@ export function linkWhatsApp(whatsapp: string | null, mensagem: string): string 
   const completo = numeros.length <= 11 ? `55${numeros}` : numeros;
   return `https://wa.me/${completo}?text=${encodeURIComponent(mensagem)}`;
 }
+
+/* ---------------------------------------------------------------- modelo ---
+   O texto deixou de ser fixo no código: cada cesteira escreve do jeito dela.
+
+   A regra que faz isso funcionar sem quebrar português: TODO marcador sempre
+   vira alguma coisa, e quem escreve a frase ao redor é ela. Foi assim que a
+   concordância deixou de ser problema — o sistema nao tenta adivinhar se o
+   produto e masculino ou feminino, ela e quem escolhe "sua última" ou "seu
+   último" olhando o que vende.
+
+   A unica excecao e {data}: quando nao ha data comemorativa perto, a LINHA
+   inteira que a menciona some. Sem isso sobraria " está chegando" sozinho no
+   meio da mensagem. */
+
+export const MARCADORES = [
+  { chave: "{nome}", descricao: "primeiro nome da cliente" },
+  { chave: "{tempo}", descricao: "há quanto tempo ela não compra" },
+  { chave: "{produto}", descricao: "o que ela costuma levar (ou “compra”)" },
+  { chave: "{data}", descricao: "a próxima data comemorativa — a linha some se não houver" },
+] as const;
+
+export const MODELO_PADRAO = `Olá {nome}, tudo bem?
+Faz {tempo} desde sua última {produto} aqui com a gente.
+E {data} está chegando — quer ver o que temos disponível para presentear alguém especial?`;
+
+export type DadosModelo = {
+  nome: string;
+  dias: number;
+  produto: string | null;
+  dataNome: string;
+  dataArtigo: "o" | "a";
+  dataDiasRestantes: number;
+};
+
+/** Acima disto a data ainda não é assunto: citar o Natal em agosto não convence. */
+const DIAS_DATA_PERTO = 45;
+
+export function aplicarModelo(modelo: string, d: DadosModelo): string {
+  const dataPerto = d.dataDiasRestantes >= 0 && d.dataDiasRestantes <= DIAS_DATA_PERTO;
+
+  return modelo
+    .split("\n")
+    // Sem data por perto, a linha que a cita sai inteira.
+    .filter((linha) => dataPerto || !linha.includes("{data}"))
+    .map((linha) =>
+      linha
+        .replaceAll("{nome}", primeiroNome(d.nome))
+        .replaceAll("{tempo}", tempoParado(d.dias))
+        // "compra" e feminino como "cesta" e "tábua": cai bem no lugar do nome
+        // do produto na maioria das frases que ela vai escrever.
+        .replaceAll("{produto}", d.produto ?? "compra")
+        .replaceAll("{data}", `${d.dataArtigo} ${d.dataNome}`),
+    )
+    .join("\n")
+    .trim();
+}
