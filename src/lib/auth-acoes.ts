@@ -123,6 +123,14 @@ export async function entrar(input: { data: unknown }): Promise<Resultado> {
   return { ok: true, destino };
 }
 
+/* Versao dos Termos que a pessoa aceitou, gravada junto com a data.
+
+   FONTE DA VERDADE: o updatedAt de src/app/documentos/termos-de-uso/page.tsx.
+   Mudou o texto dos Termos? Mude a data la e aqui no mesmo commit — senao o
+   registro passa a dizer que a pessoa aceitou uma versao que ela nunca viu, que
+   e pior do que nao ter registro nenhum. */
+const VERSAO_TERMOS = "2026-08-23";
+
 const cadastroSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   senha: z.string().min(1).max(200),
@@ -131,6 +139,10 @@ const cadastroSchema = z.object({
   documento: z.string().trim().max(30),
   telefone: z.string().trim().max(30).nullish(),
   origem: z.string().url(),
+  /* Booleano e nao literal(true) de proposito: assim o "nao aceitou" cai numa
+     checagem propria, com mensagem que explica, em vez de virar o erro
+     generico que o schema devolve para tudo. */
+  aceite_termos: z.boolean(),
 });
 
 export async function cadastrar(input: { data: unknown }): Promise<Resultado> {
@@ -138,6 +150,17 @@ export async function cadastrar(input: { data: unknown }): Promise<Resultado> {
   if (!analise.success) return { ok: false, mensagem: ERRO_GENERICO };
 
   const { email, senha, nome, loja, documento, telefone, origem } = analise.data;
+
+  /* O contrato afirma que quem cria conta "declara que leu e concorda". Ate
+     agora a tela nao mostrava, nao linkava e nao perguntava nada — o documento
+     afirmava um consentimento que nunca foi colhido. A caixa na tela e
+     conveniencia; e aqui que ela vira regra. */
+  if (!analise.data.aceite_termos) {
+    return {
+      ok: false,
+      mensagem: "Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.",
+    };
+  }
 
   const limite = await contarTentativa("cadastro", email);
   if (limite.bloqueado) {
@@ -166,6 +189,10 @@ export async function cadastrar(input: { data: unknown }): Promise<Resultado> {
         document: documento,
         document_type: documento.replace(/\D/g, "").length === 14 ? "cnpj" : "cpf",
         phone: telefone ?? null,
+        /* Fica em raw_user_meta_data, no proprio auth.users: prova por pessoa,
+           com data e versao, sem precisar de tabela nova. */
+        termos_aceitos_em: new Date().toISOString(),
+        termos_versao: VERSAO_TERMOS,
       },
     },
   });

@@ -114,6 +114,7 @@ export default function CadastroPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [aceito, setAceito] = useState(false);
   const [cadastroConcluido, setCadastroConcluido] = useState(false);
   const [emailConfirmacao, setEmailConfirmacao] = useState("");
 
@@ -166,6 +167,11 @@ export default function CadastroPage() {
       return;
     }
 
+    if (!aceito) {
+      setErro("Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.");
+      return;
+    }
+
     setCarregando(true);
 
     try {
@@ -185,6 +191,7 @@ export default function CadastroPage() {
           documento: documentoNumeros,
           telefone: whatsappNumeros,
           origem: siteUrl,
+          aceite_termos: aceito,
         },
       });
 
@@ -370,6 +377,36 @@ export default function CadastroPage() {
                     {erro}
                   </p>
                 )}
+
+                <label className="flex cursor-pointer items-start gap-2.5 text-left text-[clamp(.62rem,1.35dvh,.75rem)] leading-snug text-[#703D3A]/80">
+                  <input
+                    type="checkbox"
+                    checked={aceito}
+                    onChange={(e) => setAceito(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[#A94F45]"
+                  />
+                  <span>
+                    Li e concordo com os{" "}
+                    <Link
+                      href="/documentos/termos-de-uso"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[#A94F45] underline underline-offset-2 hover:text-[#703D3A]"
+                    >
+                      Termos de Uso
+                    </Link>{" "}
+                    e a{" "}
+                    <Link
+                      href="/documentos/termos-de-uso/privacidade"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[#A94F45] underline underline-offset-2 hover:text-[#703D3A]"
+                    >
+                      Política de Privacidade
+                    </Link>
+                    .
+                  </span>
+                </label>
 
                 <Button type="submit" disabled={carregando} className="h-[clamp(2.35rem,5.8dvh,3rem)] w-full rounded-xl bg-[#A94F45] text-[clamp(.75rem,1.6dvh,.875rem)] font-semibold text-white shadow-[0_12px_28px_rgba(169,79,69,0.2)] hover:bg-[#703D3A]">
                   {carregando ? (
