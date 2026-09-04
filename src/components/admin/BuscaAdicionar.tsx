@@ -49,7 +49,7 @@ export function BuscaAdicionar({
   const [aberto, setAberto] = useState(false);
 
   return (
-    <Popover open={aberto} onOpenChange={setAberto}>
+    <Popover open={aberto} onOpenChange={setAberto} modal>
       <PopoverTrigger asChild>
         <button
           type="button"
