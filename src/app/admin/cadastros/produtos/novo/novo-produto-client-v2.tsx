@@ -7,12 +7,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Lock,
   Plus,
+  TriangleAlert,
   Upload,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast, Toaster } from "sonner";
 
 import { RecorteFoto } from "@/components/admin/RecorteFoto";
@@ -31,6 +33,8 @@ import {
   salvarComposicaoProduto,
   type InsumoRow,
 } from "@/lib/insumos";
+import { carregarCalculoConfig } from "@/lib/calculo";
+import { CONFIG_VAZIA, calcular, type CalculoConfig } from "@/lib/calculo-tipos";
 import { mensagemDeErro } from "@/lib/erros";
 import { cn } from "@/lib/utils";
 import {
@@ -81,6 +85,7 @@ export function NovoProdutoClient({
   produtoInicial = null,
   custoInicial = 0,
   temCustoInicial = false,
+  tempoInicial = null,
 }: {
   categorias: CategoriaRow[];
   catalogos: CatalogoRow[];
@@ -91,6 +96,8 @@ export function NovoProdutoClient({
   produtoInicial?: ProdutoInicial | null;
   custoInicial?: number;
   temCustoInicial?: boolean;
+  /** Minutos de montagem. Entram na margem líquida como mão de obra. */
+  tempoInicial?: number | null;
 }) {
   const router = useRouter();
   const modoEdicao = Boolean(produtoInicial);
@@ -110,11 +117,6 @@ export function NovoProdutoClient({
     return categoria?.catalogo_id ?? TODAS_COLECOES;
   });
   const [colecoesAbertas, setColecoesAbertas] = useState(false);
-  const [preco, setPreco] = useState(
-    produtoInicial?.preco == null
-      ? ""
-      : String(produtoInicial.preco).replace(".", ","),
-  );
   const [descricao, setDescricao] = useState(produtoInicial?.observacao ?? "");
   const [imagens, setImagens] = useState<ImagemRow[]>(
     (produtoInicial?.imagens ?? [])
@@ -127,8 +129,39 @@ export function NovoProdutoClient({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  const [custoSalvo, setCustoSalvo] = useState(custoInicial);
-  const [temCusto, setTemCusto] = useState(temCustoInicial);
+  /* Preço e custo não são mais editáveis aqui — viraram leitura. Os dois se
+     definem em Custo e preços, onde aparecem juntos e a margem muda enquanto
+     você digita. Aqui em cima dava para escrever 289 sem ver custo nenhum: era
+     o mesmo campo com metade da informação, e dois lugares gravando preço que
+     nunca conversaram entre si. */
+  const custoSalvo = custoInicial;
+  const temCusto = temCustoInicial;
+
+  const [config, setConfig] = useState<CalculoConfig>(CONFIG_VAZIA);
+
+  /* Sem os Ajustes do cálculo, mão de obra e custo fixo entram como zero e a
+     margem líquida sairia igual à bruta. O painel abaixo prefere mostrar um
+     traço a mostrar um número que mente. */
+  useEffect(() => {
+    carregarCalculoConfig()
+      .then((r) => setConfig(r.config))
+      .catch(() => {});
+  }, []);
+
+  const precoAtual = produtoInicial?.preco ?? null;
+  const custoAtual = temCusto ? custoSalvo : null;
+  const faltaPreco = precoAtual == null || precoAtual <= 0;
+  const faltaCusto = custoAtual == null;
+
+  const cascata = calcular(precoAtual, custoAtual ?? 0, tempoInicial, config);
+  const margemLiquida =
+    !faltaPreco && !faltaCusto && cascata.completa ? cascata.margemReal : null;
+
+  /* Markup é preço ÷ custo dos INSUMOS, o multiplicador que a cesteira usa de
+     cabeça ("multiplico por 3"). Sobre o custo cheio não seria markup e daria
+     um número sem nome. Custo zero não divide. */
+  const markup =
+    !faltaPreco && custoAtual != null && custoAtual > 0 ? precoAtual! / custoAtual : null;
 
   const categoriaSelecionada = categorias.find((categoria) => categoria.id === categoriaId);
 
@@ -178,12 +211,8 @@ export function NovoProdutoClient({
   async function salvar() {
     setErro(null);
     const nomeLimpo = nome.trim();
-    const valorPreco = Number(preco.replace(",", "."));
 
     if (!nomeLimpo) return setErro("Informe o nome do produto.");
-    if (!preco.trim() || Number.isNaN(valorPreco) || valorPreco < 0) {
-      return setErro("Informe um preço válido para o produto.");
-    }
 
     setSalvando(true);
     try {
@@ -193,7 +222,10 @@ export function NovoProdutoClient({
           id: draft.id,
           nome: nomeLimpo,
           categoria_id: categoriaId || null,
-          preco: valorPreco,
+          /* O preço não é editado aqui: preserva o que já está gravado, e
+             produto novo nasce sem preço mesmo — ele aparece pendente em Custo
+             e preços, que é onde a decisão acontece. */
+          preco: produtoInicial?.preco ?? null,
           /* "Serve" e "Rotulo de preco" sairam do formulario E do catalogo:
              nao acrescentavam nada e viviam em branco. As colunas continuam no
              banco, entao PRESERVA em vez de zerar — o que ja foi escrito nao se
@@ -452,26 +484,71 @@ export function NovoProdutoClient({
                 </Campo>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2">
-                <Campo label="Preço (R$)" obrigatorio>
-                  <Input
-                    required
-                    inputMode="decimal"
-                    value={preco}
-                    onChange={(e) => setPreco(e.target.value)}
-                    className="h-11"
+              {/* Os quatro números do produto, todos travados. Editar preço
+                  aqui era decidir no escuro: nesta tela não há custo à vista,
+                  e o custo é justamente o que diz se o preço se paga. */}
+              <div className="space-y-3 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] p-4">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <CampoTravado
+                    label="Preço (R$)"
+                    valor={faltaPreco ? "—" : precoAtual!.toFixed(2).replace(".", ",")}
+                    apagado={faltaPreco}
                   />
-                </Campo>
+                  <CampoTravado
+                    label="Custo (R$)"
+                    valor={faltaCusto ? "—" : custoAtual!.toFixed(2).replace(".", ",")}
+                    apagado={faltaCusto}
+                  />
+                  <CampoTravado
+                    label="Margem líquida"
+                    valor={
+                      margemLiquida == null ? "—" : `${Math.round(margemLiquida * 100)}%`
+                    }
+                    apagado={margemLiquida == null}
+                    cor={margemLiquida == null ? undefined : corDaMargem(margemLiquida)}
+                    aviso={
+                      margemLiquida == null && !faltaPreco && !faltaCusto
+                        ? "Ligue os Ajustes do cálculo, em Custo e preços, para ver a margem líquida. Sem eles a mão de obra e os custos fixos entram como zero."
+                        : undefined
+                    }
+                  />
+                  <CampoTravado
+                    label="Markup"
+                    valor={markup == null ? "—" : `${markup.toFixed(2).replace(".", ",")}×`}
+                    apagado={markup == null}
+                    aviso="Preço dividido pelo custo dos insumos. É quantas vezes o insumo cabe no preço."
+                  />
+                </div>
 
-                {temCusto && (
-                  <Campo label="Custo (R$)">
-                    <Input
-                      value={custoSalvo.toFixed(2).replace(".", ",")}
-                      readOnly
-                      className="h-11 bg-[var(--cream-soft)] font-semibold text-[var(--wine)]"
-                    />
-                  </Campo>
+                {/* Três estados, não dois. O do meio — tem preço e não tem
+                    custo — é o perigoso: o produto PARECE pronto, está no
+                    catálogo e vende, e a margem é fantasia. Se o aviso só
+                    aparecesse quando faltam os dois, esse caso passaria calado. */}
+                {(faltaPreco || faltaCusto) && (
+                  <div className="flex items-start gap-2.5 rounded-xl border border-[var(--peach)] bg-white px-3.5 py-2.5">
+                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--coral)]" />
+                    <p className="text-xs leading-5 text-[var(--admin-ink-soft)]">
+                      {faltaPreco && faltaCusto
+                        ? "Este produto ainda não tem custo nem preço. Lance os insumos e defina o preço em Custo e preços."
+                        : faltaCusto
+                          ? "Falta lançar o custo. Sem ele não existe margem nem markup, e o preço fica sendo chute."
+                          : "Falta definir o preço. O custo já está lançado, então é só decidir a margem."}
+                    </p>
+                  </div>
                 )}
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="min-w-0 text-xs text-muted-foreground">
+                    Preço e custo se definem em Custo e preços, onde os dois aparecem lado a lado
+                    e a margem acompanha enquanto você digita.
+                  </p>
+                  <Button type="button" variant="outline" size="sm" asChild className="shrink-0">
+                    <a href="/custo/calculadora">
+                      <Calculator className="mr-1.5 h-4 w-4" />
+                      Abrir Custo e preços
+                    </a>
+                  </Button>
+                </div>
               </div>
 
               <Campo label="Descrição do produto">
@@ -483,24 +560,6 @@ export function NovoProdutoClient({
                   className="min-h-[108px] resize-none xl:min-h-[92px]"
                 />
               </Campo>
-
-              {/* O custo saiu daqui: ele vive na tela de Custo, que lista todos
-                  os produtos e mostra quem ainda esta sem. Montar custo e um
-                  trabalho em lote; cadastro de produto e um trabalho unitario. */}
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold">Custo do produto</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Os insumos e quantidades agora ficam na tela de Margem, junto com o quanto sobra.
-                  </p>
-                </div>
-                <Button type="button" variant="outline" asChild>
-                  <a href="/margem">
-                    <Calculator className="mr-1.5 h-4 w-4" />
-                    Abrir Margem
-                  </a>
-                </Button>
-              </div>
 
               {erro && (
                 <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-destructive">{erro}</p>
@@ -599,6 +658,50 @@ export function NovoProdutoClient({
       </main>
 
     </div>
+  );
+}
+
+/** Verde acima de 50, âmbar entre 25 e 50, vermelho abaixo. Igual à lista. */
+function corDaMargem(margem: number) {
+  if (margem >= 0.5) return "text-[var(--green-ink)]";
+  if (margem >= 0.25) return "text-[var(--bronze)]";
+  return "text-destructive";
+}
+
+/**
+ * Número só de leitura, com cadeado.
+ *
+ * O cadeado não é enfeite: sem ele um campo cinza parece um campo que não
+ * carregou, e a pessoa fica clicando esperando digitar. Com ele, a tela diz que
+ * o valor existe e que se muda em outro lugar.
+ */
+function CampoTravado({
+  label,
+  valor,
+  apagado = false,
+  cor,
+  aviso,
+}: {
+  label: string;
+  valor: string;
+  apagado?: boolean;
+  cor?: string;
+  aviso?: string;
+}) {
+  return (
+    <Campo label={label}>
+      <div className="relative" title={aviso}>
+        <p
+          className={cn(
+            "flex h-11 items-center rounded-xl border border-[var(--cream-deep)] bg-white pl-3.5 pr-9 text-sm font-semibold tabular-nums",
+            cor ?? (apagado ? "text-muted-foreground" : "text-[var(--wine)]"),
+          )}
+        >
+          {valor}
+        </p>
+        <Lock className="pointer-events-none absolute right-3.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+      </div>
+    </Campo>
   );
 }
 

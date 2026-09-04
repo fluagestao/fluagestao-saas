@@ -38,7 +38,7 @@ export default async function EditarProdutoPage({
   const { data: produto, error: produtoError } = await supabase
     .from("produtos")
     .select(
-      "id, sku, slug, rascunho, nome, categoria_id, preco, preco_label, serve, itens, precos_extra, observacao, ativo, ordem, badge, badge_cor, produto_imagens(id,url,ordem)",
+      "id, sku, slug, rascunho, nome, categoria_id, preco, preco_label, serve, tempo_montagem_min, itens, precos_extra, observacao, ativo, ordem, badge, badge_cor, produto_imagens(id,url,ordem)",
     )
     .eq("company_id", membro.company_id)
     .eq("id", id)
@@ -88,6 +88,11 @@ export default async function EditarProdutoPage({
       }}
       custoInicial={custoInicial}
       temCustoInicial={(composicao ?? []).length > 0}
+      /* A margem liquida do painel travado precisa do tempo: sem ele a mao de
+         obra entra como zero e o numero sai igual a margem bruta. */
+      tempoInicial={
+        produto.tempo_montagem_min == null ? null : Number(produto.tempo_montagem_min)
+      }
     />
   );
 }
