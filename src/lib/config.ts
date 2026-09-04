@@ -40,14 +40,13 @@ export function mensagemOrcamento(
   produto: {
     nome: string;
     preco?: number | null;
-    preco_label?: string | null;
   },
   template?: string | null,
 ) {
   const preco =
     produto.preco != null
       ? `R$ ${produto.preco.toFixed(2).replace(".", ",")}`
-      : (produto.preco_label ?? "valor a consultar");
+      : "valor a consultar";
 
   if (template) {
     return template

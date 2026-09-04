@@ -115,8 +115,6 @@ export function NovoProdutoClient({
       ? ""
       : String(produtoInicial.preco).replace(".", ","),
   );
-  const [precoLabel, setPrecoLabel] = useState(produtoInicial?.preco_label ?? "");
-  const [serve, setServe] = useState(produtoInicial?.serve ?? "");
   const [descricao, setDescricao] = useState(produtoInicial?.observacao ?? "");
   const [imagens, setImagens] = useState<ImagemRow[]>(
     (produtoInicial?.imagens ?? [])
@@ -196,8 +194,12 @@ export function NovoProdutoClient({
           nome: nomeLimpo,
           categoria_id: categoriaId || null,
           preco: valorPreco,
-          preco_label: precoLabel.trim() || null,
-          serve: serve.trim() || null,
+          /* "Serve" e "Rotulo de preco" sairam do formulario E do catalogo:
+             nao acrescentavam nada e viviam em branco. As colunas continuam no
+             banco, entao PRESERVA em vez de zerar — o que ja foi escrito nao se
+             perde e voltar atras e so devolver os dois campos. */
+          preco_label: produtoInicial?.preco_label ?? null,
+          serve: produtoInicial?.serve ?? null,
           itens: asStringArray(produtoInicial?.itens),
           precos_extra: asPrecosExtra(produtoInicial?.precos_extra),
           observacao: descricao.trim() || null,
@@ -450,16 +452,7 @@ export function NovoProdutoClient({
                 </Campo>
               </div>
 
-              <div className={cn("grid gap-3", temCusto ? "md:grid-cols-3" : "md:grid-cols-2")}>
-                <Campo label="Serve (ex.: Ideal para 2 pessoas)">
-                  <Input
-                    value={serve}
-                    onChange={(e) => setServe(e.target.value)}
-                    placeholder="Ex.: 2 pessoas"
-                    className="h-11"
-                  />
-                </Campo>
-
+              <div className="grid gap-3 md:grid-cols-2">
                 <Campo label="Preço (R$)" obrigatorio>
                   <Input
                     required
@@ -480,15 +473,6 @@ export function NovoProdutoClient({
                   </Campo>
                 )}
               </div>
-
-              <Campo label="Rótulo de preço (opcional)">
-                <Input
-                  value={precoLabel}
-                  onChange={(e) => setPrecoLabel(e.target.value)}
-                  placeholder="a partir de / sob consulta"
-                  className="h-11"
-                />
-              </Campo>
 
               <Campo label="Descrição do produto">
                 <Textarea

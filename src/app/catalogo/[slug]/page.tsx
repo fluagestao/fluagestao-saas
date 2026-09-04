@@ -94,7 +94,7 @@ function precoProduto(produto: ProdutoPublico) {
       });
     }
   }
-  return produto.preco_label?.trim() || "Sob consulta";
+  return "Sob consulta";
 }
 
 function enderecoEmpresa(empresa: EmpresaPublica) {
@@ -113,7 +113,6 @@ function telefoneWhatsapp(telefone?: string | null) {
 function descricaoProduto(produto: ProdutoPublico) {
   if (produto.observacao?.trim()) return produto.observacao.trim();
   if (produto.itens?.length) return produto.itens.slice(0, 4).join(" · ");
-  if (produto.serve?.trim()) return `Ideal para ${produto.serve.trim()}.`;
   return "Feito com cuidado e preparado especialmente para o seu pedido.";
 }
 
@@ -340,12 +339,6 @@ export default async function CatalogoPublicoPage({
                           <p className="mt-2 line-clamp-3 min-h-[60px] text-sm leading-5 text-[#7c6a64]">
                             {descricaoProduto(produto)}
                           </p>
-
-                          {produto.serve && (
-                            <p className="mt-3 text-xs font-medium text-[#92766d]">
-                              Serve: {produto.serve}
-                            </p>
-                          )}
 
                           <div className="mt-5 flex items-end justify-between gap-3 border-t border-[#efe5de] pt-4">
                             <div>

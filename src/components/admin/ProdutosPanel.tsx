@@ -60,7 +60,7 @@ function LinhaProduto({
         <p className="truncate text-xs text-muted-foreground">
           {produto.preco != null
             ? formatPreco(produto.preco)
-            : produto.preco_label || "sob consulta"}
+            : "sob consulta"}
         </p>
         <p className="mt-0.5 truncate text-[10px] font-semibold tabular-nums text-[var(--terracotta)]">
           Código: {produto.sku}

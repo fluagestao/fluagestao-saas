@@ -562,7 +562,6 @@ async function analisarProdutos(linhas: Record<string, string>[], { db, companyI
       nome,
       preco: l.preco,
       categoria: l.categoria,
-      serve: l.serve,
       observacao: l.observacao,
       ativo: l.ativo,
     });
@@ -614,8 +613,10 @@ async function analisarProdutos(linhas: Record<string, string>[], { db, companyI
         slug,
         categoria_id: categoriaId,
         preco,
+        /* Os dois campos sairam da interface; a planilha nao os oferece mais
+           e a coluna do banco nasce vazia. */
         preco_label: null,
-        serve: texto(l.serve, 80),
+        serve: null,
         itens: [],
         precos_extra: [],
         observacao: texto(l.observacao, 1000),

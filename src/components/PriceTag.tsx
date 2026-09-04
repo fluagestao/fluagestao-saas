@@ -2,7 +2,7 @@ import type { Produto } from "@/lib/catalog";
 import { formatPreco } from "@/lib/catalog";
 
 interface Props {
-  produto: Pick<Produto, "preco" | "preco_label" | "precos_extra">;
+  produto: Pick<Produto, "preco" | "precos_extra">;
   size?: "sm" | "lg";
   className?: string;
 }
@@ -36,7 +36,7 @@ export function PriceTag({ produto, size = "sm", className = "" }: Props) {
         <span
           className={`font-display italic text-[var(--terracotta)] ${big ? "text-2xl" : "text-lg"}`}
         >
-          {produto.preco_label ?? "Sob consulta"}
+          Sob consulta
         </span>
       </div>
     );
@@ -44,11 +44,6 @@ export function PriceTag({ produto, size = "sm", className = "" }: Props) {
 
   return (
     <div className={className}>
-      {produto.preco_label ? (
-        <span className={`${labelCls} block uppercase tracking-[0.18em] text-[var(--bronze)]`}>
-          {produto.preco_label}
-        </span>
-      ) : null}
       <span className={`font-display font-medium text-foreground ${numCls}`}>
         {formatPreco(produto.preco)}
       </span>

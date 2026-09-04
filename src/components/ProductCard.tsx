@@ -78,12 +78,6 @@ export function ProductCard({ produto }: Props) {
             {produto.nome}
           </h3>
         </Link>
-        {produto.serve && (
-          <p className="mt-1 text-[10px] uppercase tracking-[0.14em] text-[var(--bronze)] sm:text-xs sm:tracking-[0.16em]">
-            {produto.serve}
-          </p>
-        )}
-
         <div className="mt-auto pt-3">
           <PriceTag produto={produto} />
         </div>

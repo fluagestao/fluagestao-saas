@@ -181,7 +181,6 @@ export const DEFINICOES: Record<EntidadeImportacao, DefinicaoEntidade> = {
         ajuda: "Nome exatamente como está no cadastro de categorias",
         exemplo: "Cestas",
       },
-      { chave: "serve", rotulo: "Serve", aliases: ["serve quantas pessoas", "pessoas"], ajuda: "Ex.: 2 pessoas", exemplo: "2 pessoas" },
       { chave: "observacao", rotulo: "Descrição", aliases: ["descricao", "descrição", "observacao", "observação", "obs"], ajuda: "Texto que aparece no catálogo", exemplo: "Pães, geleia, frios e suco natural" },
       { chave: "ativo", rotulo: "Ativo", aliases: ["ativo?", "status"], ajuda: "sim ou não. Vazio = sim", exemplo: "sim" },
     ],
