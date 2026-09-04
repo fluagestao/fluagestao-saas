@@ -243,6 +243,45 @@ export function ContaPageClient({
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
   const [uf, setUf] = useState("");
+  const [buscandoCep, setBuscandoCep] = useState(false);
+
+  /**
+   * CEP completo preenche rua, bairro, cidade e UF.
+   *
+   * A tela do pedido já fazia isso desde sempre; esta e a de clientes não —
+   * a pessoa digitava o mesmo endereço três vezes em telas diferentes.
+   *
+   * Vai pela rota interna /api/cep, que tem o BrasilAPI de reserva quando o
+   * ViaCEP cai. Falha em silêncio de propósito: aqui o endereço é opcional e
+   * um aviso vermelho no cadastro da empresa assustaria à toa — quem quiser
+   * digita à mão, que é o que já fazia.
+   */
+  async function buscarCep(valor: string) {
+    const digitos = somenteNumeros(valor);
+    if (digitos.length !== 8) return;
+    setBuscandoCep(true);
+    try {
+      const r = await fetch(`/api/cep/${digitos}`);
+      if (!r.ok) return;
+      const d = (await r.json()) as {
+        logradouro?: string;
+        bairro?: string;
+        cidade?: string;
+        uf?: string;
+      };
+      /* Só preenche o que veio. CEP de cidade pequena costuma valer para o
+         município inteiro e não traz rua nenhuma — sobrescrever com vazio
+         apagaria o que a pessoa já tinha digitado. */
+      if (d.logradouro) setRua(d.logradouro);
+      if (d.bairro) setBairro(d.bairro);
+      if (d.cidade) setCidade(d.cidade);
+      if (d.uf) setUf(d.uf.toUpperCase());
+    } catch {
+      /* sem rede: digita à mão */
+    } finally {
+      setBuscandoCep(false);
+    }
+  }
   const [timezone, setTimezone] = useState("America/Sao_Paulo");
 
   const inicial = (nomeFantasia || companyName || displayName || email || "F")
@@ -565,8 +604,24 @@ export function ContaPageClient({
 
                       <div className="mt-5 grid gap-4 sm:grid-cols-6">
                         <label className="sm:col-span-2">
-                          <span className="mb-1.5 block text-xs font-semibold text-[var(--admin-ink-soft)]">CEP</span>
-                          <input value={cep} onChange={(e) => setCep(formatarCep(e.target.value))} inputMode="numeric" className={inputClass} />
+                          <span className="mb-1.5 block text-xs font-semibold text-[var(--admin-ink-soft)]">
+                            CEP
+                            {buscandoCep && (
+                              <span className="ml-1.5 font-normal text-[var(--admin-muted)]">
+                                buscando…
+                              </span>
+                            )}
+                          </span>
+                          <input
+                            value={cep}
+                            onChange={(e) => {
+                              const v = formatarCep(e.target.value);
+                              setCep(v);
+                              void buscarCep(v);
+                            }}
+                            inputMode="numeric"
+                            className={inputClass}
+                          />
                         </label>
                         <label className="sm:col-span-1">
                           <span className="mb-1.5 block text-xs font-semibold text-[var(--admin-ink-soft)]">UF</span>

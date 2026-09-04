@@ -1,6 +1,6 @@
 "use client";
 
-import { Boxes, Calculator, Search, Sparkles, Tag, TriangleAlert } from "lucide-react";
+import { Boxes, Search, Sparkles, Tag, TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 

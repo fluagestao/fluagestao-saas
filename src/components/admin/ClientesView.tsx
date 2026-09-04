@@ -640,22 +640,29 @@ export function ClienteDialog({
     };
   }, [c?.id]);
 
-  /** Mesmo comportamento do pedido: CEP completo puxa rua, bairro e cidade. */
+  /**
+   * CEP completo puxa rua, bairro e cidade — o mesmo do pedido.
+   *
+   * Vai pela rota interna /api/cep, não direto no ViaCEP. Três motivos: ela
+   * tem o BrasilAPI de reserva quando o ViaCEP cai, ela distingue "CEP não
+   * existe" de "serviço fora do ar" (num caso a pessoa corrige o número, no
+   * outro não adianta tentar), e chamada direta a domínio de terceiro morre
+   * no dia em que a CSP sair do modo de observação.
+   */
   async function buscarCep(valor: string) {
     const d = valor.replace(/\D/g, "");
     if (d.length !== 8) return;
     try {
-      const r = await fetch(`https://viacep.com.br/ws/${d}/json/`);
+      const r = await fetch(`/api/cep/${d}`);
+      if (!r.ok) return;
       const j = (await r.json()) as {
-        erro?: boolean;
         logradouro?: string;
         bairro?: string;
-        localidade?: string;
+        cidade?: string;
       };
-      if (j.erro) return;
       if (j.logradouro) setEndereco(j.logradouro);
       if (j.bairro) setBairro(j.bairro);
-      if (j.localidade) setCidade(j.localidade);
+      if (j.cidade) setCidade(j.cidade);
     } catch {
       /* sem rede: digita à mão */
     }
