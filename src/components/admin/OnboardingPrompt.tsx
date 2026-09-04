@@ -258,9 +258,6 @@ function idsValidos(valor: unknown): EtapaId[] {
   );
 }
 
-function textoElemento(elemento: Element) {
-  return (elemento.textContent ?? "").replace(/\s+/g, " ").trim();
-}
 
 function mensagemErro(error: unknown) {
   if (

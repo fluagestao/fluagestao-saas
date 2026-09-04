@@ -203,7 +203,7 @@ export function TarefasPanel() {
           type="date"
           value={prazo}
           onChange={(e) => setPrazo(e.target.value)}
-          className="w-[9.5rem]"
+          className="min-w-[10.5rem] flex-1 sm:w-[9.5rem] sm:flex-none"
         />
         <select
           value={prioridade}
