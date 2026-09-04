@@ -151,6 +151,10 @@ export function PedidoDialog({
   const [cep, setCep] = useState(pedido?.cep ?? "");
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [cidadeCep, setCidadeCep] = useState<string | null>(null);
+  /* O aviso do CEP. Antes o erro caía num `.catch(() => {})`: a pessoa digitava,
+     nada acontecia e nenhuma palavra aparecia — a conclusão óbvia é que o
+     sistema não busca CEP, quando na verdade o número não existe. */
+  const [avisoCep, setAvisoCep] = useState<string | null>(null);
   // Evita rebuscar o mesmo CEP a cada tecla e ao reabrir o pedido.
   const cepBuscado = useRef(pedido?.cep?.replace(/\D/g, "") ?? "");
   const [referencia, setReferencia] = useState(pedido?.referencia ?? "");
@@ -216,9 +220,15 @@ export function PedidoDialog({
     cepBuscado.current = digitos;
     let cancelado = false;
     setBuscandoCep(true);
+    setAvisoCep(null);
+    setCidadeCep(null);
     fetch(`/api/cep/${digitos}`)
       .then(async (r) => {
-        if (!r.ok) throw new Error("CEP não encontrado");
+        // 404 = o CEP nao existe. Qualquer outra falha e rede ou servico fora,
+        // e a pessoa precisa saber que a diferenca existe: num caso ela corrige
+        // o numero, no outro nao adianta tentar de novo.
+        if (r.status === 404) throw new Error("nao-encontrado");
+        if (!r.ok) throw new Error("indisponivel");
         return (await r.json()) as {
           logradouro?: string;
           bairro?: string;
@@ -229,6 +239,12 @@ export function PedidoDialog({
       .then((d) => {
         if (cancelado) return;
         if (d.logradouro) setEndereco(d.logradouro);
+        /* Cidade pequena costuma ter um CEP só para o município inteiro — ele
+           não aponta rua nenhuma, e o campo fica vazio de propósito. Sem dizer
+           isso, parece que a busca falhou pela metade. */
+        if (!d.logradouro && d.cidade) {
+          setAvisoCep("Esse CEP vale para a cidade toda. Digite a rua e o número.");
+        }
         if (d.bairro) {
           setBairro(d.bairro);
           // Se o bairro do CEP estiver no cadastro, já traz a taxa junto.
@@ -244,7 +260,14 @@ export function PedidoDialog({
         }
         setCidadeCep([d.cidade, d.uf].filter(Boolean).join("/") || null);
       })
-      .catch(() => {})
+      .catch((e: unknown) => {
+        if (cancelado) return;
+        setAvisoCep(
+          e instanceof Error && e.message === "nao-encontrado"
+            ? "CEP não encontrado. Confira o número ou preencha o endereço à mão."
+            : "Não consegui consultar o CEP agora. Pode preencher o endereço à mão.",
+        );
+      })
       .finally(() => !cancelado && setBuscandoCep(false));
     return () => {
       cancelado = true;
@@ -720,6 +743,9 @@ export function PedidoDialog({
                   <MapPin className="h-3 w-3" />
                   {cidadeCep}
                 </p>
+              )}
+              {avisoCep && (
+                <p className="mt-1 text-xs text-[var(--wine)]">{avisoCep}</p>
               )}
             </Campo>
           )}
