@@ -421,7 +421,6 @@ export default function HomePage() {
               <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
               <a href="#para-quem">A FLUA</a>
               <a href="#contato">CONTATO</a>
-              <a href="#documentos">DOCUMENTOS</a>
               <Link href="/login">PORTAL</Link>
             </nav>
           </div>

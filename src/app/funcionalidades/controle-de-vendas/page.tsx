@@ -83,7 +83,6 @@ export default function ControleDeVendasPage() {
               <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
               <Link href="/#para-quem">A FLUA</Link>
               <Link href="/#contato">CONTATO</Link>
-              <Link href="/#documentos">DOCUMENTOS</Link>
               <Link href="/login">PORTAL</Link>
             </nav>
           </div>
