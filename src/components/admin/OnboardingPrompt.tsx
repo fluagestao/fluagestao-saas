@@ -111,7 +111,7 @@ const ETAPAS: Etapa[] = [
       "A margem bruta desconta só os insumos; a líquida desconta também seu tempo e os custos fixos.",
     ],
     destino: "/custo/calculadora?guiaEtapa=custos",
-    acao: "Abrir Precificação",
+    acao: "Abrir Custo e preços",
     icon: CircleDollarSign,
   },
   {

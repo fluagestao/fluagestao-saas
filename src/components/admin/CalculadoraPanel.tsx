@@ -1,7 +1,7 @@
 "use client";
 
-import { Calculator, Search, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Boxes, Calculator, Search, Sparkles, Tag, TriangleAlert } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,19 @@ import { formatBRL } from "@/lib/vendas";
 import { ProdutoInsumosEditor, type ItemComposicaoProduto } from "./ProdutoInsumosEditor";
 import { Carregando, EstadoVazio, PageHeader } from "./shell";
 
-type Filtro = "todos" | "sem_custo";
+/* A tela faz dois trabalhos: montar o custo e decidir o preco. Antes os dois
+   viviam empilhados na mesma janela — tabela de insumos, preco, margem, tempo,
+   total e cascata, sete blocos sem divisoria — e quem abria nao sabia por onde
+   comecar. O nome tambem mentia: chamava-se "Precificacao" e precisava avisar
+   na descricao que era ali que os insumos eram lancados.
+
+   Agora sao duas abas, cada uma com a sua lista e a sua janela. O que garante
+   que separar nao virou esconder: a aba Precos mostra custo e tempo em campos
+   travados ao lado do preco, e avisa em vermelho quando o custo nem existe. */
+type Aba = "custo" | "precos";
+
+/** "Pendente" quer dizer coisas diferentes em cada aba: sem custo ou sem preco. */
+type Filtro = "todos" | "pendente";
 
 function moeda(valor: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor || 0);
@@ -60,8 +72,170 @@ function corDaMargem(margem: number | null) {
   return "text-destructive";
 }
 
+function faltaCustoEm(p: MargemProduto) {
+  return p.custo == null;
+}
+
+function faltaPrecoEm(p: MargemProduto) {
+  return p.preco == null || p.preco <= 0;
+}
+
+function pendenteNaAba(p: MargemProduto, aba: Aba) {
+  return aba === "custo" ? faltaCustoEm(p) : faltaPrecoEm(p);
+}
+
+type Grupo = { rotulo: string; itens: MargemProduto[]; anonimo: boolean };
+
 /**
- * Precificacao: onde o custo e montado e o preco e decidido.
+ * Agrupa por coleção e categoria.
+ *
+ * A lista corrida obrigava a ler o subtítulo de cada linha para saber onde se
+ * estava. Com o cabeçalho por grupo o subtítulo some das linhas e a mesma
+ * informação passa a ser lida uma vez por bloco, não uma vez por produto.
+ */
+function agrupar(lista: MargemProduto[]): Grupo[] {
+  const mapa = new Map<string, Grupo>();
+
+  for (const p of lista) {
+    const colecao = p.colecao?.trim() ?? "";
+    const categoria = p.categoria?.trim() ?? "";
+    const rotulo = [colecao, categoria].filter(Boolean).join(" · ") || "Sem coleção nem categoria";
+    const grupo = mapa.get(rotulo) ?? { rotulo, itens: [], anonimo: !colecao && !categoria };
+    grupo.itens.push(p);
+    mapa.set(rotulo, grupo);
+  }
+
+  /* O grupo sem nome vai para o fim: ele é o resto, não um assunto. Na ordem
+     alfabética pura ele cairia no meio, entre duas coleções de verdade. */
+  return [...mapa.values()].sort((a, b) =>
+    a.anonimo === b.anonimo ? a.rotulo.localeCompare(b.rotulo, "pt-BR") : a.anonimo ? 1 : -1,
+  );
+}
+
+/** Uma coluna numérica da linha. Mesmo formato nas duas abas. */
+function Coluna({
+  rotulo,
+  largura,
+  className,
+  title,
+  children,
+}: {
+  rotulo: string;
+  largura: string;
+  className?: string;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={cn("w-full text-right", largura)}>
+      <p className="t-support whitespace-nowrap text-muted-foreground">{rotulo}</p>
+      <p className={cn("t-body tabular-nums text-foreground", className)} title={title}>
+        {children}
+      </p>
+    </div>
+  );
+}
+
+function LinhaProduto({
+  p,
+  aba,
+  config,
+  onAbrir,
+}: {
+  p: MargemProduto;
+  aba: Aba;
+  config: CalculoConfig;
+  onAbrir: (p: MargemProduto) => void;
+}) {
+  /* A lista mostrava um numero so, chamado "margem", que era a BRUTA — preco
+     menos insumos. Dava 80% num produto cuja sobra real e bem menor, e era esse
+     80% que decidia preco. As duas aparecem lado a lado, pela mesma conta da
+     tela de Margem. */
+  const temTudo = p.custo != null && p.preco != null && p.preco > 0;
+  const cascata = calcular(p.preco, p.custo ?? 0, p.tempo_montagem_min, config);
+  const bruta = temTudo ? cascata.margemContribuicao : null;
+  /* Sem os Ajustes ligados nao da para saber a liquida: mao de obra e custo
+     fixo entram como zero e ela sairia igual a bruta. Dois numeros identicos
+     mentem mais que um traco. */
+  const liquida = temTudo && cascata.completa ? cascata.margemReal : null;
+  const pendente = pendenteNaAba(p, aba);
+
+  return (
+    <li
+      onClick={() => onAbrir(p)}
+      className={cn(
+        "flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--terracotta)]",
+        pendente
+          ? "border-[var(--cream-deep)] bg-[var(--cream-soft)]"
+          : "border-[var(--admin-border)]",
+      )}
+    >
+      <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:min-w-[14rem]">
+        <p className="t-item truncate text-foreground">{p.nome}</p>
+      </div>
+
+      {/* Os valores nao cabem em colunas num telefone: 2x2 no celular,
+          fileira unica a partir do sm. */}
+      <div className="grid w-full grid-cols-2 gap-x-4 gap-y-2 sm:contents">
+        {aba === "custo" ? (
+          <>
+            <Coluna rotulo="custo dos insumos" largura="sm:w-32">
+              {p.custo == null ? "—" : formatBRL(p.custo)}
+            </Coluna>
+            <Coluna rotulo="tempo de montagem" largura="sm:w-32">
+              {p.tempo_montagem_min == null ? "—" : `${p.tempo_montagem_min} min`}
+            </Coluna>
+          </>
+        ) : (
+          <>
+            <Coluna rotulo="custo" largura="sm:w-28">
+              {p.custo == null ? "—" : formatBRL(p.custo)}
+            </Coluna>
+            <Coluna rotulo="preço" largura="sm:w-28">
+              {p.preco == null ? "—" : formatBRL(p.preco)}
+            </Coluna>
+            <Coluna rotulo="margem bruta" largura="sm:w-24">
+              {bruta == null ? "—" : `${Math.round(bruta * 100)}%`}
+            </Coluna>
+            {/* So esta e colorida. Duas cores competindo tirariam o peso da que
+                diz se o negocio se paga. */}
+            <Coluna
+              rotulo="margem líquida"
+              largura="sm:w-24"
+              className={cn("t-item", corDaMargem(liquida))}
+              title={
+                liquida == null && temTudo
+                  ? "Ligue os Ajustes do cálculo para ver a margem líquida."
+                  : undefined
+              }
+            >
+              {liquida == null ? "—" : `${Math.round(liquida * 100)}%`}
+            </Coluna>
+          </>
+        )}
+      </div>
+
+      <span
+        className={cn(
+          "t-support inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 font-semibold",
+          pendente ? "bg-[var(--peach)] text-[var(--coral)]" : "text-muted-foreground",
+        )}
+      >
+        {aba === "custo" ? <Boxes className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}
+        {aba === "custo"
+          ? pendente
+            ? "Lançar custo"
+            : "Editar custo"
+          : pendente
+            ? "Definir preço"
+            : "Precificar"}
+      </span>
+    </li>
+  );
+}
+
+/**
+ * Custo e preços: onde o custo é montado e o preço é decidido.
  *
  * Separada da Margem de propósito. Aqui se trabalha — lança insumo, mexe no
  * preço, salva. Lá se lê o que aconteceu. Misturar as duas fazia a tela de
@@ -73,10 +247,12 @@ export function CalculadoraPanel() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [busca, setBusca] = useState("");
+  const [aba, setAba] = useState<Aba>("custo");
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [editando, setEditando] = useState<MargemProduto | null>(null);
   const [config, setConfig] = useState<CalculoConfig>(CONFIG_VAZIA);
   const [sugestao, setSugestao] = useState<SugestaoFixo | null>(null);
+  const abaEscolhida = useRef(false);
 
   const recarregarConfig = useCallback(async () => {
     try {
@@ -117,24 +293,49 @@ export function CalculadoraPanel() {
     recarregarConfig();
   }, [recarregarConfig]);
 
+  /* Abre onde há trabalho. Quem já lançou o custo de tudo cairia numa lista
+     dizendo "está tudo pronto" e teria que clicar para chegar onde queria.
+     Só na primeira carga — depois disso a aba é escolha da pessoa, e o ref
+     garante que um recarregar() não puxe a aba de volta no meio do uso. */
+  useEffect(() => {
+    if (abaEscolhida.current || carregando || !produtos.length) return;
+    abaEscolhida.current = true;
+    setAba(produtos.some(faltaCustoEm) ? "custo" : "precos");
+  }, [carregando, produtos]);
+
   const visiveis = useMemo(() => {
     const termo = busca.trim().toLocaleLowerCase("pt-BR");
     return produtos.filter((p) => {
-      if (filtro === "sem_custo" && p.custo != null) return false;
+      if (filtro === "pendente" && !pendenteNaAba(p, aba)) return false;
       if (!termo) return true;
       return `${p.nome} ${p.categoria ?? ""} ${p.colecao ?? ""}`
         .toLocaleLowerCase("pt-BR")
         .includes(termo);
     });
-  }, [produtos, busca, filtro]);
+  }, [produtos, busca, filtro, aba]);
 
-  const semCusto = produtos.filter((p) => p.custo == null).length;
+  const grupos = useMemo(() => agrupar(visiveis), [visiveis]);
+  const pendentes = useMemo(
+    () => produtos.filter((p) => pendenteNaAba(p, aba)).length,
+    [produtos, aba],
+  );
+
+  /* Do aviso da aba Preços: leva o mesmo produto para a aba Custo sem fechar
+     nada. A janela remonta pela key, então ela reabre já no modo certo. */
+  const irParaCusto = useCallback((p: MargemProduto) => {
+    setAba("custo");
+    setEditando(p);
+  }, []);
 
   return (
     <section data-tela-cheia className="min-w-0">
       <PageHeader
-        titulo="Precificação"
-        descricao="Monte o custo de cada produto e descubra por quanto precisa vender. É aqui que os insumos de cada produto são lançados."
+        titulo="Custo e preços"
+        descricao={
+          aba === "custo"
+            ? "Lance os insumos de cada produto e o quanto ele leva para montar. O custo soma sozinho."
+            : "Decida por quanto vender, com o custo já na mão. Preço e margem andam juntos."
+        }
         acoes={
           sugestao && (
             <AjustesCalculo config={config} sugestao={sugestao} onSalvo={recarregarConfig} />
@@ -148,7 +349,36 @@ export function CalculadoraPanel() {
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2">
+      {/* As duas abas. Trocar de aba troca a lista, as colunas e a janela — não
+          é um filtro, é o outro trabalho. */}
+      <div className="mt-1 inline-flex rounded-xl border border-[var(--cream-deep)] bg-card p-1">
+        {(
+          [
+            ["custo", "Custo", Boxes],
+            ["precos", "Preços", Tag],
+          ] as [Aba, string, typeof Boxes][]
+        ).map(([id, rotulo, Icone]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => {
+              setAba(id);
+              abaEscolhida.current = true;
+            }}
+            className={cn(
+              "flex h-10 items-center gap-2 rounded-lg px-5 text-sm font-semibold transition-colors",
+              aba === id
+                ? "bg-[var(--terracotta)] text-white shadow-[var(--shadow-soft)]"
+                : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
+            )}
+          >
+            <Icone className="h-4 w-4" />
+            {rotulo}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
         <div className="flex h-11 w-full items-center gap-2 rounded-xl border border-[var(--cream-deep)] bg-white px-3.5 sm:w-auto sm:min-w-[220px] sm:flex-1">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
@@ -159,10 +389,18 @@ export function CalculadoraPanel() {
           />
         </div>
 
-        {([
-          ["todos", `Todos (${produtos.length})`],
-          ["sem_custo", `Sem custo (${semCusto})`],
-        ] as [Filtro, string][]).map(([id, rotulo]) => (
+        {/* O segundo chip muda de sentido com a aba: em Custo é o que falta
+            custar, em Preços é o que falta precificar. É o "trabalho do dia"
+            de cada aba. */}
+        {(
+          [
+            ["todos", `Todos (${produtos.length})`],
+            [
+              "pendente",
+              aba === "custo" ? `Sem custo (${pendentes})` : `Sem preço (${pendentes})`,
+            ],
+          ] as [Filtro, string][]
+        ).map(([id, rotulo]) => (
           <button
             key={id}
             type="button"
@@ -183,114 +421,50 @@ export function CalculadoraPanel() {
         <Carregando texto="carregando produtos…" />
       ) : !visiveis.length ? (
         <EstadoVazio
-          titulo={filtro === "sem_custo" ? "Todo produto já tem custo" : "Nenhum produto encontrado"}
+          titulo={
+            filtro === "pendente"
+              ? aba === "custo"
+                ? "Todo produto já tem custo"
+                : "Todo produto já tem preço"
+              : "Nenhum produto encontrado"
+          }
           descricao={
-            filtro === "sem_custo"
+            filtro === "pendente"
               ? "Nada a lançar por aqui."
               : "Cadastre produtos em Cadastros → Produtos."
           }
         />
       ) : (
-        <ul className="mt-3 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-          {visiveis.map((p) => {
-            /* A lista mostrava um numero so, chamado "margem", que era a
-               BRUTA — preco menos insumos. Dava 80% num produto cuja sobra
-               real e bem menor, e era esse 80% que decidia preco. Agora as
-               duas aparecem lado a lado, pela mesma conta da tela de Margem. */
-            const temCusto = p.custo != null && p.preco != null && p.preco > 0;
-            const cascata = calcular(p.preco, p.custo ?? 0, p.tempo_montagem_min, config);
-            const bruta = temCusto ? cascata.margemContribuicao : null;
-            /* Sem os Ajustes ligados nao da para saber a liquida: mao de obra e
-               custo fixo entram como zero e ela sairia igual a bruta. Dois
-               numeros identicos mentem mais que um traco. */
-            const liquida = temCusto && cascata.completa ? cascata.margemReal : null;
-            const faltaCusto = p.custo == null;
-
-            return (
-              <li
-                key={p.slug}
-                onClick={() => setEditando(p)}
-                className={cn(
-                  "flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border bg-card px-4 py-3 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--terracotta)]",
-                  faltaCusto
-                    ? "border-[var(--cream-deep)] bg-[var(--cream-soft)]"
-                    : "border-[var(--admin-border)]",
-                )}
-              >
-                <div className="w-full min-w-0 sm:w-auto sm:flex-1 sm:min-w-[14rem]">
-                  <p className="t-item truncate text-foreground">{p.nome}</p>
-                  <p className="t-support truncate text-muted-foreground">
-                    {[p.colecao, p.categoria].filter(Boolean).join(" · ") || "sem categoria"}
-                  </p>
-                </div>
-
-                {/* Quatro valores nao cabem em quatro colunas num telefone:
-                    2x2 no celular, fileira unica a partir do sm. */}
-                <div className="grid w-full grid-cols-2 gap-x-4 gap-y-2 sm:contents">
-                  <div className="w-full text-right sm:w-28">
-                    <p className="t-support text-muted-foreground">custo</p>
-                    <p className="t-body tabular-nums text-foreground">
-                      {p.custo == null ? "—" : formatBRL(p.custo)}
-                    </p>
-                  </div>
-
-                  <div className="w-full text-right sm:w-28">
-                    <p className="t-support text-muted-foreground">preço</p>
-                    <p className="t-body tabular-nums text-foreground">
-                      {p.preco == null ? "—" : formatBRL(p.preco)}
-                    </p>
-                  </div>
-
-                  <div className="w-full text-right sm:w-24">
-                    <p className="t-support whitespace-nowrap text-muted-foreground">
-                      margem bruta
-                    </p>
-                    <p className="t-body tabular-nums text-foreground">
-                      {bruta == null ? "—" : `${Math.round(bruta * 100)}%`}
-                    </p>
-                  </div>
-
-                  {/* So esta e colorida. Duas cores competindo tirariam o peso
-                      justamente da que diz se o negocio se paga. */}
-                  <div className="w-full text-right sm:w-24">
-                    <p className="t-support whitespace-nowrap text-muted-foreground">
-                      margem líquida
-                    </p>
-                    <p
-                      className={cn("t-item tabular-nums", corDaMargem(liquida))}
-                      title={
-                        liquida == null && temCusto
-                          ? "Ligue os Ajustes do cálculo para ver a margem líquida."
-                          : undefined
-                      }
-                    >
-                      {liquida == null ? "—" : `${Math.round(liquida * 100)}%`}
-                    </p>
-                  </div>
-                </div>
-
-                <span
-                  className={cn(
-                    "t-support inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 font-semibold",
-                    faltaCusto
-                      ? "bg-[var(--peach)] text-[var(--coral)]"
-                      : "text-muted-foreground",
-                  )}
-                >
-                  <Calculator className="h-3.5 w-3.5" />
-                  {faltaCusto ? "Lançar custo" : "Calcular"}
+        <div className="mt-3 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+          {grupos.map((grupo) => (
+            <section key={grupo.rotulo}>
+              <header className="sticky top-0 z-10 flex items-baseline gap-2 bg-[var(--admin-bg)] pb-1.5">
+                <h3 className="t-support truncate font-bold uppercase tracking-[0.08em] text-[var(--terracotta)]">
+                  {grupo.rotulo}
+                </h3>
+                <span className="t-support shrink-0 text-muted-foreground">
+                  {grupo.itens.length}
                 </span>
-              </li>
-            );
-          })}
-        </ul>
+              </header>
+
+              <ul className="space-y-2">
+                {grupo.itens.map((p) => (
+                  <LinhaProduto key={p.slug} p={p} aba={aba} config={config} onAbrir={setEditando} />
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
       )}
 
       {editando && (
         <DialogoCalculo
+          key={`${aba}:${editando.id}`}
           produto={editando}
+          modo={aba}
           insumos={insumos}
           config={config}
+          onIrParaCusto={irParaCusto}
           onFechar={() => {
             setEditando(null);
             recarregar();
@@ -303,14 +477,18 @@ export function CalculadoraPanel() {
 
 function DialogoCalculo({
   produto,
+  modo,
   insumos,
   config,
   onFechar,
+  onIrParaCusto,
 }: {
   produto: MargemProduto;
+  modo: Aba;
   insumos: InsumoRow[];
   config: CalculoConfig;
   onFechar: () => void;
+  onIrParaCusto: (p: MargemProduto) => void;
 }) {
   // O editor salva sozinho e devolve o custo a cada mudança: a conta abaixo
   // acompanha enquanto você digita, sem precisar salvar para ver.
@@ -341,7 +519,16 @@ function DialogoCalculo({
 
   const precoNumero = paraNumero(preco);
   const temPreco = Number.isFinite(precoNumero) && precoNumero > 0;
-  const tempoMin = Number.isFinite(paraNumero(tempo)) ? paraNumero(tempo) : null;
+
+  /* Na aba Custo o tempo é o que está sendo digitado. Na aba Preços ele é o que
+     já foi salvo — o campo lá é travado, e a cascata precisa do valor real para
+     não calcular a mão de obra como zero. */
+  const tempoMin =
+    modo === "custo"
+      ? Number.isFinite(paraNumero(tempo))
+        ? paraNumero(tempo)
+        : null
+      : produto.tempo_montagem_min;
 
   const cascata = calcular(temPreco ? precoNumero : null, custo, tempoMin, config);
 
@@ -364,14 +551,13 @@ function DialogoCalculo({
     setPreco(novo.toFixed(2).replace(".", ","));
   }
 
-  /* Uma gravacao so. Antes eram dois tiques identicos pendurados nos campos,
-     cada um salvando uma coisa diferente, sem dizer o que salvava — e dava para
-     sair da tela achando que o preco tinha ido junto com o tempo. */
-  async function salvarPrecoETempo() {
-    if (!temPreco) return;
-
+  /* Um botão por aba, cada um gravando só o que a sua aba edita. Antes era uma
+     ação só que salvava preço E tempo, e quando o segundo falhava sobrava um
+     aviso torto ("preço salvo, mas o tempo não"). Com as abas separadas cada
+     gravação tem um nome e um resultado. */
+  async function salvarTempo() {
     const minutos = paraNumero(tempo);
-    const tempoValor = tempo.trim() === "" ? null : Math.round(minutos ?? NaN);
+    const tempoValor = tempo.trim() === "" ? null : Math.round(minutos);
     if (tempoValor != null && !Number.isFinite(tempoValor)) {
       toast.error("Informe o tempo em minutos.");
       return;
@@ -383,123 +569,201 @@ function DialogoCalculo({
 
     setSalvando(true);
     try {
-      await atualizarPrecoProduto({
-        data: { id: produto.id, preco: Number(precoNumero.toFixed(2)) },
-      });
+      // Recusa esperada vem no retorno, não no catch.
       const r = await atualizarTempoMontagem({ data: { id: produto.id, minutos: tempoValor } });
-      /* Recusa esperada vem no retorno, nao no catch. Aviso, e nao sucesso
-         mudo: o preco acima ja foi gravado, so o tempo nao — dizer "salvos"
-         aqui faria a pessoa sair achando que o tempo tinha ido junto. O
-         setSalvando(false) esta no finally, entao este return nao trava o
-         botao. */
       if (r?.erro) {
-        toast.error(`Preço salvo, mas o tempo não: ${r.erro}`);
+        toast.error(r.erro);
         return;
       }
-      toast.success("Preço e tempo salvos.");
+      toast.success("Tempo de montagem salvo.");
     } catch (e) {
-      toast.error(mensagemDeErro(e, "salvar o produto"));
+      toast.error(mensagemDeErro(e, "salvar o tempo"));
     } finally {
       setSalvando(false);
     }
   }
 
+  async function salvarPreco() {
+    if (!temPreco) return;
+    setSalvando(true);
+    try {
+      await atualizarPrecoProduto({
+        data: { id: produto.id, preco: Number(precoNumero.toFixed(2)) },
+      });
+      toast.success("Preço salvo.");
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "salvar o preço"));
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  const semCusto = produto.custo == null;
+
   return (
     <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
       <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-3xl">
         <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
-          <DialogTitle>{produto.nome}</DialogTitle>
+          <DialogTitle className="flex flex-wrap items-center gap-2">
+            {modo === "custo" ? (
+              <Boxes className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
+            ) : (
+              <Tag className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
+            )}
+            {produto.nome}
+          </DialogTitle>
           <DialogDescription>
-            Lance os insumos e as quantidades. O custo soma sozinho e a margem acompanha.
+            {modo === "custo"
+              ? "Lance os insumos e as quantidades. O custo soma sozinho enquanto você digita."
+              : "Decida o preço. Custo e tempo vêm da aba Custo e aparecem travados aqui do lado."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 py-2">
-        <ProdutoInsumosEditor
-          produtoId={produto.id}
-          insumos={insumos}
-          autoSave
-          onChange={receberCusto}
-        />
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <label className="space-y-1.5 text-sm font-medium">
-            <span className="block">Preço de venda</span>
-            <div className="relative">
-              <Input
-                value={preco}
-                onChange={(e) => setPreco(e.target.value)}
-                inputMode="decimal"
-                placeholder="0,00"
-                className="h-11 pl-9"
+          {modo === "custo" ? (
+            <>
+              <ProdutoInsumosEditor
+                produtoId={produto.id}
+                insumos={insumos}
+                autoSave
+                onChange={receberCusto}
               />
-              <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                R$
-              </span>
-            </div>
-          </label>
 
-          <label className="space-y-1.5 text-sm font-medium">
-            <span className="block">Margem líquida</span>
-            <div className="relative">
-              <Input
-                value={margemMostrada}
-                onChange={(e) => escreverMargem(e.target.value)}
-                onBlur={() => setMargemDigitada(null)}
-                inputMode="decimal"
-                placeholder="60"
-                className="h-11 pr-9"
-              />
-              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                %
-              </span>
-            </div>
-          </label>
+              <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:flex-row sm:items-end">
+                <label className="min-w-0 flex-1 space-y-1.5 text-sm font-medium sm:max-w-[12rem]">
+                  <span className="block">Tempo de montagem</span>
+                  <div className="relative">
+                    <Input
+                      value={tempo}
+                      onChange={(e) => setTempo(e.target.value)}
+                      inputMode="numeric"
+                      placeholder="40"
+                      className="h-11 pr-12"
+                    />
+                    <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      min
+                    </span>
+                  </div>
+                </label>
 
-          <label className="space-y-1.5 text-sm font-medium">
-            <span className="block">Tempo de montagem</span>
-            <div className="relative">
-              <Input
-                value={tempo}
-                onChange={(e) => setTempo(e.target.value)}
-                inputMode="numeric"
-                placeholder="40"
-                className="h-11 pr-12"
-              />
-              <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                min
-              </span>
-            </div>
-          </label>
+                <div className="min-w-0 flex-1 space-y-1.5 text-sm font-medium sm:max-w-[12rem]">
+                  <span className="block">Custo dos insumos</span>
+                  <p className="flex h-11 items-center rounded-xl bg-[var(--cream-soft)] px-3.5 t-item tabular-nums text-[var(--terracotta)]">
+                    {moeda(custo)}
+                  </p>
+                </div>
 
-          <div className="space-y-1.5 text-sm font-medium">
-            <span className="block">Insumos</span>
-            <p className="flex h-11 items-center rounded-xl bg-[var(--cream-soft)] px-3.5 t-item tabular-nums text-[var(--terracotta)]">
-              {moeda(custo)}
-            </p>
-          </div>
-        </div>
+                <Button disabled={salvando} onClick={salvarTempo} className="h-11 shrink-0">
+                  Salvar tempo
+                </Button>
+              </div>
 
-        <CascataCusto cascata={cascata} />
+              <p className="t-support px-1 text-muted-foreground">
+                Os insumos salvam sozinhos. O tempo precisa do botão — ele entra na conta como mão
+                de obra e muda a margem líquida.
+              </p>
+            </>
+          ) : (
+            <>
+              {/* Sem isto, separar viraria esconder: a cascata calcularia com
+                  custo zero e mostraria uma margem perto de 100% em qualquer
+                  preço, que é exatamente o número que faz alguém vender no
+                  prejuízo achando que está ganhando. */}
+              {semCusto && (
+                <div className="flex flex-col items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 sm:flex-row sm:items-center">
+                  <TriangleAlert className="h-5 w-5 shrink-0 text-red-600" />
+                  <p className="t-support min-w-0 flex-1 text-red-700">
+                    Este produto ainda não tem custo lançado. A margem abaixo está contando como se
+                    ele custasse zero, e por isso vai dar quase 100% em qualquer preço. Lance os
+                    insumos antes de decidir.
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={() => onIrParaCusto(produto)}
+                    className="h-10 w-full shrink-0 sm:w-auto"
+                  >
+                    Lançar o custo
+                  </Button>
+                </div>
+              )}
 
-        {/* Nada acima grava. Os dois ✓ que ficavam pendurados nos campos
-            viraram uma acao so, com nome — antes ninguem sabia o que aquele
-            tique salvava, nem que eram duas gravacoes diferentes. */}
-        <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:flex-row sm:items-center">
-          <Sparkles className="hidden h-4 w-4 shrink-0 text-[var(--bronze)] sm:block" />
-          <p className="t-support min-w-0 flex-1 text-muted-foreground">
-            Preço e margem andam juntos: mude um e o outro acompanha
-            {config.incluir_no_calculo ? " — já com montagem e fixos" : ""}. Nada é salvo até você
-            mandar.
-          </p>
-          <Button
-            disabled={!temPreco || salvando}
-            onClick={salvarPrecoETempo}
-            className="h-11 shrink-0"
-          >
-            Salvar no produto
-          </Button>
-        </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <label className="space-y-1.5 text-sm font-medium">
+                  <span className="block">Preço de venda</span>
+                  <div className="relative">
+                    <Input
+                      value={preco}
+                      onChange={(e) => setPreco(e.target.value)}
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      className="h-11 pl-9"
+                    />
+                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      R$
+                    </span>
+                  </div>
+                </label>
+
+                <label className="space-y-1.5 text-sm font-medium">
+                  <span className="block">Margem líquida</span>
+                  <div className="relative">
+                    <Input
+                      value={margemMostrada}
+                      onChange={(e) => escreverMargem(e.target.value)}
+                      onBlur={() => setMargemDigitada(null)}
+                      inputMode="decimal"
+                      placeholder="60"
+                      className="h-11 pr-9"
+                    />
+                    <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                      %
+                    </span>
+                  </div>
+                </label>
+
+                {/* Travados, e presentes. Precificar sem ver o custo ao lado é
+                    chutar. */}
+                <div className="space-y-1.5 text-sm font-medium">
+                  <span className="block">Custo dos insumos</span>
+                  <p
+                    className={cn(
+                      "flex h-11 items-center rounded-xl bg-[var(--cream-soft)] px-3.5 t-item tabular-nums",
+                      semCusto ? "text-destructive" : "text-[var(--terracotta)]",
+                    )}
+                  >
+                    {semCusto ? "não lançado" : moeda(custo)}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-sm font-medium">
+                  <span className="block">Tempo de montagem</span>
+                  <p className="flex h-11 items-center rounded-xl bg-[var(--cream-soft)] px-3.5 t-item tabular-nums text-muted-foreground">
+                    {produto.tempo_montagem_min == null
+                      ? "—"
+                      : `${produto.tempo_montagem_min} min`}
+                  </p>
+                </div>
+              </div>
+
+              <CascataCusto cascata={cascata} />
+
+              <div className="flex flex-col items-stretch gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4 sm:flex-row sm:items-center">
+                <Sparkles className="hidden h-4 w-4 shrink-0 text-[var(--bronze)] sm:block" />
+                <p className="t-support min-w-0 flex-1 text-muted-foreground">
+                  Preço e margem andam juntos: mude um e o outro acompanha
+                  {config.incluir_no_calculo ? " — já com montagem e fixos" : ""}. Nada é salvo até
+                  você mandar.
+                </p>
+                <Button
+                  disabled={!temPreco || salvando}
+                  onClick={salvarPreco}
+                  className="h-11 shrink-0"
+                >
+                  Salvar preço
+                </Button>
+              </div>
+            </>
+          )}
         </div>
 
         <DialogFooter className="shrink-0 border-t border-[var(--admin-border)] pt-3">

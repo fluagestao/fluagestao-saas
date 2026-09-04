@@ -134,7 +134,7 @@ export function CustoPanel() {
     <section className="min-w-0">
       <PageHeader
         titulo="Margem"
-        descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use a Precificação."
+        descricao="O que vendeu no período e quanto sobrou depois dos insumos. Não desconta aluguel, luz e outras despesas fixas — para isso, veja o Financeiro. Para lançar custo, use Custo e preços."
         acoes={
           <div className="grid grid-cols-2 items-end gap-2 sm:flex sm:flex-wrap">
             <button
@@ -333,7 +333,7 @@ export function CustoPanel() {
                 A mão de obra está zerada porque {dados.vendidosSemTempo} produto(s) vendidos não
                 têm tempo de montagem cadastrado — mesmo com o custo por hora em{" "}
                 {formatBRL(dados.custoHora)}. A margem líquida acima não desconta o seu tempo, então
-                ela parece melhor do que é. Informe o tempo de cada produto na Precificação.
+                ela parece melhor do que é. Informe o tempo de cada produto em Custo e preços.
               </p>
             </div>
             <Button
@@ -342,7 +342,7 @@ export function CustoPanel() {
               asChild
               className="h-11 w-full shrink-0 rounded-lg sm:h-8 sm:w-auto"
             >
-              <a href="/custo/calculadora">Abrir Precificação</a>
+              <a href="/custo/calculadora">Abrir Custo e preços</a>
             </Button>
           </div>
         )}
@@ -354,11 +354,11 @@ export function CustoPanel() {
           <div className="min-w-0 flex-1">
             <p className="t-support text-muted-foreground">
               {dados.semComposicao} produto(s) venderam sem custo cadastrado e ficam fora da
-              margem acima. Lance o custo deles na Precificação para a conta fechar.
+              margem acima. Lance o custo deles em Custo e preços para a conta fechar.
             </p>
           </div>
           <Button variant="outline" size="sm" asChild className="h-11 w-full shrink-0 rounded-lg sm:h-8 sm:w-auto">
-            <a href="/custo/calculadora">Abrir Precificação</a>
+            <a href="/custo/calculadora">Abrir Custo e preços</a>
           </Button>
         </div>
       )}

@@ -122,7 +122,7 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
    ABAS_PLANAS, que e onde o AdminPathSync acha o botao pelo rotulo. */
 const SUB_CUSTO: { id: string; label: string }[] = [
   { id: "custo", label: "Margem" },
-  { id: "calculadora", label: "Precificação" },
+  { id: "calculadora", label: "Custo e preços" },
   { id: "simulador", label: "Simulador" },
   { id: "cozinha", label: "Cozinha" },
 ];
@@ -239,7 +239,7 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon; visivel?: boole
   // Melhores no computador. Ficam alcancaveis, fora do caminho.
   { id: "financeiro", label: "Financeiro", icon: Wallet },
   { id: "cadastros", label: "Cadastros", icon: Contact },
-  { id: "calculadora", label: "Precificação", icon: Calculator },
+  { id: "calculadora", label: "Custo e preços", icon: Calculator },
   { id: "simulador", label: "Simulador", icon: Calculator },
   { id: "cozinha", label: "Cozinha", icon: Calculator },
 ];

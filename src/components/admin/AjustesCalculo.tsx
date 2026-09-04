@@ -270,7 +270,7 @@ export function AjustesCalculo({
           <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
             <DialogTitle>Ajustes do cálculo</DialogTitle>
             <DialogDescription>
-              O que entra na conta além dos insumos. Vale para a Precificação e para o Simulador.
+              O que entra na conta além dos insumos. Vale para Custo e preços e para o Simulador.
             </DialogDescription>
           </DialogHeader>
 
