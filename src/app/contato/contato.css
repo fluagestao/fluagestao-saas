@@ -8,7 +8,9 @@
   --contact-soft: #f6e7df;
   --contact-ink: #321c19;
   --contact-muted: #735d57;
+  display: grid;
   min-height: 100dvh;
+  grid-template-rows: minmax(0, 1fr) auto;
   overflow-x: clip;
   color: var(--contact-ink);
   background: #fbf7f3;
@@ -29,7 +31,7 @@
   position: relative;
   isolation: isolate;
   display: flex;
-  min-height: calc(100dvh - 92px);
+  min-height: 0;
   align-items: center;
   overflow: hidden;
   padding: clamp(140px, 12vw, 180px) 0 clamp(72px, 8vw, 110px);
@@ -37,6 +39,76 @@
     radial-gradient(circle at 8% 78%, rgba(188, 91, 71, 0.12), transparent 27rem),
     radial-gradient(circle at 95% 15%, rgba(131, 53, 47, 0.1), transparent 32rem),
     linear-gradient(120deg, #fffdf9 0%, #faf2ec 58%, #f7e8e2 100%);
+}
+
+/*
+ * Em telas de trabalho, a página inteira forma um único quadro: cabeçalho,
+ * atendimento e rodapé ficam visíveis sem rolagem. O breakpoint por altura
+ * evita comprimir o conteúdo em aparelhos baixos ou com zoom elevado.
+ */
+@media (min-width: 1101px) and (min-height: 720px) {
+  .contact-page {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .contact-hero {
+    padding: clamp(88px, 9.5vh, 112px) 0 clamp(14px, 2.5vh, 28px);
+  }
+
+  .contact-layout {
+    gap: clamp(42px, 5vw, 82px);
+  }
+
+  .contact-kicker {
+    margin-bottom: clamp(13px, 2vh, 21px);
+  }
+
+  .contact-intro h1 {
+    font-size: clamp(3.15rem, 4.7vw, 5.15rem);
+  }
+
+  .contact-intro > p {
+    margin-top: clamp(17px, 2.6vh, 25px);
+    line-height: 1.58;
+  }
+
+  .contact-tags {
+    margin-top: clamp(18px, 2.8vh, 28px);
+  }
+
+  .contact-service-block {
+    min-height: clamp(270px, 39vh, 330px);
+    padding: clamp(24px, 3vh, 34px) clamp(25px, 2.5vw, 38px);
+  }
+
+  .contact-icon {
+    width: 43px;
+    height: 43px;
+    margin-bottom: clamp(13px, 2vh, 19px);
+  }
+
+  .contact-service-block > p {
+    margin: 11px 0 18px;
+    line-height: 1.55;
+  }
+
+  .contact-details {
+    margin-bottom: 18px;
+  }
+
+  .contact-commercial {
+    margin: 0 clamp(25px, 2.5vw, 38px);
+    padding: clamp(18px, 2.6vh, 27px) 0 clamp(20px, 3vh, 30px);
+  }
+
+  .contact-commercial p {
+    line-height: 1.5;
+  }
+
+  .contact-footer {
+    padding: clamp(13px, 2vh, 19px) 0;
+  }
 }
 
 .contact-decoration {
