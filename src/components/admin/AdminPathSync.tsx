@@ -193,7 +193,22 @@ export function AdminPathSync() {
            precisão, em vez de "qualquer lugar que não seja o cabeçalho". */
         const naNavegacao =
           dentroDoHeader || Boolean(clicavel.closest(".mobile-admin-nav"));
-        if (naNavegacao) {
+
+        /* DUAS condições, e as duas precisam valer.
+
+           `naNavegacao` impede o sequestro: sem ele, qualquer botão da página
+           com o texto de um menu trocava a barra de endereços — a aba "Custo"
+           da tela Custo e preços, que vive no <main>, mandava a URL para
+           /margem.
+
+           A segunda condição preserva o desktop. Ali o botão do menu pai ABRE
+           UM MENU; empurrar a rota do primeiro filho faria "Cadastros" pular
+           direto para Produtos sem a pessoa ver as opções. No celular não há
+           menu: o chip da .mobile-admin-nav é a própria navegação, e clicar
+           nele tem que levar a algum lugar. */
+        const paiEhAtalho = window.innerWidth < 1024 || !dentroDoHeader;
+
+        if (naNavegacao && paiEhAtalho) {
           if (texto === "Custo") destino = "/margem";
           else if (texto === "Vendas") destino = "/vendas/pedidos";
           else if (texto === "Financeiro") destino = "/financeiro/entradas";

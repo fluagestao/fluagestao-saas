@@ -9,8 +9,10 @@ import { dataLocalISO } from "@/lib/vendas";
 
 /** Percentual de custo fixo medido, em vez de chutado. */
 export type SugestaoFixo = {
-  /** Soma das contas mensais que venceram no mês passado. */
+  /** Soma das saídas do mês passado nos tipos marcados como custo fixo. */
   fixos: number;
+  /** Nomes dos tipos de despesa marcados. Vazio = ninguém marcou ainda. */
+  tipos: string[];
   /** Faturamento do mesmo mês. */
   faturamento: number;
   /** fixos ÷ faturamento, como fração. null quando falta dado. */
@@ -38,19 +40,34 @@ export async function carregarCalculoConfig(): Promise<{
   // o faturamento, e daria um percentual inflado.
   const mesPassado = intervaloMes(undefined, -1);
 
-  const [configRes, contasRes, pedidosRes] = await Promise.all([
+  const [configRes, tiposRes, saidasRes, pedidosRes] = await Promise.all([
     supabase
       .from("calculo_config")
       .select("custo_hora, percentual_fixo, percentual_taxa, percentual_perdas, incluir_no_calculo")
       .eq("company_id", companyId)
       .maybeSingle(),
+    /* QUEM decide o que é custo fixo é a cesteira, marcando o TIPO.
+       Antes a regra era "conta com recorrência mensal", e ela errava dos dois
+       lados: compra mensal de insumo entrava — o mesmo dinheiro que já está no
+       custo do produto, contado duas vezes — e aluguel pago uma vez por ano
+       ficava de fora. Recorrência é como a conta se repete, não o que ela é. */
     supabase
-      .from("contas_a_pagar")
-      .select("valor, vencimento, recorrencia")
+      .from("tipos_despesa")
+      .select("id, nome")
       .eq("company_id", companyId)
-      .eq("recorrencia", "mensal")
-      .gte("vencimento", mesPassado.de)
-      .lte("vencimento", mesPassado.ate),
+      .eq("conta_como_fixo", true),
+    /* movimentos, não contas_a_pagar: pagar uma conta CRIA um movimento com o
+       mesmo tipo_despesa_id, então movimentos já tem tudo — conta paga e
+       despesa lançada direto, sem passar por conta. Lendo contas_a_pagar, toda
+       despesa paga na hora ficava fora da conta do custo fixo. */
+    supabase
+      .from("movimentos")
+      .select("valor, tipo_despesa_id")
+      .eq("company_id", companyId)
+      .eq("tipo", "saida")
+      .gte("data", mesPassado.de)
+      .lte("data", mesPassado.ate)
+      .limit(5000),
     supabase
       .from("pedidos")
       .select("total, created_at")
@@ -62,7 +79,8 @@ export async function carregarCalculoConfig(): Promise<{
   ]);
 
   if (configRes.error) throw configRes.error;
-  if (contasRes.error) throw contasRes.error;
+  if (tiposRes.error) throw tiposRes.error;
+  if (saidasRes.error) throw saidasRes.error;
   if (pedidosRes.error) throw pedidosRes.error;
 
   const config: CalculoConfig = configRes.data
@@ -75,10 +93,16 @@ export async function carregarCalculoConfig(): Promise<{
       }
     : CONFIG_VAZIA;
 
-  /* Só as contas com recorrência mensal contam como fixo. Compra de insumo é
-     variável e já está no custo do produto — somar aqui seria contar duas
-     vezes o mesmo dinheiro. */
-  const fixos = (contasRes.data ?? []).reduce((soma, c) => soma + Number(c.valor ?? 0), 0);
+  const marcados = new Set((tiposRes.data ?? []).map((tipo) => tipo.id as string));
+  const tipos = (tiposRes.data ?? []).map((tipo) => String(tipo.nome ?? "")).filter(Boolean);
+
+  /* Só o que a cesteira marcou. Sem regra de reserva de propósito: se ela
+     desmarcou tudo, a resposta honesta é zero com um aviso, não um número
+     antigo que ela não escolheu e não sabe de onde veio. */
+  const fixos = (saidasRes.data ?? []).reduce((soma, m) => {
+    const tipo = (m as { tipo_despesa_id?: string | null }).tipo_despesa_id;
+    return tipo && marcados.has(tipo) ? soma + Number(m.valor ?? 0) : soma;
+  }, 0);
 
   const faturamento = (pedidosRes.data ?? []).reduce((soma, p) => {
     const dia = p.created_at ? dataLocalISO(p.created_at as string) : null;
@@ -90,6 +114,7 @@ export async function carregarCalculoConfig(): Promise<{
     config,
     sugestao: {
       fixos,
+      tipos,
       faturamento,
       // Sem faturamento não há percentual: dividir por zero daria "infinito por
       // cento", que é pior do que não sugerir nada.
