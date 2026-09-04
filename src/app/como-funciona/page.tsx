@@ -56,7 +56,7 @@ const faqs = [
   ["Preciso instalar alguma coisa?", "Não. A Flua funciona online pelo navegador."],
   ["A Flua funciona no celular?", "Sim. Você pode acessar pelo computador, tablet ou celular."],
   ["Preciso cadastrar tudo antes do primeiro pedido?", "Não. Cliente, produto e categoria podem ser cadastrados durante o próprio pedido."],
-  ["Como funciona o teste grátis?", "Você pode experimentar a Flua durante sete dias e conhecer o fluxo real da operação."],
+  ["Como funciona o teste grátis?", "Você pode experimentar a Flua durante trinta dias e conhecer o fluxo real da operação."],
   ["Meus dados ficam protegidos?", "A plataforma utiliza acesso autenticado e mantém as informações separadas por empresa."],
   ["Consigo falar com o suporte?", "Sim. A Flua mantém atendimento humano para ajudar durante o uso do sistema."],
   ["A Flua serve para quem trabalha sozinho?", "Sim. Ela acompanha desde os primeiros pedidos até uma operação com equipe."],
@@ -137,7 +137,7 @@ export default function ComoFuncionaPage() {
 
       <section className="cf-section cf-faq"><div className="cf-shell"><div className="cf-heading"><span className="cf-kicker">DÚVIDAS FREQUENTES</span><h2>Antes de começar, saiba o essencial.</h2></div><div className="cf-faq-list">{faqs.map(([q,a])=><details key={q}><summary>{q}<ChevronDown aria-hidden="true"/></summary><p>{a}</p></details>)}</div></div></section>
 
-      <section className="cf-final"><div className="cf-shell cf-final-box"><div><span className="cf-kicker">SUA PRÓXIMA VENDA</span><h2>Sua próxima venda já pode ser mais organizada.</h2><p>Experimente a Flua durante sete dias e faça seu primeiro pedido sem configurar o sistema inteiro.</p></div><div className="cf-final-actions"><Link href="/cadastro" className="cf-btn cf-btn-light">Começar teste grátis <ArrowRight/></Link><Link href="/login" className="cf-btn cf-btn-ghost">Entrar</Link></div></div></section>
+      <section className="cf-final"><div className="cf-shell cf-final-box"><div><span className="cf-kicker">SUA PRÓXIMA VENDA</span><h2>Sua próxima venda já pode ser mais organizada.</h2><p>Experimente a Flua durante trinta dias e faça seu primeiro pedido sem configurar o sistema inteiro.</p></div><div className="cf-final-actions"><Link href="/cadastro" className="cf-btn cf-btn-light">Começar teste grátis <ArrowRight/></Link><Link href="/login" className="cf-btn cf-btn-ghost">Entrar</Link></div></div></section>
 
       <footer className="cf-footer"><div className="cf-shell cf-footer-main"><div><Image src="/logotipo-flua-branco-sem-fundo.png" alt="Flua Gestão" width={150} height={50}/><p>Gestão simples para quem transforma cuidado em negócio.</p></div><nav aria-label="Navegação do rodapé"><Link href="/nosso-saas">Nosso SaaS</Link><Link href="/a-flua">A Flua</Link><Link href="/como-funciona">Como Funciona</Link><Link href="/documentos">Documentos</Link><Link href="/login">Entrar</Link></nav></div><div className="cf-shell cf-footer-bottom"><span>© 2026 Flua Gestão. Todos os direitos reservados.</span><span>Feito para quem encanta.</span></div></footer>
     </main>

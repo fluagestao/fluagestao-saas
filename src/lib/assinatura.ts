@@ -7,7 +7,7 @@ import type { createClient } from "@/lib/supabase/server";
  * Estado da assinatura da empresa.
  *
  * A `subscriptions` já nascia com `plan='trial'`, `status='trialing'` e
- * `trial_ends_at = now() + 7 days` — criada pela RPC de onboarding desde
+ * `trial_ends_at = now() + 30 days` — criada pela RPC de onboarding desde
  * sempre. O que não existia era alguém LENDO isso para decidir acesso: a única
  * leitura no sistema era a página de conta, para exibir o plano. Passado o
  * sétimo dia, todo mundo seguia usando de graça, para sempre e sem aviso.
