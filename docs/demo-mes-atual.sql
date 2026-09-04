@@ -10,7 +10,8 @@
 -- Clientes são FICTÍCIOS e os WhatsApp usam o padrão 4899999-00XX, que não
 -- corresponde a linha real. Nenhum dado de cliente de verdade entra aqui.
 --
--- ANTES DE RODAR: troque COLE_AQUI pelo id da sua empresa de teste.
+-- ANTES DE RODAR: troque COLE_AQUI pelo id da empresa. É UMA ocorrência só,
+-- na linha `v_empresa text := 'COLE_AQUI';` (as outras estão em comentários).
 --   select id, nome from public.companies order by created_at;
 --
 -- Ele se recusa a rodar duas vezes no mesmo mês. A limpeza está no fim.
@@ -112,7 +113,8 @@ begin
        where p.company_id = v_company
          and p.data_entrega between v_inicio and v_fim
          and p.cliente_id in (select id from public.clientes
-                               where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')) > 40 then
+                               where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020')) > 40 then
     raise exception 'Este mês já tem pedidos de demonstração. Rode a limpeza do fim do arquivo antes de semear de novo.';
   end if;
 
@@ -162,7 +164,8 @@ begin
       from public.clientes
       where company_id = v_company
         and coalesce(ativo, true)
-        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%'
+        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020'
         -- Coorte: quem "sumiu" nao compra no mes corrente. Mesma regra do
         -- docs/demo-historico.sql — se mudar la, mude aqui.
         and right(regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g'), 1)
@@ -270,7 +273,8 @@ begin
     -- Só pedidos do seed: sem isto, entradas falsas entravam no caixa em cima
     -- de pedidos REAIS que ainda não tinham movimento lançado.
     and p.cliente_id in (select id from public.clientes
-                          where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')
+                          where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020')
     and not exists (select 1 from public.movimentos m where m.pedido_id = p.id);
 
   -- ----------------------------------------------------- tipos de despesa
@@ -366,7 +370,8 @@ end $$;
 --   with demo as (
 --     select id from public.clientes
 --      where company_id = 'COLE_AQUI'
---        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%'
+--        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020'
 --   )
 --   delete from public.movimentos
 --    where company_id = 'COLE_AQUI'
@@ -379,10 +384,12 @@ end $$;
 --      and cliente_id in (
 --        select id from public.clientes
 --         where company_id = 'COLE_AQUI'
---           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%');
+--           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020');
 --
 --   -- Os clientes fictícios em si, se quiser limpar de vez:
 --   -- delete from public.clientes
 --   --  where company_id = 'COLE_AQUI'
---   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%';
+--   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020';
 -- commit;

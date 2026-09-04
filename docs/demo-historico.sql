@@ -53,7 +53,8 @@
 -- Clientes são FICTÍCIOS e os WhatsApp usam 4899999-00XX, que não corresponde a
 -- linha real.
 --
--- ANTES DE RODAR: troque COLE_AQUI pelo id da empresa, nas DUAS ocorrências.
+-- ANTES DE RODAR: troque COLE_AQUI pelo id da empresa. É UMA ocorrência só,
+-- na linha `v_empresa text := 'COLE_AQUI';` (as outras estão em comentários).
 --   select id, nome from public.companies order by created_at;
 -- ============================================================================
 
@@ -128,7 +129,8 @@ begin
        where p.company_id = v_company
          and p.data_entrega between v_inicio and v_fim
          and p.cliente_id in (select id from public.clientes
-                               where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')) > 60 then
+                               where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020')) > 60 then
     raise exception 'O passado já tem pedidos de demonstração. Rode a limpeza do fim do arquivo antes de semear de novo.';
   end if;
 
@@ -227,7 +229,8 @@ begin
       from public.clientes c
       where c.company_id = v_company
         and coalesce(c.ativo, true)
-        and regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g') like '48999990%' 
+        and regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g')
+                             between '48999990001' and '48999990020' 
         and v_dia <= case right(regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g'), 1)
                        when '6' then v_hoje - 45     -- faixa 30 a 60
                        when '7' then v_hoje - 45
@@ -302,6 +305,60 @@ begin
     v_dia := v_dia + 1;
   end loop;
 
+  -- ------------------------------------ ancora das clientes que sumiram
+  /* A coorte diz quando a cliente PARA de comprar; o sorteio dos dias e que
+     decide se ela chegou a comprar perto disso. Com 35% de chance por dia e
+     vinte clientes disputando 1 a 3 pedidos, a ultima compra de uma "parada ha
+     45 dias" podia cair 80 dias atras — e ela ia para a faixa errada, ou a
+     faixa saia vazia.
+
+     Aqui cada cliente que sumiu ganha UMA venda exatamente na data de corte.
+     A faixa deixa de depender de sorte. */
+  for v_cli in
+    select c.id, c.nome, c.whatsapp, c.bairro,
+           case right(regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g'), 1)
+             when '6' then v_hoje - 45
+             when '7' then v_hoje - 45
+             when '8' then v_hoje - 95
+             else          v_hoje - 210
+           end as corte
+      from public.clientes c
+     where c.company_id = v_company
+       and coalesce(c.ativo, true)
+       and regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g')
+             between '48999990001' and '48999990020'
+       and right(regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g'), 1)
+             in ('6', '7', '8', '9')
+  loop
+    with escolhidos as (
+      select slug, nome, preco, 1 as qtd
+      from public.produtos
+      where company_id = v_company and preco is not null and preco > 0
+        and coalesce(rascunho, false) = false
+      order by random()
+      limit 2
+    )
+    select jsonb_agg(jsonb_build_object('slug', slug, 'nome', nome, 'preco', preco, 'qtd', qtd)),
+           coalesce(sum(preco * qtd), 0)
+    into v_itens, v_subtotal
+    from escolhidos;
+
+    continue when v_itens is null;
+
+    insert into public.pedidos (
+      company_id, cliente_id, cliente_nome, cliente_whatsapp,
+      itens, subtotal, taxa_entrega, taxa_manual, total,
+      tipo, bairro, data_entrega, janela_entrega, forma_pagamento, status,
+      recebido_em, entregue_em, origem, created_at
+    ) values (
+      v_company, v_cli.id, v_cli.nome, v_cli.whatsapp,
+      v_itens, v_subtotal, 12.00, true, v_subtotal + 12.00,
+      'entrega', v_cli.bairro, v_cli.corte, '14:00 às 16:00', 'pix', 'entregue',
+      v_cli.corte, v_cli.corte::timestamptz + make_interval(hours => 15),
+      'manual', (v_cli.corte - 5)::timestamptz + make_interval(hours => 10)
+    );
+  end loop;
+
   -- ------------------------------------------------- entradas no financeiro
   -- `not exists` de propósito: se houver trigger no banco que já lança o
   -- movimento ao receber o pedido, isto não duplica.
@@ -315,7 +372,8 @@ begin
     -- Só pedidos do seed: sem isto, entradas falsas entravam no caixa em cima
     -- de pedidos REAIS que ainda não tinham movimento lançado.
     and p.cliente_id in (select id from public.clientes
-                          where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')
+                          where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020')
     and not exists (select 1 from public.movimentos m where m.pedido_id = p.id);
 
   raise notice 'Pronto: % pedidos no passado, % com ocasião marcada.',
@@ -366,7 +424,8 @@ end $$;
 --   with demo as (
 --     select id from public.clientes
 --      where company_id = 'COLE_AQUI'
---        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%'
+--        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020'
 --   )
 --   delete from public.movimentos
 --    where company_id = 'COLE_AQUI'
@@ -379,10 +438,12 @@ end $$;
 --      and cliente_id in (
 --        select id from public.clientes
 --         where company_id = 'COLE_AQUI'
---           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%');
+--           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020');
 --
 --   -- Os clientes fictícios em si, se quiser limpar de vez:
 --   -- delete from public.clientes
 --   --  where company_id = 'COLE_AQUI'
---   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%';
+--   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
+                    between '48999990001' and '48999990020';
 -- commit;
