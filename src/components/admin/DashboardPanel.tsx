@@ -12,6 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { rotuloOcasiao } from "@/lib/datas-comemorativas";
+import { mensagemDeErro } from "@/lib/erros";
+import { carregarMetasDoAno, removerMeta, salvarMeta, type Meta } from "@/lib/metas";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { hojeISO } from "@/lib/prazo";
 import { carregarDashboard } from "@/lib/pedidos";
 import type { DashboardVendas, MesDaSerie, VendaAgrupada } from "@/lib/pedidos-ops.server";
@@ -105,17 +109,24 @@ function EvolucaoAno({
   ano,
   mesAtivo,
   onEscolherMes,
+  metas,
 }: {
   serie: MesDaSerie[];
   ano: string;
   /** 1 a 12, ou null quando o periodo e o ano inteiro. */
   mesAtivo: number | null;
   onEscolherMes: (mes: number) => void;
+  /** Meta de cada mes, por numero do mes. Mes sem meta nao desenha marcador. */
+  metas: Map<number, number>;
 }) {
   const totalAno = serie.reduce((t, m) => t + m.principais, 0);
   const meses = serie.filter((m) => m.pedidos > 0).length;
   const media = meses ? totalAno / meses : 0;
-  const dados = serie.map((m) => ({ ...m, rotulo: MESES_CURTOS[m.mes - 1] }));
+  const dados = serie.map((m) => ({
+    ...m,
+    rotulo: MESES_CURTOS[m.mes - 1],
+    meta: metas.get(m.mes) ?? null,
+  }));
 
   return (
     <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
@@ -149,10 +160,24 @@ function EvolucaoAno({
               />
               <Tooltip
                 cursor={{ fill: "var(--cream-soft)" }}
-                formatter={(v: number, _n, item: { payload?: MesDaSerie }) => [
-                  `${v} ${v === 1 ? "unidade" : "unidades"} · ${item?.payload?.pedidos ?? 0} pedido(s) · ${formatBRL(item?.payload?.valor ?? 0)}`,
-                  "",
-                ]}
+                formatter={(
+                  v: number,
+                  nome: string,
+                  item: { payload?: MesDaSerie & { meta?: number | null } },
+                ) => {
+                  if (nome === "meta") return [`meta de ${v} cesta(s)`, ""];
+                  const meta = item?.payload?.meta ?? null;
+                  const falta = meta != null ? meta - v : null;
+                  return [
+                    `${v} ${v === 1 ? "unidade" : "unidades"} · ${item?.payload?.pedidos ?? 0} pedido(s) · ${formatBRL(item?.payload?.valor ?? 0)}` +
+                      (falta != null
+                        ? falta > 0
+                          ? ` · faltam ${falta} para a meta`
+                          : ` · meta batida com ${-falta} a mais`
+                        : ""),
+                    "",
+                  ];
+                }}
                 labelFormatter={(r: string) => String(r).toUpperCase()}
                 contentStyle={{
                   background: "var(--cream-soft)",
@@ -161,6 +186,10 @@ function EvolucaoAno({
                   fontSize: "0.8rem",
                 }}
               />
+              {/* A meta e uma barra CLARA atras da realizada. Linha de
+                  referencia unica nao serviria: a meta muda de mes para mes, e
+                  uma linha reta atravessando o ano diria uma coisa falsa. */}
+              <Bar dataKey="meta" radius={[6, 6, 0, 0]} fill="var(--cream)" />
               <Bar
                 dataKey="principais"
                 radius={[6, 6, 0, 0]}
@@ -218,14 +247,10 @@ function LinhasPizza({ dados, total }: { dados: VendaAgrupada[]; total: number }
 function Pizza({
   titulo,
   dados,
-  selecionado,
-  onSelecionar,
   vazio,
 }: {
   titulo: string;
   dados: VendaAgrupada[];
-  selecionado: string | null;
-  onSelecionar: (chave: string | null) => void;
   vazio: string;
 }) {
   const total = dados.reduce((t, d) => t + d.valor, 0);
@@ -271,7 +296,6 @@ function Pizza({
                     <Cell
                       key={d.chave}
                       fill={CORES[i % CORES.length]}
-                      opacity={selecionado && selecionado !== d.chave ? 0.35 : 1}
                       style={{ outline: "none" }}
                     />
                   ))}
@@ -372,6 +396,10 @@ export function DashboardPanel() {
   const [aba, setAba] = useState<"produtos" | "adicionais">("produtos");
   const [categoriaSel, setCategoriaSel] = useState<string | null>(null);
   const [formaSel, setFormaSel] = useState<string | null>(null);
+  const [metas, setMetas] = useState<Meta[]>([]);
+  const [metaAberta, setMetaAberta] = useState(false);
+  const [metaTexto, setMetaTexto] = useState("");
+  const [salvandoMeta, setSalvandoMeta] = useState(false);
 
   const [anoSelecionado, mesSelecionado] = mes.split("-");
   const periodo = useMemo(
@@ -398,6 +426,55 @@ export function DashboardPanel() {
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  const carregarMetas = useCallback(async () => {
+    try {
+      const r = await carregarMetasDoAno({ data: { ano: Number(anoSelecionado) } });
+      setMetas(r.metas);
+    } catch {
+      // Sem meta a tela funciona igual: o gráfico só não desenha o marcador.
+      setMetas([]);
+    }
+  }, [anoSelecionado]);
+
+  useEffect(() => {
+    carregarMetas();
+  }, [carregarMetas]);
+
+  const metasPorMes = useMemo(
+    () => new Map(metas.map((m) => [m.mes, m.metaCestas])),
+    [metas],
+  );
+
+  /* A meta é do MÊS, então só faz sentido no modo mês. No ano inteiro o
+     gráfico mostra as doze e não há um número único a comparar. */
+  const mesDaMeta = Number(mesSelecionado);
+  const metaDoMes = metasPorMes.get(mesDaMeta) ?? null;
+  const realizadoDoMes = dados?.unidades.principais ?? 0;
+
+  async function gravarMeta() {
+    setSalvandoMeta(true);
+    try {
+      const bruto = Number(metaTexto.replace(/\D/g, ""));
+      const r = bruto
+        ? await salvarMeta({
+            data: { ano: Number(anoSelecionado), mes: mesDaMeta, metaCestas: bruto, observacao: null },
+          })
+        : await removerMeta({ data: { ano: Number(anoSelecionado), mes: mesDaMeta } });
+
+      if (r?.erro) {
+        toast.error(r.erro);
+        return;
+      }
+      toast.success(bruto ? "Meta salva." : "Meta removida.");
+      setMetaAberta(false);
+      await carregarMetas();
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "salvar a meta"));
+    } finally {
+      setSalvandoMeta(false);
+    }
+  }
 
   const lista = aba === "produtos" ? (dados?.produtos ?? []) : (dados?.adicionais ?? []);
 
@@ -524,6 +601,42 @@ export function DashboardPanel() {
         </div>
       )}
 
+      <Dialog open={metaAberta} onOpenChange={setMetaAberta}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="text-left">
+            <DialogTitle>
+              Meta de {MESES_CURTOS[mesDaMeta - 1]?.toUpperCase()} de {anoSelecionado}
+            </DialogTitle>
+            <DialogDescription>
+              Quantas cestas você quer entregar no mês. Conta o mesmo que o cartão “Cestas
+              entregues”: adicionais não entram.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Input
+            value={metaTexto}
+            onChange={(e) => setMetaTexto(e.target.value.replace(/\D/g, ""))}
+            inputMode="numeric"
+            placeholder="Ex.: 80"
+            className="h-11"
+            autoFocus
+          />
+
+          <p className="t-support text-muted-foreground">
+            Deixe em branco para remover a meta deste mês.
+          </p>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMetaAberta(false)} disabled={salvandoMeta}>
+              Cancelar
+            </Button>
+            <Button onClick={gravarMeta} disabled={salvandoMeta}>
+              {salvandoMeta ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {carregando && <Carregando texto="somando as vendas…" />}
 
       {!carregando && dados && dados.totalPedidos === 0 && (
@@ -597,6 +710,55 @@ export function DashboardPanel() {
                 cadastrada nele. O numero grande e a aquisicao, porque e sobre
                 ela que se decide investir; a recompra vem na nota, junto com a
                 fatia, que e o que diz se a base esta girando ou sendo trocada. */}
+            {modo === "mes" && (
+              <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="t-support uppercase tracking-wide text-muted-foreground">
+                    Meta do mês
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMetaTexto(metaDoMes ? String(metaDoMes) : "");
+                      setMetaAberta(true);
+                    }}
+                    className="shrink-0 text-xs font-semibold text-[var(--terracotta)] hover:text-[var(--wine)]"
+                  >
+                    {metaDoMes ? "alterar" : "definir"}
+                  </button>
+                </div>
+
+                {metaDoMes == null ? (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Sem meta. O gráfico do ano ao lado mostra a sazonalidade — é dele que sai um
+                    número que não é chute.
+                  </p>
+                ) : (
+                  <>
+                    <p className="t-hero text-foreground">
+                      {realizadoDoMes}
+                      <span className="t-body text-muted-foreground"> de {metaDoMes}</span>
+                    </p>
+                    {/* Barra em vez de só porcentagem: "78%" exige converter de
+                        cabeça quantas cestas faltam; a barra mostra. */}
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--cream)]">
+                      <div
+                        className="h-full rounded-full bg-[var(--terracotta)] transition-all"
+                        style={{
+                          width: `${Math.min(100, Math.round((realizadoDoMes / metaDoMes) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="t-support mt-1.5 text-muted-foreground">
+                      {realizadoDoMes >= metaDoMes
+                        ? `meta batida com ${realizadoDoMes - metaDoMes} a mais`
+                        : `faltam ${metaDoMes - realizadoDoMes} cesta(s)`}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+
             <Cartao
               titulo="Clientes novas"
               valor={String(dados.clientes.novos)}
@@ -613,6 +775,7 @@ export function DashboardPanel() {
               serie={dados.serieMensal}
               ano={anoSelecionado}
               mesAtivo={modo === "ano" ? null : Number(mesSelecionado)}
+              metas={metasPorMes}
               onEscolherMes={(m) => {
                 setModo("mes");
                 setMes(`${anoSelecionado}-${String(m).padStart(2, "0")}`);
@@ -624,22 +787,16 @@ export function DashboardPanel() {
             <Pizza
               titulo="Por categoria"
               dados={dados.porCategoria}
-              selecionado={categoriaSel}
-              onSelecionar={setCategoriaSel}
               vazio="Sem vendas categorizadas."
             />
             <Pizza
               titulo="Por coleção"
               dados={dados.porColecao}
-              selecionado={colecaoId}
-              onSelecionar={setColecaoId}
               vazio="Sem vendas por coleção."
             />
             <Pizza
               titulo="Por forma de pagamento"
               dados={dados.porPagamento}
-              selecionado={formaSel}
-              onSelecionar={setFormaSel}
               vazio="Nenhuma forma registrada."
             />
           </div>
