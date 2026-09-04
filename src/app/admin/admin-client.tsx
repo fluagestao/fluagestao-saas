@@ -226,12 +226,12 @@ const DO_CATALOGO: AbaId[] = [
    chegou nela de proposito. */
 const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon; visivel?: boolean }[] = [
   { id: "inicio", label: "Início", icon: Home, visivel: true },
-  { id: "vendas", label: "Pedidos", icon: ShoppingCart, visivel: true },
+  { id: "vendas", label: "Vendas", icon: ShoppingCart, visivel: true },
   { id: "dashboard", label: "Dashboard", icon: ChartPie, visivel: true },
 
   { id: "calendario", label: "Agenda", icon: CalendarDays, visivel: true },
-  { id: "followup", label: "Follow-up", icon: ShoppingCart, visivel: true },
-  { id: "relacionamento", label: "Relacionamento", icon: ShoppingCart, visivel: true },
+  { id: "followup", label: "Follow-up", icon: ShoppingCart },
+  { id: "relacionamento", label: "Relacionamento", icon: ShoppingCart },
   { id: "custo", label: "Margem", icon: Calculator, visivel: true },
   { id: "estoque", label: "Estoque", icon: Boxes, visivel: true },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare, visivel: true },
