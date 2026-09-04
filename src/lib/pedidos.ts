@@ -994,7 +994,8 @@ export async function carregarDashboard(input: { data: unknown }) {
     if (!relevante) continue;
 
     const contaDinheiro = dentro(diaDoDinheiro(pedido));
-    const contaProducao = dentro(diaDaProducao(pedido));
+    const foiEntregue = String((pedido as { status?: unknown }).status ?? "") === "entregue";
+    const contaProducao = foiEntregue && dentro(diaDaProducao(pedido));
 
     if (contaDinheiro) {
       totalPedidos += 1;

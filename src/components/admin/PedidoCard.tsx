@@ -41,8 +41,10 @@ export type AcoesPedido = {
 /**
  * Card do pedido, usado na lista e no kanban.
  *
- * `compacto` é a versão do kanban: sem os botões (o arrasto move o status) e
- * com menos informação, porque a coluna é estreita.
+ * `compacto` é a versão do kanban: menos informação, porque a coluna é
+ * estreita. As ações continuam existindo, escondidas até o clique — no quadro
+ * o arrasto move o status, mas "Recebi" nao tem gesto equivalente, e sem elas
+ * a pessoa precisava sair do quadro para registrar um pagamento.
  */
 export function PedidoCard({
   pedido: p,
@@ -108,9 +110,9 @@ export function PedidoCard({
       <div
         className={cn(
           "flex flex-wrap items-start justify-between gap-2",
-          !compacto && "cursor-pointer",
+          "cursor-pointer",
         )}
-        onClick={compacto ? undefined : () => setAberto((v) => !v)}
+        onClick={() => setAberto((v) => !v)}
       >
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -192,7 +194,7 @@ export function PedidoCard({
           </span>
           {/* Nada no card avisa que ele abre. Sem esse aviso, as ações (ficha,
               recebi, WhatsApp) ficam escondidas de quem nunca clicou por acaso. */}
-          {!compacto && (
+          {(
             <span className="text-xs text-muted-foreground">
               {aberto ? "Clique para recolher" : "Clique para expandir"}
             </span>
@@ -200,8 +202,14 @@ export function PedidoCard({
         </div>
       </div>
 
-      {!compacto && aberto && (
-        <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--cream-deep)] pt-3">
+      {aberto && (
+        /* stopPropagation porque no quadro este bloco vive dentro de um
+           draggable: sem ele o clique no botao seria engolido pelo gesto. */
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="mt-3 flex flex-wrap gap-2 border-t border-[var(--cream-deep)] pt-3"
+        >
           {prox && (
             <Button size="sm" onClick={() => acoes.avancar(p)}>
               Marcar como {statusLabel(prox)}
