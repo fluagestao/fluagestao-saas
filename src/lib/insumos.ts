@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { requireCompany } from "@/lib/company-context.server";
+import { mensagemDeErro } from "@/lib/erros";
 
 export type UnidadeInsumo = "UN" | "KG" | "G" | "L" | "ML" | "CX" | "PCT";
 
@@ -341,6 +342,16 @@ export async function removerInsumo(input: ActionInput<unknown>) {
   return { ok: true as const };
 }
 
+/* RETORNA o erro, nao lanca.
+
+   Em producao o React descarta a mensagem de um Error lancado dentro de um
+   arquivo "use server" e manda so um digest — o texto morre no servidor. Era o
+   que acontecia aqui: a tela dizia "Nao consegui salvar composicao. Confira os
+   dados..." (o fallback generico do erros.ts) para QUALQUER causa, e nem o dono
+   do sistema conseguia saber o que tinha falhado sem abrir o log da Vercel.
+
+   Com o erro no retorno ele atravessa inteiro. Mesmo remedio que ja foi
+   aplicado em salvarCliente (pedidos.ts). */
 export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
   const data = composicaoSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();
@@ -351,7 +362,13 @@ export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
     .eq("id", data.produtoId)
     .eq("company_id", companyId)
     .single();
-  if (produtoError || !produto) throw produtoError ?? new Error("Produto não encontrado.");
+
+  if (produtoError || !produto) {
+    return {
+      ok: false as const,
+      erro: mensagemDeErro(produtoError, "encontrar o produto"),
+    };
+  }
 
   const selecionados = data.itens.map((item) => item.insumoId);
 
@@ -368,7 +385,9 @@ export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
         })),
         { onConflict: "company_id,produto_id,insumo_id" },
       );
-    if (upsertError) throw upsertError;
+    if (upsertError) {
+      return { ok: false as const, erro: mensagemDeErro(upsertError, "salvar a composição") };
+    }
   }
 
   let removerQuery = supabase
@@ -382,9 +401,11 @@ export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
   }
 
   const { error: removerError } = await removerQuery;
-  if (removerError) throw removerError;
+  if (removerError) {
+    return { ok: false as const, erro: mensagemDeErro(removerError, "limpar os insumos antigos") };
+  }
 
-  return { ok: true };
+  return { ok: true as const, erro: null };
 }
 
 export async function listarComposicaoProduto(input: ActionInput<unknown>) {

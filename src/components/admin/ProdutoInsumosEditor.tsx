@@ -96,12 +96,15 @@ export function ProdutoInsumosEditor({
 
     setSalvando(true);
     try {
-      await salvarComposicaoProduto({
+      const r = await salvarComposicaoProduto({
         data: {
           produtoId,
           itens: proximos,
         },
       });
+      // O erro agora vem no retorno, com o texto inteiro. O catch fica para o
+      // que ainda pode ser lancado: rede caida, sessao perdida.
+      if (r?.erro) toast.error(r.erro);
     } catch (e) {
       toast.error(mensagemDeErro(e, "salvar composição"));
     } finally {
