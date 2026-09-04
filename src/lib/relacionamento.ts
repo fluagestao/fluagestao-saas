@@ -546,3 +546,26 @@ export async function aplicarRetroativo(): Promise<{ marcados: number }> {
 
   return { marcados };
 }
+
+/**
+ * Desfaz o preenchimento retroativo.
+ *
+ * Só apaga PALPITE — `ocasiao_confirmada = false`. O que uma pessoa escolheu na
+ * tela do pedido fica intacto, e é justamente para essa distinção que a coluna
+ * existe. Sem este caminho, uma ação que escreve suposição no histórico seria
+ * de mão única, e um clique sem querer viraria dado que ninguém sabe separar.
+ */
+export async function desfazerRetroativo(): Promise<{ limpos: number }> {
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .update({ ocasiao: null })
+    .eq("company_id", companyId)
+    .eq("ocasiao_confirmada", false)
+    .not("ocasiao", "is", null)
+    .select("id");
+
+  if (error) throw error;
+  return { limpos: (data ?? []).length };
+}

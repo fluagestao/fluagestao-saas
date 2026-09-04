@@ -12,6 +12,7 @@ import {
   anosComOcasiao,
   aplicarRetroativo,
   carregarPorOcasiao,
+  desfazerRetroativo,
   previaRetroativo,
   type CompraNaOcasiao,
   type PreviaRetroativo,
@@ -116,6 +117,23 @@ export function RelacionamentoOcasiao({ modelos }: { modelos: ModelosRelacioname
     }
   }
 
+  async function desfazer() {
+    setOcupado(true);
+    try {
+      const r = await desfazerRetroativo();
+      toast.success(
+        r.limpos === 0
+          ? "Não havia nada marcado pelo sistema."
+          : `${r.limpos} marcação(ões) desfeita(s). O que você marcou à mão ficou.`,
+      );
+      await buscar();
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "desfazer as marcações"));
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   async function aplicar() {
     setOcupado(true);
     try {
@@ -183,7 +201,7 @@ export function RelacionamentoOcasiao({ modelos }: { modelos: ModelosRelacioname
         <p className="t-support rounded-xl bg-[var(--cream)] px-3.5 py-2.5 text-[var(--admin-ink-soft)]">
           {palpites} {palpites === 1 ? "pedido foi marcado" : "pedidos foram marcados"} pelo
           sistema a partir da data de entrega, sem ninguém confirmar. Vale conferir antes de
-          mandar.
+          mandar — ou desfazer no botão abaixo, que só apaga os palpites.
         </p>
       )}
 
@@ -237,7 +255,15 @@ export function RelacionamentoOcasiao({ modelos }: { modelos: ModelosRelacioname
       ) : (
         <Button variant="outline" onClick={verPrevia} disabled={ocupado} className="h-10">
           <Wand2 className="mr-1.5 h-4 w-4" />
-          {ocupado ? "Conferindo…" : "Marcar histórico pela data de entrega"}
+          {ocupado ? "Conferindo…" : "Ver o que dá para marcar pela data de entrega"}
+        </Button>
+      )}
+
+      {/* Desfazer sempre visível quando há palpite na tela: quem clicou sem
+          querer precisa achar a volta sem procurar. */}
+      {palpites > 0 && !previa && (
+        <Button variant="outline" onClick={desfazer} disabled={ocupado} className="h-10">
+          {ocupado ? "Desfazendo…" : "Desfazer as marcações do sistema"}
         </Button>
       )}
 
