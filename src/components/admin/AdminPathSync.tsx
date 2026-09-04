@@ -13,6 +13,7 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Estoque: "/estoque",
   Tarefas: "/tarefas",
   "Follow-up": "/followup",
+  Relacionamento: "/relacionamento",
 
   Pedidos: "/vendas/pedidos",
   Realizadas: "/vendas/realizadas",
@@ -41,6 +42,7 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/vendas/a-receber": { pai: "Financeiro", filho: "Entradas" },
   "/vendas/realizadas": { pai: "Vendas", filho: "Realizadas" },
   "/followup": { pai: "Vendas", filho: "Follow-up" },
+  "/relacionamento": { pai: "Vendas", filho: "Relacionamento" },
 
   "/dashboard": { filho: "Dashboard" },
   /* No celular estas quatro vivem sob o chip "Custo", entao a rota precisa

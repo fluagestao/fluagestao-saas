@@ -41,6 +41,7 @@ import { ColecoesPanel } from "@/components/admin/ColecoesPanel";
 import { DashboardPanel } from "@/components/admin/DashboardPanel";
 import { FinanceiroPanel } from "@/components/admin/FinanceiroPanel";
 import { FollowupPanel } from "@/components/admin/FollowupPanel";
+import { RelacionamentoPanel } from "@/components/admin/RelacionamentoPanel";
 import { InicioPanel } from "@/components/admin/InicioPanel";
 import { InsumosPanel } from "@/components/admin/InsumosPanel";
 import { PerfilContaMenu } from "@/components/admin/PerfilContaMenu";
@@ -68,6 +69,7 @@ export type AbaId =
   | "inicio"
   | "vendas"
   | "followup"
+  | "relacionamento"
   | "dashboard"
   | "calendario"
   | "tarefas"
@@ -91,7 +93,7 @@ export type SubFinanceiro = "entradas" | "saidas";
 /* Em que ponto do ciclo a lista esta. "pendente" e o padrao nas duas abas
    porque e o trabalho que sobrou: o que falta receber, o que falta pagar. */
 export type EstadoFinanceiro = "pendente" | "concluido";
-export type SubVendas = "pedidos" | "areceber" | "realizadas" | "followup";
+export type SubVendas = "pedidos" | "areceber" | "realizadas" | "followup" | "relacionamento";
 export type SubCadastros =
   | "clientes"
   | "fornecedores"
@@ -112,6 +114,7 @@ const SUB_VENDAS: { id: SubVendas; label: string }[] = [
   { id: "pedidos", label: "Pedidos" },
   { id: "realizadas", label: "Realizadas" },
   { id: "followup", label: "Follow-up" },
+  { id: "relacionamento", label: "Relacionamento" },
 ];
 
 /* Custo virou guarda-chuva. Cada filho e uma tela propria (uma AbaId), e nao
@@ -228,6 +231,7 @@ const ABAS_PLANAS: { id: AbaId; label: string; icon: LucideIcon; visivel?: boole
 
   { id: "calendario", label: "Agenda", icon: CalendarDays, visivel: true },
   { id: "followup", label: "Follow-up", icon: ShoppingCart, visivel: true },
+  { id: "relacionamento", label: "Relacionamento", icon: ShoppingCart, visivel: true },
   { id: "custo", label: "Margem", icon: Calculator, visivel: true },
   { id: "estoque", label: "Estoque", icon: Boxes, visivel: true },
   { id: "tarefas", label: "Tarefas", icon: CheckSquare, visivel: true },
@@ -271,7 +275,11 @@ export default function AdminClient({
 
   const [aba, setAba] = useState<AbaId>(initialAba);
   const [subVendas, setSubVendas] = useState<SubVendas>(
-    initialAba === "followup" ? "followup" : "pedidos",
+    initialAba === "followup"
+      ? "followup"
+      : initialAba === "relacionamento"
+        ? "relacionamento"
+        : "pedidos",
   );
   const [subFin, setSubFin] = useState<SubFinanceiro>("entradas");
   const [estadoFin, setEstadoFin] = useState<EstadoFinanceiro>("concluido");
@@ -311,7 +319,7 @@ export default function AdminClient({
       return aba === "cadastros" || DO_CATALOGO.includes(aba);
     }
     if (item.id === "custo") return DO_CUSTO.includes(aba);
-    if (item.id === "vendas" && aba === "followup") return true;
+    if (item.id === "vendas" && (aba === "followup" || aba === "relacionamento")) return true;
     return item.abas ? DO_CATALOGO.includes(aba) : aba === item.id;
   }
 
@@ -648,7 +656,7 @@ export default function AdminClient({
             ))}
           </nav>
 
-          {(aba === "vendas" || aba === "followup") && (
+          {(aba === "vendas" || aba === "followup" || aba === "relacionamento") && (
             <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto border-t border-[var(--admin-border)] px-4 py-2 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SUB_VENDAS.filter((sub) => sub.id !== "realizadas").map((sub) => (
                 <button
@@ -661,6 +669,7 @@ export default function AdminClient({
                   className={cn(
                     "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                     (aba === "followup" && sub.id === "followup") ||
+                      (aba === "relacionamento" && sub.id === "relacionamento") ||
                       (aba === "vendas" && subVendas === sub.id)
                       ? "bg-[var(--cream)] text-[var(--terracotta)]"
                       : "text-[var(--admin-ink-soft)] hover:bg-[var(--cream-soft)]",
@@ -766,6 +775,8 @@ export default function AdminClient({
             <DashboardPanel />
           ) : aba === "followup" ? (
             <FollowupPanel empresaNome={companyName} />
+          ) : aba === "relacionamento" ? (
+            <RelacionamentoPanel />
           ) : aba === "calendario" ? (
             <CalendarioEntregasPanel
               empresa={{
@@ -822,6 +833,8 @@ export default function AdminClient({
           ) : aba === "vendas" ? (
             subVendas === "followup" ? (
               <FollowupPanel empresaNome={companyName} />
+            ) : subVendas === "relacionamento" ? (
+              <RelacionamentoPanel />
             ) : (
               painelVendas(subVendas as "pedidos" | "areceber" | "realizadas")
             )
