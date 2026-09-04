@@ -140,7 +140,12 @@ begin
     for v_n in 1 .. v_qtd_dia loop
       select id, nome, whatsapp, bairro into v_cli
       from public.clientes
-      where company_id = v_company and coalesce(ativo, true)
+      where company_id = v_company
+        and coalesce(ativo, true)
+        -- Coorte: quem "sumiu" nao compra no mes corrente. Mesma regra do
+        -- docs/demo-historico.sql — se mudar la, mude aqui.
+        and right(regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g'), 1)
+              not in ('6', '7', '8', '9')
       order by random() limit 1;
 
       -- Itens saem dos produtos REAIS da empresa: assim o slug bate, a margem

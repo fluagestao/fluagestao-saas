@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, HeartHandshake, MessageCircle, Settings2 } from "lucide-react";
+import { CalendarHeart, Check, Gift, HeartHandshake, MessageCircle, Settings2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
@@ -64,6 +65,36 @@ const FAIXAS = [
 
 type FaixaId = (typeof FAIXAS)[number]["id"];
 
+type CampoModelo = "comData" | "semData" | "repetir";
+
+const MODELOS_UI: {
+  campo: CampoModelo;
+  titulo: string;
+  ajuda: string;
+  icon: typeof Gift;
+}[] = [
+  {
+    campo: "comData",
+    titulo: "Com ocasião",
+    ajuda:
+      "Usada quando você escolhe falar da data comemorativa. A linha com {data} some se não houver data por perto.",
+    icon: CalendarHeart,
+  },
+  {
+    campo: "semData",
+    titulo: "Sem ocasião",
+    ajuda: "Para reaproximar quem sumiu, sem gancho nenhum.",
+    icon: Sparkles,
+  },
+  {
+    campo: "repetir",
+    titulo: "Repetir o presente",
+    ajuda:
+      "Usada na aba Por ocasião, para oferecer de novo o que ela já mandou. Aqui valem {destinatario} e {ano}.",
+    icon: Gift,
+  },
+];
+
 /* Descanso depois de chamar. Sem ele a lista de acao se repete: quem esta
    parada ha 80 dias continua parada ha 81 amanha, entao reapareceria todo dia e
    receberia a mesma mensagem toda semana. Trinta dias e o intervalo em que uma
@@ -104,6 +135,7 @@ export function RelacionamentoPanel() {
      outro é um botão que simplesmente não faz nada, e o aviso fica onde ela já
      está olhando. */
   const [confirmandoPadrao, setConfirmandoPadrao] = useState(false);
+  const [abaModelo, setAbaModelo] = useState<CampoModelo>("comData");
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -428,45 +460,41 @@ export function RelacionamentoPanel() {
             “seu último” conforme o que vende. Clique num marcador para inserir no fim do texto.
           </p>
 
-          {(
-            [
-              {
-                campo: "comData" as const,
-                titulo: "Com ocasião",
-                ajuda: "Usada quando você escolhe falar da data comemorativa. A linha com {data} some se não houver data por perto.",
-              },
-              {
-                campo: "semData" as const,
-                titulo: "Sem ocasião",
-                ajuda: "Para reaproximar quem sumiu, sem gancho nenhum.",
-              },
-              {
-                campo: "repetir" as const,
-                titulo: "Repetir o presente",
-                ajuda: "Usada na aba Por ocasião, para oferecer de novo o que ela já mandou. Aqui valem {destinatario} e {ano}.",
-              },
-            ]
-          ).map((m) => (
-            <div key={m.campo} className="space-y-2">
-              <div>
-                <p className="text-sm font-semibold text-foreground">{m.titulo}</p>
+          {/* Abas, e nao os tres empilhados: com as previas, o dialogo virava
+              uma rolagem sem fim e nenhuma das mensagens dava para ler inteira.
+              Mesmo padrao do Follow-up, que ja separa avaliacao de presente da
+              de consumo proprio. */}
+          <Tabs value={abaModelo} onValueChange={(v) => setAbaModelo(v as CampoModelo)}>
+            <TabsList className="grid h-auto w-full min-w-0 grid-cols-3 gap-1 rounded-xl bg-transparent p-0">
+              {MODELOS_UI.map((m) => (
+                <TabsTrigger
+                  key={m.campo}
+                  value={m.campo}
+                  className="min-w-0 gap-1.5 whitespace-normal rounded-xl border border-transparent bg-[#f7e5e1] px-2 py-2.5 text-center text-xs leading-tight text-[var(--wine)] opacity-45 shadow-none transition-all hover:opacity-70 data-[state=active]:border-[var(--wine)] data-[state=active]:bg-[var(--wine)] data-[state=active]:text-white data-[state=active]:opacity-100 data-[state=active]:shadow-sm sm:gap-2 sm:text-sm"
+                >
+                  <m.icon className="h-4 w-4" />
+                  {m.titulo}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {MODELOS_UI.map((m) => (
+              <TabsContent key={m.campo} value={m.campo} className="mt-3 space-y-2">
                 <p className="t-support text-muted-foreground">{m.ajuda}</p>
-              </div>
 
-              <Textarea
-                value={rascunho[m.campo]}
-                onChange={(e) => setRascunho((v) => ({ ...v, [m.campo]: e.target.value }))}
-                rows={4}
-              />
+                <Textarea
+                  value={rascunho[m.campo]}
+                  onChange={(e) => setRascunho((v) => ({ ...v, [m.campo]: e.target.value }))}
+                  rows={4}
+                />
 
-              <div className="flex flex-wrap gap-1.5">
-                {MARCADORES.filter((x) => {
-                  if (x.chave === "{data}") return m.campo !== "semData";
-                  if (x.chave === "{destinatario}" || x.chave === "{ano}")
-                    return m.campo === "repetir";
-                  return true;
-                }).map(
-                  (x) => (
+                <div className="flex flex-wrap gap-1.5">
+                  {MARCADORES.filter((x) => {
+                    if (x.chave === "{data}") return m.campo !== "semData";
+                    if (x.chave === "{destinatario}" || x.chave === "{ano}")
+                      return m.campo === "repetir";
+                    return true;
+                  }).map((x) => (
                     <button
                       key={x.chave}
                       type="button"
@@ -478,25 +506,25 @@ export function RelacionamentoPanel() {
                     >
                       {x.chave}
                     </button>
-                  ),
-                )}
-              </div>
+                  ))}
+                </div>
 
-              {/* Prévia: editar marcador sem ver o resultado é escrever no escuro. */}
-              <div className="rounded-xl bg-[var(--cream-soft)] p-3.5">
-                <p className="t-support mb-1.5 text-muted-foreground">
-                  Como sai para {previa.nome}:
-                </p>
-                <p className="whitespace-pre-line text-sm text-[var(--admin-ink)]">
-                  {aplicarModelo(rascunho[m.campo], {
-                    ...previa,
-                    dataDiasRestantes:
-                      m.campo === "semData" ? Number.MAX_SAFE_INTEGER : previa.dataDiasRestantes,
-                  })}
-                </p>
-              </div>
-            </div>
-          ))}
+                {/* Prévia: editar marcador sem ver o resultado é escrever no escuro. */}
+                <div className="rounded-xl bg-[var(--cream-soft)] p-3.5">
+                  <p className="t-support mb-1.5 text-muted-foreground">
+                    Como sai para {previa.nome}:
+                  </p>
+                  <p className="whitespace-pre-line text-sm text-[var(--admin-ink)]">
+                    {aplicarModelo(rascunho[m.campo], {
+                      ...previa,
+                      dataDiasRestantes:
+                        m.campo === "semData" ? Number.MAX_SAFE_INTEGER : previa.dataDiasRestantes,
+                    })}
+                  </p>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
 
           {confirmandoPadrao ? (
             <div className="flex flex-col gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3.5 sm:flex-row sm:items-center">
