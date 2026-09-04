@@ -105,14 +105,6 @@ main [data-slot="table-container"] {
 
 }
 
-/* Desktop medio: busca global some antes de disputar espaco com menu e perfil. */
-@media (min-width: 1280px) and (max-width: 1535px) {
-  div[class~="bg-[var(--admin-bg)]"] > header > div:first-child > div:has(input[placeholder="Buscar no sistema..."]) {
-    display: none !important;
-  }
-
-}
-
 /* Monitores grandes */
 @media (min-width: 1536px) {
 }
