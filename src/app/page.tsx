@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import PricingSection from "@/components/PricingSection";
+import HomeTestimonials from "@/components/HomeTestimonials";
 import {
   ArrowRight,
   TrendingUp,
@@ -780,6 +781,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <HomeTestimonials />
 
       <PricingSection />
 
