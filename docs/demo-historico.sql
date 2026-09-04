@@ -111,14 +111,36 @@ begin
     raise exception 'Esta empresa não tem produto com preço. Cadastre ao menos um antes de semear.';
   end if;
 
-  if (select count(*) from public.pedidos
-      where company_id = v_company and data_entrega between v_inicio and v_fim) > 60 then
-    raise exception 'O passado já tem pedidos demais. Rode a limpeza do fim do arquivo antes de semear de novo.';
+  -- Conta só o que ESTE arquivo criou. Contando tudo, quem já tem histórico
+  -- real nunca conseguiria rodar — e seria mandado para uma limpeza que
+  -- apagaria justamente esse histórico.
+  if (select count(*) from public.pedidos p
+       where p.company_id = v_company
+         and p.data_entrega between v_inicio and v_fim
+         and p.cliente_id in (select id from public.clientes
+                               where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')) > 60 then
+    raise exception 'O passado já tem pedidos de demonstração. Rode a limpeza do fim do arquivo antes de semear de novo.';
   end if;
 
+/* ------------------------------------------------------------------------
+   COMO O SEED SABE O QUE É DELE
+
+   `company_id = v_company` NÃO delimita "o que este arquivo criou" — delimita
+   "tudo da empresa", e o dono tem clientes e pedidos DE VERDADE neste banco.
+   Sem uma marca, o seed sorteava clientes reais para pôr venda falsa no nome
+   deles, lançava entrada no caixa em cima de pedido real, e a limpeza do fim
+   apagava histórico verdadeiro.
+
+   A marca é o WhatsApp: os vinte clientes fictícios usam 48999990XX, e todo
+   pedido criado aqui pertence a um deles. Então "o que é do seed" é uma
+   consulta, não uma suposição. */
+
   -- ---------------------------------------------------------------- clientes
-  -- Mesma lista do seed do mês, com `on conflict do nothing`: se ele já rodou,
-  -- estes clientes já existem e nada é duplicado.
+  /* `on conflict do nothing` sem alvo: a idempotência vem do índice único de
+     WhatsApp por empresa, que já existe (é ele que produz a mensagem "Já existe
+     um cliente com esse WhatsApp" em pedidos.ts). Se ele um dia sair, este
+     insert passa a duplicar em silêncio — por isso a marca do seed é o próprio
+     WhatsApp, e não a quantidade de linhas. */
   insert into public.clientes (company_id, nome, whatsapp, email, bairro, cidade, ativo)
   select v_company, c.nome, c.whatsapp, c.email, c.bairro, 'Tubarão', true
   from (values
@@ -188,11 +210,14 @@ begin
     end if;
 
     for v_n in 1 .. v_qtd_dia loop
-      -- Só compra quem ainda estava ativa nesta data (ver COORTE, no topo).
+      /* Só os clientes fictícios do seed, e só quem ainda estava ativa nesta
+         data (ver COORTE, no topo). Sem o filtro do WhatsApp, isto sorteava
+         clientes REAIS do dono e punha venda inventada no nome deles. */
       select c.id, c.nome, c.whatsapp, c.bairro into v_cli
       from public.clientes c
       where c.company_id = v_company
         and coalesce(c.ativo, true)
+        and regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g') like '48999990%' 
         and v_dia <= case right(regexp_replace(coalesce(c.whatsapp, ''), '\D', '', 'g'), 1)
                        when '6' then v_hoje - 45     -- faixa 30 a 60
                        when '7' then v_hoje - 45
@@ -277,6 +302,10 @@ begin
   where p.company_id = v_company
     and p.recebido_em is not null
     and p.recebido_em between v_inicio and v_fim
+    -- Só pedidos do seed: sem isto, entradas falsas entravam no caixa em cima
+    -- de pedidos REAIS que ainda não tinham movimento lançado.
+    and p.cliente_id in (select id from public.clientes
+                          where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')
     and not exists (select 1 from public.movimentos m where m.pedido_id = p.id);
 
   raise notice 'Pronto: % pedidos no passado, % com ocasião marcada.',
@@ -317,18 +346,33 @@ end $$;
 --    group by 1, 2 order by 2 desc, 3 desc;
 --
 -- ============================================================================
--- LIMPEZA — apaga só o passado que este arquivo criou, preservando o mês
--- corrente. Troque COLE_AQUI nas quatro linhas.
+-- LIMPEZA — apaga SÓ o que este arquivo criou.
+--
+-- O recorte é pelos clientes fictícios (WhatsApp 48999990XX), e não por data:
+-- apagar "tudo antes do mês corrente" levaria junto as vendas REAIS antigas do
+-- dono, sem volta. Troque COLE_AQUI nas quatro linhas.
 -- ============================================================================
 -- begin;
+--   with demo as (
+--     select id from public.clientes
+--      where company_id = 'COLE_AQUI'
+--        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%'
+--   )
 --   delete from public.movimentos
 --    where company_id = 'COLE_AQUI'
---      and pedido_id in (
---        select id from public.pedidos
---         where company_id = 'COLE_AQUI'
---           and data_entrega < date_trunc('month', current_date)::date);
+--      and pedido_id in (select id from public.pedidos
+--                         where company_id = 'COLE_AQUI'
+--                           and cliente_id in (select id from demo));
 --
 --   delete from public.pedidos
 --    where company_id = 'COLE_AQUI'
---      and data_entrega < date_trunc('month', current_date)::date;
+--      and cliente_id in (
+--        select id from public.clientes
+--         where company_id = 'COLE_AQUI'
+--           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%');
+--
+--   -- Os clientes fictícios em si, se quiser limpar de vez:
+--   -- delete from public.clientes
+--   --  where company_id = 'COLE_AQUI'
+--   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%';
 -- commit;

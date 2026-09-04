@@ -95,9 +95,15 @@ begin
     raise exception 'Esta empresa não tem produto com preço. Cadastre ao menos um antes de semear.';
   end if;
 
-  if (select count(*) from public.pedidos
-      where company_id = v_company and data_entrega between v_inicio and v_fim) > 40 then
-    raise exception 'Este mês já tem pedidos demais. Rode a limpeza do fim do arquivo antes de semear de novo.';
+  -- Conta só o que ESTE arquivo criou: contando tudo, quem já tem pedido real
+  -- no mês nunca conseguiria rodar, e seria mandado para uma limpeza que
+  -- apagaria justamente esses pedidos.
+  if (select count(*) from public.pedidos p
+       where p.company_id = v_company
+         and p.data_entrega between v_inicio and v_fim
+         and p.cliente_id in (select id from public.clientes
+                               where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')) > 40 then
+    raise exception 'Este mês já tem pedidos de demonstração. Rode a limpeza do fim do arquivo antes de semear de novo.';
   end if;
 
   -- ---------------------------------------------------------------- clientes
@@ -138,10 +144,15 @@ begin
     v_qtd_dia := 3 + floor(random() * 5)::int;   -- 3 a 7
 
     for v_n in 1 .. v_qtd_dia loop
+      /* SÓ os clientes fictícios do seed. `company_id` sozinho não delimita o
+         que este arquivo criou — delimita a empresa inteira, e o dono tem
+         clientes DE VERDADE aqui. Sem este filtro, o seed sorteava gente real
+         e punha venda inventada no nome dela. */
       select id, nome, whatsapp, bairro into v_cli
       from public.clientes
       where company_id = v_company
         and coalesce(ativo, true)
+        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%'
         -- Coorte: quem "sumiu" nao compra no mes corrente. Mesma regra do
         -- docs/demo-historico.sql — se mudar la, mude aqui.
         and right(regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g'), 1)
@@ -246,6 +257,10 @@ begin
   where p.company_id = v_company
     and p.recebido_em is not null
     and p.recebido_em between v_inicio and v_fim
+    -- Só pedidos do seed: sem isto, entradas falsas entravam no caixa em cima
+    -- de pedidos REAIS que ainda não tinham movimento lançado.
+    and p.cliente_id in (select id from public.clientes
+                          where company_id = v_company and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%')
     and not exists (select 1 from public.movimentos m where m.pedido_id = p.id);
 
   -- ----------------------------------------------------- tipos de despesa
@@ -331,24 +346,33 @@ end $$;
 
 
 -- ============================================================================
--- LIMPEZA — apaga só o que este arquivo criou. Rode antes de semear de novo.
--- Troque COLE_AQUI nas quatro linhas.
+-- LIMPEZA — apaga SÓ o que este arquivo criou.
+--
+-- O recorte é pelos clientes fictícios (WhatsApp 48999990XX), e não por data:
+-- apagar "tudo antes do mês corrente" levaria junto as vendas REAIS antigas do
+-- dono, sem volta. Troque COLE_AQUI nas quatro linhas.
 -- ============================================================================
 -- begin;
+--   with demo as (
+--     select id from public.clientes
+--      where company_id = 'COLE_AQUI'
+--        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%'
+--   )
 --   delete from public.movimentos
 --    where company_id = 'COLE_AQUI'
 --      and pedido_id in (select id from public.pedidos
 --                         where company_id = 'COLE_AQUI'
---                           and data_entrega >= date_trunc('month', current_date)::date);
---
---   delete from public.movimentos
---    where company_id = 'COLE_AQUI'
---      and id in (select movimento_id from public.contas_a_pagar
---                  where company_id = 'COLE_AQUI' and movimento_id is not null);
---
---   delete from public.contas_a_pagar where company_id = 'COLE_AQUI';
+--                           and cliente_id in (select id from demo));
 --
 --   delete from public.pedidos
 --    where company_id = 'COLE_AQUI'
---      and data_entrega >= date_trunc('month', current_date)::date;
+--      and cliente_id in (
+--        select id from public.clientes
+--         where company_id = 'COLE_AQUI'
+--           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%');
+--
+--   -- Os clientes fictícios em si, se quiser limpar de vez:
+--   -- delete from public.clientes
+--   --  where company_id = 'COLE_AQUI'
+--   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g') like '48999990%';
 -- commit;
