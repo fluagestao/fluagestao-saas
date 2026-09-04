@@ -394,8 +394,6 @@ export function DashboardPanel() {
   const [dados, setDados] = useState<DashboardVendas | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [aba, setAba] = useState<"produtos" | "adicionais">("produtos");
-  const [categoriaSel, setCategoriaSel] = useState<string | null>(null);
-  const [formaSel, setFormaSel] = useState<string | null>(null);
   const [metas, setMetas] = useState<Meta[]>([]);
   const [metaAberta, setMetaAberta] = useState(false);
   const [metaTexto, setMetaTexto] = useState("");
