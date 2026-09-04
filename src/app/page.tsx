@@ -148,7 +148,7 @@ function ShowcaseSalesPreview() {
         <div>
           <span>#1842</span>
           <strong>Ana Paula</strong>
-          <em className="site">Site</em>
+          <em className="whats">WhatsApp</em>
           <span>Hoje · 14:00</span>
           <b>R$ 259,90</b>
           <i className="production">Em produção</i>
@@ -164,7 +164,7 @@ function ShowcaseSalesPreview() {
         <div>
           <span>#1840</span>
           <strong>Camila Ribeiro</strong>
-          <em className="site">Site</em>
+          <em className="whats">WhatsApp</em>
           <span>Amanhã · 09:00</span>
           <b>R$ 329,90</b>
           <i className="waiting">Aguardando</i>

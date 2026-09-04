@@ -166,11 +166,9 @@ function DemoScreen() {
             <span className="active">Vendas</span>
             <span>Dashboard</span>
             <span>Financeiro</span>
+            <span>Custo</span>
+            <span>Estoque</span>
             <span>Cadastros</span>
-          </div>
-
-          <div className="saas-demo-search">
-            Buscar no sistema...
           </div>
         </div>
 
@@ -235,7 +233,7 @@ function DemoScreen() {
               </span>
 
               <span>
-                <i className="site">Site</i>
+                <i className="whats">WhatsApp</i>
               </span>
 
               <span>R$ 259,90</span>
@@ -316,7 +314,7 @@ function DemoScreen() {
               </span>
 
               <span>
-                <i className="site">Site</i>
+                <i className="whats">WhatsApp</i>
               </span>
 
               <span>R$ 414,90</span>
