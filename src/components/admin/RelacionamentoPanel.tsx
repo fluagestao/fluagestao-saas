@@ -1,14 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HeartHandshake, MessageCircle } from "lucide-react";
+import { Check, HeartHandshake, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataCurta } from "@/lib/prazo";
-import { carregarRelacionamento, type ClienteParado } from "@/lib/relacionamento";
+import {
+  carregarRelacionamento,
+  desfazerContato,
+  marcarContatado,
+  type ClienteParado,
+} from "@/lib/relacionamento";
 import { linkWhatsApp, montarMensagem, tempoParado } from "@/lib/relacionamento-mensagem";
 import { cn } from "@/lib/utils";
 
@@ -39,6 +44,10 @@ export function RelacionamentoPanel() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [faixa, setFaixa] = useState<FaixaId>("30");
+  /* Quem foi chamada AGORA continua na tela, marcada, ate a proxima recarga.
+     Sumir na hora esconderia o que ela acabou de fazer, e tiraria o caminho de
+     volta se ela abriu o WhatsApp e desistiu de mandar. */
+  const [chamadas, setChamadas] = useState<Set<string>>(new Set());
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -75,7 +84,7 @@ export function RelacionamentoPanel() {
     [clientes],
   );
 
-  function chamar(c: ClienteParado) {
+  async function chamar(c: ClienteParado) {
     const mensagem = montarMensagem({
       nome: c.nome,
       dias: c.diasParado,
@@ -89,7 +98,37 @@ export function RelacionamentoPanel() {
       toast.error("Essa cliente não tem WhatsApp cadastrado.");
       return;
     }
+    /* Abre ANTES de gravar: o navegador so trata a janela como pedida pela
+       pessoa se ela nascer dentro do clique. Depois de um await, o bloqueador
+       de pop-up engole a aba e a conversa nunca abre. */
     window.open(link, "_blank", "noopener,noreferrer");
+
+    setChamadas((atual) => new Set(atual).add(c.id));
+    try {
+      await marcarContatado({ data: { id: c.id } });
+    } catch (e) {
+      setChamadas((atual) => {
+        const novo = new Set(atual);
+        novo.delete(c.id);
+        return novo;
+      });
+      toast.error(mensagemDeErro(e, "marcar a cliente como chamada"));
+    }
+  }
+
+  async function desfazer(c: ClienteParado) {
+    setChamadas((atual) => {
+      const novo = new Set(atual);
+      novo.delete(c.id);
+      return novo;
+    });
+    try {
+      await desfazerContato({ data: { id: c.id } });
+      toast.success(`${c.nome} volta para a lista.`);
+    } catch (e) {
+      setChamadas((atual) => new Set(atual).add(c.id));
+      toast.error(mensagemDeErro(e, "desfazer"));
+    }
   }
 
   return (
@@ -183,10 +222,24 @@ export function RelacionamentoPanel() {
                 <p className="t-support text-muted-foreground sm:hidden">
                   última em {formatarDataCurta(c.ultimaCompraEm)}
                 </p>
-                <Button onClick={() => chamar(c)} className="h-10 shrink-0">
-                  <MessageCircle className="mr-1.5 h-4 w-4" />
-                  Chamar
-                </Button>
+                {chamadas.has(c.id) ? (
+                  <span className="t-support flex shrink-0 items-center gap-2 text-[var(--green-ink)]">
+                    <Check className="h-4 w-4" />
+                    Chamada hoje
+                    <button
+                      type="button"
+                      onClick={() => desfazer(c)}
+                      className="font-semibold text-[var(--terracotta)] underline underline-offset-2"
+                    >
+                      desfazer
+                    </button>
+                  </span>
+                ) : (
+                  <Button onClick={() => chamar(c)} className="h-10 shrink-0">
+                    <MessageCircle className="mr-1.5 h-4 w-4" />
+                    Chamar
+                  </Button>
+                )}
               </div>
             </li>
           ))}

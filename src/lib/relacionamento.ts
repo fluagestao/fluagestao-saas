@@ -1,7 +1,9 @@
 "use server";
 
+import { z } from "zod";
+
 import { requireCompany } from "@/lib/company-context.server";
-import { hojeISO } from "@/lib/prazo";
+import { hojeISO, somarDias } from "@/lib/prazo";
 import type { ItemPedido } from "@/lib/vendas";
 
 /**
@@ -20,6 +22,13 @@ import type { ItemPedido } from "@/lib/vendas";
 
 /** Teto das duas consultas. Mesmo valor que o Follow-up usa. */
 const TETO = 5000;
+
+/* Descanso depois de chamar. Sem ele a lista se repete: quem esta parado ha 80
+   dias continua parado ha 81 amanha, entao reapareceria todo dia e receberia a
+   mesma mensagem toda semana — destruindo o relacionamento que a aba existe
+   para recuperar. Trinta dias e o intervalo em que uma segunda mensagem ainda
+   soa como insistencia, e nao como lembrete. */
+const DESCANSO_DIAS = 30;
 
 /** Pedido em aberto: ela ainda vai receber. Não é hora de chamar de volta. */
 const EM_ABERTO = new Set(["novo", "producao", "pronto"]);
@@ -71,7 +80,7 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
   const [clientesRes, pedidosRes] = await Promise.all([
     supabase
       .from("clientes")
-      .select("id, nome, whatsapp")
+      .select("id, nome, whatsapp, contatado_em")
       .eq("company_id", companyId)
       .eq("ativo", true)
       .limit(TETO),
@@ -131,9 +140,15 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
   }
 
   const clientes: ClienteParado[] = [];
+  const limiteDescanso = somarDias(hoje, -DESCANSO_DIAS);
 
   for (const c of clientesRes.data ?? []) {
     const id = String(c.id);
+
+    // Chamada ha pouco: sai da lista ate o descanso terminar.
+    const contatada = (c.contatado_em as string | null) ?? null;
+    if (contatada && contatada >= limiteDescanso) continue;
+
     // Tem pedido a caminho: receber "faz tempo que você não compra" enquanto
     // espera a entrega mostra um sistema que não sabe o que está fazendo.
     if (comAberto.has(id)) continue;
@@ -167,4 +182,49 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
   clientes.sort((a, b) => b.diasParado - a.diasParado);
 
   return { clientes };
+}
+
+const idSchema = z.object({ id: z.string().uuid() });
+
+/**
+ * Carimba que a cliente foi chamada hoje.
+ *
+ * Registra a ABERTURA da conversa, não o envio — o Flua não manda a mensagem,
+ * e afirmar que mandou seria inventar. É o limite do que este dado pode dizer
+ * com honestidade, e é o bastante para o que a lista precisa saber: já falei
+ * com essa pessoa recentemente?
+ */
+export async function marcarContatado(input: { data: unknown }) {
+  const { id } = idSchema.parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({ contatado_em: hojeISO() })
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error) throw error;
+  return { ok: true as const };
+}
+
+/**
+ * Tira o carimbo.
+ *
+ * Existe porque abrir o WhatsApp e desistir de mandar é comum, e sem desfazer
+ * a cliente sumiria da tela por trinta dias por causa de um clique — sem
+ * nenhum caminho de volta, já que é justamente desta lista que ela some.
+ */
+export async function desfazerContato(input: { data: unknown }) {
+  const { id } = idSchema.parse(input.data);
+  const { supabase, companyId } = await requireCompany();
+
+  const { error } = await supabase
+    .from("clientes")
+    .update({ contatado_em: null })
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  if (error) throw error;
+  return { ok: true as const };
 }
