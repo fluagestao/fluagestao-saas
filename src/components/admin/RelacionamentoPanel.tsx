@@ -23,7 +23,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ocasiaoPorSlug, proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
+import { carregarPedidosDoCliente } from "@/lib/pedidos";
 import { formatarDataCurta } from "@/lib/prazo";
+import type { Pedido } from "@/lib/vendas";
 import {
   carregarModeloRelacionamento,
   carregarRelacionamento,
@@ -136,6 +138,8 @@ export function RelacionamentoPanel() {
      está olhando. */
   const [confirmandoPadrao, setConfirmandoPadrao] = useState(false);
   const [abaModelo, setAbaModelo] = useState<CampoModelo>("comData");
+  const [historicoDe, setHistoricoDe] = useState<ClienteParado | null>(null);
+  const [historico, setHistorico] = useState<Pedido[] | null>(null);
   /* Filtros que SOMAM com a faixa: tempo parado responde "quem sumiu", ocasião
      responde "quem já comprou nessa data" e o período recorta "quando". As três
      perguntas são independentes, então nenhuma anula a outra. */
@@ -242,6 +246,21 @@ export function RelacionamentoPanel() {
     };
   }, [porFaixa, clientes, proxima]);
 
+  /* Reaproveita a consulta que a tela de Clientes já usa. Como ela faz
+     select("*") e normalizarPedido só espalha a linha, ocasião e presenteado
+     vieram de graça assim que as colunas passaram a existir. */
+  async function abrirHistorico(c: ClienteParado) {
+    setHistoricoDe(c);
+    setHistorico(null);
+    try {
+      const r = await carregarPedidosDoCliente({ data: { cliente_id: c.id } });
+      setHistorico(r.pedidos);
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "carregar o histórico"));
+      setHistoricoDe(null);
+    }
+  }
+
   async function salvarModelo() {
     setSalvando(true);
     try {
@@ -256,17 +275,33 @@ export function RelacionamentoPanel() {
     }
   }
 
-  async function chamar(c: ClienteParado, tipo: "comData" | "semData") {
+  async function chamar(c: ClienteParado, tipo: CampoModelo) {
+    /* "Repetir" fala de uma compra ESPECÍFICA — a última com ocasião —, não do
+       produto que ela costuma levar nem da próxima data do calendário. Por isso
+       os três campos abaixo trocam de fonte conforme o modelo. */
+    const rep = tipo === "repetir" ? c.ultimaOcasiao : null;
+    const ocasiaoRep = rep ? ocasiaoPorSlug(rep.slug) : null;
+
     const mensagem = aplicarModelo(modelos[tipo], {
       nome: c.nome,
       dias: c.diasParado,
-      produto: c.produtoFrequente,
-      dataNome: proxima.nome,
-      dataArtigo: proxima.artigo,
+      produto: rep ? (rep.produto ?? "um presente") : c.produtoFrequente,
+      dataNome: ocasiaoRep?.label ?? proxima.nome,
+      dataArtigo: ocasiaoRep?.artigo ?? proxima.artigo,
+      destinatario: rep?.destinatario ?? null,
+      ano: rep?.ano ?? null,
       /* No modelo "sem ocasião" a data é forçada para longe: assim, se ela
          tiver deixado um {data} lá dentro, a linha cai fora em vez de citar o
          Natal numa mensagem que existe justamente para não citar. */
-      dataDiasRestantes: tipo === "semData" ? Number.MAX_SAFE_INTEGER : proxima.diasRestantes,
+      /* Em "repetir" a data É o assunto, então nunca some. Em "sem ocasião"
+         ela é empurrada para longe, para a linha cair fora caso a pessoa tenha
+         deixado um {data} no texto dela. */
+      dataDiasRestantes:
+        tipo === "repetir"
+          ? 0
+          : tipo === "semData"
+            ? Number.MAX_SAFE_INTEGER
+            : proxima.diasRestantes,
     });
 
     const link = linkWhatsApp(c.whatsapp, mensagem);
@@ -445,7 +480,8 @@ export function RelacionamentoPanel() {
           {porFaixa.map((c) => (
             <li
               key={c.id}
-              className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-[var(--admin-border)] bg-card px-4 py-3 shadow-[var(--shadow-soft)]"
+              onClick={() => abrirHistorico(c)}
+              className="flex cursor-pointer flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-[var(--admin-border)] bg-card px-4 py-3 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--terracotta)]"
             >
               <div className="w-full min-w-0 sm:w-auto sm:flex-1">
                 <p className="t-item truncate text-foreground">{c.nome}</p>
@@ -475,7 +511,11 @@ export function RelacionamentoPanel() {
                 </div>
               </div>
 
-              <div className="flex w-full items-center justify-between gap-3 sm:w-auto">
+              {/* Para o clique aqui: o botão e o menu não devem abrir o card. */}
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="flex w-full items-center justify-between gap-3 sm:w-auto"
+              >
                 <p className="t-support text-muted-foreground sm:hidden">
                   última em {formatarDataCurta(c.ultimaCompraEm)}
                 </p>
@@ -502,29 +542,60 @@ export function RelacionamentoPanel() {
                         chamada há {diasDesde(c.contatadoEm)}d
                       </span>
                     )}
-                    {temDataPerto ? (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button className="h-10 shrink-0">
+                    {(() => {
+                      /* As opções são por LINHA, não por tela: "repetir" só
+                         existe para quem tem compra com ocasião, e falar da
+                         data comemorativa só faz sentido se ela estiver perto.
+                         Com uma opção só, o menu vira ruído e o botão manda
+                         direto. */
+                      const rep = c.ultimaOcasiao;
+                      const ocRep = rep ? ocasiaoPorSlug(rep.slug) : null;
+                      const opcoes: { tipo: CampoModelo; label: string }[] = [];
+
+                      if (temDataPerto) {
+                        opcoes.push({
+                          tipo: "comData",
+                          label: `Falando d${proxima.artigo === "a" ? "a" : "o"} ${proxima.nome}`,
+                        });
+                      }
+                      opcoes.push({ tipo: "semData", label: "Sem ocasião, só reaproximar" });
+                      if (rep && ocRep) {
+                        opcoes.push({
+                          tipo: "repetir",
+                          label: `Repetir o presente d${ocRep.artigo === "a" ? "a" : "o"} ${ocRep.label} de ${rep.ano}`,
+                        });
+                      }
+
+                      if (opcoes.length === 1) {
+                        return (
+                          <Button
+                            onClick={() => chamar(c, opcoes[0].tipo)}
+                            className="h-10 shrink-0"
+                          >
                             <MessageCircle className="mr-1.5 h-4 w-4" />
                             Chamar
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-60">
-                          <DropdownMenuItem onClick={() => chamar(c, "comData")}>
-                            Falando d{proxima.artigo === "a" ? "a" : "o"} {proxima.nome}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => chamar(c, "semData")}>
-                            Sem ocasião, só reaproximar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    ) : (
-                      <Button onClick={() => chamar(c, "semData")} className="h-10 shrink-0">
-                        <MessageCircle className="mr-1.5 h-4 w-4" />
-                        Chamar
-                      </Button>
-                    )}
+                        );
+                      }
+
+                      return (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button className="h-10 shrink-0">
+                              <MessageCircle className="mr-1.5 h-4 w-4" />
+                              Chamar
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-72">
+                            {opcoes.map((o) => (
+                              <DropdownMenuItem key={o.tipo} onClick={() => chamar(c, o.tipo)}>
+                                {o.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
@@ -532,6 +603,67 @@ export function RelacionamentoPanel() {
           ))}
         </ul>
       )}
+
+      <Dialog open={historicoDe != null} onOpenChange={(a) => !a && setHistoricoDe(null)}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader className="text-left">
+            <DialogTitle>{historicoDe?.nome}</DialogTitle>
+            <DialogDescription>
+              {historicoDe
+                ? `${historicoDe.compras} ${historicoDe.compras === 1 ? "compra" : "compras"} · ${moeda(historicoDe.totalGasto)} · parada há ${tempoParado(historicoDe.diasParado)}`
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          {historico == null ? (
+            <Carregando texto="carregando o histórico…" />
+          ) : historico.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma compra registrada.</p>
+          ) : (
+            <ul className="max-h-[55dvh] space-y-2 overflow-y-auto pr-1">
+              {historico.map((p) => {
+                const oc = ocasiaoPorSlug(p.ocasiao);
+                return (
+                  <li
+                    key={p.id}
+                    className="rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-3.5 py-2.5"
+                  >
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                      <p className="t-item min-w-0 flex-1 truncate text-foreground">
+                        {p.itens?.map((i) => i.nome).join(", ") || "pedido"}
+                      </p>
+                      <p className="t-body shrink-0 tabular-nums text-foreground">
+                        {moeda(p.total)}
+                      </p>
+                    </div>
+                    <p className="t-support mt-0.5 text-muted-foreground">
+                      {formatarDataCurta(
+                        String(p.data_entrega ?? p.created_at ?? "").slice(0, 10),
+                      )}
+                      {/* Sem ocasião aparece como "sem ocasião", não some: uma
+                          lista que esconde parte das compras mente sobre o total. */}
+                      {" · "}
+                      {oc ? (
+                        <span className="font-semibold text-[var(--wine)]">{oc.label}</span>
+                      ) : (
+                        "sem ocasião"
+                      )}
+                      {p.destinatario_nome ? ` · para ${p.destinatario_nome}` : ""}
+                      {p.ocasiao && p.ocasiao_confirmada === false ? " · marcado pelo sistema" : ""}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoricoDe(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={ajustesAberto} onOpenChange={setAjustesAberto}>
         <DialogContent className="sm:max-w-2xl">

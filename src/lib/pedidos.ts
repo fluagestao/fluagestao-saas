@@ -778,7 +778,7 @@ export async function carregarDashboard(input: { data: unknown }) {
     await Promise.all([
       supabase
         .from("pedidos")
-        .select("itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status")
+        .select("cliente_id, itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status")
         .eq("company_id", companyId)
         .neq("status", "cancelado")
         .limit(3000),
@@ -857,6 +857,45 @@ export async function carregarDashboard(input: { data: unknown }) {
     String(pedido.data_entrega ?? "") || String(pedido.created_at ?? "").slice(0, 10) || "";
 
   const dentro = (dia: string) => Boolean(dia) && dia >= filtro.de && dia <= filtro.ate;
+
+  /* CLIENTES NOVAS x RECORRENTES.
+   *
+   * "Nova" e quem fez a PRIMEIRA compra dentro do periodo — nao quem foi
+   * cadastrada nele. A diferenca importa: cadastro pode ter sido feito meses
+   * antes, no dia em que ela pediu orcamento, e contar isso como aquisicao
+   * inflaria o numero justamente no mes em que a pessoa nao comprou.
+   *
+   * Da para responder sem consulta nova porque a query ja traz o historico
+   * inteiro, nao so o periodo: a primeira compra de cada cliente sai do mesmo
+   * conjunto. Conta pelo dia da producao, a mesma regua das unidades. */
+  const primeiraCompra = new Map<string, string>();
+  for (const pedido of pedidosRes.data ?? []) {
+    const id = (pedido as { cliente_id?: string | null }).cliente_id;
+    if (!id) continue;
+    const dia = diaDaProducao(pedido as LinhaPedido);
+    if (!dia) continue;
+    const atual = primeiraCompra.get(id);
+    if (!atual || dia < atual) primeiraCompra.set(id, dia);
+  }
+
+  const compraramNoPeriodo = new Set<string>();
+  for (const pedido of pedidosRes.data ?? []) {
+    const id = (pedido as { cliente_id?: string | null }).cliente_id;
+    if (!id) continue;
+    if (dentro(diaDaProducao(pedido as LinhaPedido))) compraramNoPeriodo.add(id);
+  }
+
+  let clientesNovos = 0;
+  for (const id of compraramNoPeriodo) {
+    const primeira = primeiraCompra.get(id);
+    if (primeira && dentro(primeira)) clientesNovos += 1;
+  }
+
+  const clientes = {
+    novos: clientesNovos,
+    recorrentes: compraramNoPeriodo.size - clientesNovos,
+    total: compraramNoPeriodo.size,
+  };
 
   const todos = pedidosRes.data ?? [];
   const noPeriodo = todos.filter(
@@ -1141,6 +1180,7 @@ export async function carregarDashboard(input: { data: unknown }) {
       id: catalogo.id,
       nome: catalogo.nome,
     })),
+    clientes,
   };
 
   return resultado;

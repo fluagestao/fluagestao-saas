@@ -39,6 +39,11 @@ export type MesDaSerie = {
 };
 
 export type DashboardVendas = {
+  /* Novas x recorrentes. "Nova" e quem fez a PRIMEIRA compra dentro do
+     periodo — nao quem foi cadastrada nele: cadastro feito meses antes, no dia
+     do orcamento, inflaria a aquisicao justo no mes em que a pessoa nao
+     comprou. */
+  clientes: { novos: number; recorrentes: number; total: number };
   totalVendido: number;
   totalPedidos: number;
   ticketMedio: number;

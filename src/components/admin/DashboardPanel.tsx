@@ -497,6 +497,19 @@ export function DashboardPanel() {
                   : undefined
               }
             />
+            {/* "Nova" e quem comprou pela PRIMEIRA vez no periodo — nao quem foi
+                cadastrada nele. O numero grande e a aquisicao, porque e sobre
+                ela que se decide investir; a recompra vem na nota, junto com a
+                fatia, que e o que diz se a base esta girando ou sendo trocada. */}
+            <Cartao
+              titulo="Clientes novas"
+              valor={String(dados.clientes.novos)}
+              nota={
+                dados.clientes.total
+                  ? `${dados.clientes.recorrentes} recorrente(s) · ${Math.round((dados.clientes.novos / dados.clientes.total) * 100)}% do período`
+                  : "ninguém comprou no período"
+              }
+            />
           </div>
 
           <div className="mt-3">
