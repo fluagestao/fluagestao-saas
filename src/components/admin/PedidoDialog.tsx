@@ -25,6 +25,7 @@ import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { MAX_LINHAS_CARTAO } from "@/lib/pedidos-schema";
 import { formatCelular, formatCep } from "@/lib/formato";
 import { carregarBairros } from "@/lib/bairros";
+import { ocasiaoSugerida, ocasioesDisponiveis } from "@/lib/datas-comemorativas";
 import { acharBairro, calcularFrete, type Bairro } from "@/lib/frete";
 import { ClienteDialog } from "./ClientesView";
 import { BuscaAdicionar } from "./BuscaAdicionar";
@@ -33,6 +34,7 @@ import {
   type CategoriaRapida,
 } from "./QuickProductDialog";
 import { mensagemDeErro } from "@/lib/erros";
+import { cn } from "@/lib/utils";
 import {
   STATUS_PEDIDO,
   formatBRL,
@@ -120,6 +122,11 @@ export function PedidoDialog({
   const [endereco, setEndereco] = useState(pedido?.endereco ?? "");
   const [bairro, setBairro] = useState(pedido?.bairro ?? "");
   const [dataEntrega, setDataEntrega] = useState(pedido?.data_entrega ?? "");
+  /* Null = ninguem escolheu ainda. Diferente de "sem ocasiao": este campo e
+     opcional de proposito — ele existe para uma consulta que roda duas vezes
+     por ano, e o pedido e preenchido com a cliente no telefone. Obrigatorio
+     aqui seria atrito no pior momento possivel. */
+  const [ocasiao, setOcasiao] = useState<string | null>(pedido?.ocasiao ?? null);
   const janelaSalva = pedido?.janela_entrega ?? "";
   const janelaListada = (JANELAS as readonly string[]).includes(janelaSalva);
   const [janela, setJanela] = useState(janelaListada ? janelaSalva : janelaSalva ? "Outro" : "");
@@ -250,6 +257,18 @@ export function PedidoDialog({
   const ehRetirada = tipo === "retirada";
   const bairroSel = bairros.find((b) => b.id === bairroId) ?? null;
   const freteCalc = calcularFrete(bairroSel, dataEntrega || null, adicionalDomingo);
+
+  /* Entrega perto de uma data comemorativa quase sempre E aquela data. O chip
+     ja aparece marcado e ela so confirma — no caso comum, zero toque. */
+  const sugerida = useMemo(() => ocasiaoSugerida(dataEntrega || null), [dataEntrega]);
+  const ocasiaoEfetiva = ocasiao ?? sugerida?.slug ?? null;
+  const opcoesOcasiao = useMemo(() => {
+    const base = ocasioesDisponiveis(Number(dataEntrega?.slice(0, 4)) || undefined);
+    /* A sugerida vem primeiro para cair debaixo do polegar; o resto segue a
+       ordem do ano. Sem duplicar quando ela ja esta na lista. */
+    if (!sugerida) return base;
+    return [sugerida, ...base.filter((o) => o.slug !== sugerida.slug)];
+  }, [dataEntrega, sugerida]);
   const taxaNum = ehRetirada ? null : taxaManual || !freteCalc ? paraNumero(taxa) : freteCalc.total;
 
   // Bairro ou data mudou: refaz a conta, a menos que a taxa esteja assumida
@@ -330,6 +349,11 @@ export function PedidoDialog({
           endereco: endereco.trim() || null,
           bairro: bairro.trim() || null,
           data_entrega: dataEntrega || null,
+          ocasiao: ocasiaoEfetiva,
+          /* Confirmada porque ela VIU na tela: ou escolheu, ou salvou com a
+             sugestao a mostra. O false fica reservado para o preenchimento
+             retroativo, onde ninguem olhou. */
+          ocasiao_confirmada: ocasiaoEfetiva != null,
           janela_entrega: janela === "Outro" ? janelaOutro.trim() || null : janela || null,
           forma_pagamento:
             pagamento === "Outro" ? pagamentoOutro.trim() || null : pagamento || null,
@@ -803,6 +827,39 @@ export function PedidoDialog({
               />
             )}
           </Campo>
+          <div className="sm:col-span-2">
+            <p className="mb-1.5 text-sm font-medium text-foreground">
+              Ocasião <span className="font-normal text-muted-foreground">(opcional)</span>
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {opcoesOcasiao.map((o) => {
+                const ativa = ocasiaoEfetiva === o.slug;
+                return (
+                  <button
+                    key={o.slug}
+                    type="button"
+                    // Clicar na que já está marcada desmarca: é como se tira
+                    // sem precisar de um chip "nenhuma" ocupando a fileira.
+                    onClick={() => setOcasiao(ativa ? null : o.slug)}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+                      ativa
+                        ? "bg-[var(--terracotta)] text-white"
+                        : "bg-[var(--cream)] text-[var(--admin-ink-soft)] hover:bg-[var(--cream-deep)]",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                );
+              })}
+            </div>
+            {sugerida && ocasiao == null && (
+              <p className="t-support mt-1.5 text-muted-foreground">
+                Sugerido pela data de entrega. Clique para trocar ou desmarcar.
+              </p>
+            )}
+          </div>
+
           <Campo label="Pagamento">
             <select
               className={campoCls}

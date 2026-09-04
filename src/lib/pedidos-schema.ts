@@ -77,6 +77,16 @@ export const pedidoManualSchema = z.object({
   destinatario_whatsapp: z.string().max(24).nullable().default(null),
   data_entrega: z.string().regex(DATA_ISO).nullable(),
   janela_entrega: z.string().max(60).nullable(),
+  /* Por que a pessoa esta comprando. Slug estavel; o rotulo sai de
+     datas-comemorativas.ts. `confirmada` separa o que alguem viu na tela do
+     palpite do preenchimento retroativo. */
+  ocasiao: z
+    .string()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/)
+    .max(40)
+    .nullable()
+    .default(null),
+  ocasiao_confirmada: z.boolean().default(false),
   forma_pagamento: z.string().max(40).nullable(),
   status: z.enum(["novo", "producao", "pronto", "entregue", "cancelado"]),
   observacao: z.string().max(1000).nullable(),

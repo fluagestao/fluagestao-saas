@@ -2,6 +2,11 @@ import { hojeISO, somarDias } from "./prazo";
 
 export type DataComemorativa = {
   nome: string;
+  /* Chave estavel gravada em pedidos.ocasiao. NUNCA derivada do nome em tempo
+     de execucao: se um dia o rotulo virar "Dia dos Irmãos", os pedidos antigos
+     precisam continuar casando. Renomear e de graca; mudar o slug parte o
+     historico ao meio, calado. */
+  slug: string;
   /* Artigo que acompanha o nome numa frase. Existe porque "o Páscoa" e "o Black
      Friday" iam para a cliente na mensagem do Relacionamento. Obrigatorio de
      proposito: quem acrescentar uma data nova e forcado a decidir. */
@@ -70,84 +75,98 @@ export function datasComemorativasDoAno(ano: number): DataComemorativa[] {
   const datas: DataComemorativa[] = [
     {
       nome: "Ano Novo",
+      slug: "ano-novo",
       artigo: "o",
       data: iso(ano, 1, 1),
       mensagem: "Antecipe kits de celebração e presentes para começar o ano.",
     },
     {
       nome: "Dia Internacional da Mulher",
+      slug: "dia-da-mulher",
       artigo: "o",
       data: iso(ano, 3, 8),
       mensagem: "Prepare presentes e campanhas para homenagear mulheres especiais.",
     },
     {
       nome: "Páscoa",
+      slug: "pascoa",
       artigo: "a",
       data: pascoa(ano),
       mensagem: "Planeje cestas, chocolates e encomendas sazonais com antecedência.",
     },
     {
       nome: "Dia das Mães",
+      slug: "dia-das-maes",
       artigo: "o",
       data: enesimoDiaDaSemana(ano, 5, 0, 2),
       mensagem: "Organize campanhas, presentes e entregas para uma das maiores datas do ano.",
     },
     {
       nome: "Dia dos Namorados",
+      slug: "dia-dos-namorados",
       artigo: "o",
       data: iso(ano, 6, 12),
       mensagem: "Prepare kits românticos, cartões e entregas com horário marcado.",
     },
     {
       nome: "Dia dos Avós",
+      slug: "dia-dos-avos",
       artigo: "o",
       data: iso(ano, 7, 26),
       mensagem: "Crie opções carinhosas de presente para avós e famílias.",
     },
     {
       nome: "Dia dos Pais",
+      slug: "dia-dos-pais",
       artigo: "o",
       data: enesimoDiaDaSemana(ano, 8, 0, 2),
       mensagem: "Antecipe combos, lembranças e campanhas para celebrar os pais.",
     },
     {
       nome: "Dia do Irmão",
+      slug: "dia-do-irmao",
       artigo: "o",
       data: iso(ano, 9, 5),
       mensagem: "Aproveite a data para divulgar presentes e pequenas surpresas.",
     },
     {
       nome: "Dia do Cliente",
+      slug: "dia-do-cliente",
       artigo: "o",
       data: iso(ano, 9, 15),
       mensagem: "Planeje ações de agradecimento, cupons e mimos para clientes.",
     },
     {
       nome: "Dia das Crianças",
+      slug: "dia-das-criancas",
       artigo: "o",
       data: iso(ano, 10, 12),
       mensagem: "Prepare campanhas, encomendas e kits especiais com antecedência.",
     },
     {
       nome: "Dia dos Professores",
+      slug: "dia-dos-professores",
       artigo: "o",
       data: iso(ano, 10, 15),
       mensagem: "Divulgue lembranças e presentes para homenagear professores.",
     },
     {
       nome: "Halloween",
+      slug: "halloween",
       artigo: "o",
       data: iso(ano, 10, 31),
       mensagem: "Planeje produtos temáticos e ações divertidas para a data.",
     },
     {
       nome: "Black Friday",
+      slug: "black-friday",
       artigo: "a",
       data: ultimoDiaDaSemana(ano, 11, 5),
       mensagem: "Organize ofertas, estoque e capacidade de entrega para a campanha.",
     },
     {
       nome: "Natal",
+      slug: "natal",
       artigo: "o",
       data: iso(ano, 12, 25),
       mensagem: "Antecipe cestas, presentes e a operação de entregas de fim de ano.",
@@ -182,9 +201,84 @@ export function proximaDataComemorativa(
 ): ProximaDataComemorativa {
   return proximasDatasComemorativas(agora, 1)[0] ?? {
     nome: "Próxima data especial",
+    slug: "proxima-data",
     artigo: "a",
     data: somarDias(hojeISO(agora), 1),
     mensagem: "Antecipe suas campanhas e encomendas para as próximas datas.",
     diasRestantes: 1,
   };
+}
+
+
+/* ------------------------------------------------------------- ocasiões ---
+   O "porquê" de um pedido. As datas do calendário já estão acima; aqui entram
+   as que não têm dia fixo e vivem o ano inteiro.
+
+   Sem cadastro de Ocasiões na tela de propósito: seria mais um lugar para
+   manter e para desalinhar. A lista do calendário já se atualiza sozinha a
+   cada ano, e estas cinco não mudam. */
+
+export type Ocasiao = { slug: string; label: string };
+
+export const OCASIOES_PESSOAIS: Ocasiao[] = [
+  { slug: "aniversario", label: "Aniversário" },
+  { slug: "casamento", label: "Casamento" },
+  { slug: "nascimento", label: "Nascimento" },
+  { slug: "agradecimento", label: "Agradecimento" },
+  { slug: "corporativo", label: "Corporativo" },
+];
+
+/** Tudo que pode ser escolhido: as datas do ano mais as perenes. */
+export function ocasioesDisponiveis(ano: number = new Date().getFullYear()): Ocasiao[] {
+  const doCalendario = datasComemorativasDoAno(ano)
+    .filter((d) => d.slug !== "proxima-data")
+    .map((d) => ({ slug: d.slug, label: d.nome }));
+
+  return [...doCalendario, ...OCASIOES_PESSOAIS];
+}
+
+/**
+ * Nome para mostrar. Slug desconhecido — de uma data que saiu da lista — vira
+ * texto legível em vez de sumir: o pedido antigo continua dizendo o que era.
+ */
+export function rotuloOcasiao(slug: string | null | undefined): string | null {
+  if (!slug) return null;
+  const achada = ocasioesDisponiveis().find((o) => o.slug === slug);
+  if (achada) return achada.label;
+  return slug.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
+/**
+ * Palpite pela data de entrega: entrega perto de uma data comemorativa quase
+ * sempre É aquela data. Serve para pré-marcar o chip no pedido e para o
+ * preenchimento retroativo — nos dois casos como sugestão, nunca como verdade.
+ */
+export function ocasiaoSugerida(
+  dataEntrega: string | null | undefined,
+  janelaDias = 10,
+): Ocasiao | null {
+  if (!dataEntrega) return null;
+  const ano = Number(dataEntrega.slice(0, 4));
+  if (!Number.isFinite(ano)) return null;
+
+  /* Olha o ano anterior e o seguinte tambem: entrega de 02/01 esta a um dia do
+     Ano Novo, que pertence ao ano de tras. */
+  const candidatas = [
+    ...datasComemorativasDoAno(ano - 1),
+    ...datasComemorativasDoAno(ano),
+    ...datasComemorativasDoAno(ano + 1),
+  ].filter((d) => d.slug !== "proxima-data");
+
+  let melhor: DataComemorativa | null = null;
+  let menor = Number.POSITIVE_INFINITY;
+
+  for (const d of candidatas) {
+    const dist = Math.abs(diasEntre(d.data, dataEntrega));
+    if (dist <= janelaDias && dist < menor) {
+      menor = dist;
+      melhor = d;
+    }
+  }
+
+  return melhor ? { slug: melhor.slug, label: melhor.nome } : null;
 }

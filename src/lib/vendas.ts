@@ -36,6 +36,10 @@ export type Pedido = {
   taxa_manual?: boolean;
   data_entrega: string | null; // YYYY-MM-DD
   janela_entrega: string | null;
+  /** Por que comprou. Slug; o rótulo vem de datas-comemorativas.ts. */
+  ocasiao?: string | null;
+  /** false = palpite do retroativo, ninguém olhou. */
+  ocasiao_confirmada?: boolean;
   forma_pagamento: string | null; // pix | cartao
   status: StatusPedido;
   observacao: string | null;

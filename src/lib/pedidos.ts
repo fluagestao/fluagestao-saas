@@ -363,6 +363,8 @@ export async function salvarPedido(input: { data: unknown }) {
     cartao_mensagem: data.cartao_mensagem,
     data_entrega: data.data_entrega,
     janela_entrega: data.janela_entrega,
+    ocasiao: data.ocasiao,
+    ocasiao_confirmada: data.ocasiao_confirmada,
     forma_pagamento: data.forma_pagamento,
     status: data.status,
     observacao: data.observacao,
