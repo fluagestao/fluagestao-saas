@@ -109,6 +109,8 @@ export function mensagemDeErro(e: unknown, contexto = "salvar"): string {
     code?: string;
     issues?: { path?: (string | number)[]; code?: string; message?: string }[];
     name?: string;
+    /** Carimbo que o React manda no lugar da mensagem. Ver o item 5. */
+    digest?: string;
   };
 
   // 1) Validação (zod), venha como objeto ou serializada em texto.
@@ -166,7 +168,41 @@ export function mensagemDeErro(e: unknown, contexto = "salvar"): string {
     return "Sem conexão com o servidor. Confira a internet e tente de novo.";
   }
 
-  // 5) Sobrou o texto original, que já é melhor que "erro".
+  /* 5) Erro de server action, redigido pelo React.
+
+     Em produção o React NÃO manda a mensagem de um Error lançado dentro de um
+     arquivo "use server": ele descarta o texto no servidor e envia só um
+     digest. No lugar da frase que a pessoa deveria ler, chega isto:
+
+       "Minified React error #441; visit https://react.dev/errors/441 for the
+        full message or use the non-minified dev environment for full errors
+        and additional helpful warnings."
+
+     São 171 caracteres, e o item 6 repassa qualquer texto com menos de 200 —
+     então a cesteira lia essa frase, em inglês, na tela. Em desenvolvimento
+     nunca aparece, porque o bundle de dev serializa a mensagem: por isso
+     passou batido.
+
+     Isto aqui estanca o vazamento, não devolve a mensagem perdida: ela morreu
+     no servidor. O conserto de verdade é RETORNAR o erro esperado em vez de
+     lançá-lo, como já foi feito em salvarCliente (pedidos.ts). Enquanto os
+     outros pontos não forem convertidos, ao menos ninguém lê inglês minificado.
+
+     O digest vai junto porque é o único fio que liga o que a pessoa viu ao que
+     está no log do servidor. Sem ele, um relato de erro não tem como ser
+     investigado. */
+  if (/minified react error/i.test(texto)) {
+    const ref = bruto.digest ? ` (código ${String(bruto.digest).slice(0, 8)})` : "";
+
+    // #441 é especificamente a exceção vinda de uma server action: quase sempre
+    // uma regra de negócio (duplicado, já pago, sem permissão). Os demais são
+    // falhas de renderização, onde mandar conferir os dados só confundiria.
+    return /#441\b/.test(texto)
+      ? `Não consegui ${contexto}. Confira os dados e veja se esse registro já não existe.${ref}`
+      : `Algo deu errado ao montar esta tela. Atualize a página e tente de novo.${ref}`;
+  }
+
+  // 6) Sobrou o texto original, que já é melhor que "erro".
   return texto.length > 2 && texto.length < 200
     ? texto
     : `Não consegui ${contexto}. Tente de novo.`;
