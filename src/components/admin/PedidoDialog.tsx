@@ -34,7 +34,6 @@ import {
   type CategoriaRapida,
 } from "./QuickProductDialog";
 import { mensagemDeErro } from "@/lib/erros";
-import { cn } from "@/lib/utils";
 import {
   STATUS_PEDIDO,
   formatBRL,
@@ -827,38 +826,25 @@ export function PedidoDialog({
               />
             )}
           </Campo>
-          <div className="sm:col-span-2">
-            <p className="mb-1.5 text-sm font-medium text-foreground">
-              Ocasião <span className="font-normal text-muted-foreground">(opcional)</span>
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {opcoesOcasiao.map((o) => {
-                const ativa = ocasiaoEfetiva === o.slug;
-                return (
-                  <button
-                    key={o.slug}
-                    type="button"
-                    // Clicar na que já está marcada desmarca: é como se tira
-                    // sem precisar de um chip "nenhuma" ocupando a fileira.
-                    onClick={() => setOcasiao(ativa ? null : o.slug)}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
-                      ativa
-                        ? "bg-[var(--terracotta)] text-white"
-                        : "bg-[var(--cream)] text-[var(--admin-ink-soft)] hover:bg-[var(--cream-deep)]",
-                    )}
-                  >
-                    {o.label}
-                  </button>
-                );
-              })}
-            </div>
+          <Campo label="Ocasião">
+            <select
+              className={campoCls}
+              value={ocasiaoEfetiva ?? ""}
+              onChange={(e) => setOcasiao(e.target.value || null)}
+            >
+              <option value="">—</option>
+              {opcoesOcasiao.map((o) => (
+                <option key={o.slug} value={o.slug}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
             {sugerida && ocasiao == null && (
               <p className="t-support mt-1.5 text-muted-foreground">
-                Sugerido pela data de entrega. Clique para trocar ou desmarcar.
+                Sugerido pela data de entrega.
               </p>
             )}
-          </div>
+          </Campo>
 
           <Campo label="Pagamento">
             <select
