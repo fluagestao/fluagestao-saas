@@ -363,7 +363,6 @@ export default function AdminClient({
               <VendasPanel
       vista={vista}
       onVista={setSubVendas}
-      empresaNome={companyName}
       abrirNovoAoMontar={initialNovoPedido}
       categorias={categorias.map((categoria) => ({
         id: categoria.id,

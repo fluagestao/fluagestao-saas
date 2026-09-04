@@ -325,14 +325,12 @@ export function VendasPanel({
   produtos,
   vista: subExterna,
   onVista,
-  empresaNome,
   abrirNovoAoMontar = false,
   categorias = [],
   onCatalogoChange,
 }: {
   produtos: ProdutoOpcao[];
   categorias?: CategoriaRapida[];
-  empresaNome: string;
   abrirNovoAoMontar?: boolean;
   onCatalogoChange?: () => void;
   /** Sub-aba escolhida na lateral. Sem ela, o painel controla sozinho. */
@@ -1093,7 +1091,7 @@ export function VendasPanel({
           {/* Celular: seis colunas nao cabem, entao a lista segue em cards. */}
           <div className="mt-3 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1 md:hidden">
             {realizadasFiltradas.map((p) => (
-              <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
+              <PedidoCard key={p.id} pedido={p} acoes={acoes} />
             ))}
           </div>
         </div>
@@ -1145,7 +1143,7 @@ export function VendasPanel({
             </h3>
             <div className="space-y-3">
               {g.pedidos.map((p) => (
-                <PedidoCard key={p.id} pedido={p} acoes={acoes} empresaNome={empresaNome} />
+                <PedidoCard key={p.id} pedido={p} acoes={acoes} />
               ))}
             </div>
           </section>

@@ -11,11 +11,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatarDataLonga } from "@/lib/prazo";
-import { toast } from "sonner";
 
 import {
   aReceber,
-  abrirWhatsappCom,
   formatBRL,
   proximoStatus,
   statusCor,
@@ -46,22 +44,17 @@ export function PedidoCard({
   acoes,
   compacto = false,
   className,
-  empresaNome = "Sua empresa",
 }: {
   pedido: Pedido;
   acoes: AcoesPedido;
   compacto?: boolean;
   className?: string;
-  empresaNome?: string;
 }) {
   const prox = proximoStatus(p.status);
+  /* O link do WhatsApp e um <a href> direto. A funcao enviar() e o
+     abrirWhatsappCom existiam para as mensagens prontas da loja — confirmacao
+     de pedido e retomada de carrinho —, que sairam junto com ela. */
   const wa = whatsappDoCliente(p.cliente_whatsapp);
-  const temWhats = Boolean(whatsappDoCliente(p.cliente_whatsapp));
-  function enviar(mensagem: string) {
-    if (!abrirWhatsappCom(p.cliente_whatsapp, mensagem)) {
-      toast.error("Esse pedido não tem um WhatsApp válido.");
-    }
-  }
 
   const atrasado = urgenciaDoPedido(p) === "atrasado";
   const naoPago = aReceber(p);
