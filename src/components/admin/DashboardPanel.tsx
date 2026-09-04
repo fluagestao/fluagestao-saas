@@ -11,9 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Target } from "lucide-react";
 import { rotuloOcasiao } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
-import { carregarMetasDoAno, removerMeta, salvarMeta, type Meta } from "@/lib/metas";
+import { carregarMetasDoAno, salvarMetasDoAno, type Meta } from "@/lib/metas";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { hojeISO } from "@/lib/prazo";
@@ -396,10 +397,14 @@ export function DashboardPanel() {
   const [aba, setAba] = useState<"produtos" | "adicionais">("produtos");
   const [metas, setMetas] = useState<Meta[]>([]);
   const [metaAberta, setMetaAberta] = useState(false);
-  const [metaTexto, setMetaTexto] = useState("");
+  /* Rascunho dos doze meses, indexado por mês. Texto e não número: o campo
+     controlado precisa aceitar o estado intermediário de quem está apagando. */
+  const [rascunhoMetas, setRascunhoMetas] = useState<Record<number, string>>({});
   const [salvandoMeta, setSalvandoMeta] = useState(false);
 
   const [anoSelecionado, mesSelecionado] = mes.split("-");
+  const anoAtual = Number(hojeISO().slice(0, 4));
+  const mesAtual = Number(hojeISO().slice(5, 7));
   const periodo = useMemo(
     () => (modo === "ano" ? anoDe(anoSelecionado) : mesDe(`${mes}-01`)),
     [modo, anoSelecionado, mes],
@@ -450,25 +455,27 @@ export function DashboardPanel() {
   const metaDoMes = metasPorMes.get(mesDaMeta) ?? null;
   const realizadoDoMes = dados?.unidades.principais ?? 0;
 
-  async function gravarMeta() {
+  async function gravarMetas() {
     setSalvandoMeta(true);
     try {
-      const bruto = Number(metaTexto.replace(/\D/g, ""));
-      const r = bruto
-        ? await salvarMeta({
-            data: { ano: Number(anoSelecionado), mes: mesDaMeta, metaCestas: bruto, observacao: null },
-          })
-        : await removerMeta({ data: { ano: Number(anoSelecionado), mes: mesDaMeta } });
-
+      const r = await salvarMetasDoAno({
+        data: {
+          ano: Number(anoSelecionado),
+          metas: Array.from({ length: 12 }, (_, i) => ({
+            mes: i + 1,
+            metaCestas: Number(rascunhoMetas[i + 1] ?? "") || null,
+          })),
+        },
+      });
       if (r?.erro) {
         toast.error(r.erro);
         return;
       }
-      toast.success(bruto ? "Meta salva." : "Meta removida.");
+      toast.success("Metas salvas.");
       setMetaAberta(false);
       await carregarMetas();
     } catch (e) {
-      toast.error(mensagemDeErro(e, "salvar a meta"));
+      toast.error(mensagemDeErro(e, "salvar as metas"));
     } finally {
       setSalvandoMeta(false);
     }
@@ -483,6 +490,25 @@ export function DashboardPanel() {
         descricao="Dinheiro conta quando entra: faturamento e ticket usam a data do pagamento. Cestas contam quando saem: a data de entrega. Cancelados ficam fora."
         acoes={
           <div className="grid w-full grid-cols-2 items-end gap-2 sm:flex sm:w-auto sm:flex-wrap">
+            <Button
+              variant="outline"
+              className="col-span-2 h-11 sm:h-9"
+              onClick={() => {
+                setRascunhoMetas(
+                  Object.fromEntries(
+                    Array.from({ length: 12 }, (_, i) => [
+                      i + 1,
+                      metasPorMes.get(i + 1) ? String(metasPorMes.get(i + 1)) : "",
+                    ]),
+                  ),
+                );
+                setMetaAberta(true);
+              }}
+            >
+              <Target className="mr-1.5 h-4 w-4" />
+              Metas de {anoSelecionado}
+            </Button>
+
             <label className="grid gap-1 text-xs text-muted-foreground">
               Período
               <div className="flex h-11 gap-1 rounded-lg border border-[var(--cream-deep)] p-0.5 sm:h-9">
@@ -600,36 +626,84 @@ export function DashboardPanel() {
       )}
 
       <Dialog open={metaAberta} onOpenChange={setMetaAberta}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           <DialogHeader className="text-left">
-            <DialogTitle>
-              Meta de {MESES_CURTOS[mesDaMeta - 1]?.toUpperCase()} de {anoSelecionado}
-            </DialogTitle>
+            <DialogTitle>Metas de {anoSelecionado}</DialogTitle>
             <DialogDescription>
-              Quantas cestas você quer entregar no mês. Conta o mesmo que o cartão “Cestas
-              entregues”: adicionais não entram.
+              Quantas cestas entregar em cada mês. Conta o mesmo que o cartão “Cestas
+              entregues” — adicionais não entram. Mês em branco fica sem meta.
             </DialogDescription>
           </DialogHeader>
 
-          <Input
-            value={metaTexto}
-            onChange={(e) => setMetaTexto(e.target.value.replace(/\D/g, ""))}
-            inputMode="numeric"
-            placeholder="Ex.: 80"
-            className="h-11"
-            autoFocus
-          />
+          {/* Os doze de uma vez: é olhando a sazonalidade do ano que se decide
+              o número de cada mês. Um a um, a pessoa fecharia e reabriria doze
+              vezes sem nunca ver o conjunto. */}
+          <ul className="max-h-[55dvh] space-y-1 overflow-y-auto pr-1">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+              const realizado = dados?.serieMensal.find((x) => x.mes === m)?.principais ?? 0;
+              const alvo = Number(rascunhoMetas[m] ?? "") || null;
+              const passou = Number(anoSelecionado) < anoAtual || (Number(anoSelecionado) === anoAtual && m < mesAtual);
 
-          <p className="t-support text-muted-foreground">
-            Deixe em branco para remover a meta deste mês.
-          </p>
+              return (
+                <li
+                  key={m}
+                  className="flex items-center gap-3 rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-3 py-2"
+                >
+                  <span className="w-10 shrink-0 text-sm font-semibold uppercase text-foreground">
+                    {MESES_CURTOS[m - 1]}
+                  </span>
+
+                  <Input
+                    value={rascunhoMetas[m] ?? ""}
+                    onChange={(e) =>
+                      setRascunhoMetas((v) => ({ ...v, [m]: e.target.value.replace(/\D/g, "") }))
+                    }
+                    inputMode="numeric"
+                    placeholder="—"
+                    className="h-9 w-20 shrink-0 bg-white text-center"
+                  />
+
+                  {/* Só mês que já passou compara: em mês corrente ou futuro o
+                      realizado ainda vai mudar, e dizer "faltam 30" no dia 2
+                      seria alarme falso. */}
+                  <span className="t-support min-w-0 flex-1 text-muted-foreground">
+                    {passou ? (
+                      alvo ? (
+                        <>
+                          <b
+                            className={
+                              realizado >= alvo
+                                ? "text-[var(--green-ink)]"
+                                : "text-[var(--terracotta)]"
+                            }
+                          >
+                            {realizado}
+                          </b>{" "}
+                          entregues ·{" "}
+                          {realizado >= alvo
+                            ? `${realizado - alvo} acima`
+                            : `${alvo - realizado} abaixo`}
+                        </>
+                      ) : (
+                        `${realizado} entregues`
+                      )
+                    ) : realizado > 0 ? (
+                      `${realizado} até agora`
+                    ) : (
+                      ""
+                    )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setMetaAberta(false)} disabled={salvandoMeta}>
               Cancelar
             </Button>
-            <Button onClick={gravarMeta} disabled={salvandoMeta}>
-              {salvandoMeta ? "Salvando…" : "Salvar"}
+            <Button onClick={gravarMetas} disabled={salvandoMeta}>
+              {salvandoMeta ? "Salvando…" : "Salvar o ano"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -717,7 +791,14 @@ export function DashboardPanel() {
                   <button
                     type="button"
                     onClick={() => {
-                      setMetaTexto(metaDoMes ? String(metaDoMes) : "");
+                      setRascunhoMetas(
+                        Object.fromEntries(
+                          Array.from({ length: 12 }, (_, i) => [
+                            i + 1,
+                            metasPorMes.get(i + 1) ? String(metasPorMes.get(i + 1)) : "",
+                          ]),
+                        ),
+                      );
                       setMetaAberta(true);
                     }}
                     className="shrink-0 text-xs font-semibold text-[var(--terracotta)] hover:text-[var(--wine)]"

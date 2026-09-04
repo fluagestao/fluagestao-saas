@@ -113,3 +113,69 @@ export async function removerMeta(input: { data: unknown }) {
   if (error) return { ok: false as const, erro: error.message };
   return { ok: true as const, erro: null };
 }
+
+/**
+ * Grava o ano inteiro de uma vez.
+ *
+ * A tela planeja os doze meses juntos — é olhando a sazonalidade que se decide
+ * o número de cada mês, e salvar um a um faria a pessoa fechar e reabrir o
+ * diálogo doze vezes. Mês deixado em branco significa "sem meta", e por isso
+ * apaga a linha em vez de gravar zero: `meta_cestas` tem check de mínimo 1, e
+ * meta zero não é uma meta.
+ */
+export async function salvarMetasDoAno(input: { data: unknown }) {
+  const { ano, metas } = z
+    .object({
+      ano: z.number().int().min(2020).max(2100),
+      metas: z
+        .array(
+          z.object({
+            mes: z.number().int().min(1).max(12),
+            metaCestas: z.number().int().nullable(),
+          }),
+        )
+        .max(12),
+    })
+    .parse(input.data);
+
+  const foraDaFaixa = metas.find(
+    (m) => m.metaCestas != null && (m.metaCestas < 1 || m.metaCestas > 100000),
+  );
+  if (foraDaFaixa) {
+    return {
+      ok: false as const,
+      erro: `A meta de cada mês precisa ficar entre 1 e 100.000 cestas. Confira o mês ${foraDaFaixa.mes}.`,
+    };
+  }
+
+  const { supabase, companyId } = await requireCompany();
+
+  const comMeta = metas.filter((m) => m.metaCestas != null);
+  const semMeta = metas.filter((m) => m.metaCestas == null).map((m) => m.mes);
+
+  if (comMeta.length) {
+    const { error } = await supabase.from("metas_mensais").upsert(
+      comMeta.map((m) => ({
+        company_id: companyId,
+        ano,
+        mes: m.mes,
+        meta_cestas: m.metaCestas as number,
+        updated_at: new Date().toISOString(),
+      })),
+      { onConflict: "company_id,ano,mes" },
+    );
+    if (error) return { ok: false as const, erro: error.message };
+  }
+
+  if (semMeta.length) {
+    const { error } = await supabase
+      .from("metas_mensais")
+      .delete()
+      .eq("company_id", companyId)
+      .eq("ano", ano)
+      .in("mes", semMeta);
+    if (error) return { ok: false as const, erro: error.message };
+  }
+
+  return { ok: true as const, erro: null };
+}
