@@ -116,7 +116,11 @@ export async function carregarNotificacoes() {
     detalhe: "Precisam sair hoje.",
     quantidade: entregasHoje,
     urgente: false,
-    destino: "/tarefas",
+    /* Ia para /tarefas, que nao tem nada a ver com entrega: tarefas.ts nao le
+       pedido nenhum. Quem clicava caia numa lista vazia. Vai para a mesma tela
+       do aviso de entrega atrasada — e la que os pedidos do dia aparecem e sao
+       marcados como entregues. */
+    destino: "/vendas/pedidos",
   });
 
   const atrasadas = pendentes.filter(
