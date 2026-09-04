@@ -60,7 +60,8 @@ export async function salvarTarefa(input: { data: unknown }) {
       .maybeSingle();
 
     if (error) throw error;
-    return { id: salvo?.id ?? data.id };
+    // erro: null tambem no sucesso — quem chama le sempre o mesmo campo.
+    return { id: salvo?.id ?? data.id, erro: null };
   }
 
   const { data: salvo, error } = await supabase
@@ -74,9 +75,15 @@ export async function salvarTarefa(input: { data: unknown }) {
     .select("id")
     .maybeSingle();
 
+  /* "Nao salvou" e resposta, nao excecao. Erro LANCADO dentro de arquivo
+     "use server" e redigido pelo React em producao: a frase morria no servidor
+     e a tela recebia so um digest ("Minified React error #441"), entao quem
+     clicava em Adicionar via o campo continuar cheio sem nenhum motivo. Falha
+     de infraestrutura (o `error` cru do Supabase, logo acima) continua sendo
+     lancada: para essa o texto generico serve e nao ha o que a pessoa faca. */
   if (error) throw error;
-  if (!salvo) throw new Error("Não foi possível salvar a tarefa.");
-  return { id: salvo.id };
+  if (!salvo) return { id: null, erro: "Não foi possível salvar a tarefa." };
+  return { id: salvo.id, erro: null };
 }
 
 export async function marcarTarefa(input: { data: unknown }) {

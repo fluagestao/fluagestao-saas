@@ -204,6 +204,17 @@ export type ResultadoLote = {
   semMudanca: number;
   /** Só na contagem: diferença aplicada por insumo, para o aviso na tela. */
   ajustes: { insumoId: string; diferenca: number }[];
+  /* Erro ESPERADO volta aqui, nao lancado.
+
+     Em producao o React descarta a mensagem de um Error lancado dentro de
+     arquivo "use server": o texto morre no servidor e so um digest chega ao
+     navegador, entao a tela mostrava "Minified React error #441" no lugar da
+     frase. Falha de infraestrutura continua com throw: para essa o texto
+     generico serve e nao ha o que a pessoa faca.
+
+     Sucesso tambem traz o campo, com null, senao quem chama nao teria como ler
+     sempre o mesmo lugar. */
+  erro: string | null;
 };
 
 export async function registrarMovimentos(
@@ -233,7 +244,19 @@ export async function registrarMovimentos(
   );
   // Um id que nao voltou nao e desta empresa: nao grava movimento fantasma.
   const faltando = ids.filter((id) => !custos.has(id));
-  if (faltando.length) throw new Error("Um dos insumos não foi encontrado.");
+  /* Esperado, nao excecao: acontece quando o insumo saiu do ar em outra aba
+     (desativado ou apagado) com o dialogo ja aberto. A pessoa resolve sozinha
+     atualizando a lista — mas so se conseguir ler a frase, e lancada ela nao
+     chegava. Nada foi gravado ate aqui, entao o lote inteiro para. */
+  if (faltando.length) {
+    return {
+      gravados: 0,
+      semMudanca: 0,
+      ajustes: [],
+      erro:
+        "Um dos insumos do lançamento não existe mais. Atualize a página e escolha de novo.",
+    };
+  }
 
   const saldos = new Map(
     (saldosRes.data ?? []).map((l) => [l.insumo_id as string, Number(l.saldo ?? 0)]),
@@ -282,7 +305,7 @@ export async function registrarMovimentos(
     if (error) throw error;
   }
 
-  return { gravados: linhas.length, semMudanca, ajustes };
+  return { gravados: linhas.length, semMudanca, ajustes, erro: null };
 }
 
 const controleSchema = z.object({

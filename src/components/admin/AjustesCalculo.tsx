@@ -226,7 +226,7 @@ export function AjustesCalculo({
 
     setSalvando(true);
     try {
-      await salvarCalculoConfig({
+      const r = await salvarCalculoConfig({
         data: {
           custo_hora: hora,
           percentual_fixo: (paraNumero(fixo) || 0) / 100,
@@ -235,6 +235,14 @@ export function AjustesCalculo({
           incluir_no_calculo: incluir,
         },
       });
+      /* Recusa esperada vem no retorno, nao no catch: lancada, a frase virava
+         digest em producao e o dialogo fechava como se tivesse salvado. O
+         setSalvando(false) esta no finally, entao este return nao trava o
+         botao. */
+      if (r?.erro) {
+        toast.error(r.erro);
+        return;
+      }
       toast.success("Ajustes salvos.");
       setAberto(false);
       await onSalvo();

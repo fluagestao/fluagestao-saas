@@ -500,7 +500,16 @@ function DialogoLancamento({
       const criado = ehEntrada
         ? await criarTipoReceita({ data: { nome } })
         : await criarTipoDespesa({ data: { nome } });
-      setCategoriaId(criado.id);
+      // O erro esperado (nome ja cadastrado) vem no retorno; o catch abaixo fica
+      // para rede e sessao. Lancado, o React apagaria a frase em producao — o
+      // setSalvandoTipo(false) do finally cobre este return.
+      if (criado.erro) {
+        toast.error(criado.erro);
+        return;
+      }
+      // No sucesso o id sempre vem; o ?? "" so acompanha o retorno, que agora
+      // tambem carrega a forma do erro.
+      setCategoriaId(criado.id ?? "");
       setNovoTipo("");
       setCadastrando(false);
       toast.success("Categoria cadastrada.");

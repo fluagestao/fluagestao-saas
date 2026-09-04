@@ -386,7 +386,16 @@ function DialogoCalculo({
       await atualizarPrecoProduto({
         data: { id: produto.id, preco: Number(precoNumero.toFixed(2)) },
       });
-      await atualizarTempoMontagem({ data: { id: produto.id, minutos: tempoValor } });
+      const r = await atualizarTempoMontagem({ data: { id: produto.id, minutos: tempoValor } });
+      /* Recusa esperada vem no retorno, nao no catch. Aviso, e nao sucesso
+         mudo: o preco acima ja foi gravado, so o tempo nao — dizer "salvos"
+         aqui faria a pessoa sair achando que o tempo tinha ido junto. O
+         setSalvando(false) esta no finally, entao este return nao trava o
+         botao. */
+      if (r?.erro) {
+        toast.error(`Preço salvo, mas o tempo não: ${r.erro}`);
+        return;
+      }
       toast.success("Preço e tempo salvos.");
     } catch (e) {
       toast.error(mensagemDeErro(e, "salvar o produto"));

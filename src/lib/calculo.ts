@@ -99,13 +99,25 @@ export async function carregarCalculoConfig(): Promise<{
   };
 }
 
+/* Erro ESPERADO volta no retorno, nao lancado.
+
+   Em producao o React descarta a mensagem de um Error lancado dentro de
+   arquivo "use server" e manda so um digest: a frase sobre os 90% morria no
+   servidor e a tela mostrava "Minified React error #441", sem dizer qual
+   numero revisar. Falha do banco continua sendo lancada — para essa o texto
+   generico serve e nao ha o que a pessoa faca com ela.
+
+   Mesmo remedio ja aplicado em salvarCliente (pedidos.ts) e em usuarios.ts. */
 export async function salvarCalculoConfig(input: ActionInput<unknown>) {
   const data = configSchema.parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
   const soma = data.percentual_fixo + data.percentual_taxa + data.percentual_perdas;
   if (soma > 0.9) {
-    throw new Error("Os percentuais somados passam de 90% do preço. Reveja os valores.");
+    return {
+      ok: false as const,
+      erro: "Os percentuais somados passam de 90% do preço. Reveja os valores.",
+    };
   }
 
   const { error } = await supabase
@@ -116,17 +128,32 @@ export async function salvarCalculoConfig(input: ActionInput<unknown>) {
     );
   if (error) throw error;
 
-  return { ok: true as const };
+  return { ok: true as const, erro: null };
 }
 
 /** Minutos de montagem do produto. Separado por ser um campo só. */
 export async function atualizarTempoMontagem(input: ActionInput<unknown>) {
-  const { id, minutos } = z
+  const parsed = z
     .object({
       id: z.string().uuid(),
       minutos: z.number().int().min(0).max(6000).nullable(),
     })
-    .parse(input.data);
+    .safeParse(input.data);
+
+  /* Tempo fora da faixa e erro ESPERADO — a tela deixa digitar qualquer numero
+     e quem preenche pode corrigir. Lancado pelo .parse(), a queixa do zod virava
+     digest em producao e a pessoa so via "nao consegui salvar o produto", sem
+     saber que o problema era o campo de minutos. Id invalido nao entra nessa
+     conta: ele vem do proprio sistema, entao e bug e continua sendo lancado. */
+  if (!parsed.success) {
+    const doTempo = parsed.error.issues.some((i) => i.path[0] === "minutos");
+    if (!doTempo) throw parsed.error;
+    return {
+      ok: false as const,
+      erro: "Informe o tempo de montagem em minutos inteiros, de 0 a 6000 (100 horas).",
+    };
+  }
+  const { id, minutos } = parsed.data;
 
   const { supabase, companyId } = await requireCompany();
 
@@ -137,5 +164,5 @@ export async function atualizarTempoMontagem(input: ActionInput<unknown>) {
     .eq("company_id", companyId);
   if (error) throw error;
 
-  return { ok: true as const };
+  return { ok: true as const, erro: null };
 }

@@ -119,8 +119,16 @@ function Coluna({
     if (!limpo || salvando) return;
     setSalvando(true);
     try {
-      if (lado === "receita") await criarTipoReceita({ data: { nome: limpo } });
-      else await criarTipoDespesa({ data: { nome: limpo } });
+      const r =
+        lado === "receita"
+          ? await criarTipoReceita({ data: { nome: limpo } })
+          : await criarTipoDespesa({ data: { nome: limpo } });
+      // O erro esperado (nome ja cadastrado) vem no retorno; o catch abaixo fica
+      // para rede e sessao. Lancado, o React apagaria a frase em producao.
+      if (r?.erro) {
+        toast.error(r.erro);
+        return;
+      }
       setNome("");
       toast.success("Categoria criada.");
       onMudou();
@@ -135,7 +143,10 @@ function Coluna({
     const limpo = valor.trim();
     if (!limpo || limpo === item.nome) return;
     try {
-      await renomearCategoriaFinanceira({ data: { id: item.id, nome: limpo, lado } });
+      const r = await renomearCategoriaFinanceira({ data: { id: item.id, nome: limpo, lado } });
+      // Nome repetido volta no retorno, nao lancado. Recarrega dos dois jeitos:
+      // no erro a lista traz o nome antigo de volta e a pessoa ve que nao valeu.
+      if (r?.erro) toast.error(r.erro);
       onMudou();
     } catch (e) {
       toast.error(mensagemDeErro(e, "renomear a categoria"));

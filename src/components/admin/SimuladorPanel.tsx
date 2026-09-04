@@ -427,6 +427,14 @@ function DialogoSimulacao({
           itens: montado.itens,
         },
       });
+      /* Recusa esperada vem no retorno, nao no catch. Devolver null aqui e o
+         que impede o passo seguinte (cadastrar avulsos / virar produto) de
+         seguir em cima de uma simulacao que nao foi salva. O setSalvando(false)
+         esta no finally, entao este return nao trava o botao. */
+      if (r.erro) {
+        toast.error(r.erro);
+        return null;
+      }
       setId(r.id);
       await onMudou();
       return r.id;
@@ -445,6 +453,15 @@ function DialogoSimulacao({
     setSalvando(true);
     try {
       const r = await cadastrarAvulsos({ data: { id: salvo } });
+      /* A recusa vem no retorno com a contagem parcial junto: alguns itens
+         podem ter sido cadastrados antes de parar, e o onMudou() abaixo faz a
+         tela refletir isso. Lancada, a frase com o nome do item que falhou
+         virava digest em producao. O setSalvando(false) esta no finally. */
+      if (r.erro) {
+        toast.error(r.erro);
+        await onMudou();
+        return;
+      }
       const partes = [];
       if (r.criados) partes.push(`${r.criados} cadastrado${r.criados === 1 ? "" : "s"}`);
       if (r.reaproveitados) partes.push(`${r.reaproveitados} já existia${r.reaproveitados === 1 ? "" : "m"}`);
@@ -466,6 +483,14 @@ function DialogoSimulacao({
     setSalvando(true);
     try {
       const r = await virarProduto({ data: { id: salvo, categoriaId: null } });
+      /* Aqui esta o caso que mais doia: "ainda tem N item(ns) sem insumo
+         cadastrado: X, Y" diz exatamente o que fazer, e era justamente essa
+         frase que o React apagava em producao. Vem no retorno; o dialogo fica
+         aberto para a pessoa resolver. O setSalvando(false) esta no finally. */
+      if (r.erro) {
+        toast.error(r.erro, { duration: 8000 });
+        return;
+      }
       toast.success(`Produto criado com ${r.itens} insumo(s). Ajuste a categoria em Produtos.`, {
         duration: 8000,
       });

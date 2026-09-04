@@ -255,6 +255,16 @@ export function ImportacaoConfig() {
     setDesfazendo(lote.id);
     try {
       const r = await desfazerImportacao({ data: { id: lote.id } });
+      /* O erro esperado vem no retorno, nao no catch: em producao o React
+         apagaria a mensagem se ela fosse lancada. O setDesfazendo(null) esta no
+         finally, entao este return nao trava o botao. */
+      if (r.erro) {
+        toast.error(r.erro);
+        // Lote sumiu ou ja foi desfeito em outra aba: a lista aqui esta velha e
+        // ainda mostra o botao. Recarrega para o estado bater com o banco.
+        await carregarHistorico();
+        return;
+      }
       toast.success(
         r.mantidos
           ? `${r.desfeitos} apagados. ${r.mantidos} ficaram porque já estão em uso.`
@@ -448,7 +458,7 @@ export function ImportacaoConfig() {
           <p className="text-sm text-[var(--admin-ink-soft)]">
             <strong className="font-semibold text-[var(--coral)]">{erros.length}</strong>{" "}
             {erros.length === 1 ? "linha não entrou" : "linhas não entraram"}. Baixe, corrija a coluna
-            "Erro" e envie só elas.
+            “Erro” e envie só elas.
           </p>
           <Button variant="outline" onClick={baixarErros} className="h-9 rounded-xl">
             <Download className="mr-1.5 h-4 w-4" />

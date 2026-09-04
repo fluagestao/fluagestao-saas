@@ -124,6 +124,19 @@ export async function salvarFornecedor(input: { data: unknown }) {
     tipo_fornecedor_id: data.tipo_fornecedor_id,
   };
 
+  /* Nome repetido e resposta, nao excecao.
+
+     Erro LANCADO dentro de arquivo "use server" e redigido pelo React em
+     producao: o texto morre no servidor e chega so um digest ("Minified React
+     error #441"). Quem cadastrava lia isso no lugar de "ja existe um fornecedor
+     com esse nome" e nao tinha como saber o que corrigir. Falha crua do banco
+     continua sendo lancada logo abaixo: para essa o texto generico serve, e nao
+     ha nada que a pessoa possa fazer.
+
+     Todos os retornos daqui pra baixo carregam id e erro, senao quem chama le
+     um campo que as vezes nao existe. */
+  const jaExiste = `Já existe um fornecedor chamado "${data.nome}".`;
+
   if (data.id) {
     const { data: salvo, error } = await supabase
       .from("fornecedores")
@@ -134,12 +147,10 @@ export async function salvarFornecedor(input: { data: unknown }) {
       .maybeSingle();
 
     if (error) {
-      if (error.code === "23505") {
-        throw new Error(`Já existe um fornecedor chamado "${data.nome}".`);
-      }
+      if (error.code === "23505") return { id: null, erro: jaExiste };
       throw error;
     }
-    return { id: salvo?.id ?? data.id };
+    return { id: salvo?.id ?? data.id, erro: null };
   }
 
   const { data: salvo, error } = await supabase
@@ -149,13 +160,13 @@ export async function salvarFornecedor(input: { data: unknown }) {
     .maybeSingle();
 
   if (error) {
-    if (error.code === "23505") {
-      throw new Error(`Já existe um fornecedor chamado "${data.nome}".`);
-    }
+    if (error.code === "23505") return { id: null, erro: jaExiste };
     throw error;
   }
-  if (!salvo) throw new Error("Não foi possível salvar o fornecedor.");
-  return { id: salvo.id };
+  // Insert sem erro e sem linha: quase sempre RLS barrando a escrita em
+  // silencio. Volta como frase para a tela dizer alguma coisa.
+  if (!salvo) return { id: null, erro: "Não foi possível salvar o fornecedor." };
+  return { id: salvo.id, erro: null };
 }
 
 export async function removerFornecedor(input: { data: unknown }) {
@@ -184,9 +195,14 @@ export async function criarTipoFornecedor(input: { data: unknown }) {
     .select("id, nome")
     .single();
 
-  if (error?.code === "23505") throw new Error("Este tipo já está cadastrado.");
+  // Tipo repetido e engano de quem digita, nao falha de sistema: volta no
+  // retorno para a frase chegar inteira na tela (ver a nota em
+  // salvarFornecedor). O erro cru do banco segue lancado.
+  if (error?.code === "23505") {
+    return { id: null, nome: null, erro: "Este tipo já está cadastrado." };
+  }
   if (error) throw error;
-  return { id: data.id, nome: data.nome };
+  return { id: data.id, nome: data.nome, erro: null };
 }
 
 export async function excluirTipoFornecedor(input: { data: unknown }) {

@@ -652,14 +652,26 @@ function DialogoPagamento({
     if (!conta || salvando || paraNumero(valor) <= 0) return;
     setSalvando(true);
     try {
-      await pagarContaAPagar({ data: { id: conta.id, data, valor: paraNumero(valor) } });
+      const r = await pagarContaAPagar({
+        data: { id: conta.id, data, valor: paraNumero(valor) },
+      });
+      /* O que a pessoa pode resolver ("já foi paga", "não encontrada") vem no
+         retorno: lançado, o React apagaria a mensagem e sobraria um digest. */
+      if (r?.erro) {
+        toast.error(r.erro);
+        return;
+      }
       toast.success("Pagamento lançado no caixa.");
       onSalvo();
       onFechar();
     } catch (e) {
+      // O catch ficou para o resto: rede caída e sessão expirada.
       toast.error(mensagemDeErro(e, "registrar o pagamento"));
+    } finally {
+      /* Precisa ser finally por causa do return acima — solto depois do
+         try/catch, o botão travaria em "Lançando…" para sempre. */
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   const diferenca = conta ? paraNumero(valor) - conta.valor : 0;

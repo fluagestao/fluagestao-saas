@@ -779,19 +779,36 @@ async function emUso(db: Db, companyId: string, entidade: EntidadeImportacao, id
   return usados;
 }
 
-export async function desfazerImportacao(input: { data: unknown }): Promise<{ desfeitos: number; mantidos: number }> {
+/* Erro ESPERADO volta no retorno, nao lancado.
+
+   Em producao o React descarta a mensagem de um Error lancado dentro de um
+   arquivo "use server" e manda so um digest — "Essa importacao ja foi desfeita"
+   virava "Minified React error #441" na tela, e a pessoa clicava de novo sem
+   entender por que nada acontecia. Sao os dois casos que ela realmente encontra:
+   duas abas abertas, ou a lista da tela velha depois de desfazer em outro lugar.
+   Falha de infraestrutura (erro cru do Supabase) continua sendo lancada: para
+   essa o texto generico serve, e nao ha o que a pessoa faca com ele. */
+export async function desfazerImportacao(
+  input: { data: unknown },
+): Promise<{ desfeitos: number; mantidos: number; erro: string | null }> {
   const { id } = z.object({ id: z.string().uuid() }).parse(input.data);
   const { supabase, companyId } = await requireCompany();
 
+  /* maybeSingle, nao single: com single o "nenhuma linha casou" chega como erro
+     tambem, e nao havia como separar lote inexistente (esperado, com mensagem)
+     de falha de banco (infra, que segue lancada). */
   const { data: lote, error } = await supabase
     .from("importacoes")
     .select("id, entidade, registros_criados, desfeita_em")
     .eq("id", id)
     .eq("company_id", companyId)
-    .single();
-  if (error || !lote) throw error ?? new Error("Importação não encontrada.");
-  if (lote.desfeita_em) throw new Error("Essa importação já foi desfeita.");
+    .maybeSingle();
+  if (error) throw error;
+  if (!lote) return { desfeitos: 0, mantidos: 0, erro: "Importação não encontrada." };
+  if (lote.desfeita_em) return { desfeitos: 0, mantidos: 0, erro: "Essa importação já foi desfeita." };
 
+  // Linha corrompida no banco, nao coisa que a pessoa possa corrigir: segue
+  // lancando, como o parse acima.
   const entidade = entidadeSchema.parse(lote.entidade);
   if (!ENTIDADES.includes(entidade)) throw new Error("Entidade desconhecida.");
 
@@ -844,5 +861,5 @@ export async function desfazerImportacao(input: { data: unknown }): Promise<{ de
     .eq("company_id", companyId);
   if (updError) throw updError;
 
-  return { desfeitos, mantidos: restantes.length };
+  return { desfeitos, mantidos: restantes.length, erro: null };
 }

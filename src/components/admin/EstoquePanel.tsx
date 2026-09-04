@@ -307,6 +307,15 @@ export function EstoquePanel() {
         },
       });
 
+      /* Le o erro que a acao devolve em vez de lancar. Sem esta leitura o lote
+         "daria certo" em silencio: nada gravado e nenhum aviso na tela. O
+         setSalvando(false) esta no finally, entao o return aqui nao trava o
+         botao. */
+      if (r.erro) {
+        toast.error(r.erro);
+        return;
+      }
+
       if (acao === "contagem") {
         if (r.gravados === 0) {
           toast.info("Tudo bateu com o saldo. Nada a corrigir.");

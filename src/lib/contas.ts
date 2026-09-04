@@ -241,8 +241,27 @@ export async function pagarContaAPagar(input: { data: unknown }) {
     .maybeSingle();
 
   if (buscaErro) throw buscaErro;
-  if (!conta) throw new Error("Conta não encontrada.");
-  if (conta.pago_em) throw new Error("Esta conta já foi paga.");
+
+  /* Erro ESPERADO volta no retorno, nao lanca.
+
+     Em producao o React descarta a mensagem de um Error lancado dentro de um
+     arquivo "use server" e manda so um digest — "Esta conta ja foi paga."
+     morria no servidor e a tela mostrava um codigo. A pessoa clicava em
+     "Paguei" de novo sem descobrir que o pagamento ja tinha entrado.
+
+     Sao os dois casos em que ela pode agir: atualizar a lista, ou parar de
+     tentar. Falha de infraestrutura (os throws acima e abaixo) continua
+     lancada: para essa o texto generico serve e nao ha o que fazer.
+     Mesmo remedio ja aplicado em salvarComposicaoProduto (insumos.ts). */
+  if (!conta) {
+    return {
+      ok: false as const,
+      erro: "Conta não encontrada. Atualize a lista e tente de novo.",
+    };
+  }
+  if (conta.pago_em) {
+    return { ok: false as const, erro: "Esta conta já foi paga." };
+  }
 
   const { data: movimento, error: movErro } = await supabase
     .from("movimentos")
@@ -267,7 +286,8 @@ export async function pagarContaAPagar(input: { data: unknown }) {
     .eq("company_id", companyId);
 
   if (error) throw error;
-  return { ok: true as const };
+  // erro: null tambem no sucesso — sem o campo nos dois lados, quem chama nao le.
+  return { ok: true as const, erro: null };
 }
 
 export async function excluirContaAPagar(input: { data: unknown }) {

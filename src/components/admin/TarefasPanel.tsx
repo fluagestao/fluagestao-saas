@@ -141,9 +141,16 @@ export function TarefasPanel() {
 
   async function adicionar() {
     if (!titulo.trim()) return;
-    await salvarTarefa({
+    // O motivo de nao ter salvo vem no RETORNO, nao por excecao: em producao a
+    // mensagem de um erro lancado no servidor nunca chega ate aqui. Sem ler
+    // este campo a tela limparia o formulario como se tivesse dado certo.
+    const r = await salvarTarefa({
       data: { titulo: titulo.trim(), detalhe: null, prazo: prazo || null, prioridade },
     });
+    if (r?.erro) {
+      toast.error(r.erro);
+      return;
+    }
     toast.success("Tarefa adicionada.");
     setTitulo("");
     setPrazo("");

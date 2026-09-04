@@ -248,12 +248,17 @@ export async function criarTipoDespesa(input: { data: unknown }) {
     .select("id, nome")
     .single();
 
+  /* Nome repetido e resposta, nao excecao. Erro LANCADO dentro de arquivo
+     "use server" e redigido pelo React em producao: no lugar da frase a tela
+     recebia so um digest, e quem cadastrava nao tinha como saber que o nome ja
+     estava na lista. Falha crua do banco continua sendo lancada — para essa o
+     texto generico serve e nao ha o que a pessoa faca. */
   if (error?.code === "23505") {
-    throw new Error("Este tipo de despesa já está cadastrado.");
+    return { id: null, nome: null, erro: "Este tipo de despesa já está cadastrado." };
   }
   if (error) throw error;
 
-  return { id: data.id, nome: data.nome };
+  return { id: data.id, nome: data.nome, erro: null };
 }
 
 export async function criarTipoReceita(input: { data: unknown }) {
@@ -268,12 +273,13 @@ export async function criarTipoReceita(input: { data: unknown }) {
     .select("id, nome")
     .single();
 
+  // Nome repetido volta no retorno — ver a nota em criarTipoDespesa.
   if (error?.code === "23505") {
-    throw new Error("Este tipo de receita já está cadastrado.");
+    return { id: null, nome: null, erro: "Este tipo de receita já está cadastrado." };
   }
   if (error) throw error;
 
-  return { id: data.id, nome: data.nome };
+  return { id: data.id, nome: data.nome, erro: null };
 }
 
 /** As duas listas de categoria, para a tela de cadastro. */
@@ -323,11 +329,12 @@ export async function renomearCategoriaFinanceira(input: { data: unknown }) {
     .eq("id", id)
     .eq("company_id", companyId);
 
+  // Nome repetido volta no retorno — ver a nota em criarTipoDespesa.
   if (error?.code === "23505") {
-    throw new Error("Já existe uma categoria com esse nome.");
+    return { ok: false as const, erro: "Já existe uma categoria com esse nome." };
   }
   if (error) throw error;
-  return { ok: true as const };
+  return { ok: true as const, erro: null };
 }
 
 export async function excluirCategoriaFinanceira(input: { data: unknown }) {

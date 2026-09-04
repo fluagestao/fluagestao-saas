@@ -142,6 +142,16 @@ export async function carregarSimulacoes(): Promise<Simulacao[]> {
   });
 }
 
+/* Erro ESPERADO volta no retorno, nao lancado.
+
+   Em producao o React descarta a mensagem de um Error lancado dentro de
+   arquivo "use server": so um digest chega ao navegador e a pessoa le
+   "Minified React error #441" no lugar da frase escrita para ela. Toda
+   mensagem em portugues deste arquivo passa a viajar pelo retorno; falha de
+   rede e erro cru do banco continuam sendo lancados, porque para esses o texto
+   generico ja serve e nao ha o que a pessoa faca.
+
+   Mesmo remedio ja aplicado em salvarCliente (pedidos.ts) e em usuarios.ts. */
 export async function salvarSimulacao(input: ActionInput<unknown>) {
   const data = simulacaoSchema.parse(input.data);
   const { supabase, companyId } = await requireCompany();
@@ -172,7 +182,10 @@ export async function salvarSimulacao(input: ActionInput<unknown>) {
       .insert(cabecalho)
       .select("id")
       .single();
-    if (error || !criada) throw error ?? new Error("Não consegui criar a simulação.");
+    if (error) throw error;
+    // Insert que volta sem linha: e o unico caso aqui em que existe frase
+    // propria para mostrar, entao ela vai no retorno.
+    if (!criada) return { id: null, erro: "Não consegui criar a simulação." };
     simulacaoId = criada.id as string;
   }
 
@@ -198,7 +211,7 @@ export async function salvarSimulacao(input: ActionInput<unknown>) {
     if (insError) throw insError;
   }
 
-  return { id: simulacaoId };
+  return { id: simulacaoId, erro: null };
 }
 
 export async function removerSimulacao(input: ActionInput<unknown>) {
@@ -232,7 +245,7 @@ export async function cadastrarAvulsos(input: ActionInput<unknown>) {
     .eq("simulacao_id", id)
     .is("insumo_id", null);
   if (error) throw error;
-  if (!itens?.length) return { criados: 0, reaproveitados: 0 };
+  if (!itens?.length) return { criados: 0, reaproveitados: 0, erro: null };
 
   // Insumo com o mesmo nome já cadastrado é reaproveitado, não duplicado.
   const { data: existentes, error: exError } = await supabase
@@ -271,7 +284,13 @@ export async function cadastrarAvulsos(input: ActionInput<unknown>) {
         })
         .select("id")
         .single();
-      if (insError || !criado) throw insError ?? new Error(`Não consegui cadastrar "${nome}".`);
+      if (insError) throw insError;
+      /* Devolvido com a conta parcial de proposito: o laco ja cadastrou alguns
+         itens antes de parar, e a pessoa precisa saber ONDE parou para nao
+         mandar tudo de novo. Lancado, o nome do item sumiria no digest. */
+      if (!criado) {
+        return { criados, reaproveitados, erro: `Não consegui cadastrar "${nome}".` };
+      }
       insumoId = criado.id as string;
       porNome.set(chave(nome), insumoId);
       criados += 1;
@@ -285,7 +304,7 @@ export async function cadastrarAvulsos(input: ActionInput<unknown>) {
     if (ligaError) throw ligaError;
   }
 
-  return { criados, reaproveitados };
+  return { criados, reaproveitados, erro: null };
 }
 
 /** Promove a simulação a produto. Exige que todo item já seja insumo. */
@@ -301,8 +320,22 @@ export async function virarProduto(input: ActionInput<unknown>) {
     .eq("id", id)
     .eq("company_id", companyId)
     .single();
-  if (error || !simulacao) throw error ?? new Error("Simulação não encontrada.");
-  if (simulacao.produto_id) throw new Error("Essa simulação já virou produto.");
+  /* Falha real do banco primeiro, para nao ser confundida com "sumiu": so
+     depois trata a ausencia da linha. PGRST116 e o codigo do PostgREST para
+     single() que nao achou nada — nesse caso a linha vem nula e o erro nao e
+     de infraestrutura. Nao encontrada e ESPERADO: a simulacao pode ter sido
+     excluida em outra aba enquanto este dialogo estava aberto. */
+  if (error && error.code !== "PGRST116") throw error;
+  if (!simulacao) {
+    return { produtoId: null, itens: 0, erro: "Simulação não encontrada." };
+  }
+
+  /* As tres recusas abaixo sao o motivo de esta funcao existir: cada uma diz o
+     que fazer antes de tentar de novo. Lancadas, viravam digest em producao e
+     o botao "Virar produto" so falhava sem explicar nada. */
+  if (simulacao.produto_id) {
+    return { produtoId: null, itens: 0, erro: "Essa simulação já virou produto." };
+  }
 
   const { data: itens, error: itensError } = await supabase
     .from("simulacao_itens")
@@ -310,15 +343,19 @@ export async function virarProduto(input: ActionInput<unknown>) {
     .eq("company_id", companyId)
     .eq("simulacao_id", id);
   if (itensError) throw itensError;
-  if (!itens?.length) throw new Error("A simulação está sem itens.");
+  if (!itens?.length) {
+    return { produtoId: null, itens: 0, erro: "A simulação está sem itens." };
+  }
 
   const semInsumo = itens.filter((i) => !i.insumo_id);
   if (semInsumo.length > 0) {
-    throw new Error(
-      `Ainda tem ${semInsumo.length} item(ns) sem insumo cadastrado: ${semInsumo
+    return {
+      produtoId: null,
+      itens: 0,
+      erro: `Ainda tem ${semInsumo.length} item(ns) sem insumo cadastrado: ${semInsumo
         .map((i) => i.descricao as string)
         .join(", ")}.`,
-    );
+    };
   }
 
   // Slug único: o banco recusa repetido e a tela de produto não trata colisão.
@@ -363,7 +400,11 @@ export async function virarProduto(input: ActionInput<unknown>) {
     })
     .select("id")
     .single();
-  if (criarError || !produto) throw criarError ?? new Error("Não consegui criar o produto.");
+  if (criarError) throw criarError;
+  // Insert sem linha de volta: unica frase propria daqui para baixo.
+  if (!produto) {
+    return { produtoId: null, itens: 0, erro: "Não consegui criar o produto." };
+  }
 
   const { error: compError } = await supabase.from("produto_insumos").upsert(
     itens.map((item, ordemItem) => ({
@@ -384,5 +425,5 @@ export async function virarProduto(input: ActionInput<unknown>) {
     .eq("company_id", companyId);
   if (marcarError) throw marcarError;
 
-  return { produtoId: produto.id as string, itens: itens.length };
+  return { produtoId: produto.id as string, itens: itens.length, erro: null };
 }

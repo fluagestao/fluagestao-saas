@@ -72,7 +72,7 @@ export function FornecedoresView() {
 
   async function atualizar(f: Linha, mudanca: Partial<Fornecedor>) {
     try {
-      await salvarFornecedor({
+      const r = await salvarFornecedor({
         data: {
           id: f.id,
           nome: mudanca.nome ?? f.nome,
@@ -88,6 +88,14 @@ export function FornecedoresView() {
           tipo_fornecedor_id: f.tipo_fornecedor_id ?? null,
         },
       });
+      // Nome duplicado chega no retorno, nao como excecao: o catch abaixo ficou
+      // so para rede e sessao. Recarrega nos dois casos porque a celula na tela
+      // ficou com o texto que nao foi salvo.
+      if (r?.erro) {
+        toast.error(r.erro);
+        recarregar();
+        return;
+      }
       recarregar();
     } catch (e) {
       toast.error(mensagemDeErro(e, "salvar"));
@@ -349,7 +357,7 @@ function DialogoFornecedor({
     if (!nome.trim() || salvando || !documentoValido) return;
     setSalvando(true);
     try {
-      await salvarFornecedor({
+      const r = await salvarFornecedor({
         data: {
           ...(editando ? { id: editando.id } : {}),
           nome: nome.trim(),
@@ -363,13 +371,23 @@ function DialogoFornecedor({
           ativo: editando?.ativo ?? true,
         },
       });
+      // Erro esperado (nome ja cadastrado) vem no retorno; o catch ficou para
+      // rede e sessao. O dialogo continua aberto com o que foi digitado, para a
+      // pessoa so trocar o nome.
+      if (r?.erro) {
+        toast.error(r.erro, { duration: 8000 });
+        return;
+      }
       toast.success(editando ? "Fornecedor atualizado." : "Fornecedor cadastrado.");
       onSalvo();
       onFechar();
     } catch (e) {
       toast.error(mensagemDeErro(e, "salvar o fornecedor"));
+    } finally {
+      // Precisa ser no finally: com o return acima, um setSalvando(false) solto
+      // depois do try nao rodaria e o botao ficaria travado em "Salvando…".
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   return (
@@ -490,13 +508,22 @@ function DialogoTipos({
     if (!limpo || salvando) return;
     setSalvando(true);
     try {
-      await criarTipoFornecedor({ data: { nome: limpo } });
+      const r = await criarTipoFornecedor({ data: { nome: limpo } });
+      // Tipo repetido volta no retorno; o campo continua preenchido para a
+      // pessoa ver qual nome ela tentou repetir.
+      if (r?.erro) {
+        toast.error(r.erro);
+        return;
+      }
       setNome("");
       onMudou();
     } catch (e) {
       toast.error(mensagemDeErro(e, "criar o tipo"));
+    } finally {
+      // No finally pelo mesmo motivo do dialogo de fornecedor: o return acima
+      // pularia um setSalvando(false) solto e o botao ficaria desabilitado.
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   async function excluir(tipo: TipoFornecedor) {
