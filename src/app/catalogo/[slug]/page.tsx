@@ -94,7 +94,12 @@ function precoProduto(produto: ProdutoPublico) {
       });
     }
   }
-  return "Sob consulta";
+  /* O campo saiu da interface, mas quando preco e null o preco_label NAO era um
+     prefixo: era o preco inteiro ("a partir de R$ 90"). Tirar os dois juntos fez
+     produto legado desse tipo virar "Sob consulta" — e o botao de comprar passou
+     a mandar "(Sob consulta)" no WhatsApp. Esta linha e so rede para linha
+     antiga; nada no sistema escreve mais aqui. */
+  return produto.preco_label?.trim() || "Sob consulta";
 }
 
 function enderecoEmpresa(empresa: EmpresaPublica) {

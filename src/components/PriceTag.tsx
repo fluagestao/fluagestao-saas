@@ -2,7 +2,7 @@ import type { Produto } from "@/lib/catalog";
 import { formatPreco } from "@/lib/catalog";
 
 interface Props {
-  produto: Pick<Produto, "preco" | "precos_extra">;
+  produto: Pick<Produto, "preco" | "preco_label" | "precos_extra">;
   size?: "sm" | "lg";
   className?: string;
 }
@@ -36,7 +36,9 @@ export function PriceTag({ produto, size = "sm", className = "" }: Props) {
         <span
           className={`font-display italic text-[var(--terracotta)] ${big ? "text-2xl" : "text-lg"}`}
         >
-          Sob consulta
+          {/* Rede para linha antiga: com preco null o rotulo era o preco
+              inteiro, nao um prefixo. Nada escreve mais aqui. */}
+          {produto.preco_label?.trim() || "Sob consulta"}
         </span>
       </div>
     );
