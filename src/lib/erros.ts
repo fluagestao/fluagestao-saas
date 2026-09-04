@@ -151,13 +151,29 @@ export function mensagemDeErro(e: unknown, contexto = "salvar"): string {
       : "Algum valor está em formato inválido.";
   }
 
-  // 3) Migration pendente — dá o nome do que falta.
+  /* 3) Algo que o codigo pede e o banco nao tem.
+
+     "does not exist" e uma frase generica: casa com tabela ausente, coluna
+     ausente, funcao de policy faltando e cache de schema desatualizado do
+     PostgREST. Quando da para nomear o objeto, a mensagem nomeia. Quando NAO
+     da, ela carrega o texto original — sem isso ela dizia "falta criar uma
+     tabela" para qualquer uma dessas causas, e quem fosse investigar comecava
+     do zero, sem nem saber se era mesmo tabela. Aconteceu: um erro real ficou
+     meia hora sem diagnostico porque a mensagem escondia o unico dado util. */
   if (/does not exist|schema cache|PGRST205|42P01|42703/i.test(`${codigo} ${texto}`)) {
     const tabela = texto.match(/table '?(?:public\.)?([a-z_]+)'?/i)?.[1];
+    const funcao = texto.match(/function ([a-z_.]+\(?)/i)?.[1];
+
     if (campo) {
       return `O sistema pede o campo "${rotulo(campo)}", que ainda não existe no banco. Fale com o Lucas: falta rodar uma migration.`;
     }
-    return `Falta criar ${tabela ? `a tabela "${tabela}"` : "uma tabela"} no banco. Fale com o Lucas: falta rodar uma migration.`;
+    if (tabela) {
+      return `Falta criar a tabela "${tabela}" no banco. Fale com o Lucas: falta rodar uma migration.`;
+    }
+    if (funcao) {
+      return `O banco não encontrou a função "${funcao}". Fale com o Lucas: falta rodar uma migration.`;
+    }
+    return `O banco não encontrou algo que o sistema pediu. Mostre isto ao Lucas: ${texto.slice(0, 160)}`;
   }
 
   // 4) Sessão e rede.
