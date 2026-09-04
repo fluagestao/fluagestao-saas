@@ -109,9 +109,33 @@ export const MARCADORES = [
   { chave: "{data}", descricao: "a próxima data comemorativa — a linha some se não houver" },
 ] as const;
 
-export const MODELO_PADRAO = `Olá {nome}, tudo bem?
+/* Dois textos, porque sao duas conversas diferentes.
+
+   A COM OCASIAO tem um motivo externo — o Natal chegando — e pede um presente.
+   A SEM OCASIAO nao tem gancho nenhum: e reacender a relacao com quem sumiu, e
+   citar uma data ali soaria como desculpa. Antes existia um modelo so, e a data
+   entrava sempre que estivesse perto: em dezembro nao dava para mandar a seca. */
+
+export const MODELO_PADRAO_COM_DATA = `Olá {nome}, tudo bem?
 Faz {tempo} desde sua última {produto} aqui com a gente.
 E {data} está chegando — quer ver o que temos disponível para presentear alguém especial?`;
+
+export const MODELO_PADRAO_SEM_DATA = `Olá {nome}, tudo bem?
+Faz {tempo} desde sua última {produto} aqui com a gente.
+Preparei coisas novas desde então — quer dar uma olhada?`;
+
+/** Compatibilidade: o painel antigo importava um nome só. */
+export const MODELO_PADRAO = MODELO_PADRAO_COM_DATA;
+
+export type ModelosRelacionamento = {
+  comData: string;
+  semData: string;
+};
+
+export const MODELOS_PADRAO: ModelosRelacionamento = {
+  comData: MODELO_PADRAO_COM_DATA,
+  semData: MODELO_PADRAO_SEM_DATA,
+};
 
 export type DadosModelo = {
   nome: string;

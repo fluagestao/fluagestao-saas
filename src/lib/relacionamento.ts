@@ -5,7 +5,7 @@ import { z } from "zod";
 import { getConfig, setConfig } from "@/lib/admin-ops.server";
 import { requireCompany } from "@/lib/company-context.server";
 import { hojeISO } from "@/lib/prazo";
-import { MODELO_PADRAO } from "@/lib/relacionamento-mensagem";
+import { MODELOS_PADRAO, type ModelosRelacionamento } from "@/lib/relacionamento-mensagem";
 import type { ItemPedido } from "@/lib/vendas";
 
 /**
@@ -254,19 +254,34 @@ export async function desfazerContato(input: { data: unknown }) {
    mesmo lugar onde os horarios ja moram. Nao precisou de migration nenhuma. */
 const CHAVE_MODELO = "relacionamento_modelo";
 
-export async function carregarModeloRelacionamento(): Promise<{ modelo: string }> {
+export async function carregarModeloRelacionamento(): Promise<ModelosRelacionamento> {
   const { supabase, companyId } = await requireCompany();
-  const valor = await getConfig(supabase, companyId, CHAVE_MODELO);
-  const texto = typeof valor === "string" ? valor : (valor as { texto?: string } | null)?.texto;
-  return { modelo: texto && texto.trim() ? texto : MODELO_PADRAO };
+  const valor = (await getConfig(supabase, companyId, CHAVE_MODELO)) as {
+    texto?: string;
+    comData?: string;
+    semData?: string;
+  } | null;
+
+  const limpo = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
+
+  /* `texto` e a forma antiga, de quando existia um modelo so. Quem ja salvou
+     nao perde o que escreveu: aquele texto vira o "com ocasiao", que era
+     exatamente o papel dele. */
+  return {
+    comData: limpo(valor?.comData) ?? limpo(valor?.texto) ?? MODELOS_PADRAO.comData,
+    semData: limpo(valor?.semData) ?? MODELOS_PADRAO.semData,
+  };
 }
 
 export async function salvarModeloRelacionamento(input: { data: unknown }) {
-  const { modelo } = z
-    .object({ modelo: z.string().trim().min(1).max(1200) })
+  const modelos = z
+    .object({
+      comData: z.string().trim().min(1).max(1200),
+      semData: z.string().trim().min(1).max(1200),
+    })
     .parse(input.data);
 
   const { supabase, companyId } = await requireCompany();
-  await setConfig(supabase, companyId, CHAVE_MODELO, { texto: modelo });
+  await setConfig(supabase, companyId, CHAVE_MODELO, modelos);
   return { ok: true as const };
 }

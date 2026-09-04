@@ -13,6 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
@@ -27,10 +33,11 @@ import {
 } from "@/lib/relacionamento";
 import {
   MARCADORES,
-  MODELO_PADRAO,
+  MODELOS_PADRAO,
   aplicarModelo,
   linkWhatsApp,
   tempoParado,
+  type ModelosRelacionamento,
 } from "@/lib/relacionamento-mensagem";
 import { cn } from "@/lib/utils";
 
@@ -81,10 +88,18 @@ export function RelacionamentoPanel() {
      Sumir na hora esconderia o que ela acabou de fazer, e tiraria o caminho de
      volta se ela abriu o WhatsApp e desistiu de mandar. */
   const [chamadas, setChamadas] = useState<Set<string>>(new Set());
-  const [modelo, setModelo] = useState(MODELO_PADRAO);
+  const [modelos, setModelos] = useState<ModelosRelacionamento>(MODELOS_PADRAO);
   const [ajustesAberto, setAjustesAberto] = useState(false);
-  const [rascunho, setRascunho] = useState(MODELO_PADRAO);
+  const [rascunho, setRascunho] = useState<ModelosRelacionamento>(MODELOS_PADRAO);
   const [salvando, setSalvando] = useState(false);
+  /* Confirmação DENTRO do card, e não um AlertDialog por cima.
+
+     O confirmador do shell é um AlertDialog z-50, igual ao Dialog que já está
+     aberto aqui — e não existe, em nenhum lugar do projeto, precedente de
+     confirmação disparada de dentro de outro diálogo. Um modal preso atrás do
+     outro é um botão que simplesmente não faz nada, e o aviso fica onde ela já
+     está olhando. */
+  const [confirmandoPadrao, setConfirmandoPadrao] = useState(false);
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -105,8 +120,8 @@ export function RelacionamentoPanel() {
   useEffect(() => {
     carregarModeloRelacionamento()
       .then((r) => {
-        setModelo(r.modelo);
-        setRascunho(r.modelo);
+        setModelos(r);
+        setRascunho(r);
       })
       // Sem modelo salvo a tela funciona igual: cai no padrão.
       .catch(() => undefined);
@@ -114,6 +129,9 @@ export function RelacionamentoPanel() {
 
   // Calculada uma vez: é a mesma para todas as linhas da tela.
   const proxima = useMemo(() => proximaDataComemorativa(), []);
+  /* Só há escolha a fazer quando existe data por perto. Fora disso o botão
+     manda direto a mensagem sem ocasião. */
+  const temDataPerto = proxima.diasRestantes >= 0 && proxima.diasRestantes <= 45;
 
   /* "Todos" mostra a base inteira, para acompanhar. As faixas sao a lista de
      ACAO, e por isso tiram quem nao deve ser chamada agora: quem tem pedido a
@@ -158,8 +176,8 @@ export function RelacionamentoPanel() {
   async function salvarModelo() {
     setSalvando(true);
     try {
-      await salvarModeloRelacionamento({ data: { modelo: rascunho } });
-      setModelo(rascunho);
+      await salvarModeloRelacionamento({ data: rascunho });
+      setModelos(rascunho);
       setAjustesAberto(false);
       toast.success("Modelo salvo.");
     } catch (e) {
@@ -169,14 +187,17 @@ export function RelacionamentoPanel() {
     }
   }
 
-  async function chamar(c: ClienteParado) {
-    const mensagem = aplicarModelo(modelo, {
+  async function chamar(c: ClienteParado, tipo: "comData" | "semData") {
+    const mensagem = aplicarModelo(modelos[tipo], {
       nome: c.nome,
       dias: c.diasParado,
       produto: c.produtoFrequente,
       dataNome: proxima.nome,
       dataArtigo: proxima.artigo,
-      dataDiasRestantes: proxima.diasRestantes,
+      /* No modelo "sem ocasião" a data é forçada para longe: assim, se ela
+         tiver deixado um {data} lá dentro, a linha cai fora em vez de citar o
+         Natal numa mensagem que existe justamente para não citar. */
+      dataDiasRestantes: tipo === "semData" ? Number.MAX_SAFE_INTEGER : proxima.diasRestantes,
     });
 
     const link = linkWhatsApp(c.whatsapp, mensagem);
@@ -227,7 +248,8 @@ export function RelacionamentoPanel() {
             variant="outline"
             className="h-11"
             onClick={() => {
-              setRascunho(modelo);
+              setRascunho(modelos);
+              setConfirmandoPadrao(false);
               setAjustesAberto(true);
             }}
           >
@@ -353,10 +375,29 @@ export function RelacionamentoPanel() {
                         chamada há {diasDesde(c.contatadoEm)}d
                       </span>
                     )}
-                    <Button onClick={() => chamar(c)} className="h-10 shrink-0">
-                      <MessageCircle className="mr-1.5 h-4 w-4" />
-                      Chamar
-                    </Button>
+                    {temDataPerto ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button className="h-10 shrink-0">
+                            <MessageCircle className="mr-1.5 h-4 w-4" />
+                            Chamar
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-60">
+                          <DropdownMenuItem onClick={() => chamar(c, "comData")}>
+                            Falando d{proxima.artigo === "a" ? "a" : "o"} {proxima.nome}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => chamar(c, "semData")}>
+                            Sem ocasião, só reaproximar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <Button onClick={() => chamar(c, "semData")} className="h-10 shrink-0">
+                        <MessageCircle className="mr-1.5 h-4 w-4" />
+                        Chamar
+                      </Button>
+                    )}
                   </div>
                 )}
               </div>
@@ -375,46 +416,109 @@ export function RelacionamentoPanel() {
             </DialogDescription>
           </DialogHeader>
 
-          <Textarea value={rascunho} onChange={(e) => setRascunho(e.target.value)} rows={5} />
-
-          <div className="flex flex-wrap gap-1.5">
-            {MARCADORES.map((m) => (
-              <button
-                key={m.chave}
-                type="button"
-                onClick={() => setRascunho((v) => `${v}${m.chave}`)}
-                title={m.descricao}
-                className="rounded-lg bg-[var(--cream)] px-2.5 py-1.5 text-xs font-semibold text-[var(--wine)] transition-colors hover:bg-[var(--cream-deep)]"
-              >
-                {m.chave}
-              </button>
-            ))}
-          </div>
-
           <p className="t-support text-muted-foreground">
             Você escreve a frase inteira, então a concordância é sua: escolha “sua última” ou
-            “seu último” conforme o que vende. Quando não houver data comemorativa por perto, a
-            linha que usa <b>{"{data}"}</b> some sozinha.
+            “seu último” conforme o que vende. Clique num marcador para inserir no fim do texto.
           </p>
 
-          {/* Prévia: editar marcador sem ver o resultado é escrever no escuro. */}
-          <div className="rounded-xl bg-[var(--cream-soft)] p-3.5">
-            <p className="t-support mb-1.5 text-muted-foreground">
-              Como sai para {previa.nome}:
-            </p>
-            <p className="whitespace-pre-line text-sm text-[var(--admin-ink)]">
-              {aplicarModelo(rascunho, previa)}
-            </p>
-          </div>
+          {(
+            [
+              {
+                campo: "comData" as const,
+                titulo: "Com ocasião",
+                ajuda: "Usada quando você escolhe falar da data comemorativa. A linha com {data} some se não houver data por perto.",
+              },
+              {
+                campo: "semData" as const,
+                titulo: "Sem ocasião",
+                ajuda: "Para reaproximar quem sumiu, sem gancho nenhum.",
+              },
+            ]
+          ).map((m) => (
+            <div key={m.campo} className="space-y-2">
+              <div>
+                <p className="text-sm font-semibold text-foreground">{m.titulo}</p>
+                <p className="t-support text-muted-foreground">{m.ajuda}</p>
+              </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRascunho(MODELO_PADRAO)} disabled={salvando}>
-              Voltar ao padrão
-            </Button>
-            <Button onClick={salvarModelo} disabled={salvando || !rascunho.trim()}>
-              {salvando ? "Salvando…" : "Salvar"}
-            </Button>
-          </DialogFooter>
+              <Textarea
+                value={rascunho[m.campo]}
+                onChange={(e) => setRascunho((v) => ({ ...v, [m.campo]: e.target.value }))}
+                rows={4}
+              />
+
+              <div className="flex flex-wrap gap-1.5">
+                {MARCADORES.filter((x) => m.campo === "comData" || x.chave !== "{data}").map(
+                  (x) => (
+                    <button
+                      key={x.chave}
+                      type="button"
+                      onClick={() =>
+                        setRascunho((v) => ({ ...v, [m.campo]: `${v[m.campo]}${x.chave}` }))
+                      }
+                      title={x.descricao}
+                      className="rounded-lg bg-[var(--cream)] px-2.5 py-1.5 text-xs font-semibold text-[var(--wine)] transition-colors hover:bg-[var(--cream-deep)]"
+                    >
+                      {x.chave}
+                    </button>
+                  ),
+                )}
+              </div>
+
+              {/* Prévia: editar marcador sem ver o resultado é escrever no escuro. */}
+              <div className="rounded-xl bg-[var(--cream-soft)] p-3.5">
+                <p className="t-support mb-1.5 text-muted-foreground">
+                  Como sai para {previa.nome}:
+                </p>
+                <p className="whitespace-pre-line text-sm text-[var(--admin-ink)]">
+                  {aplicarModelo(rascunho[m.campo], {
+                    ...previa,
+                    dataDiasRestantes:
+                      m.campo === "semData" ? Number.MAX_SAFE_INTEGER : previa.dataDiasRestantes,
+                  })}
+                </p>
+              </div>
+            </div>
+          ))}
+
+          {confirmandoPadrao ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-3.5 sm:flex-row sm:items-center">
+              <p className="min-w-0 flex-1 text-sm text-foreground">
+                Os dois textos que você escreveu voltam ao original.{" "}
+                <b>Não dá para recuperar depois.</b>
+              </p>
+              <div className="flex shrink-0 gap-2">
+                <Button variant="outline" onClick={() => setConfirmandoPadrao(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={() => {
+                    setRascunho(MODELOS_PADRAO);
+                    setConfirmandoPadrao(false);
+                  }}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Apagar e voltar
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmandoPadrao(true)}
+                disabled={salvando}
+              >
+                Voltar ao padrão
+              </Button>
+              <Button
+                onClick={salvarModelo}
+                disabled={salvando || !rascunho.comData.trim() || !rascunho.semData.trim()}
+              >
+                {salvando ? "Salvando…" : "Salvar"}
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </section>
