@@ -107,6 +107,8 @@ export const MARCADORES = [
   { chave: "{tempo}", descricao: "há quanto tempo ela não compra" },
   { chave: "{produto}", descricao: "o que ela costuma levar (ou “compra”)" },
   { chave: "{data}", descricao: "a próxima data comemorativa — a linha some se não houver" },
+  { chave: "{destinatario}", descricao: "para quem ela mandou (só em “repetir”)" },
+  { chave: "{ano}", descricao: "o ano da compra (só em “repetir”)" },
 ] as const;
 
 /* Dois textos, porque sao duas conversas diferentes.
@@ -124,17 +126,26 @@ export const MODELO_PADRAO_SEM_DATA = `Olá {nome}, tudo bem?
 Faz {tempo} desde sua última {produto} aqui com a gente.
 Preparei coisas novas desde então — quer dar uma olhada?`;
 
+/* A terceira conversa, e a que mais vende: nao e reativacao nem campanha, e
+   lembrar de um gesto que a pessoa ja fez. Por isso tem marcadores que as
+   outras nao tem — para quem foi e em que ano. */
+export const MODELO_PADRAO_REPETIR = `Olá {nome}, tudo bem?
+Em {ano} você mandou {produto} para {destinatario} n{data}.
+Está chegando de novo — quer que eu prepare igual?`;
+
 /** Compatibilidade: o painel antigo importava um nome só. */
 export const MODELO_PADRAO = MODELO_PADRAO_COM_DATA;
 
 export type ModelosRelacionamento = {
   comData: string;
   semData: string;
+  repetir: string;
 };
 
 export const MODELOS_PADRAO: ModelosRelacionamento = {
   comData: MODELO_PADRAO_COM_DATA,
   semData: MODELO_PADRAO_SEM_DATA,
+  repetir: MODELO_PADRAO_REPETIR,
 };
 
 export type DadosModelo = {
@@ -144,6 +155,9 @@ export type DadosModelo = {
   dataNome: string;
   dataArtigo: "o" | "a";
   dataDiasRestantes: number;
+  /** Só no modelo "repetir": para quem foi e em que ano. */
+  destinatario?: string | null;
+  ano?: number | null;
 };
 
 /** Acima disto a data ainda não é assunto: citar o Natal em agosto não convence. */
@@ -163,7 +177,11 @@ export function aplicarModelo(modelo: string, d: DadosModelo): string {
         // "compra" e feminino como "cesta" e "tábua": cai bem no lugar do nome
         // do produto na maioria das frases que ela vai escrever.
         .replaceAll("{produto}", d.produto ?? "compra")
-        .replaceAll("{data}", `${d.dataArtigo} ${d.dataNome}`),
+        .replaceAll("{data}", `${d.dataArtigo} ${d.dataNome}`)
+        /* "alguém especial" no lugar do destinatário em branco: o pedido nem
+           sempre registra para quem foi, e a frase precisa continuar de pé. */
+        .replaceAll("{destinatario}", d.destinatario?.trim() || "alguém especial")
+        .replaceAll("{ano}", d.ano ? String(d.ano) : "outro ano"),
     )
     .join("\n")
     .trim();

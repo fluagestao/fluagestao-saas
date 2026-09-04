@@ -218,21 +218,21 @@ export function proximaDataComemorativa(
    manter e para desalinhar. A lista do calendário já se atualiza sozinha a
    cada ano, e estas cinco não mudam. */
 
-export type Ocasiao = { slug: string; label: string };
+export type Ocasiao = { slug: string; label: string; artigo: "o" | "a" };
 
 export const OCASIOES_PESSOAIS: Ocasiao[] = [
-  { slug: "aniversario", label: "Aniversário" },
-  { slug: "casamento", label: "Casamento" },
-  { slug: "nascimento", label: "Nascimento" },
-  { slug: "agradecimento", label: "Agradecimento" },
-  { slug: "corporativo", label: "Corporativo" },
+  { slug: "aniversario", label: "Aniversário", artigo: "o" },
+  { slug: "casamento", label: "Casamento", artigo: "o" },
+  { slug: "nascimento", label: "Nascimento", artigo: "o" },
+  { slug: "agradecimento", label: "Agradecimento", artigo: "o" },
+  { slug: "corporativo", label: "Pedido corporativo", artigo: "o" },
 ];
 
 /** Tudo que pode ser escolhido: as datas do ano mais as perenes. */
 export function ocasioesDisponiveis(ano: number = new Date().getFullYear()): Ocasiao[] {
   const doCalendario = datasComemorativasDoAno(ano)
     .filter((d) => d.slug !== "proxima-data")
-    .map((d) => ({ slug: d.slug, label: d.nome }));
+    .map((d) => ({ slug: d.slug, label: d.nome, artigo: d.artigo }));
 
   return [...doCalendario, ...OCASIOES_PESSOAIS];
 }
@@ -241,11 +241,21 @@ export function ocasioesDisponiveis(ano: number = new Date().getFullYear()): Oca
  * Nome para mostrar. Slug desconhecido — de uma data que saiu da lista — vira
  * texto legível em vez de sumir: o pedido antigo continua dizendo o que era.
  */
-export function rotuloOcasiao(slug: string | null | undefined): string | null {
+export function ocasiaoPorSlug(slug: string | null | undefined): Ocasiao | null {
   if (!slug) return null;
   const achada = ocasioesDisponiveis().find((o) => o.slug === slug);
-  if (achada) return achada.label;
-  return slug.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase());
+  if (achada) return achada;
+  /* Slug de uma data que saiu da lista: vira texto legivel em vez de sumir, e
+     o artigo cai no masculino, que erra menos. */
+  return {
+    slug,
+    label: slug.replace(/-/g, " ").replace(/^./, (c) => c.toUpperCase()),
+    artigo: "o",
+  };
+}
+
+export function rotuloOcasiao(slug: string | null | undefined): string | null {
+  return ocasiaoPorSlug(slug)?.label ?? null;
 }
 
 /**
@@ -280,5 +290,5 @@ export function ocasiaoSugerida(
     }
   }
 
-  return melhor ? { slug: melhor.slug, label: melhor.nome } : null;
+  return melhor ? { slug: melhor.slug, label: melhor.nome, artigo: melhor.artigo } : null;
 }

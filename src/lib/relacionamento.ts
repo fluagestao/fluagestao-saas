@@ -260,6 +260,7 @@ export async function carregarModeloRelacionamento(): Promise<ModelosRelacioname
     texto?: string;
     comData?: string;
     semData?: string;
+    repetir?: string;
   } | null;
 
   const limpo = (v: unknown) => (typeof v === "string" && v.trim() ? v : null);
@@ -270,6 +271,7 @@ export async function carregarModeloRelacionamento(): Promise<ModelosRelacioname
   return {
     comData: limpo(valor?.comData) ?? limpo(valor?.texto) ?? MODELOS_PADRAO.comData,
     semData: limpo(valor?.semData) ?? MODELOS_PADRAO.semData,
+    repetir: limpo(valor?.repetir) ?? MODELOS_PADRAO.repetir,
   };
 }
 
@@ -278,10 +280,110 @@ export async function salvarModeloRelacionamento(input: { data: unknown }) {
     .object({
       comData: z.string().trim().min(1).max(1200),
       semData: z.string().trim().min(1).max(1200),
+      repetir: z.string().trim().min(1).max(1200),
     })
     .parse(input.data);
 
   const { supabase, companyId } = await requireCompany();
   await setConfig(supabase, companyId, CHAVE_MODELO, modelos);
   return { ok: true as const };
+}
+
+export type CompraNaOcasiao = {
+  clienteId: string;
+  nome: string;
+  whatsapp: string | null;
+  /** O que ela mandou naquela ocasião. */
+  produto: string | null;
+  /** Para quem foi, quando o pedido registrou destinatário. */
+  destinatario: string | null;
+  data: string;
+  total: number;
+  /** false = palpite do retroativo. A tela avisa em vez de esconder. */
+  confirmada: boolean;
+};
+
+/**
+ * Quem comprou numa ocasião, num ano.
+ *
+ * É a consulta que justifica a coluna: "quem mandou cesta no Dia das Mães do
+ * ano passado" para oferecer a deste ano. Filtrar por janela de data não
+ * resolveria — as datas andam (Dia das Mães é o 2o domingo de maio) e a janela
+ * mistura quem comprou aniversário na mesma semana.
+ */
+export async function carregarPorOcasiao(input: { data: unknown }) {
+  const { ocasiao, ano } = z
+    .object({
+      ocasiao: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/).max(40),
+      ano: z.number().int().min(2000).max(2100),
+    })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select(
+      "cliente_id, cliente_nome, cliente_whatsapp, destinatario_nome, itens, total, data_entrega, created_at, ocasiao_confirmada",
+    )
+    .eq("company_id", companyId)
+    .eq("ocasiao", ocasiao)
+    .neq("status", "cancelado")
+    .gte("data_entrega", `${ano}-01-01`)
+    .lte("data_entrega", `${ano}-12-31`)
+    .order("data_entrega", { ascending: false })
+    .limit(TETO);
+
+  if (error) throw error;
+
+  const compras: CompraNaOcasiao[] = [];
+
+  for (const p of data ?? []) {
+    const itens = (p.itens ?? []) as { nome?: string; qtd?: number }[];
+    // O item de maior quantidade representa o pedido: é o que ela vai citar.
+    let produto: string | null = null;
+    let maior = 0;
+    for (const i of itens) {
+      const q = Number(i?.qtd ?? 1);
+      if (i?.nome && q > maior) {
+        maior = q;
+        produto = String(i.nome);
+      }
+    }
+
+    compras.push({
+      clienteId: String(p.cliente_id ?? ""),
+      nome: String(p.cliente_nome ?? ""),
+      whatsapp: (p.cliente_whatsapp as string | null) ?? null,
+      produto,
+      destinatario: (p.destinatario_nome as string | null) ?? null,
+      data: String(p.data_entrega ?? "").slice(0, 10),
+      total: Number(p.total ?? 0),
+      confirmada: Boolean(p.ocasiao_confirmada),
+    });
+  }
+
+  return { compras };
+}
+
+/** Anos que têm pedido com ocasião marcada, para a tela oferecer só o que existe. */
+export async function anosComOcasiao(): Promise<{ anos: number[] }> {
+  const { supabase, companyId } = await requireCompany();
+
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select("data_entrega")
+    .eq("company_id", companyId)
+    .not("ocasiao", "is", null)
+    .not("data_entrega", "is", null)
+    .limit(TETO);
+
+  if (error) throw error;
+
+  const anos = new Set<number>();
+  for (const p of data ?? []) {
+    const a = Number(String(p.data_entrega ?? "").slice(0, 4));
+    if (Number.isFinite(a)) anos.add(a);
+  }
+  return { anos: [...anos].sort((a, b) => b - a) };
 }

@@ -41,6 +41,7 @@ import {
 } from "@/lib/relacionamento-mensagem";
 import { cn } from "@/lib/utils";
 
+import { RelacionamentoOcasiao } from "./RelacionamentoOcasiao";
 import { Carregando, EstadoVazio, PageHeader } from "./shell";
 
 /**
@@ -53,6 +54,9 @@ import { Carregando, EstadoVazio, PageHeader } from "./shell";
  */
 const FAIXAS = [
   { id: "todos", label: "Todos", de: 0, ate: Infinity },
+  /* Não é faixa de tempo: é outra pergunta inteira, por isso não tem contagem
+     e troca o conteúdo da tela em vez de filtrar a mesma lista. */
+  { id: "ocasiao", label: "Por ocasião", de: -1, ate: -1 },
   { id: "30", label: "30 a 60 dias", de: 30, ate: 60 },
   { id: "60", label: "60 a 120 dias", de: 60, ate: 120 },
   { id: "120", label: "Mais de 120 dias", de: 120, ate: Infinity },
@@ -152,10 +156,9 @@ export function RelacionamentoPanel() {
 
   const contagens = useMemo(
     () =>
-      Object.fromEntries(FAIXAS.map((f) => [f.id, filtrar(clientes, f.id).length])) as Record<
-        FaixaId,
-        number
-      >,
+      Object.fromEntries(
+        FAIXAS.map((f) => [f.id, f.id === "ocasiao" ? -1 : filtrar(clientes, f.id).length]),
+      ) as Record<FaixaId, number>,
     [clientes, filtrar],
   );
 
@@ -267,7 +270,7 @@ export function RelacionamentoPanel() {
 
       {/* A data comemorativa entra na mensagem quando está perto. Mostrar aqui
           deixa claro de onde vem o "o Natal está chegando" do texto. */}
-      {proxima.diasRestantes <= 45 && (
+      {faixa !== "ocasiao" && proxima.diasRestantes <= 45 && (
         <p className="mt-3 flex items-center gap-2 rounded-xl bg-[var(--cream)] px-3.5 py-2.5 text-sm text-[var(--admin-ink-soft)]">
           <HeartHandshake className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
           <span>
@@ -297,12 +300,16 @@ export function RelacionamentoPanel() {
             )}
           >
             {f.label}
-            <span className="ml-1.5 tabular-nums opacity-70">{contagens[f.id] ?? 0}</span>
+            {contagens[f.id] >= 0 && (
+              <span className="ml-1.5 tabular-nums opacity-70">{contagens[f.id]}</span>
+            )}
           </button>
         ))}
       </div>
 
-      {carregando ? (
+      {faixa === "ocasiao" ? (
+        <RelacionamentoOcasiao modelos={modelos} />
+      ) : carregando ? (
         <Carregando texto="carregando os clientes…" />
       ) : porFaixa.length === 0 ? (
         <EstadoVazio
@@ -433,6 +440,11 @@ export function RelacionamentoPanel() {
                 titulo: "Sem ocasião",
                 ajuda: "Para reaproximar quem sumiu, sem gancho nenhum.",
               },
+              {
+                campo: "repetir" as const,
+                titulo: "Repetir o presente",
+                ajuda: "Usada na aba Por ocasião, para oferecer de novo o que ela já mandou. Aqui valem {destinatario} e {ano}.",
+              },
             ]
           ).map((m) => (
             <div key={m.campo} className="space-y-2">
@@ -448,7 +460,12 @@ export function RelacionamentoPanel() {
               />
 
               <div className="flex flex-wrap gap-1.5">
-                {MARCADORES.filter((x) => m.campo === "comData" || x.chave !== "{data}").map(
+                {MARCADORES.filter((x) => {
+                  if (x.chave === "{data}") return m.campo !== "semData";
+                  if (x.chave === "{destinatario}" || x.chave === "{ano}")
+                    return m.campo === "repetir";
+                  return true;
+                }).map(
                   (x) => (
                     <button
                       key={x.chave}
@@ -513,7 +530,7 @@ export function RelacionamentoPanel() {
               </Button>
               <Button
                 onClick={salvarModelo}
-                disabled={salvando || !rascunho.comData.trim() || !rascunho.semData.trim()}
+                disabled={salvando || !rascunho.comData.trim() || !rascunho.semData.trim() || !rascunho.repetir.trim()}
               >
                 {salvando ? "Salvando…" : "Salvar"}
               </Button>
