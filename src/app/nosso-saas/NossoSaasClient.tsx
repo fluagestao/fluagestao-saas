@@ -253,6 +253,15 @@ function DemoScreen() {
                 </span>
                 <i>R$ 560,00</i>
               </div>
+
+              <div className="saas-demo-linha feito">
+                <b>16:00</b>
+                <span>
+                  Larissa Prado
+                  <small>2x Tábua de frios pra 6</small>
+                </span>
+                <i>R$ 820,00</i>
+              </div>
             </article>
 
             <article className="saas-demo-card">
@@ -292,6 +301,15 @@ function DemoScreen() {
                   <small>3x Box romântico</small>
                 </span>
                 <i>R$ 525,00</i>
+              </div>
+
+              <div className="saas-demo-linha">
+                <b>TER 08</b>
+                <span>
+                  Natália Furtado
+                  <small>1x Café da manhã infantil</small>
+                </span>
+                <i>R$ 149,00</i>
               </div>
             </article>
 
@@ -334,6 +352,34 @@ function DemoScreen() {
                 </div>
               </article>
             </div>
+          </div>
+
+          {/* Cortada pela borda da janela de propósito: tela que continua ao
+              rolar parece tela de verdade, e não um cartaz que acaba ali. */}
+          <div className="saas-demo-rodape">
+            <article className="saas-demo-card">
+              <header>Resumo do faturamento</header>
+              <div className="saas-demo-grafico">
+                <strong>R$ 15.873,00</strong>
+                <span>
+                  <u style={{ height: "62%" }} />
+                  <u style={{ height: "38%" }} />
+                  <u style={{ height: "81%" }} />
+                  <u style={{ height: "45%" }} />
+                  <u style={{ height: "94%" }} />
+                  <u style={{ height: "58%" }} />
+                  <u style={{ height: "72%" }} />
+                </span>
+              </div>
+            </article>
+
+            <article className="saas-demo-card">
+              <header>Datas comemorativas</header>
+              <div className="saas-demo-vazio">
+                Dia do Irmão
+                <small>é amanhã · 05/09</small>
+              </div>
+            </article>
           </div>
         </div>
       </div>
