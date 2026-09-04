@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { getConfig, setConfig } from "@/lib/admin-ops.server";
 import { requireCompany } from "@/lib/company-context.server";
+import { ocasiaoSugerida } from "@/lib/datas-comemorativas";
 import { hojeISO } from "@/lib/prazo";
 import { MODELOS_PADRAO, type ModelosRelacionamento } from "@/lib/relacionamento-mensagem";
 import type { ItemPedido } from "@/lib/vendas";
@@ -386,4 +387,107 @@ export async function anosComOcasiao(): Promise<{ anos: number[] }> {
     if (Number.isFinite(a)) anos.add(a);
   }
   return { anos: [...anos].sort((a, b) => b - a) };
+}
+
+/* ------------------------------------------------- preenchimento retroativo ---
+   Sem isto a ocasião só serve daqui a um ano: ela grava neste Natal e a
+   consulta "quem comprou no Natal passado" só responde em 2027.
+
+   O palpite vem da proximidade entre a data de entrega e uma data comemorativa,
+   usando o MESMO ocasiaoSugerida que sugere o chip no pedido — uma
+   implementação só. Foi por isso que ele não entrou na migration: reescrever o
+   cálculo da Páscoa em PL/pgSQL criaria uma segunda versão para divergir.
+
+   Duas regras que fazem a diferença entre útil e perigoso:
+     - nunca sobrescreve. Só toca em pedido com ocasiao NULA; o que uma pessoa
+       marcou fica como está.
+     - grava ocasiao_confirmada = false. É palpite, e a tela mostra como
+       palpite. Sem essa marca a suposição vira verdade no dia seguinte e não
+       há mais como saber o que foi conferido.
+*/
+
+/** Janela em dias entre a entrega e a data comemorativa. */
+const JANELA_RETROATIVO = 10;
+
+export type PreviaRetroativo = {
+  /** Quantos pedidos ganhariam ocasião. */
+  total: number;
+  porOcasiao: { slug: string; label: string; quantidade: number }[];
+  /** Entregas que não caem perto de nenhuma data: ficam sem ocasião mesmo. */
+  semPalpite: number;
+};
+
+async function palpitesRetroativos(
+  supabase: Awaited<ReturnType<typeof requireCompany>>["supabase"],
+  companyId: string,
+) {
+  const { data, error } = await supabase
+    .from("pedidos")
+    .select("id, data_entrega")
+    .eq("company_id", companyId)
+    .is("ocasiao", null)
+    .neq("status", "cancelado")
+    .not("data_entrega", "is", null)
+    .limit(TETO);
+
+  if (error) throw error;
+
+  const porSlug = new Map<string, { label: string; ids: string[] }>();
+  let semPalpite = 0;
+
+  for (const p of data ?? []) {
+    const sugerida = ocasiaoSugerida(p.data_entrega as string, JANELA_RETROATIVO);
+    if (!sugerida) {
+      semPalpite += 1;
+      continue;
+    }
+    const atual = porSlug.get(sugerida.slug) ?? { label: sugerida.label, ids: [] };
+    atual.ids.push(String(p.id));
+    porSlug.set(sugerida.slug, atual);
+  }
+
+  return { porSlug, semPalpite };
+}
+
+/** O que seria marcado, sem gravar nada. */
+export async function previaRetroativo(): Promise<PreviaRetroativo> {
+  const { supabase, companyId } = await requireCompany();
+  const { porSlug, semPalpite } = await palpitesRetroativos(supabase, companyId);
+
+  const porOcasiao = [...porSlug.entries()]
+    .map(([slug, v]) => ({ slug, label: v.label, quantidade: v.ids.length }))
+    .sort((a, b) => b.quantidade - a.quantidade);
+
+  return {
+    total: porOcasiao.reduce((soma, o) => soma + o.quantidade, 0),
+    porOcasiao,
+    semPalpite,
+  };
+}
+
+/** Grava os palpites. Um update por ocasião, não um por pedido. */
+export async function aplicarRetroativo(): Promise<{ marcados: number }> {
+  const { supabase, companyId } = await requireCompany();
+  const { porSlug } = await palpitesRetroativos(supabase, companyId);
+
+  let marcados = 0;
+
+  for (const [slug, { ids }] of porSlug) {
+    if (!ids.length) continue;
+
+    const { error } = await supabase
+      .from("pedidos")
+      .update({ ocasiao: slug, ocasiao_confirmada: false })
+      .eq("company_id", companyId)
+      /* `is null` de novo no update, e nao so na leitura: entre ler e gravar a
+         pessoa pode ter marcado a ocasiao a mao noutra aba. O filtro garante
+         que o palpite nunca passa por cima de uma escolha. */
+      .is("ocasiao", null)
+      .in("id", ids);
+
+    if (error) throw error;
+    marcados += ids.length;
+  }
+
+  return { marcados };
 }

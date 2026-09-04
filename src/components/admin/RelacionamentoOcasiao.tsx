@@ -1,14 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Gift, MessageCircle } from "lucide-react";
+import { Gift, MessageCircle, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { ocasiaoPorSlug, ocasioesDisponiveis } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataCurta } from "@/lib/prazo";
-import { anosComOcasiao, carregarPorOcasiao, type CompraNaOcasiao } from "@/lib/relacionamento";
+import {
+  anosComOcasiao,
+  aplicarRetroativo,
+  carregarPorOcasiao,
+  previaRetroativo,
+  type CompraNaOcasiao,
+  type PreviaRetroativo,
+} from "@/lib/relacionamento";
 import { aplicarModelo, linkWhatsApp, type ModelosRelacionamento } from "@/lib/relacionamento-mensagem";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +43,8 @@ export function RelacionamentoOcasiao({ modelos }: { modelos: ModelosRelacioname
   const [compras, setCompras] = useState<CompraNaOcasiao[]>([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [previa, setPrevia] = useState<PreviaRetroativo | null>(null);
+  const [ocupado, setOcupado] = useState(false);
 
   const opcoes = useMemo(() => ocasioesDisponiveis(), []);
   const alvo = useMemo(() => ocasiaoPorSlug(ocasiao), [ocasiao]);
@@ -96,6 +105,37 @@ export function RelacionamentoOcasiao({ modelos }: { modelos: ModelosRelacioname
 
   const palpites = compras.filter((c) => !c.confirmada).length;
 
+  async function verPrevia() {
+    setOcupado(true);
+    try {
+      setPrevia(await previaRetroativo());
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "conferir o histórico"));
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  async function aplicar() {
+    setOcupado(true);
+    try {
+      const r = await aplicarRetroativo();
+      toast.success(
+        r.marcados === 1 ? "1 pedido marcado." : `${r.marcados} pedidos marcados.`,
+      );
+      setPrevia(null);
+      // Anos e lista mudam junto: agora existe histórico com ocasião.
+      const anosNovos = await anosComOcasiao();
+      setAnos(anosNovos.anos);
+      setAno((atual) => atual ?? anosNovos.anos[0] ?? null);
+      await buscar();
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "marcar o histórico"));
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   return (
     <div className="mt-3 space-y-3">
       <div className="flex flex-wrap items-end gap-3">
@@ -145,6 +185,60 @@ export function RelacionamentoOcasiao({ modelos }: { modelos: ModelosRelacioname
           sistema a partir da data de entrega, sem ninguém confirmar. Vale conferir antes de
           mandar.
         </p>
+      )}
+
+      {/* Preenchimento retroativo: sem ele a aba só serve daqui a um ano.
+          Mostra o que vai fazer ANTES de gravar — palpite escrito em silêncio
+          no histórico dela é o tipo de botão que ninguém aperta duas vezes. */}
+      {previa ? (
+        <div className="space-y-3 rounded-2xl border border-[var(--admin-border)] bg-card p-4">
+          {previa.total === 0 ? (
+            <p className="text-sm text-foreground">
+              Nenhuma entrega do histórico cai perto de uma data comemorativa. Não há o que
+              marcar.
+            </p>
+          ) : (
+            <>
+              <p className="text-sm text-foreground">
+                Vou marcar <b>{previa.total}</b>{" "}
+                {previa.total === 1 ? "pedido" : "pedidos"} pela data de entrega, como
+                sugestão — nada do que você já marcou à mão é tocado.
+              </p>
+              <ul className="flex flex-wrap gap-1.5">
+                {previa.porOcasiao.map((o) => (
+                  <li
+                    key={o.slug}
+                    className="rounded-lg bg-[var(--cream)] px-2.5 py-1.5 text-xs font-semibold text-[var(--wine)]"
+                  >
+                    {o.label} <span className="tabular-nums opacity-70">{o.quantidade}</span>
+                  </li>
+                ))}
+              </ul>
+              {previa.semPalpite > 0 && (
+                <p className="t-support text-muted-foreground">
+                  Outr{previa.semPalpite === 1 ? "o" : "os"} {previa.semPalpite}{" "}
+                  {previa.semPalpite === 1 ? "pedido não cai" : "pedidos não caem"} perto de
+                  nenhuma data e {previa.semPalpite === 1 ? "fica" : "ficam"} sem ocasião.
+                </p>
+              )}
+            </>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setPrevia(null)} disabled={ocupado}>
+              Cancelar
+            </Button>
+            {previa.total > 0 && (
+              <Button onClick={aplicar} disabled={ocupado}>
+                {ocupado ? "Marcando…" : "Marcar histórico"}
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : (
+        <Button variant="outline" onClick={verPrevia} disabled={ocupado} className="h-10">
+          <Wand2 className="mr-1.5 h-4 w-4" />
+          {ocupado ? "Conferindo…" : "Marcar histórico pela data de entrega"}
+        </Button>
       )}
 
       {!ocasiao ? (
