@@ -162,8 +162,8 @@ function DemoScreen() {
           <strong>flua</strong>
 
           <div className="saas-demo-nav">
-            <span>Início</span>
-            <span className="active">Vendas</span>
+            <span className="active">Início</span>
+            <span>Vendas</span>
             <span>Dashboard</span>
             <span>Financeiro</span>
             <span>Custo</span>
@@ -173,155 +173,166 @@ function DemoScreen() {
         </div>
 
         <div className="saas-demo-body">
+          {/* Desenho da tela Inicio, que e a primeira coisa que ela ve ao
+              entrar. Antes aqui havia uma tabela de Vendas inventada: nomes,
+              produtos e origens que nao existem em lugar nenhum. Uma foto do
+              que o sistema realmente abre vende melhor do que uma invencao. */}
           <div className="saas-demo-heading">
             <div>
-              <small>PEDIDOS</small>
-              <h3>Seu negócio em movimento.</h3>
+              <small>SEXTA, 04/09</small>
+              <h3>Boa tarde, Ana!</h3>
             </div>
 
-            <button>Novo pedido</button>
+            <button>+ Novo pedido</button>
           </div>
 
           <div className="saas-demo-kpis">
             <div>
-              <span>Faturamento do mês</span>
-              <strong>R$ 3.243,30</strong>
+              <span>Recebido no mês</span>
+              <strong>R$ 15.873,00</strong>
+              <small>28 pedidos pagos</small>
             </div>
 
             <div>
-              <span>Pedidos no mês</span>
-              <strong>12</strong>
+              <span>Pedidos em aberto</span>
+              <strong>14</strong>
+              <small>aguardando saída</small>
             </div>
 
             <div>
-              <span>Em aberto</span>
-              <strong>5</strong>
+              <span>Entregas hoje</span>
+              <strong>6</strong>
+              <small>tudo entregue</small>
+            </div>
+
+            <div>
+              <span>Ticket médio</span>
+              <strong>R$ 566,89</strong>
+              <small>28 pedidos no mês</small>
             </div>
           </div>
 
-          <div className="saas-demo-filters">
-            <b>Novo</b>
-            <span>Em produção</span>
-            <span>Aguardando retirada</span>
-            <span>Entregue</span>
-          </div>
+          <div className="saas-demo-inicio">
+            <article className="saas-demo-card">
+              <header>
+                Entregas de hoje <em>ver agenda</em>
+              </header>
 
-          <div className="saas-demo-table">
-            <div className="head">
-              <span>Pedido</span>
-              <span>Cliente</span>
-              <span>Produto</span>
-              <span>Origem</span>
-              <span>Total</span>
-              <span>Status</span>
-            </div>
+              <div className="saas-demo-linha feito">
+                <b>10:00</b>
+                <span>
+                  Sabrina Duarte
+                  <small>1x Kit vinho e queijos</small>
+                </span>
+                <i>R$ 797,00</i>
+              </div>
 
-            <div>
-              <span>
-                <b>#9281</b>
-                <small>24/05 · 10:32</small>
-              </span>
+              <div className="saas-demo-linha feito">
+                <b>08:00</b>
+                <span>
+                  Larissa Andrade
+                  <small>1x Tábua de frios pra 6</small>
+                </span>
+                <i>R$ 787,00</i>
+              </div>
 
-              <span>
-                Ana Paula Souza
-                <small>WhatsApp</small>
-              </span>
+              <div className="saas-demo-linha feito">
+                <b>14:00</b>
+                <span>
+                  Renata Schmitt
+                  <small>1x Cesta café da manhã</small>
+                </span>
+                <i>R$ 664,00</i>
+              </div>
 
-              <span>
-                Cesta Romântica
-                <small>CR-001</small>
-              </span>
+              <div className="saas-demo-linha feito">
+                <b>12:00</b>
+                <span>
+                  Imobiliária Sul Casa
+                  <small>1x Tábua de frios pra 4</small>
+                </span>
+                <i>R$ 560,00</i>
+              </div>
+            </article>
 
-              <span>
-                <i className="whats">WhatsApp</i>
-              </span>
+            <article className="saas-demo-card">
+              <header>Próximos 7 dias</header>
 
-              <span>R$ 259,90</span>
+              <div className="saas-demo-linha">
+                <b>SÁB 05</b>
+                <span>
+                  Patrícia Lemos
+                  <small>1x Tábua de frios pra 6</small>
+                </span>
+                <i>R$ 1.072,00</i>
+              </div>
 
-              <span>
-                <i className="novo">Novo</i>
-              </span>
-            </div>
+              <div className="saas-demo-linha">
+                <b>SÁB 05</b>
+                <span>
+                  Fernanda Ribeiro
+                  <small>1x Kit vinho e queijos</small>
+                </span>
+                <i>R$ 783,00</i>
+              </div>
 
-            <div>
-              <span>
-                <b>#9280</b>
-                <small>24/05 · 09:15</small>
-              </span>
+              <div className="saas-demo-linha">
+                <b>DOM 06</b>
+                <span>
+                  Carla Menezes
+                  <small>1x Cesta premium</small>
+                </span>
+                <i>R$ 609,00</i>
+              </div>
 
-              <span>
-                Juliana Martins
-                <small>WhatsApp</small>
-              </span>
+              <div className="saas-demo-linha">
+                <b>SEG 07</b>
+                <span>
+                  Marcos Vinícius
+                  <small>3x Box romântico</small>
+                </span>
+                <i>R$ 525,00</i>
+              </div>
+            </article>
 
-              <span>
-                Cesta Café da Manhã
-                <small>CCM-002</small>
-              </span>
+            <div className="saas-demo-coluna">
+              <article className="saas-demo-card">
+                <header>Tarefas pendentes</header>
+                <div className="saas-demo-vazio">
+                  Nenhuma tarefa pendente
+                  <small>As tarefas adicionadas aparecem aqui.</small>
+                </div>
+              </article>
 
-              <span>
-                <i className="insta">Instagram</i>
-              </span>
+              <article className="saas-demo-card">
+                <header>
+                  Pedidos em aberto <em>ver todos</em>
+                </header>
 
-              <span>R$ 149,90</span>
+                <div className="saas-demo-linha">
+                  <span>
+                    Sabrina Duarte
+                    <small>1x Box romântico</small>
+                  </span>
+                  <u>Novo</u>
+                </div>
 
-              <span>
-                <i className="producao">Em produção</i>
-              </span>
-            </div>
+                <div className="saas-demo-linha">
+                  <span>
+                    Carla Menezes
+                    <small>1x Cesta premium</small>
+                  </span>
+                  <u>Novo</u>
+                </div>
 
-            <div>
-              <span>
-                <b>#9279</b>
-                <small>23/05 · 16:45</small>
-              </span>
-
-              <span>
-                Camila Ribeiro
-                <small>WhatsApp</small>
-              </span>
-
-              <span>
-                Tábua Premium
-                <small>TP-003</small>
-              </span>
-
-              <span>
-                <i className="manual">Manual</i>
-              </span>
-
-              <span>R$ 329,90</span>
-
-              <span>
-                <i className="retirada">Aguardando</i>
-              </span>
-            </div>
-
-            <div>
-              <span>
-                <b>#9278</b>
-                <small>23/05 · 14:20</small>
-              </span>
-
-              <span>
-                Marina Lopes
-                <small>WhatsApp</small>
-              </span>
-
-              <span>
-                Presente Especial
-                <small>PE-004</small>
-              </span>
-
-              <span>
-                <i className="whats">WhatsApp</i>
-              </span>
-
-              <span>R$ 414,90</span>
-
-              <span>
-                <i className="entregue">Entregue</i>
-              </span>
+                <div className="saas-demo-linha">
+                  <span>
+                    Débora Vasconcelos
+                    <small>1x Cesta de chocolates</small>
+                  </span>
+                  <u>Novo</u>
+                </div>
+              </article>
             </div>
           </div>
         </div>

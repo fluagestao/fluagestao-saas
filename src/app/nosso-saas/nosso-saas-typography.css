@@ -82,7 +82,7 @@
 .saas-page .saas-hero-proof,
 .saas-page .saas-demo-nav,
 .saas-page .saas-demo-heading button,
-.saas-page .saas-demo-filters>*{
+.saas-page .saas-demo-card>header{
   font-family:var(--font-geist-sans),Arial,sans-serif;
   font-weight:600;
 }
@@ -94,19 +94,14 @@
 .saas-page .saas-demo-heading h3,
 .saas-page .saas-demo-topbar>strong,
 .saas-page .saas-demo-kpis strong,
-.saas-page .saas-demo-table span b{
+.saas-page .saas-demo-linha>i{
   font-weight:600;
 }
 
 .saas-page .saas-demo-heading small,
 .saas-page .saas-demo-kpis span,
-.saas-page .saas-demo-table .head,
 .saas-page .saas-flow-copy>span{
   font-weight:600;
-}
-
-.saas-page .saas-demo-table i{
-  font-weight:500;
 }
 
 .saas-page .saas-quick-grid strong{
