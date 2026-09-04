@@ -2,7 +2,7 @@
 -- Por que a aba Relacionamento está vazia?
 --
 -- Troque COLE_AQUI pelo id da empresa e rode. Cada bloco elimina uma hipótese.
---   select id, nome from public.companies order by created_at;
+--   select id, name from public.companies order by created_at;
 -- ============================================================================
 
 -- 1) O pedido chega ligado a um cliente?

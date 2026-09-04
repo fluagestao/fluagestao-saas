@@ -53,10 +53,11 @@
 -- Clientes são FICTÍCIOS e os WhatsApp usam 4899999-00XX, que não corresponde a
 -- linha real.
 --
--- ANTES DE RODAR: troque COLE_AQUI pelo id da empresa. É UMA ocorrência só,
--- na linha `v_empresa text := 'COLE_AQUI';` (as outras estão em comentários).
---   select id, nome from public.companies order by created_at;
--- ============================================================================
+-- COMO RODAR: cole o arquivo inteiro e mande. Se houver uma empresa so no
+-- banco, ele acha sozinho e nao ha nada para editar.
+--
+-- Com mais de uma empresa, ele para e lista os ids; ai cole o escolhido no
+-- lugar de COLE_AQUI, na linha do v_empresa.
 
 do $$
 declare
@@ -73,6 +74,7 @@ declare
   v_fim        date := (date_trunc('month', current_date) - interval '1 day')::date;
 
   v_produtos   int;
+  v_qtd   int;
   v_dia        date;
   v_qtd_dia    int;
   v_n          int;
@@ -103,18 +105,28 @@ declare
     'Cláudia', 'Roberto', 'Lúcia', 'a equipe do escritório', 'Dona Ivete'
   ];
 begin
-  /* Valida o FORMATO, e nao um texto sentinela.
+  /* Resolve a empresa sozinho quando da para ter certeza.
 
-     A versao anterior comparava com o literal 'COLE_AQUI' — e quem faz
-     localizar-e-substituir em tudo (o jeito natural) trocava tambem o literal
-     da comparacao. A checagem virava `id = id`, sempre verdadeira, e o bloco
-     abortava dizendo justamente para trocar o que ja tinha sido trocado.
-     Olhando o formato, tanto faz como o arquivo foi editado. */
-  if v_empresa !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' then
-    raise exception 'Onde esta COLE_AQUI, cole o id da empresa (um uuid). Valor atual: %. Pegue com: select id, nome from public.companies order by created_at;', v_empresa;
+     A versao anterior obrigava a editar o arquivo antes de rodar, e a mensagem
+     "troque COLE_AQUI" e exatamente o tipo de instrucao que se perde entre
+     copiar e colar 400 linhas. Se houver uma empresa so, nao ha ambiguidade e
+     nao ha o que perguntar. Com mais de uma, ai sim ele para e lista quais. */
+  if v_empresa ~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' then
+    v_company := v_empresa::uuid;
+  else
+    select count(*) into v_qtd from public.companies;
+
+    if v_qtd = 1 then
+      select id into v_company from public.companies;
+      raise notice 'Usando a unica empresa do banco: %', v_company;
+    elsif v_qtd = 0 then
+      raise exception 'Nao existe empresa neste banco.';
+    else
+      raise exception 'Ha % empresas aqui. Cole o id de uma delas no lugar de COLE_AQUI (linha do v_empresa). Sao: %',
+        v_qtd,
+        (select string_agg(name || ' = ' || id, ' | ' order by created_at) from public.companies);
+    end if;
   end if;
-
-  v_company := v_empresa::uuid;
 
   select count(*) into v_produtos
   from public.produtos
