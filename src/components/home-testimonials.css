@@ -1,0 +1,275 @@
+.flua-testimonials {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(76px, 8vw, 118px) 0;
+  color: #3e211e;
+  background:
+    radial-gradient(circle at 4% 15%, rgba(188, 91, 71, 0.1), transparent 24rem),
+    radial-gradient(circle at 96% 85%, rgba(112, 44, 39, 0.08), transparent 28rem),
+    #fffaf5;
+}
+
+.flua-testimonials-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 48px;
+  margin-bottom: clamp(38px, 5vw, 62px);
+}
+
+.flua-testimonials-heading-copy {
+  max-width: 830px;
+}
+
+.flua-testimonials-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ad4c41;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+}
+
+.flua-testimonials-kicker::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c76e5c;
+  box-shadow: 0 0 0 5px rgba(199, 110, 92, 0.12);
+  content: "";
+}
+
+.flua-testimonials h2 {
+  max-width: 820px;
+  margin: 20px 0 0;
+  color: #531e1c;
+  font-family: var(--font-flua-serif), Georgia, serif;
+  font-size: clamp(2.7rem, 4.5vw, 4.9rem);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.flua-testimonials-heading-copy > p {
+  max-width: 690px;
+  margin: 24px 0 0;
+  color: #735d57;
+  font-size: clamp(0.98rem, 1.2vw, 1.08rem);
+  line-height: 1.65;
+}
+
+.flua-testimonials-company {
+  display: grid;
+  width: 205px;
+  justify-items: center;
+  padding: 17px 20px 13px;
+  border: 1px solid rgba(133, 58, 48, 0.14);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.flua-testimonials-company span {
+  color: #8b5b52;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.flua-testimonials-company img {
+  width: 165px;
+  height: 78px;
+  object-fit: contain;
+}
+
+.flua-testimonials-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(22px, 2.6vw, 38px);
+}
+
+.flua-testimonial-card {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(210px, 0.8fr) minmax(300px, 1.2fr);
+  overflow: hidden;
+  border: 1px solid rgba(119, 55, 47, 0.15);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 20px 52px rgba(72, 30, 25, 0.09);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.flua-testimonial-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 27px 65px rgba(72, 30, 25, 0.14);
+}
+
+.flua-testimonial-photo {
+  position: relative;
+  min-height: 480px;
+  overflow: hidden;
+  background: #e8ddd7;
+}
+
+.flua-testimonial-photo img {
+  object-fit: cover;
+}
+
+.flua-testimonial-photo-alice {
+  object-position: 56% center;
+}
+
+.flua-testimonial-photo-adriana {
+  object-position: 50% 28%;
+}
+
+.flua-testimonial-content {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  padding: clamp(31px, 3.2vw, 47px);
+}
+
+.flua-testimonial-quote-mark {
+  position: absolute;
+  top: 18px;
+  right: 28px;
+  color: rgba(173, 76, 65, 0.12);
+  font-family: Georgia, serif;
+  font-size: 7.5rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.flua-testimonial-content blockquote {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  width: 100%;
+  margin: 0;
+  flex-direction: column;
+}
+
+.flua-testimonial-content blockquote > p {
+  margin: 0;
+  color: #563d37;
+  font-size: clamp(0.9rem, 1vw, 1.02rem);
+  line-height: 1.72;
+}
+
+.flua-testimonial-content footer {
+  display: grid;
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+.flua-testimonial-content cite {
+  color: #531e1c;
+  font-family: var(--font-flua-serif), Georgia, serif;
+  font-size: 1.55rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.flua-testimonial-content footer span {
+  margin-top: 3px;
+  color: #ad4c41;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.flua-testimonial-content footer small {
+  margin-top: 5px;
+  color: #806a64;
+  font-size: 0.76rem;
+}
+
+@media (max-width: 1320px) {
+  .flua-testimonial-card {
+    grid-template-columns: 42% 58%;
+  }
+
+  .flua-testimonial-content {
+    padding: 30px;
+  }
+
+  .flua-testimonial-content blockquote > p {
+    font-size: 0.88rem;
+    line-height: 1.62;
+  }
+}
+
+@media (max-width: 1080px) {
+  .flua-testimonials-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .flua-testimonial-card {
+    grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .flua-testimonial-photo {
+    min-height: 410px;
+  }
+
+  .flua-testimonial-content blockquote > p {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .flua-testimonials-heading {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 27px;
+  }
+
+  .flua-testimonials-company {
+    width: 180px;
+  }
+
+  .flua-testimonials-company img {
+    width: 140px;
+    height: 66px;
+  }
+
+  .flua-testimonial-card {
+    grid-template-columns: 1fr;
+    border-radius: 22px;
+  }
+
+  .flua-testimonial-photo {
+    min-height: clamp(320px, 92vw, 470px);
+  }
+
+  .flua-testimonial-photo-alice {
+    object-position: 54% center;
+  }
+
+  .flua-testimonial-photo-adriana {
+    object-position: 50% 24%;
+  }
+
+  .flua-testimonial-content {
+    padding: 29px 24px 32px;
+  }
+
+  .flua-testimonial-content footer {
+    margin-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flua-testimonial-card {
+    transition: none;
+  }
+
+  .flua-testimonial-card:hover {
+    transform: none;
+  }
+}
