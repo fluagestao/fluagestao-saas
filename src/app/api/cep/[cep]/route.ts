@@ -13,13 +13,25 @@ async function consultarViaCep(cep: string): Promise<EnderecoCep | null> {
   if (!resposta.ok) return null;
 
   const dados = (await resposta.json()) as {
-    erro?: boolean;
+    /* String, nao booleano: o ViaCEP responde `{"erro": "true"}` para CEP que
+       nao existe. O tipo dizia `boolean` e a checagem funcionava por acidente
+       — "true" e truthy. O acidente tinha um custo: no dia em que a resposta
+       trouxesse `"false"`, ela tambem seria truthy e um CEP valido viraria
+       "nao encontrado". Versoes antigas mandavam o booleano, entao os dois
+       formatos ficam declarados. */
+    erro?: boolean | string;
     logradouro?: string;
     bairro?: string;
     localidade?: string;
     uf?: string;
   };
-  if (dados.erro) return null;
+
+  /* Erro e a ausencia de negacao, nao a presenca de "true": assim uma mudanca
+     de formato do ViaCEP (`1`, `"sim"`, o que for) continua sendo tratada como
+     erro, em vez de deixar passar um endereco vazio como se fosse valido. */
+  const semRegistro =
+    dados.erro !== undefined && dados.erro !== false && dados.erro !== "false";
+  if (semRegistro) return null;
 
   return {
     cep,
@@ -42,6 +54,11 @@ async function consultarBrasilApi(cep: string): Promise<EnderecoCep | null> {
     city?: string;
     state?: string;
   };
+
+  /* Sem cidade nao ha endereco. Devolver o objeto vazio faria a rota responder
+     200 com tudo em branco, e a tela trataria como sucesso — pior que o 404,
+     porque nao ha o que dizer para a pessoa. */
+  if (!dados.city) return null;
 
   return {
     cep,
