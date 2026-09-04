@@ -103,15 +103,18 @@ declare
     'Cláudia', 'Roberto', 'Lúcia', 'a equipe do escritório', 'Dona Ivete'
   ];
 begin
-  if v_empresa = 'COLE_AQUI' then
-    raise exception 'Troque COLE_AQUI pelo id da empresa antes de rodar. Pegue com: select id, nome from public.companies order by created_at;';
+  /* Valida o FORMATO, e nao um texto sentinela.
+
+     A versao anterior comparava com o literal 'COLE_AQUI' — e quem faz
+     localizar-e-substituir em tudo (o jeito natural) trocava tambem o literal
+     da comparacao. A checagem virava `id = id`, sempre verdadeira, e o bloco
+     abortava dizendo justamente para trocar o que ja tinha sido trocado.
+     Olhando o formato, tanto faz como o arquivo foi editado. */
+  if v_empresa !~ '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' then
+    raise exception 'Onde esta COLE_AQUI, cole o id da empresa (um uuid). Valor atual: %. Pegue com: select id, nome from public.companies order by created_at;', v_empresa;
   end if;
 
-  begin
-    v_company := v_empresa::uuid;
-  exception when others then
-    raise exception 'O valor colado no lugar de COLE_AQUI nao e um id valido: %', v_empresa;
-  end;
+  v_company := v_empresa::uuid;
 
   select count(*) into v_produtos
   from public.produtos
