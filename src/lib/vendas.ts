@@ -419,3 +419,58 @@ export function abrirWhatsappCom(numero: string | null | undefined, mensagem: st
   window.open(`${base}?text=${encodeURIComponent(mensagem)}`, "_blank");
   return true;
 }
+
+/* ------------------------------------------------- forma de pagamento ---
+   "pix" e "Pix" viravam duas fatias no grafico, e "cartao" e "Cartão" outras
+   duas — o Pix aparecia com 62% quando era 69%, e o grafico ganhava fantasmas.
+
+   A causa e o campo aceitar texto livre em "Outro" e ter mudado de convencao
+   ao longo do tempo: o seletor grava "Pix", codigo antigo gravava "pix".
+   Somar por texto cru e o mesmo erro que o slug da ocasiao existe para evitar.
+
+   Aqui a CHAVE e dobrada (sem acento, minuscula) e o ROTULO e canonico. Assim
+   o historico antigo se junta sem precisar de migration, e quem digitar
+   "PIX" amanha cai no mesmo balde. */
+
+const CANONICO: Record<string, string> = {
+  pix: "Pix",
+  cartao: "Cartão",
+  dinheiro: "Dinheiro",
+  especie: "Dinheiro",
+  cortesia: "Cortesia",
+  transferencia: "Transferência",
+  ted: "Transferência",
+  boleto: "Boleto",
+};
+
+function dobrar(forma: string | null | undefined): string {
+  return String(forma ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Chave para agrupar.
+ *
+ * Passa pelo canonico, e nao so pelo texto dobrado: "credito" e "debito" viram
+ * "cartao". Sem isso os dois cairiam em chaves diferentes mostrando o MESMO
+ * rotulo, e o grafico teria duas fatias chamadas "Cartão" — trocando um
+ * duplicado por outro.
+ */
+export function chaveFormaPagamento(forma: string | null | undefined): string {
+  const chave = dobrar(forma);
+  const canonico = CANONICO[chave];
+  return canonico ? dobrar(canonico) : chave;
+}
+
+/** Como mostrar na tela. Forma desconhecida volta com a inicial maiuscula. */
+export function rotuloFormaPagamento(forma: string | null | undefined): string {
+  const chave = dobrar(forma);
+  if (!chave) return "A combinar";
+  if (CANONICO[chave]) return CANONICO[chave];
+  const bruto = String(forma ?? "").trim();
+  return bruto.charAt(0).toUpperCase() + bruto.slice(1);
+}

@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { requireCompany } from "@/lib/company-context.server";
+import { chaveFormaPagamento, rotuloFormaPagamento } from "@/lib/vendas";
 import { calcularFrete } from "@/lib/frete";
 import {
   filtroPedidosSchema,
@@ -365,7 +366,12 @@ export async function salvarPedido(input: { data: unknown }) {
     janela_entrega: data.janela_entrega,
     ocasiao: data.ocasiao,
     ocasiao_confirmada: data.ocasiao_confirmada,
-    forma_pagamento: data.forma_pagamento,
+    /* Canoniza aqui, e nao so na leitura: o campo "Outro" e texto livre, e sem
+       isto cada "PIX", "pix " e "Pix" digitado vira uma linha nova no grafico
+       que alguem tem que dobrar de novo depois. */
+    forma_pagamento: data.forma_pagamento
+      ? rotuloFormaPagamento(data.forma_pagamento)
+      : null,
     status: data.status,
     observacao: data.observacao,
     ...(data.recebido_em ? { recebido_em: data.recebido_em } : {}),
@@ -1010,8 +1016,14 @@ export async function carregarDashboard(input: { data: unknown }) {
         valorSemAdicional += valorPedido;
       }
 
-      const forma = pedido.forma_pagamento || "A combinar";
-      somar(porPagamento, forma, forma, 1, Number(pedido.total ?? 0));
+      const forma = pedido.forma_pagamento as string | null;
+      somar(
+        porPagamento,
+        chaveFormaPagamento(forma) || "a combinar",
+        rotuloFormaPagamento(forma),
+        1,
+        Number(pedido.total ?? 0),
+      );
     }
 
     for (const item of itens) {

@@ -309,7 +309,7 @@ begin
         v_dest,
         v_dia,
         v_janelas[1 + ((v_n - 1) % array_length(v_janelas, 1))],
-        case when random() < 0.72 then 'pix' else 'cartao' end,
+        case when random() < 0.72 then 'Pix' else 'Cartão' end,
         'entregue',
         case when v_confirmada then v_ocasiao end,
         v_confirmada,
@@ -368,7 +368,7 @@ begin
     ) values (
       v_company, v_cli.id, v_cli.nome, v_cli.whatsapp,
       v_itens, v_subtotal, 12.00, true, v_subtotal + 12.00,
-      'entrega', v_cli.bairro, v_cli.corte, '14:00 às 16:00', 'pix', 'entregue',
+      'entrega', v_cli.bairro, v_cli.corte, '14:00 às 16:00', 'Pix', 'entregue',
       v_cli.corte, v_cli.corte::timestamptz + make_interval(hours => 15),
       'manual', (v_cli.corte - 5)::timestamptz + make_interval(hours => 10)
     );

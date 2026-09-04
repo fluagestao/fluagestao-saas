@@ -214,7 +214,7 @@ begin
       v_taxa := case when v_tipo = 'entrega' then 8 + floor(random() * 18)::int else 0 end;
 
       v_janela := v_janelas[least(v_n, array_length(v_janelas, 1))];
-      v_forma  := case when random() < 0.72 then 'pix' else 'cartao' end;
+      v_forma  := case when random() < 0.72 then 'Pix' else 'Cartão' end;
 
       -- O pedido é sempre criado no passado. Datar a criação no futuro para
       -- casar com a entrega deixaria "criado em 22/09" numa tela de dia 03.
