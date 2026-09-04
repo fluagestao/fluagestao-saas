@@ -141,7 +141,12 @@ export function CustoPanel() {
               type="button"
               onClick={() => setMostrar((v) => !v)}
               aria-pressed={mostrar}
-              className="col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-[var(--cream-deep)] px-3 text-sm font-medium text-[var(--admin-ink-soft)] transition-colors hover:border-[var(--terracotta)] hover:text-[var(--terracotta)] sm:col-auto sm:h-9"
+              className={cn(
+                "col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-medium transition-colors sm:col-auto sm:h-9",
+                mostrar
+                  ? "border-[var(--cream-deep)] text-[var(--admin-ink-soft)] hover:border-[var(--terracotta)] hover:text-[var(--terracotta)]"
+                  : "border-[var(--terracotta)] bg-[var(--terracotta)] font-semibold text-white shadow-[0_2px_8px_rgba(169,79,69,0.25)] hover:bg-[var(--wine)]",
+              )}
             >
               {mostrar ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               {mostrar ? "Esconder" : "Mostrar"}
