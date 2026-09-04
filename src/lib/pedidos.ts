@@ -19,6 +19,7 @@ import type {
   VendaAgrupada,
   ClienteDoPeriodo,
 } from "@/lib/pedidos-ops.server";
+import { mensagemDeErro } from "@/lib/erros";
 import {
   dataLocalISO,
   normalizarPedido,
@@ -338,9 +339,25 @@ export async function salvarPedido(input: { data: unknown }) {
   const { supabase, companyId } = await requireCompany();
 
   const itens = data.itens as ItemPedido[];
-  const taxa = await resolverTaxa(supabase, companyId, data);
-  const clienteId =
-    data.cliente_id ?? (await garantirCliente(supabase, companyId, data));
+
+  /* RETORNA o erro em vez de lançar.
+     Em produção o React descarta a mensagem de um Error vindo de arquivo
+     "use server" e manda só um digest — a pessoa lia um texto minificado em
+     inglês. Aqui dói mais que em qualquer outro lugar: é por esta função que
+     TODO pedido nasce, e as falhas daqui são justamente as que ela precisa
+     ler ("esse WhatsApp já está em outro cliente", "bairro não encontrado").
+
+     Estas duas linhas entram no try porque as duas tocam o banco: resolverTaxa
+     lê o bairro e garantirCliente pode CRIAR uma cliente, que é onde mora o
+     conflito de duplicado. */
+  let taxa: number | null;
+  let clienteId: string | null;
+  try {
+    taxa = await resolverTaxa(supabase, companyId, data);
+    clienteId = data.cliente_id ?? (await garantirCliente(supabase, companyId, data));
+  } catch (e) {
+    return { ok: false as const, id: null, erro: mensagemDeErro(e, "salvar o pedido") };
+  }
 
   const row = {
     cliente_nome: data.cliente_nome,
@@ -387,8 +404,10 @@ export async function salvarPedido(input: { data: unknown }) {
       .select("id")
       .maybeSingle();
 
-    if (error) throw error;
-    return { id: salvo?.id ?? data.id };
+    if (error) {
+      return { ok: false as const, id: null, erro: mensagemDeErro(error, "salvar o pedido") };
+    }
+    return { ok: true as const, id: salvo?.id ?? data.id, erro: null };
   }
 
   const { data: salvo, error } = await supabase
@@ -401,9 +420,19 @@ export async function salvarPedido(input: { data: unknown }) {
     .select("id")
     .maybeSingle();
 
-  if (error) throw error;
-  if (!salvo) throw new Error("Não foi possível salvar o pedido.");
-  return { id: salvo.id };
+  if (error) {
+    return { ok: false as const, id: null, erro: mensagemDeErro(error, "salvar o pedido") };
+  }
+  if (!salvo) {
+    /* Insert sem erro e sem linha: o RLS recusou em silêncio. Dizer "não foi
+       possível" não ajudava ninguém a fazer nada. */
+    return {
+      ok: false as const,
+      id: null,
+      erro: "O pedido não foi gravado e o banco não disse por quê. Tente de novo; se repetir, avise o Lucas.",
+    };
+  }
+  return { ok: true as const, id: salvo.id, erro: null };
 }
 
 export async function mudarStatusPedido(input: { data: unknown }) {

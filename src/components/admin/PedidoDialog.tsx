@@ -344,7 +344,7 @@ export function PedidoDialog({
     setSalvando(true);
     setErro(null);
     try {
-      await salvarPedido({
+      const res = await salvarPedido({
         data: {
           ...(pedido ? { id: pedido.id } : {}),
           cliente_nome: nome.trim() || null,
@@ -389,14 +389,25 @@ export function PedidoDialog({
           cartao_mensagem: cartaoMsg.trim() || null,
         },
       });
+
+      /* Recusa esperada vem no RETORNO, não no catch: o servidor já traduziu.
+         E o setSalvando(false) precisa estar no finally — com ele solto depois
+         do try, este return cedo deixaria o botão desabilitado para sempre e a
+         pessoa presa na tela sem conseguir tentar de novo. */
+      if (res?.erro) {
+        setErro(res.erro);
+        return;
+      }
+
       onSaved();
       if (guiado) guia?.concluir();
       fecharPedido();
     } catch (e) {
-      // Mensagem crua do banco ajuda mais que "erro ao salvar".
+      // Sobrou o inesperado: rede caiu, sessão expirou.
       setErro(mensagemDeErro(e, "salvar o pedido"));
+    } finally {
+      setSalvando(false);
     }
-    setSalvando(false);
   }
 
   const conteudo = (
