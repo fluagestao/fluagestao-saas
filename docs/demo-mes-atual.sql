@@ -371,7 +371,7 @@ end $$;
 --     select id from public.clientes
 --      where company_id = 'COLE_AQUI'
 --        and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
-                    between '48999990001' and '48999990020'
+--                    between '48999990001' and '48999990020'
 --   )
 --   delete from public.movimentos
 --    where company_id = 'COLE_AQUI'
@@ -385,11 +385,11 @@ end $$;
 --        select id from public.clientes
 --         where company_id = 'COLE_AQUI'
 --           and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
-                    between '48999990001' and '48999990020');
+--                    between '48999990001' and '48999990020');
 --
 --   -- Os clientes fictícios em si, se quiser limpar de vez:
 --   -- delete from public.clientes
 --   --  where company_id = 'COLE_AQUI'
 --   --    and regexp_replace(coalesce(whatsapp, ''), '\D', '', 'g')
-                    between '48999990001' and '48999990020';
+--                    between '48999990001' and '48999990020';
 -- commit;
