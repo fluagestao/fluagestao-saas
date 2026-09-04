@@ -358,6 +358,55 @@ function Pizza({
   );
 }
 
+/* Barra de progresso de uma meta. Recebe o formatador porque cestas e reais
+   nao se escrevem igual, e um numero cru de faturamento no meio de unidades
+   confundiria mais do que informa. */
+function Barra({
+  rotulo,
+  realizado,
+  meta,
+  formatar,
+  sufixo,
+}: {
+  rotulo: string;
+  realizado: number;
+  meta: number;
+  formatar: (v: number) => string;
+  sufixo?: string;
+}) {
+  const bateu = realizado >= meta;
+  const falta = Math.abs(meta - realizado);
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="t-support text-muted-foreground">{rotulo}</span>
+        <span className="t-body tabular-nums text-foreground">
+          {formatar(realizado)}
+          <span className="text-muted-foreground"> de {formatar(meta)}</span>
+        </span>
+      </div>
+      {/* Barra em vez de so porcentagem: "78%" exige converter de cabeca
+          quanto falta; a barra mostra. */}
+      <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--cream)]">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all",
+            bateu ? "bg-[var(--green-ink)]" : "bg-[var(--terracotta)]",
+          )}
+          style={{ width: `${Math.min(100, Math.round((realizado / meta) * 100))}%` }}
+        />
+      </div>
+      <p className="t-support mt-1 text-muted-foreground">
+        {bateu ? "meta batida com " : "faltam "}
+        {formatar(falta)}
+        {sufixo ? ` ${sufixo}` : ""}
+        {bateu ? " a mais" : ""}
+      </p>
+    </div>
+  );
+}
+
 function Ranking({ itens }: { itens: VendaAgrupada[] }) {
   if (itens.length === 0) {
     return <p className="mt-3 text-sm text-muted-foreground">Nada vendido no período.</p>;
@@ -399,7 +448,9 @@ export function DashboardPanel() {
   const [metaAberta, setMetaAberta] = useState(false);
   /* Rascunho dos doze meses, indexado por mês. Texto e não número: o campo
      controlado precisa aceitar o estado intermediário de quem está apagando. */
-  const [rascunhoMetas, setRascunhoMetas] = useState<Record<number, string>>({});
+  const [rascunhoMetas, setRascunhoMetas] = useState<
+    Record<number, { cestas: string; dinheiro: string }>
+  >({});
   const [salvandoMeta, setSalvandoMeta] = useState(false);
 
   const [anoSelecionado, mesSelecionado] = mes.split("-");
@@ -445,7 +496,20 @@ export function DashboardPanel() {
   }, [carregarMetas]);
 
   const metasPorMes = useMemo(
-    () => new Map(metas.map((m) => [m.mes, m.metaCestas])),
+    () =>
+      new Map(
+        metas.filter((m) => m.metaCestas != null).map((m) => [m.mes, m.metaCestas as number]),
+      ),
+    [metas],
+  );
+
+  const metasDinheiroPorMes = useMemo(
+    () =>
+      new Map(
+        metas
+          .filter((m) => m.metaFaturamento != null)
+          .map((m) => [m.mes, m.metaFaturamento as number]),
+      ),
     [metas],
   );
 
@@ -454,6 +518,8 @@ export function DashboardPanel() {
   const mesDaMeta = Number(mesSelecionado);
   const metaDoMes = metasPorMes.get(mesDaMeta) ?? null;
   const realizadoDoMes = dados?.unidades.principais ?? 0;
+  const metaDinheiroDoMes = metasDinheiroPorMes.get(mesDaMeta) ?? null;
+  const realizadoDinheiro = dados?.totalVendido ?? 0;
 
   async function gravarMetas() {
     setSalvandoMeta(true);
@@ -463,7 +529,8 @@ export function DashboardPanel() {
           ano: Number(anoSelecionado),
           metas: Array.from({ length: 12 }, (_, i) => ({
             mes: i + 1,
-            metaCestas: Number(rascunhoMetas[i + 1] ?? "") || null,
+            metaCestas: Number(rascunhoMetas[i + 1]?.cestas ?? "") || null,
+            metaFaturamento: Number(rascunhoMetas[i + 1]?.dinheiro ?? "") || null,
           })),
         },
       });
@@ -498,7 +565,12 @@ export function DashboardPanel() {
                   Object.fromEntries(
                     Array.from({ length: 12 }, (_, i) => [
                       i + 1,
-                      metasPorMes.get(i + 1) ? String(metasPorMes.get(i + 1)) : "",
+                      {
+                        cestas: metasPorMes.get(i + 1) ? String(metasPorMes.get(i + 1)) : "",
+                        dinheiro: metasDinheiroPorMes.get(i + 1)
+                          ? String(metasDinheiroPorMes.get(i + 1))
+                          : "",
+                      },
                     ]),
                   ),
                 );
@@ -630,19 +702,37 @@ export function DashboardPanel() {
           <DialogHeader className="text-left">
             <DialogTitle>Metas de {anoSelecionado}</DialogTitle>
             <DialogDescription>
-              Quantas cestas entregar em cada mês. Conta o mesmo que o cartão “Cestas
-              entregues” — adicionais não entram. Mês em branco fica sem meta.
+              As duas são independentes: dá para definir só cestas, só faturamento, ou as
+              duas. Cestas conta o mesmo que o cartão “Cestas entregues” — adicionais não
+              entram. Mês com os dois em branco fica sem meta.
             </DialogDescription>
           </DialogHeader>
 
           {/* Os doze de uma vez: é olhando a sazonalidade do ano que se decide
               o número de cada mês. Um a um, a pessoa fecharia e reabriria doze
               vezes sem nunca ver o conjunto. */}
+          {/* Cabecalho das colunas: sem ele, dois campos numericos lado a lado
+              nao dizem qual e qual. */}
+          <div className="flex items-center gap-3 px-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <span className="w-10 shrink-0" />
+            <span className="w-20 shrink-0 text-center">Cestas</span>
+            <span className="w-28 shrink-0 text-center">Faturamento</span>
+            <span className="min-w-0 flex-1">Realizado</span>
+          </div>
+
+          {/* Os doze de uma vez: é olhando a sazonalidade do ano que se decide
+              o número de cada mês. Um a um, a pessoa fecharia e reabriria doze
+              vezes sem nunca ver o conjunto. */}
           <ul className="max-h-[55dvh] space-y-1 overflow-y-auto pr-1">
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
-              const realizado = dados?.serieMensal.find((x) => x.mes === m)?.principais ?? 0;
-              const alvo = Number(rascunhoMetas[m] ?? "") || null;
-              const passou = Number(anoSelecionado) < anoAtual || (Number(anoSelecionado) === anoAtual && m < mesAtual);
+              const serie = dados?.serieMensal.find((x) => x.mes === m);
+              const realizado = serie?.principais ?? 0;
+              const faturado = serie?.valor ?? 0;
+              const alvo = Number(rascunhoMetas[m]?.cestas ?? "") || null;
+              const alvoDinheiro = Number(rascunhoMetas[m]?.dinheiro ?? "") || null;
+              const passou =
+                Number(anoSelecionado) < anoAtual ||
+                (Number(anoSelecionado) === anoAtual && m < mesAtual);
 
               return (
                 <li
@@ -654,41 +744,81 @@ export function DashboardPanel() {
                   </span>
 
                   <Input
-                    value={rascunhoMetas[m] ?? ""}
+                    value={rascunhoMetas[m]?.cestas ?? ""}
                     onChange={(e) =>
-                      setRascunhoMetas((v) => ({ ...v, [m]: e.target.value.replace(/\D/g, "") }))
+                      setRascunhoMetas((v) => ({
+                        ...v,
+                        [m]: {
+                          cestas: e.target.value.replace(/\D/g, ""),
+                          dinheiro: v[m]?.dinheiro ?? "",
+                        },
+                      }))
                     }
                     inputMode="numeric"
                     placeholder="—"
                     className="h-9 w-20 shrink-0 bg-white text-center"
+                    aria-label={`Meta de cestas de ${MESES_CURTOS[m - 1]}`}
+                  />
+
+                  <Input
+                    value={rascunhoMetas[m]?.dinheiro ?? ""}
+                    onChange={(e) =>
+                      setRascunhoMetas((v) => ({
+                        ...v,
+                        [m]: {
+                          cestas: v[m]?.cestas ?? "",
+                          dinheiro: e.target.value.replace(/\D/g, ""),
+                        },
+                      }))
+                    }
+                    inputMode="numeric"
+                    placeholder="—"
+                    className="h-9 w-28 shrink-0 bg-white text-center"
+                    aria-label={`Meta de faturamento de ${MESES_CURTOS[m - 1]}`}
                   />
 
                   {/* Só mês que já passou compara: em mês corrente ou futuro o
                       realizado ainda vai mudar, e dizer "faltam 30" no dia 2
                       seria alarme falso. */}
-                  <span className="t-support min-w-0 flex-1 text-muted-foreground">
+                  <span className="t-support min-w-0 flex-1 leading-tight text-muted-foreground">
                     {passou ? (
-                      alvo ? (
-                        <>
-                          <b
-                            className={
-                              realizado >= alvo
-                                ? "text-[var(--green-ink)]"
-                                : "text-[var(--terracotta)]"
-                            }
-                          >
-                            {realizado}
-                          </b>{" "}
-                          entregues ·{" "}
-                          {realizado >= alvo
-                            ? `${realizado - alvo} acima`
-                            : `${alvo - realizado} abaixo`}
-                        </>
-                      ) : (
-                        `${realizado} entregues`
-                      )
-                    ) : realizado > 0 ? (
-                      `${realizado} até agora`
+                      <>
+                        <span className="block">
+                          {alvo ? (
+                            <>
+                              <b
+                                className={
+                                  realizado >= alvo
+                                    ? "text-[var(--green-ink)]"
+                                    : "text-[var(--terracotta)]"
+                                }
+                              >
+                                {realizado}
+                              </b>{" "}
+                              de {alvo} cestas
+                            </>
+                          ) : (
+                            `${realizado} cestas`
+                          )}
+                        </span>
+                        <span className="block">
+                          {alvoDinheiro ? (
+                            <b
+                              className={
+                                faturado >= alvoDinheiro
+                                  ? "text-[var(--green-ink)]"
+                                  : "text-[var(--terracotta)]"
+                              }
+                            >
+                              {formatBRL(faturado)}
+                            </b>
+                          ) : (
+                            formatBRL(faturado)
+                          )}
+                        </span>
+                      </>
+                    ) : realizado > 0 || faturado > 0 ? (
+                      `${realizado} cestas · ${formatBRL(faturado)} até agora`
                     ) : (
                       ""
                     )}
@@ -792,13 +922,18 @@ export function DashboardPanel() {
                     type="button"
                     onClick={() => {
                       setRascunhoMetas(
-                        Object.fromEntries(
-                          Array.from({ length: 12 }, (_, i) => [
-                            i + 1,
-                            metasPorMes.get(i + 1) ? String(metasPorMes.get(i + 1)) : "",
-                          ]),
-                        ),
-                      );
+                  Object.fromEntries(
+                    Array.from({ length: 12 }, (_, i) => [
+                      i + 1,
+                      {
+                        cestas: metasPorMes.get(i + 1) ? String(metasPorMes.get(i + 1)) : "",
+                        dinheiro: metasDinheiroPorMes.get(i + 1)
+                          ? String(metasDinheiroPorMes.get(i + 1))
+                          : "",
+                      },
+                    ]),
+                  ),
+                );
                       setMetaAberta(true);
                     }}
                     className="shrink-0 text-xs font-semibold text-[var(--terracotta)] hover:text-[var(--wine)]"
@@ -807,33 +942,34 @@ export function DashboardPanel() {
                   </button>
                 </div>
 
-                {metaDoMes == null ? (
+                {metaDoMes == null && metaDinheiroDoMes == null ? (
                   <p className="mt-2 text-sm text-muted-foreground">
                     Sem meta. O gráfico do ano ao lado mostra a sazonalidade — é dele que sai um
                     número que não é chute.
                   </p>
                 ) : (
-                  <>
-                    <p className="t-hero text-foreground">
-                      {realizadoDoMes}
-                      <span className="t-body text-muted-foreground"> de {metaDoMes}</span>
-                    </p>
-                    {/* Barra em vez de só porcentagem: "78%" exige converter de
-                        cabeça quantas cestas faltam; a barra mostra. */}
-                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--cream)]">
-                      <div
-                        className="h-full rounded-full bg-[var(--terracotta)] transition-all"
-                        style={{
-                          width: `${Math.min(100, Math.round((realizadoDoMes / metaDoMes) * 100))}%`,
-                        }}
+                  <div className="mt-1 space-y-3">
+                    {/* Uma barra por meta, cada uma com a sua unidade. Somar as
+                        duas num numero so esconderia o caso que interessa:
+                        bater o dinheiro vendendo menos cesta mais cara. */}
+                    {metaDoMes != null && (
+                      <Barra
+                        rotulo="Cestas"
+                        realizado={realizadoDoMes}
+                        meta={metaDoMes}
+                        formatar={(v) => String(v)}
+                        sufixo="cesta(s)"
                       />
-                    </div>
-                    <p className="t-support mt-1.5 text-muted-foreground">
-                      {realizadoDoMes >= metaDoMes
-                        ? `meta batida com ${realizadoDoMes - metaDoMes} a mais`
-                        : `faltam ${metaDoMes - realizadoDoMes} cesta(s)`}
-                    </p>
-                  </>
+                    )}
+                    {metaDinheiroDoMes != null && (
+                      <Barra
+                        rotulo="Faturamento"
+                        realizado={realizadoDinheiro}
+                        meta={metaDinheiroDoMes}
+                        formatar={formatBRL}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             )}

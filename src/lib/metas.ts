@@ -20,7 +20,12 @@ import { requireCompany } from "@/lib/company-context.server";
 export type Meta = {
   ano: number;
   mes: number;
-  metaCestas: number;
+  /* As duas sao independentes e as duas podem ser nulas separadamente. Cestas
+     mede trabalho, faturamento mede dinheiro — derivar uma da outra pelo
+     ticket medio faria o sistema decidir por ela: subiu o preco, a meta de
+     cestas cairia sozinha sem ninguem ter escolhido. */
+  metaCestas: number | null;
+  metaFaturamento: number | null;
   observacao: string | null;
 };
 
@@ -36,7 +41,7 @@ export async function carregarMetasDoAno(input: { data: unknown }): Promise<{ me
 
   const { data, error } = await supabase
     .from("metas_mensais")
-    .select("ano, mes, meta_cestas, observacao")
+    .select("ano, mes, meta_cestas, meta_faturamento, observacao")
     .eq("company_id", companyId)
     .eq("ano", ano)
     .order("mes", { ascending: true });
@@ -47,7 +52,8 @@ export async function carregarMetasDoAno(input: { data: unknown }): Promise<{ me
     metas: (data ?? []).map((m) => ({
       ano: Number(m.ano),
       mes: Number(m.mes),
-      metaCestas: Number(m.meta_cestas),
+      metaCestas: m.meta_cestas == null ? null : Number(m.meta_cestas),
+      metaFaturamento: m.meta_faturamento == null ? null : Number(m.meta_faturamento),
       observacao: (m.observacao as string | null) ?? null,
     })),
   };
@@ -132,26 +138,42 @@ export async function salvarMetasDoAno(input: { data: unknown }) {
           z.object({
             mes: z.number().int().min(1).max(12),
             metaCestas: z.number().int().nullable(),
+            metaFaturamento: z.number().nullable(),
           }),
         )
         .max(12),
     })
     .parse(input.data);
 
-  const foraDaFaixa = metas.find(
+  const cestasFora = metas.find(
     (m) => m.metaCestas != null && (m.metaCestas < 1 || m.metaCestas > 100000),
   );
-  if (foraDaFaixa) {
+  if (cestasFora) {
     return {
       ok: false as const,
-      erro: `A meta de cada mês precisa ficar entre 1 e 100.000 cestas. Confira o mês ${foraDaFaixa.mes}.`,
+      erro: `A meta de cestas precisa ficar entre 1 e 100.000. Confira o mês ${cestasFora.mes}.`,
+    };
+  }
+
+  const dinheiroFora = metas.find(
+    (m) => m.metaFaturamento != null && (m.metaFaturamento <= 0 || m.metaFaturamento > 100000000),
+  );
+  if (dinheiroFora) {
+    return {
+      ok: false as const,
+      erro: `A meta de faturamento precisa ser maior que zero. Confira o mês ${dinheiroFora.mes}.`,
     };
   }
 
   const { supabase, companyId } = await requireCompany();
 
-  const comMeta = metas.filter((m) => m.metaCestas != null);
-  const semMeta = metas.filter((m) => m.metaCestas == null).map((m) => m.mes);
+  /* "Tem meta" agora e ter QUALQUER uma das duas. Mes com os dois campos em
+     branco apaga a linha: a constraint do banco exige pelo menos uma, e linha
+     sem meta nenhuma nao e meta — e uma linha morta na consulta. */
+  const comMeta = metas.filter((m) => m.metaCestas != null || m.metaFaturamento != null);
+  const semMeta = metas
+    .filter((m) => m.metaCestas == null && m.metaFaturamento == null)
+    .map((m) => m.mes);
 
   if (comMeta.length) {
     const { error } = await supabase.from("metas_mensais").upsert(
@@ -159,7 +181,8 @@ export async function salvarMetasDoAno(input: { data: unknown }) {
         company_id: companyId,
         ano,
         mes: m.mes,
-        meta_cestas: m.metaCestas as number,
+        meta_cestas: m.metaCestas,
+        meta_faturamento: m.metaFaturamento,
         updated_at: new Date().toISOString(),
       })),
       { onConflict: "company_id,ano,mes" },
