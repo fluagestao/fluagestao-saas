@@ -6,7 +6,6 @@ import {
   Bell,
   CalendarDays,
   ChevronDown,
-  Search,
   Settings,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -150,18 +149,6 @@ export function AppHeader({
             );
           })}
         </nav>
-
-        <div className="ml-auto hidden min-w-[220px] max-w-[300px] flex-1 xl:block">
-          <label className="flex h-11 items-center gap-2 rounded-xl border border-[var(--admin-border)] bg-[var(--cream-soft)] px-3.5 text-[var(--admin-muted)] transition focus-within:border-[var(--terracotta)] focus-within:bg-white">
-            <Search className="h-4 w-4 shrink-0" />
-            <input
-              type="search"
-              placeholder="Buscar no sistema..."
-              className="min-w-0 flex-1 bg-transparent text-sm text-[var(--admin-ink)] outline-none placeholder:text-[var(--admin-muted)]"
-            />
-            <span className="rounded-md border border-[var(--admin-border)] bg-white px-1.5 py-0.5 text-[10px] font-semibold">⌘ K</span>
-          </label>
-        </div>
 
         {/* Os quatro icones so tinham aria-label: quem enxerga nao descobria
             para que servem. O balao no hover conta, sem ocupar espaco fixo. */}
