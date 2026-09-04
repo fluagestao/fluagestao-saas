@@ -550,6 +550,30 @@ export function PedidoDialog({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-lg font-semibold text-foreground">Itens</h3>
             <div className="flex flex-wrap items-center gap-2">
+              {/* PRIMEIRO de propósito: quase todo pedido é de produto que já
+                  está no cadastro, e a pessoa clica no primeiro botão que vê.
+                  Com o avulso na frente, o caminho raro estava ganhando o
+                  clique do caminho comum. E a caixa é larga o bastante para o
+                  rótulo inteiro caber: em 15rem ele saía "Adicionar produto
+                  cadas…", que não diz o que o botão faz. Sem largura fixa: o
+                  w-auto dimensiona pelo texto, então o rótulo não corta em
+                  nenhuma fonte ou zoom, e o max-w-full impede de estourar a
+                  linha no celular — a fileira ja e flex-wrap. */}
+              <BuscaAdicionar
+                className="w-auto max-w-full"
+                placeholder="Adicionar produto cadastrado"
+                buscaPlaceholder="Buscar produto…"
+                vazio="Nenhum produto com esse nome."
+                grupos={gruposCatalogo.map((g) => ({
+                  nome: g.nome,
+                  itens: g.itens.map((p) => ({
+                    valor: p.slug,
+                    rotulo: p.nome,
+                    detalhe: p.preco != null ? formatBRL(p.preco) : "sem preço",
+                  })),
+                }))}
+                onEscolher={adicionarDoCatalogo}
+              />
               <TooltipProvider delayDuration={250}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -571,21 +595,6 @@ export function PedidoDialog({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <BuscaAdicionar
-                className="w-[15rem]"
-                placeholder="Adicionar produto cadastrado"
-                buscaPlaceholder="Buscar produto…"
-                vazio="Nenhum produto com esse nome."
-                grupos={gruposCatalogo.map((g) => ({
-                  nome: g.nome,
-                  itens: g.itens.map((p) => ({
-                    valor: p.slug,
-                    rotulo: p.nome,
-                    detalhe: p.preco != null ? formatBRL(p.preco) : "sem preço",
-                  })),
-                }))}
-                onEscolher={adicionarDoCatalogo}
-              />
               <Button
                 type="button"
                 variant="outline"
