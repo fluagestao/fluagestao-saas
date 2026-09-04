@@ -41,7 +41,7 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [processando, setProcessando] = useState(false);
 
-  const molduraRef = useRef<HTMLDivElement>(null);
+  const molduraRef = useRef<HTMLDivElement | null>(null);
   const arrasto = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
 
   // Carrega a imagem e libera a URL ao trocar de arquivo.
@@ -60,15 +60,25 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
      feita sobre um numero velho. */
   const [lado, setLado] = useState(0);
 
-  useEffect(() => {
-    const alvo = molduraRef.current;
-    if (!alvo) return;
+  /* Callback ref, e nao useEffect com [].
+     O efeito lia molduraRef.current uma vez, logo depois da montagem — e o
+     dialogo do Radix monta o conteudo antes de o layout dar largura a ele,
+     entao clientWidth vinha 0. Com lado = 0, `cobrir` e `caber` caiam no
+     fallback 1: a escala ficava presa em 1 e o controle nao mexia em nada.
+     Era esse o "afastar nao afasta".
 
-    const medir = () => setLado(alvo.clientWidth);
+     A callback ref roda no momento exato em que o no entra no DOM, e o
+     ResizeObserver cobre tudo que vier depois (a animacao de abertura, girar o
+     celular, redimensionar a janela). */
+  const medirMoldura = useCallback((no: HTMLDivElement | null) => {
+    molduraRef.current = no;
+    if (!no) return;
+
+    const medir = () => setLado(no.clientWidth);
     medir();
 
     const observador = new ResizeObserver(medir);
-    observador.observe(alvo);
+    observador.observe(no);
     return () => observador.disconnect();
   }, []);
 
@@ -197,7 +207,7 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
         </DialogHeader>
 
         <div
-          ref={molduraRef}
+          ref={medirMoldura}
           onPointerDown={aoPegar}
           onPointerMove={aoMover}
           onPointerUp={aoSoltar}
@@ -208,8 +218,8 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
             /* A foto vai como FUNDO, e nao num <img>: nenhuma regra global de
                `img { ... }` alcanca um background, e `background-size` recebe
                as duas dimensoes explicitas — nada externo consegue esticar. */
-            backgroundImage: img ? `url(${img.src})` : undefined,
-            backgroundSize: img ? `${largura}px ${altura}px` : undefined,
+            backgroundImage: img && lado ? `url(${img.src})` : undefined,
+            backgroundSize: img && lado ? `${largura}px ${altura}px` : undefined,
             backgroundPosition: `${pos.x}px ${pos.y}px`,
             backgroundRepeat: "no-repeat",
           }}
