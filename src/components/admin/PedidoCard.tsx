@@ -1,26 +1,22 @@
 import {
   BadgeDollarSign,
   ChevronRight,
-  Copy,
   MessageCircle,
   Pencil,
-  Printer,
   Trash2,
   Undo2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatarDataLonga } from "@/lib/prazo";
-import { imprimirFicha } from "@/lib/ficha-pedido";
 import { toast } from "sonner";
 
 import {
   aReceber,
   abrirWhatsappCom,
   formatBRL,
-  mensagemConfirmacao,
   mensagemRetomada,
   proximoStatus,
   statusCor,
@@ -62,28 +58,12 @@ export function PedidoCard({
   const prox = proximoStatus(p.status);
   const wa = whatsappDoCliente(p.cliente_whatsapp);
   const temWhats = Boolean(whatsappDoCliente(p.cliente_whatsapp));
-  // O botão de copiar só faz sentido no computador; no celular a mensagem vai
-  // pronta. Em efeito pra não divergir na hidratação.
-  const [noComputador, setNoComputador] = useState(false);
-  useEffect(() => {
-    setNoComputador(!/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent));
-  }, []);
-
   function enviar(mensagem: string) {
     if (!abrirWhatsappCom(p.cliente_whatsapp, mensagem)) {
       toast.error("Esse pedido não tem um WhatsApp válido.");
     }
   }
 
-  /** Saída manual: se o WhatsApp Web falhar, dá pra colar na conversa. */
-  async function copiar(mensagem: string) {
-    try {
-      await navigator.clipboard.writeText(mensagem);
-      toast.success("Mensagem copiada — cole na conversa com Ctrl+V.");
-    } catch {
-      toast.error("Não consegui copiar. Selecione o texto na conversa e digite à mão.");
-    }
-  }
   const atrasado = urgenciaDoPedido(p) === "atrasado";
   const naoPago = aReceber(p);
   // O normal é pagar antes de receber a cesta; entregue sem pagamento é a
@@ -192,8 +172,9 @@ export function PedidoCard({
           >
             {formatBRL(p.total)}
           </span>
-          {/* Nada no card avisa que ele abre. Sem esse aviso, as ações (ficha,
-              recebi, WhatsApp) ficam escondidas de quem nunca clicou por acaso. */}
+          {/* Nada no card avisa que ele abre. Sem esse aviso, as ações (avançar
+              status, recebi, WhatsApp) ficam escondidas de quem nunca clicou
+              por acaso. */}
           {(
             <span className="text-xs text-muted-foreground">
               {aberto ? "Clique para recolher" : "Clique para expandir"}
@@ -216,23 +197,6 @@ export function PedidoCard({
             </Button>
           )}
 
-          {/* A ficha é o papel que segue com o trabalho: produção monta olhando
-              ela, e o entregador recebe a mesma folha. */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              if (!imprimirFicha(p, empresaNome)) {
-                toast.error(
-                  "O navegador bloqueou a janela da ficha. Libere o pop-up e tente de novo.",
-                );
-              }
-            }}
-          >
-            <Printer className="mr-1.5 h-3.5 w-3.5" />
-            Ficha
-          </Button>
-
           {/* Pagamento é independente do status: a maioria paga na encomenda. */}
           {acoes.receber && (
             <Button
@@ -254,54 +218,17 @@ export function PedidoCard({
             </Button>
           )}
 
-          {/* Some quando entrega: pedido entregue não tem mais o que confirmar,
-              e botão que não serve mais só atrapalha quem varre a lista. */}
-          {temWhats && p.status !== "cancelado" && p.status !== "entregue" && (
-            <span className="inline-flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => enviar(mensagemConfirmacao(p))}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--whatsapp)] px-3 text-xs font-medium text-[var(--whatsapp-foreground)]"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                Confirme o pedido
-              </button>
-              {noComputador && (
-                <button
-                  type="button"
-                  title="Copiar a mensagem, caso o WhatsApp abra sem ela"
-                  onClick={() => copiar(mensagemConfirmacao(p))}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--cream-deep)] text-foreground/50 hover:text-foreground"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </span>
-          )}
-
           {/* Pedido do site ainda em aberto: provável carrinho que o cliente
               montou e não chegou a enviar. Puxar a conversa é o que fecha. */}
           {temWhats && p.status === "novo" && p.origem === "site" ? (
-            <span className="inline-flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => enviar(mensagemRetomada(p, empresaNome))}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--whatsapp)] px-3 text-xs font-medium text-[var(--whatsapp-foreground)]"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                Chamar pra concluir
-              </button>
-              {noComputador && (
-                <button
-                  type="button"
-                  title="Copiar a mensagem, caso o WhatsApp abra sem ela"
-                  onClick={() => copiar(mensagemRetomada(p, empresaNome))}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--cream-deep)] text-foreground/50 hover:text-foreground"
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </span>
+            <button
+              type="button"
+              onClick={() => enviar(mensagemRetomada(p, empresaNome))}
+              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--whatsapp)] px-3 text-xs font-medium text-[var(--whatsapp-foreground)]"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              Chamar pra concluir
+            </button>
           ) : (
             wa &&
             p.status !== "entregue" && (
