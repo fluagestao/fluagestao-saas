@@ -17,6 +17,7 @@ import type {
   DashboardVendas,
   MesDaSerie,
   VendaAgrupada,
+  ClienteDoPeriodo,
 } from "@/lib/pedidos-ops.server";
 import {
   dataLocalISO,
@@ -27,21 +28,6 @@ import {
   type Pedido,
   type StatusPedido,
 } from "@/lib/vendas";
-
-/* Uma cliente que comprou no periodo, com o que ela fez ali dentro.
-   Nao e exportado: "use server" quer so funcoes async como export publico, e o
-   painel infere a forma pelo retorno de carregarDashboard. */
-type ClienteDoPeriodo = {
-  id: string;
-  nome: string;
-  whatsapp: string | null;
-  /** Pedidos dentro do periodo, nao no total. */
-  pedidos: number;
-  /** Faturamento dentro do periodo. */
-  total: number;
-  /** Dia da primeira compra de todos os tempos. */
-  primeiraCompra: string;
-};
 
 type Contexto = Awaited<ReturnType<typeof requireCompany>>;
 type Supabase = Contexto["supabase"];

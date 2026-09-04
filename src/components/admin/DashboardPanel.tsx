@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Target } from "lucide-react";
+import { ChevronRight, MessageCircle, Target } from "lucide-react";
 import { rotuloOcasiao } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
 import { carregarMetasDoAno, salvarMetasDoAno, type Meta } from "@/lib/metas";
@@ -19,8 +19,13 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { hojeISO } from "@/lib/prazo";
 import { carregarDashboard } from "@/lib/pedidos";
-import type { DashboardVendas, MesDaSerie, VendaAgrupada } from "@/lib/pedidos-ops.server";
-import { formatBRL } from "@/lib/vendas";
+import type {
+  ClienteDoPeriodo,
+  DashboardVendas,
+  MesDaSerie,
+  VendaAgrupada,
+} from "@/lib/pedidos-ops.server";
+import { formatBRL, whatsappDoCliente } from "@/lib/vendas";
 import { Carregando, EstadoVazio, Num, PageHeader } from "./shell";
 
 /** Paleta da casa — mesma dos destaques de coleção. */
@@ -83,14 +88,17 @@ function Cartao({
   valor,
   nota,
   variacao,
+  onAbrir,
 }: {
   titulo: string;
   valor: string;
   nota?: React.ReactNode;
   variacao?: React.ReactNode;
+  /** Quando existe, o cartão vira botão e mostra que há algo atrás do número. */
+  onAbrir?: () => void;
 }) {
-  return (
-    <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">
+  const conteudo = (
+    <>
       <p className="text-xs uppercase tracking-[0.14em] text-[var(--bronze)]">{titulo}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{valor}</p>
       {(nota || variacao) && (
@@ -99,8 +107,118 @@ function Cartao({
           {variacao}
         </p>
       )}
-    </div>
+    </>
   );
+
+  if (!onAbrir) {
+    return (
+      <div className="rounded-2xl bg-card p-4 shadow-[var(--shadow-card)]">{conteudo}</div>
+    );
+  }
+
+  /* "Ver quem" fica escrito. Um cartão que abre e não avisa é uma porta sem
+     maçaneta: quem nunca clicou por acaso nunca descobre que existe lista. */
+  return (
+    <button
+      type="button"
+      onClick={onAbrir}
+      className="rounded-2xl bg-card p-4 text-left shadow-[var(--shadow-card)] transition-colors hover:bg-[var(--cream-soft)]"
+    >
+      {conteudo}
+      <span className="mt-1.5 inline-flex items-center gap-1 text-xs font-semibold text-[var(--terracotta)]">
+        Ver quem
+        <ChevronRight className="h-3 w-3" />
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Quem está atrás do número do cartão.
+ *
+ * Ordenada por faturamento: a lista existe para agir, e quem gastou mais é por
+ * onde se começa. O WhatsApp vem junto porque, sem ele, saber o nome ainda
+ * deixa a pessoa procurando o contato em outra tela.
+ */
+function DialogoClientes({
+  titulo,
+  descricao,
+  lista,
+  onFechar,
+}: {
+  titulo: string;
+  descricao: string;
+  lista: ClienteDoPeriodo[];
+  onFechar: () => void;
+}) {
+  return (
+    <Dialog open onOpenChange={(estado) => !estado && onFechar()}>
+      <DialogContent className="flex max-h-[calc(100dvh-8rem)] flex-col gap-0 overflow-hidden sm:max-w-2xl">
+        <DialogHeader className="shrink-0 border-b border-[var(--admin-border)] pb-3 pr-6 text-left">
+          <DialogTitle>
+            {titulo} ({lista.length})
+          </DialogTitle>
+          <DialogDescription>{descricao}</DialogDescription>
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto py-2">
+          {!lista.length ? (
+            <p className="px-1 py-6 text-center text-sm text-muted-foreground">
+              Ninguém neste grupo no período escolhido.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {lista.map((c) => {
+                const wa = whatsappDoCliente(c.whatsapp);
+                return (
+                  <li
+                    key={c.id}
+                    className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl border border-[var(--admin-border)] bg-card px-4 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-foreground">{c.nome}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {c.pedidos} pedido(s) no período
+                        {c.primeiraCompra ? ` · 1ª compra em ${diaCurto(c.primeiraCompra)}` : ""}
+                      </p>
+                    </div>
+
+                    <p className="shrink-0 text-sm font-semibold tabular-nums text-foreground">
+                      {formatBRL(c.total)}
+                    </p>
+
+                    {wa && (
+                      <a
+                        href={wa}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--cream-deep)] px-3 text-xs font-medium text-foreground"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        WhatsApp
+                      </a>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        <DialogFooter className="shrink-0 border-t border-[var(--admin-border)] pt-3">
+          <Button variant="outline" onClick={onFechar}>
+            Fechar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** 05/09 — a lista não precisa do ano, o período já está no título. */
+function diaCurto(iso: string) {
+  const [, mes, dia] = iso.split("-");
+  return mes && dia ? `${dia}/${mes}` : iso;
 }
 
 /* Quantas unidades sairam por mes no ano. E o grafico que permite estipular
@@ -442,6 +560,8 @@ export function DashboardPanel() {
   const [colecaoId, setColecaoId] = useState<string | null>(null);
   const [ocasiao, setOcasiao] = useState<string | null>(null);
   const [dados, setDados] = useState<DashboardVendas | null>(null);
+  /** Qual das duas listas de cliente está aberta. null = nenhuma. */
+  const [listaAberta, setListaAberta] = useState<"novos" | "recorrentes" | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [aba, setAba] = useState<"produtos" | "adicionais">("produtos");
   const [metas, setMetas] = useState<Meta[]>([]);
@@ -974,16 +1094,53 @@ export function DashboardPanel() {
               </div>
             )}
 
+            {/* Dois cartões, não um com o outro número na nota. Eram duas
+                perguntas diferentes disputando o mesmo lugar: quantas cheguei
+                a conquistar, e quantas voltaram. A segunda vivia como rodapé
+                da primeira, em letra pequena, e é a que sustenta o negócio. */}
             <Cartao
               titulo="Clientes novas"
               valor={String(dados.clientes.novos)}
               nota={
                 dados.clientes.total
-                  ? `${dados.clientes.recorrentes} recorrente(s) · ${Math.round((dados.clientes.novos / dados.clientes.total) * 100)}% do período`
+                  ? `${Math.round((dados.clientes.novos / dados.clientes.total) * 100)}% de quem comprou`
                   : "ninguém comprou no período"
+              }
+              onAbrir={
+                dados.clientes.novos ? () => setListaAberta("novos") : undefined
+              }
+            />
+
+            <Cartao
+              titulo="Clientes recorrentes"
+              valor={String(dados.clientes.recorrentes)}
+              nota={
+                dados.clientes.total
+                  ? `${Math.round((dados.clientes.recorrentes / dados.clientes.total) * 100)}% de quem comprou`
+                  : "ninguém comprou no período"
+              }
+              onAbrir={
+                dados.clientes.recorrentes ? () => setListaAberta("recorrentes") : undefined
               }
             />
           </div>
+
+          {listaAberta && (
+            <DialogoClientes
+              titulo={listaAberta === "novos" ? "Clientes novas" : "Clientes recorrentes"}
+              descricao={
+                listaAberta === "novos"
+                  ? "Quem fez a primeira compra dentro do período. Ordenadas pelo quanto compraram."
+                  : "Quem já tinha comprado antes e voltou no período. Ordenadas pelo quanto compraram."
+              }
+              lista={
+                listaAberta === "novos"
+                  ? dados.clientes.listaNovos
+                  : dados.clientes.listaRecorrentes
+              }
+              onFechar={() => setListaAberta(null)}
+            />
+          )}
 
           <div className="mt-3">
             <EvolucaoAno

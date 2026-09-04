@@ -1,3 +1,21 @@
+/**
+ * Uma cliente que comprou dentro do período do Dashboard.
+ *
+ * Existe porque o cartão virou porta: "3 clientes novas" não vira trabalho
+ * nenhum enquanto não se sabe QUEM são as três.
+ */
+export type ClienteDoPeriodo = {
+  id: string;
+  nome: string;
+  whatsapp: string | null;
+  /** Pedidos dentro do período, não no total. */
+  pedidos: number;
+  /** Faturamento dentro do período. */
+  total: number;
+  /** Dia da primeira compra de todos os tempos. */
+  primeiraCompra: string;
+};
+
 export type Cliente = {
   id: string;
   nome: string;
@@ -43,7 +61,14 @@ export type DashboardVendas = {
      periodo — nao quem foi cadastrada nele: cadastro feito meses antes, no dia
      do orcamento, inflaria a aquisicao justo no mes em que a pessoa nao
      comprou. */
-  clientes: { novos: number; recorrentes: number; total: number };
+  clientes: {
+    novos: number;
+    recorrentes: number;
+    total: number;
+    /** Quem são, para o cartão poder abrir a lista. Maior faturamento primeiro. */
+    listaNovos: ClienteDoPeriodo[];
+    listaRecorrentes: ClienteDoPeriodo[];
+  };
   /** Slugs de ocasião presentes no histórico, para o seletor. */
   ocasioes: string[];
   totalVendido: number;
