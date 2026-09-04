@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 
-import { createClient } from "@/lib/supabase/server";
+import { requireCompany } from "@/lib/company-context.server";
 import {
   deleteCatalogo,
   deleteCategoria,
@@ -96,40 +96,22 @@ const removerImagemSchema = z.object({
 
 type ActionInput<T> = { data: T };
 
+/* Delega para requireCompany de proposito.
+
+   Estes tres arquivos montavam o cliente Supabase cru e nunca liam a
+   assinatura. Como a trava do teste vencido vive no Proxy que requireCompany
+   devolve, quem nao passava por ela continuava gravando depois do 7o dia:
+   produto, categoria, colecao, foto, insumo, ficha tecnica e movimento de
+   estoque. Onze acoes furando o paywall, em silencio — a falha nao aparece
+   como erro, aparece como "funciona".
+
+   O comentario de company-context.server.ts ja avisava: "bastava esquecer uma
+   para o teste vencido continuar gravando por ali". Eram tres.
+
+   O nome local fica porque as 29 chamadas ja o usam, e requireCompany devolve
+   um superconjunto do que estas funcoes devolviam. */
 async function contextoEmpresa() {
-  const supabase = await createClient();
-
-  const { data: claimsData, error: claimsError } =
-    await supabase.auth.getClaims();
-
-  const userId = claimsData?.claims?.sub;
-
-  if (claimsError || !userId) {
-    throw new Error("Sessão inválida. Entre novamente.");
-  }
-
-  const { data: membro, error: membroError } = await supabase
-    .from("company_members")
-    .select("company_id, email, display_name, role, status")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (membroError) throw membroError;
-
-  if (!membro) {
-    throw new Error("Seu usuário não está vinculado a uma empresa ativa.");
-  }
-
-  return {
-    supabase,
-    companyId: membro.company_id,
-    email: membro.email,
-    displayName: membro.display_name,
-    role: membro.role,
-  };
+  return requireCompany();
 }
 
 /**
