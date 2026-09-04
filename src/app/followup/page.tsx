@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import AdminClient from "@/app/admin/admin-client";
+import { lerAssinatura } from "@/lib/assinatura";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +31,14 @@ export default async function FollowupPage() {
     .eq("id", membro.company_id)
     .maybeSingle();
 
+  const assinatura = await lerAssinatura(supabase, membro.company_id);
+
   return (
     <AdminClient
       email={membro.email}
       displayName={membro.display_name}
       companyName={empresa?.name ?? "Empresa"}
+      assinatura={assinatura}
       initialAba="followup"
     />
   );

@@ -41,6 +41,8 @@ export type DadosMensagem = {
   produto: string | null;
   /** Nome da próxima data comemorativa, e quanto falta. */
   dataNome: string;
+  /** "o" ou "a". Vem junto do dado: "o Páscoa" ia para a cliente. */
+  dataArtigo: "o" | "a";
   dataDiasRestantes: number;
 };
 
@@ -67,7 +69,7 @@ export function montarMensagem(d: DadosMensagem): string {
      dias ela ainda não é assunto, e a mensagem fica melhor sem. */
   const dataPerto = d.dataDiasRestantes >= 0 && d.dataDiasRestantes <= 45;
 
-  linhas.push(dataPerto ? `${meio}, e o ${d.dataNome} está chegando.` : `${meio}.`);
+  linhas.push(dataPerto ? `${meio}, e ${d.dataArtigo} ${d.dataNome} está chegando.` : `${meio}.`);
 
   linhas.push(
     dataPerto

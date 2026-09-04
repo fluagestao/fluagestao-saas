@@ -44,12 +44,15 @@ export type ClienteParado = {
   totalGasto: number;
   /** O que ela mais leva, somando quantidades. Null quando não dá para dizer. */
   produtoFrequente: string | null;
+  /** Chamada hoje: fica na lista, marcada, para o "desfazer" existir. */
+  chamadaHoje: boolean;
 };
 
 type PedidoLinha = {
   cliente_id: string | null;
   status: string | null;
   data_entrega: string | null;
+  entregue_em: string | null;
   created_at: string | null;
   total: number | null;
   itens: ItemPedido[] | null;
@@ -64,7 +67,17 @@ type PedidoLinha = {
  * importa é a última vez que algo chegou na mão dela.
  */
 function diaDaCompra(p: PedidoLinha): string {
-  return String(p.data_entrega ?? "") || String(p.created_at ?? "").slice(0, 10) || "";
+  /* `entregue_em` primeiro: e o carimbo que o banco poe quando o pedido VIRA
+     entregue, entao e o dia real. `data_entrega` e uma promessa — a dona marca
+     entregue ao despachar e a data combinada pode estar la na frente. Antes,
+     data futura fazia o pedido inteiro ser descartado: quem gastou R$ 260 na
+     semana passada aparecia como parada ha seis meses, e recebia a mensagem. */
+  return (
+    String(p.entregue_em ?? "").slice(0, 10) ||
+    String(p.data_entrega ?? "") ||
+    String(p.created_at ?? "").slice(0, 10) ||
+    ""
+  );
 }
 
 function diasEntre(de: string, ate: string): number {
@@ -82,11 +95,17 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
       .from("clientes")
       .select("id, nome, whatsapp, contatado_em")
       .eq("company_id", companyId)
-      .eq("ativo", true)
+      /* `not.is.false` e nao `eq true`: cliente criada a partir de um pedido
+         (garantirCliente, pedidos.ts) nasce sem escrever `ativo`, e no Postgres
+         `ativo = true` e FALSO para nulo — some justamente quem forma a
+         populacao desta aba. E o filtro nao perde nada: nada no sistema grava
+         `ativo = false` (o cadastro escreve true literal e excluir e DELETE de
+         verdade), entao no melhor caso ele excluia zero linhas. */
+      .not("ativo", "is", false)
       .limit(TETO),
     supabase
       .from("pedidos")
-      .select("cliente_id, status, data_entrega, created_at, total, itens")
+      .select("cliente_id, status, data_entrega, entregue_em, created_at, total, itens")
       .eq("company_id", companyId)
       .not("cliente_id", "is", null)
       .limit(TETO),
@@ -114,8 +133,10 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
        compra" faria a cliente parecer ativa por um pedido que ela desistiu. */
     if (status === "cancelado") continue;
 
-    const dia = diaDaCompra(p);
-    if (!dia || dia > hoje) continue;
+    const bruto = diaDaCompra(p);
+    if (!bruto) continue;
+    // Limitar em vez de descartar: o pedido aconteceu, so a data esta adiantada.
+    const dia = bruto > hoje ? hoje : bruto;
 
     const atual = porCliente.get(id) ?? {
       ultima: dia,
@@ -145,9 +166,12 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
   for (const c of clientesRes.data ?? []) {
     const id = String(c.id);
 
-    // Chamada ha pouco: sai da lista ate o descanso terminar.
+    /* Chamada ha pouco sai da lista — MENOS quem foi chamada hoje. Cortar hoje
+       tambem fazia o "desfazer" viver so ate a tela remontar: bastava trocar de
+       aba e voltar para a cliente sumir por trinta dias sem nenhum caminho de
+       volta, ja que e desta lista que ela some. */
     const contatada = (c.contatado_em as string | null) ?? null;
-    if (contatada && contatada >= limiteDescanso) continue;
+    if (contatada && contatada >= limiteDescanso && contatada !== hoje) continue;
 
     // Tem pedido a caminho: receber "faz tempo que você não compra" enquanto
     // espera a entrega mostra um sistema que não sabe o que está fazendo.
@@ -174,6 +198,7 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
       compras: dados.compras,
       totalGasto: dados.total,
       produtoFrequente,
+      chamadaHoje: contatada === hoje,
     });
   }
 

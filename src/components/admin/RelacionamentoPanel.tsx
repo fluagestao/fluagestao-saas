@@ -90,6 +90,7 @@ export function RelacionamentoPanel() {
       dias: c.diasParado,
       produto: c.produtoFrequente,
       dataNome: proxima.nome,
+      dataArtigo: proxima.artigo,
       dataDiasRestantes: proxima.diasRestantes,
     });
 
@@ -151,7 +152,12 @@ export function RelacionamentoPanel() {
           <HeartHandshake className="h-4 w-4 shrink-0 text-[var(--terracotta)]" />
           <span>
             <b className="text-[var(--wine)]">{proxima.nome}</b> em{" "}
-            {proxima.diasRestantes === 0 ? "hoje" : `${proxima.diasRestantes} dias`} — entra
+            {proxima.diasRestantes === 0
+              ? "hoje"
+              : proxima.diasRestantes === 1
+                ? "amanhã"
+                : `${proxima.diasRestantes} dias`}{" "}
+            — entra
             automaticamente na mensagem.
           </span>
         </p>
@@ -222,7 +228,7 @@ export function RelacionamentoPanel() {
                 <p className="t-support text-muted-foreground sm:hidden">
                   última em {formatarDataCurta(c.ultimaCompraEm)}
                 </p>
-                {chamadas.has(c.id) ? (
+                {chamadas.has(c.id) || c.chamadaHoje ? (
                   <span className="t-support flex shrink-0 items-center gap-2 text-[var(--green-ink)]">
                     <Check className="h-4 w-4" />
                     Chamada hoje
