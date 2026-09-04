@@ -213,53 +213,6 @@ export function whatsappDoCliente(numero: string | null | undefined): string | n
   return `https://wa.me/${d.startsWith("55") ? d : `55${d}`}`;
 }
 
-/** Só o primeiro nome — "Oi, Maria!" soa melhor que "Oi, Maria Eduarda Souza!". */
-function primeiroNome(nome: string | null | undefined): string {
-  return (nome ?? "").trim().split(/\s+/)[0] ?? "";
-}
-
-/**
- * Mensagem para retomar um pedido que o cliente montou no site mas não chegou a
- * enviar. Como o carrinho grava antes de abrir o WhatsApp, temos nome, telefone
- * e itens mesmo quando a conversa nunca começou.
- *
- * O nome da empresa é recebido do painel para não existir marca fixa no SaaS.
- */
-export function mensagemRetomada(pedido: Pedido, empresaNome = "Sua empresa"): string {
-  const nome = primeiroNome(pedido.cliente_nome);
-  const empresa = empresaNome.trim() || "Sua empresa";
-  const linhas = pedido.itens.map(
-    (i) => `• ${i.qtd}x ${i.nome}${i.variacao ? ` (${i.variacao})` : ""}`,
-  );
-
-  const partes = [
-    nome
-      ? `Oi, ${nome}! 🤍 Aqui é da *${empresa}*.`
-      : `Oi! 🤍 Aqui é da *${empresa}*.`,
-    "",
-    "Vi que você montou esse pedido no nosso site:",
-    ...linhas,
-  ];
-
-  if (pedido.data_entrega) {
-    partes.push("", `Anotei para *${formatarDataCurta(pedido.data_entrega)}*.`);
-  }
-
-  partes.push(
-    "",
-    "Quer que eu confirme a disponibilidade e finalize pra você? Se quiser mudar alguma coisa, a gente ajusta por aqui. 💛",
-  );
-
-  return partes.join("\n");
-}
-
-/** Link do WhatsApp já com a mensagem de retomada preenchida. */
-export function linkRetomada(pedido: Pedido, empresaNome = "Sua empresa"): string | null {
-  const base = whatsappDoCliente(pedido.cliente_whatsapp);
-  if (!base) return null;
-  return `${base}?text=${encodeURIComponent(mensagemRetomada(pedido, empresaNome))}`;
-}
-
 const DIAS_SEMANA_EXT = [
   "domingo",
   "segunda-feira",

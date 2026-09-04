@@ -36,27 +36,6 @@ export function whatsappLink(mensagem: string) {
     : "#";
 }
 
-export function mensagemOrcamento(
-  produto: {
-    nome: string;
-    preco?: number | null;
-  },
-  template?: string | null,
-) {
-  const preco =
-    produto.preco != null
-      ? `R$ ${produto.preco.toFixed(2).replace(".", ",")}`
-      : "valor a consultar";
-
-  if (template) {
-    return template
-      .replaceAll("{produto}", produto.nome)
-      .replaceAll("{preco}", preco);
-  }
-
-  return `Olá! Tenho interesse no(a) *${produto.nome}* (${preco}).`;
-}
-
 export function mensagemGenerica() {
   return "Olá! Gostaria de mais informações.";
 }

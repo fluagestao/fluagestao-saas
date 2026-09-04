@@ -17,7 +17,6 @@ import {
   aReceber,
   abrirWhatsappCom,
   formatBRL,
-  mensagemRetomada,
   proximoStatus,
   statusCor,
   statusLabel,
@@ -78,10 +77,7 @@ export function PedidoCard({
       className={cn(
         "rounded-2xl shadow-[var(--shadow-card)]",
         compacto ? "p-3" : "p-4",
-        // Pedido do site tem fundo azulado: dá pra achar na lista sem ler as
-        // etiquetas. O tom é fraco de propósito, pra não brigar com o vermelho
-        // do atrasado nem cansar numa lista cheia.
-        p.origem === "site" ? "bg-[#3d5a66]/[0.07] ring-1 ring-inset ring-[#3d5a66]/20" : "bg-card",
+        "bg-card",
         // Atrasado ganha um filete na lateral — some junto com o problema.
         atrasado && "border-l-4 border-l-destructive",
         className,
@@ -118,11 +114,6 @@ export function PedidoCard({
                 style={{ backgroundColor: statusCor(p.status) }}
               >
                 {statusLabel(p.status)}
-              </span>
-            )}
-            {p.origem === "site" && (
-              <span className="rounded-full bg-[var(--cream-deep)] px-2 py-0.5 text-[11px] text-muted-foreground">
-                site
               </span>
             )}
             {p.recebido_em ? (
@@ -218,30 +209,16 @@ export function PedidoCard({
             </Button>
           )}
 
-          {/* Pedido do site ainda em aberto: provável carrinho que o cliente
-              montou e não chegou a enviar. Puxar a conversa é o que fecha. */}
-          {temWhats && p.status === "novo" && p.origem === "site" ? (
-            <button
-              type="button"
-              onClick={() => enviar(mensagemRetomada(p, empresaNome))}
-              className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--whatsapp)] px-3 text-xs font-medium text-[var(--whatsapp-foreground)]"
+          {wa && p.status !== "entregue" && (
+            <a
+              href={wa}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--cream-deep)] px-3 text-xs font-medium text-foreground"
             >
               <MessageCircle className="h-3.5 w-3.5" />
-              Chamar pra concluir
-            </button>
-          ) : (
-            wa &&
-            p.status !== "entregue" && (
-              <a
-                href={wa}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[var(--cream-deep)] px-3 text-xs font-medium text-foreground"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                WhatsApp
-              </a>
-            )
+              WhatsApp
+            </a>
           )}
 
           <button

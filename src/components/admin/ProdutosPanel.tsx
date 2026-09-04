@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { removerProduto } from "@/lib/admin";
-import { formatPreco } from "@/lib/catalog";
+import { formatBRL } from "@/lib/vendas";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -59,7 +59,7 @@ function LinhaProduto({
         </div>
         <p className="truncate text-xs text-muted-foreground">
           {produto.preco != null
-            ? formatPreco(produto.preco)
+            ? formatBRL(produto.preco)
             : "sob consulta"}
         </p>
         <p className="mt-0.5 truncate text-[10px] font-semibold tabular-nums text-[var(--terracotta)]">
