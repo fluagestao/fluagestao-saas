@@ -5,7 +5,6 @@ import { carregarClientes } from "@/lib/pedidos";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { ClientesView } from "./ClientesView";
 import { FornecedoresView } from "./FornecedoresView";
-import { BairrosView } from "./BairrosView";
 import { UsuariosView } from "./UsuariosView";
 import { Carregando, PageHeader } from "./shell";
 
@@ -38,13 +37,12 @@ export function CadastrosPanel({
   }, []);
 
   useEffect(() => {
-    // Só busca quando a aba de clientes está aberta: fornecedores e bairros
-    // carregam os próprios dados.
+    // Só busca quando a aba de clientes está aberta: fornecedores carrega
+    // os próprios dados.
     if (sub === "clientes") recarregarClientes();
   }, [sub, recarregarClientes]);
 
   if (sub === "fornecedores") return <FornecedoresView />;
-  if (sub === "bairros") return <BairrosView />;
   if (sub === "usuarios") return <UsuariosView />;
 
   if (erro) {

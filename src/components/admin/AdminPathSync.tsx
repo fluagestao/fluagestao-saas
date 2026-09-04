@@ -28,7 +28,6 @@ const ROTAS_DIRETAS: Record<string, string> = {
   Fornecedores: "/cadastros/fornecedores",
   "Tipos de receita": "/cadastros/financeiro/receitas",
   "Tipos de despesa": "/cadastros/financeiro/despesas",
-  Bairros: "/cadastros/bairros",
 
 };
 
@@ -67,7 +66,6 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/cadastros/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
   "/cadastros/financeiro/receitas": { pai: "Cadastros", filho: "Tipos de receita" },
   "/cadastros/financeiro/despesas": { pai: "Cadastros", filho: "Tipos de despesa" },
-  "/cadastros/bairros": { pai: "Cadastros", filho: "Bairros" },
 
   "/tarefas": { filho: "Tarefas" },
 
@@ -83,7 +81,6 @@ const ESTADO_POR_ROTA: Record<string, { pai?: string; filho: string }> = {
   "/insumos": { pai: "Cadastros", filho: "Insumos" },
   "/clientes": { pai: "Cadastros", filho: "Clientes" },
   "/fornecedores": { pai: "Cadastros", filho: "Fornecedores" },
-  "/bairros": { pai: "Cadastros", filho: "Bairros" },
 };
 
 const ROTAS_PAINEL = new Set(Object.keys(ESTADO_POR_ROTA));

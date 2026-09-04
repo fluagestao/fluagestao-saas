@@ -91,7 +91,6 @@ const nextConfig: NextConfig = {
       { source: "/insumos", destination: "/cadastros/insumos", permanent: false },
       { source: "/clientes", destination: "/cadastros/clientes", permanent: false },
       { source: "/fornecedores", destination: "/cadastros/fornecedores", permanent: false },
-      { source: "/bairros", destination: "/cadastros/bairros", permanent: false },
 
 
       { source: "/produtos/novo", destination: "/cadastros/produtos/novo", permanent: false },
@@ -162,7 +161,6 @@ const nextConfig: NextConfig = {
       { source: "/cadastros/fornecedores", destination: "/admin" },
       { source: "/cadastros/financeiro/receitas", destination: "/admin" },
       { source: "/cadastros/financeiro/despesas", destination: "/admin" },
-      { source: "/cadastros/bairros", destination: "/admin" },
 
       { source: "/tarefas", destination: "/admin" },
 
