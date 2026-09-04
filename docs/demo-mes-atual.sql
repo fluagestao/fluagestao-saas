@@ -42,7 +42,6 @@ declare
   v_n           int;
 
   v_cli         record;
-  v_bairro      record;
   v_itens       jsonb;
   v_subtotal    numeric(12,2);
   v_taxa        numeric(12,2);
@@ -205,17 +204,14 @@ begin
 
       continue when v_itens is null;
 
+      /* O cadastro de bairros saiu do sistema, entao a tabela esta vazia e o
+         `select into` nunca atribuia estrutura ao record — e o PL/pgSQL precisa
+         do tipo dele para preparar o insert, mesmo no ramo que nao executa.
+         Dai o "record v_bairro is not assigned yet" no primeiro pedido de
+         retirada. A taxa agora e sorteada, como no demo-historico.sql, e o
+         bairro vem do proprio cadastro da cliente. */
       v_tipo := case when random() < 0.8 then 'entrega' else 'retirada' end;
-
-      v_bairro := null;
-      v_taxa := 0;
-      if v_tipo = 'entrega' then
-        select id, nome, taxa into v_bairro
-        from public.bairros
-        where company_id = v_company and coalesce(ativo, true)
-        order by random() limit 1;
-        v_taxa := coalesce(v_bairro.taxa, 10.00);
-      end if;
+      v_taxa := case when v_tipo = 'entrega' then 8 + floor(random() * 18)::int else 0 end;
 
       v_janela := v_janelas[least(v_n, array_length(v_janelas, 1))];
       v_forma  := case when random() < 0.72 then 'pix' else 'cartao' end;
@@ -258,15 +254,14 @@ begin
       insert into public.pedidos (
         company_id, cliente_id, cliente_nome, cliente_whatsapp,
         itens, subtotal, taxa_entrega, taxa_manual, total,
-        tipo, bairro, bairro_id, endereco,
+        tipo, bairro, endereco,
         data_entrega, janela_entrega, forma_pagamento, status,
         recebido_em, entregue_em, origem, created_at, observacao
       ) values (
         v_company, v_cli.id, v_cli.nome, v_cli.whatsapp,
-        v_itens, v_subtotal, nullif(v_taxa, 0), false, v_subtotal + v_taxa,
+        v_itens, v_subtotal, nullif(v_taxa, 0), true, v_subtotal + v_taxa,
         v_tipo,
-        case when v_tipo = 'entrega' then coalesce(v_bairro.nome, v_cli.bairro) end,
-        case when v_tipo = 'entrega' then v_bairro.id end,
+        case when v_tipo = 'entrega' then v_cli.bairro end,
         case when v_tipo = 'entrega' then 'Rua das Acácias, ' || (50 + floor(random() * 900))::int end,
         v_dia, v_janela, v_forma, v_status,
         v_recebido, v_entregue, 'manual', v_criado, null
