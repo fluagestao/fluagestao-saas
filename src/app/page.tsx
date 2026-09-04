@@ -420,7 +420,7 @@ export default function HomePage() {
             <nav className="flua2-nav-links marketing-nav-simple-links" aria-label="Navegação principal">
               <Link href="/funcionalidades/controle-de-vendas">NOSSO SAAS</Link>
               <a href="#para-quem">A FLUA</a>
-              <a href="#contato">CONTATO</a>
+              <Link href="/contato">CONTATO</Link>
               <Link href="/login">PORTAL</Link>
             </nav>
           </div>
