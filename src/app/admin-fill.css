@@ -67,11 +67,18 @@ main > section:has(button[aria-label="Mudar meu nome"]) {
   transform: none !important;
 }
 
-/* Header sempre acessivel; somente o header direto do shell. */
+/* Header sempre acessivel; somente o header direto do shell.
+
+   z-index 40, e nao 60: o overlay do dialogo e z-50. Com 60 o cabecalho ficava
+   POR CIMA do escurecido — aceso e clicavel com o modal aberto —, entao um
+   clique no menu trocava a tela por tras do dialogo. O proprio mobile-admin.css
+   ja documenta 40 como o valor certo ("Acima do cabecalho sticky (z-40) e
+   ABAIXO do overlay de dialogo (z-50)") e coloca a barra do celular em 45; o
+   60 daqui e que contrariava o desenho. */
 div[class~="bg-[var(--admin-bg)]"] > header:first-child {
   position: sticky !important;
   top: 0 !important;
-  z-index: 60 !important;
+  z-index: 40 !important;
   background: rgba(255, 255, 255, 0.97) !important;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);

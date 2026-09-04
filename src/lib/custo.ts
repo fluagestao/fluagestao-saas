@@ -68,6 +68,7 @@ export async function carregarMargemProdutos(input: { data: unknown }) {
         .from("produtos")
         .select("id, slug, nome, preco, categoria_id, tempo_montagem_min")
         .eq("company_id", companyId)
+        .eq("rascunho", false)
         .limit(1000),
       supabase
         .from("produto_insumos")

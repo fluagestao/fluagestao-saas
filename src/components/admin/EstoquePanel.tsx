@@ -491,6 +491,15 @@ export function EstoquePanel() {
         }
       />
 
+      {/* No celular o Estoque e so consulta: registrar entrada, baixa e
+          contagem e trabalho de mesa, com o insumo na mao e varias linhas de
+          uma vez. Esconder os botoes sem explicar faria a tela parecer
+          quebrada, entao a razao fica escrita. */}
+      <p className="mt-3 rounded-xl bg-[var(--cream)] px-3.5 py-2.5 text-sm text-[var(--admin-ink-soft)] lg:hidden">
+        Aqui no celular o estoque é só para consulta. Para registrar entrada,
+        baixa ou contagem, abra no computador.
+      </p>
+
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="card-panel px-4 py-3">
           <p className="t-support text-[var(--admin-muted)]">No controle</p>
@@ -606,11 +615,15 @@ export function EstoquePanel() {
                 </div>
                 <p className="max-w-sm text-sm text-muted-foreground">
                   {linhas.length === 0
-                    ? "Nenhum insumo está no controle de estoque. Escolha quais você quer acompanhar — os outros continuam funcionando normalmente no custo dos produtos."
+                    ? "Nenhum insumo está no controle de estoque. Escolha no computador quais você quer acompanhar — os outros continuam funcionando normalmente no custo dos produtos."
                     : "Nenhum insumo encontrado com esse filtro."}
                 </p>
                 {linhas.length === 0 && (
-                  <Button variant="outline" onClick={abrirControle}>
+                  <Button
+                    variant="outline"
+                    onClick={abrirControle}
+                    className="hidden lg:inline-flex"
+                  >
                     <SlidersHorizontal className="mr-1.5 h-4 w-4" />
                     Escolher insumos
                   </Button>
@@ -673,6 +686,7 @@ export function EstoquePanel() {
                       onClick={() => abrirMovimento("entrada", linha.insumo_id)}
                       aria-label={`Entrada de ${linha.nome}`}
                       title="Entrada"
+                      className="hidden lg:inline-flex"
                     >
                       <ArrowUpRight className="h-4 w-4 text-[var(--green-ink)]" />
                     </Button>
@@ -682,6 +696,7 @@ export function EstoquePanel() {
                       onClick={() => abrirMovimento("saida", linha.insumo_id)}
                       aria-label={`Baixa de ${linha.nome}`}
                       title="Baixa"
+                      className="hidden lg:inline-flex"
                     >
                       <ArrowDownRight className="h-4 w-4 text-[var(--coral)]" />
                     </Button>
