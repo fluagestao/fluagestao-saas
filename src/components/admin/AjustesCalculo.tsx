@@ -347,15 +347,33 @@ export function AjustesCalculo({
               />
             )}
 
-            {sugestao.percentual != null && (
+            {/* Quem decide o que é custo fixo é você, marcando o TIPO da
+                despesa. Sem nenhum marcado a sugestão é zero — e zero sem
+                explicação parece defeito, então a caixa diz o que fazer em vez
+                de mostrar um número vazio. */}
+            {sugestao.tipos.length === 0 ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--peach)] bg-[var(--cream-soft)] px-3.5 py-3">
+                <Lightbulb className="h-4 w-4 shrink-0 text-[var(--coral)]" />
+                <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
+                  O sistema pode calcular esse percentual sozinho, mas ainda não sabe o que é
+                  custo fixo pra você. Marque os tipos em{" "}
+                  <strong>Cadastros → Tipos de despesa</strong> — aluguel, energia, contador.
+                  Deixe de fora o que já está no custo do produto, como insumo e embalagem:
+                  somar aqui contaria o mesmo dinheiro duas vezes.
+                </p>
+                <Button variant="outline" size="sm" asChild className="h-8 shrink-0">
+                  <a href="/cadastros/financeiro/despesas">Marcar tipos</a>
+                </Button>
+              </div>
+            ) : sugestao.percentual != null ? (
               <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-3">
                 <Lightbulb className="h-4 w-4 shrink-0 text-[var(--bronze)]" />
                 <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
                   <strong>
                     {(sugestao.percentual * 100).toFixed(1).replace(".", ",")}%
                   </strong>{" "}
-                  é o que o sistema apurou do que você mesma lançou: as contas mensais de{" "}
-                  <strong>{moeda(sugestao.fixos)}</strong> em A pagar, sobre{" "}
+                  é o que o sistema apurou do que você mesma lançou:{" "}
+                  <strong>{moeda(sugestao.fixos)}</strong> em {sugestao.tipos.join(", ")}, sobre{" "}
                   <strong>{moeda(sugestao.faturamento)}</strong> recebidos no mês passado.
                 </p>
                 <Button
@@ -366,6 +384,18 @@ export function AjustesCalculo({
                 >
                   Usar
                 </Button>
+              </div>
+            ) : (
+              /* Tipos marcados, mas nada saiu neles no mês passado. Sem esta
+                 linha a caixa simplesmente sumia e parecia que a marcação não
+                 tinha funcionado. */
+              <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-3.5 py-3">
+                <Lightbulb className="h-4 w-4 shrink-0 text-[var(--bronze)]" />
+                <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
+                  Você marcou {sugestao.tipos.join(", ")} como custo fixo, mas no mês passado
+                  não houve saída nesses tipos — ou não houve faturamento. Sem os dois números
+                  não dá para sugerir um percentual.
+                </p>
               </div>
             )}
 

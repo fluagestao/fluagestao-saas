@@ -1,6 +1,8 @@
 "use client";
 
-import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Building2, Plus, Trash2 } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,11 +15,17 @@ import {
   criarTipoDespesa,
   criarTipoReceita,
   excluirCategoriaFinanceira,
+  marcarTipoComoCustoFixo,
   renomearCategoriaFinanceira,
 } from "@/lib/financeiro";
 import { Carregando, EstadoVazio, PageHeader, useConfirmar } from "./shell";
 
-type Categoria = { id: string; nome: string };
+type Categoria = {
+  id: string;
+  nome: string;
+  /** Só despesa tem. Marcado = soma no custo fixo do cálculo de preço. */
+  conta_como_fixo?: boolean;
+};
 type Lado = "receita" | "despesa";
 
 /**
@@ -139,6 +147,28 @@ function Coluna({
     }
   }
 
+  /* O selo decide o que entra no custo fixo do preço. Salva na hora, sem
+     botão de confirmar: é uma chave de liga-desliga, e obrigar a confirmar
+     cada uma faria a pessoa marcar oito tipos com dezesseis cliques. */
+  async function alternarFixo(item: Categoria) {
+    const novo = !item.conta_como_fixo;
+    try {
+      const r = await marcarTipoComoCustoFixo({ data: { id: item.id, marcado: novo } });
+      if (r?.erro) {
+        toast.error(r.erro);
+        return;
+      }
+      toast.success(
+        novo
+          ? `"${item.nome}" agora entra no custo fixo.`
+          : `"${item.nome}" saiu do custo fixo.`,
+      );
+      onMudou();
+    } catch (e) {
+      toast.error(mensagemDeErro(e, "salvar o selo"));
+    }
+  }
+
   async function renomear(item: Categoria, valor: string) {
     const limpo = valor.trim();
     if (!limpo || limpo === item.nome) return;
@@ -211,7 +241,30 @@ function Coluna({
                 className="h-10"
                 aria-label={`Nome da categoria ${item.nome}`}
               />
-              <span className="t-support w-24 shrink-0 text-right text-muted-foreground">
+              {/* Só despesa: receita não forma custo. */}
+              {lado === "despesa" && (
+                <button
+                  type="button"
+                  onClick={() => alternarFixo(item)}
+                  title={
+                    item.conta_como_fixo
+                      ? "Entra no custo fixo do cálculo de preço. Clique para tirar."
+                      : "Não entra no custo fixo. Clique para incluir. Deixe fora o que já está no custo do produto, como insumo e embalagem."
+                  }
+                  aria-pressed={Boolean(item.conta_como_fixo)}
+                  className={cn(
+                    "inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-semibold transition-colors",
+                    item.conta_como_fixo
+                      ? "border-[var(--terracotta)] bg-[var(--terracotta)] text-white"
+                      : "border-[var(--cream-deep)] bg-card text-muted-foreground hover:bg-[var(--cream-soft)]",
+                  )}
+                >
+                  <Building2 className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">custo fixo</span>
+                </button>
+              )}
+
+              <span className="t-support w-20 shrink-0 text-right text-muted-foreground">
                 {uso[item.id] ?? 0} uso(s)
               </span>
               <Button variant="ghost" size="icon" onClick={() => excluir(item)}>

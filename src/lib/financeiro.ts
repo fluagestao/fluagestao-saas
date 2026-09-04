@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { requireCompany } from "@/lib/company-context.server";
+import { mensagemDeErro } from "@/lib/erros";
 import type { Movimento } from "@/lib/caixa";
 
 const DATA = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -289,7 +290,7 @@ export async function carregarCategoriasFinanceiras() {
   const [despesasRes, receitasRes] = await Promise.all([
     supabase
       .from("tipos_despesa")
-      .select("id, nome")
+      .select("id, nome, conta_como_fixo")
       .eq("company_id", companyId)
       .order("nome"),
     supabase
@@ -313,6 +314,35 @@ const categoriaSchema = z.object({
   nome: z.string().trim().min(1).max(80),
   lado: z.enum(["despesa", "receita"]),
 });
+
+/**
+ * Liga ou desliga o selo de custo fixo de um tipo de despesa.
+ *
+ * O selo decide o que entra na sugestão de custo fixo do cálculo de preço.
+ * Antes isso era adivinhado por "conta com recorrência mensal", regra que
+ * errava dos dois lados: compra mensal de insumo entrava — o mesmo dinheiro
+ * que já está no custo do produto, contado duas vezes — e aluguel pago uma vez
+ * por ano ficava de fora.
+ *
+ * Só despesa tem selo: receita não forma custo.
+ */
+export async function marcarTipoComoCustoFixo(input: { data: unknown }) {
+  const { id, marcado } = z
+    .object({ id: z.string().uuid(), marcado: z.boolean() })
+    .parse(input.data);
+
+  const { supabase, companyId } = await requireCompany();
+
+  const { error } = await supabase
+    .from("tipos_despesa")
+    .update({ conta_como_fixo: marcado })
+    .eq("id", id)
+    .eq("company_id", companyId);
+
+  // Retorna em vez de lançar: em produção o React descarta a mensagem.
+  if (error) return { ok: false as const, erro: mensagemDeErro(error, "salvar o selo") };
+  return { ok: true as const, erro: null };
+}
 
 /** O lado decide a tabela: as duas tem a mesma forma e o mesmo indice unico. */
 function tabelaDoLado(lado: "despesa" | "receita") {
