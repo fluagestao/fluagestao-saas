@@ -59,7 +59,11 @@
 
 do $$
 declare
-  v_company    uuid := 'COLE_AQUI';
+  /* Texto, e nao uuid: `uuid := 'COLE_AQUI'` estoura na propria declaracao,
+     antes de qualquer verificacao, com um erro que nao explica nada. Assim a
+     mensagem abaixo consegue aparecer. */
+  v_empresa    text := 'COLE_AQUI';
+  v_company    uuid;
 
   MESES        constant int := 14;
 
@@ -98,9 +102,15 @@ declare
     'Cláudia', 'Roberto', 'Lúcia', 'a equipe do escritório', 'Dona Ivete'
   ];
 begin
-  if v_company = 'COLE_AQUI'::uuid then
-    raise exception 'Troque COLE_AQUI pelo id da empresa antes de rodar.';
+  if v_empresa = 'COLE_AQUI' then
+    raise exception 'Troque COLE_AQUI pelo id da empresa antes de rodar. Pegue com: select id, nome from public.companies order by created_at;';
   end if;
+
+  begin
+    v_company := v_empresa::uuid;
+  exception when others then
+    raise exception 'O valor colado no lugar de COLE_AQUI nao e um id valido: %', v_empresa;
+  end;
 
   select count(*) into v_produtos
   from public.produtos

@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { proximaDataComemorativa } from "@/lib/datas-comemorativas";
+import { ocasiaoPorSlug, proximaDataComemorativa } from "@/lib/datas-comemorativas";
 import { mensagemDeErro } from "@/lib/erros";
 import { formatarDataCurta } from "@/lib/prazo";
 import {
@@ -136,6 +136,12 @@ export function RelacionamentoPanel() {
      está olhando. */
   const [confirmandoPadrao, setConfirmandoPadrao] = useState(false);
   const [abaModelo, setAbaModelo] = useState<CampoModelo>("comData");
+  /* Filtros que SOMAM com a faixa: tempo parado responde "quem sumiu", ocasião
+     responde "quem já comprou nessa data" e o período recorta "quando". As três
+     perguntas são independentes, então nenhuma anula a outra. */
+  const [filtroOcasiao, setFiltroOcasiao] = useState("");
+  const [de, setDe] = useState("");
+  const [ate, setAte] = useState("");
 
   const recarregar = useCallback(async () => {
     setCarregando(true);
@@ -172,6 +178,21 @@ export function RelacionamentoPanel() {
   /* "Todos" mostra a base inteira, para acompanhar. As faixas sao a lista de
      ACAO, e por isso tiram quem nao deve ser chamada agora: quem tem pedido a
      caminho e quem ja foi chamada dentro do descanso. */
+  /* Ocasião e período valem em TODAS as abas, inclusive em "Todos" — são um
+     recorte de quem se está olhando, não uma lista de ação. */
+  const recortada = useMemo(
+    () =>
+      clientes.filter((c) => {
+        if (filtroOcasiao && !c.ocasioes.includes(filtroOcasiao)) return false;
+        if (de || ate) {
+          const dentro = c.datas.some((d) => (!de || d >= de) && (!ate || d <= ate));
+          if (!dentro) return false;
+        }
+        return true;
+      }),
+    [clientes, filtroOcasiao, de, ate],
+  );
+
   const filtrar = useCallback((lista: ClienteParado[], id: FaixaId) => {
     const f = FAIXAS.find((x) => x.id === id)!;
     if (id === "todos") return lista;
@@ -184,14 +205,27 @@ export function RelacionamentoPanel() {
     });
   }, []);
 
-  const porFaixa = useMemo(() => filtrar(clientes, faixa), [clientes, faixa, filtrar]);
+  const porFaixa = useMemo(() => filtrar(recortada, faixa), [recortada, faixa, filtrar]);
+
+  /* Só as ocasiões que existem no histórico. Oferecer as dezenove do calendário
+     encheria o seletor de opções que nunca devolvem nada. */
+  const ocasioesUsadas = useMemo(() => {
+    const vistas = new Set<string>();
+    for (const c of clientes) for (const o of c.ocasioes) vistas.add(o);
+    return [...vistas]
+      .map((slug) => ocasiaoPorSlug(slug))
+      .filter((o): o is NonNullable<typeof o> => o != null)
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+  }, [clientes]);
+
+  const temRecorte = Boolean(filtroOcasiao || de || ate);
 
   const contagens = useMemo(
     () =>
       Object.fromEntries(
-        FAIXAS.map((f) => [f.id, f.id === "ocasiao" ? -1 : filtrar(clientes, f.id).length]),
+        FAIXAS.map((f) => [f.id, f.id === "ocasiao" ? -1 : filtrar(recortada, f.id).length]),
       ) as Record<FaixaId, number>,
-    [clientes, filtrar],
+    [recortada, filtrar],
   );
 
   /* Prévia com quem está no topo da lista; sem lista, um exemplo plausível —
@@ -338,6 +372,60 @@ export function RelacionamentoPanel() {
           </button>
         ))}
       </div>
+
+      {faixa !== "ocasiao" && (ocasioesUsadas.length > 0 || temRecorte) && (
+        <div className="mt-3 flex flex-wrap items-end gap-3 rounded-2xl border border-[var(--admin-border)] bg-card p-3">
+          <label className="min-w-0 flex-1 space-y-1.5 text-sm font-medium sm:max-w-56">
+            <span className="block">Comprou na ocasião</span>
+            <select
+              value={filtroOcasiao}
+              onChange={(e) => setFiltroOcasiao(e.target.value)}
+              className="h-10 w-full rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+            >
+              <option value="">Qualquer uma</option>
+              {ocasioesUsadas.map((o) => (
+                <option key={o.slug} value={o.slug}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="space-y-1.5 text-sm font-medium">
+            <span className="block">Comprou de</span>
+            <input
+              type="date"
+              value={de}
+              onChange={(e) => setDe(e.target.value)}
+              className="h-10 min-w-[10.5rem] rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+            />
+          </label>
+
+          <label className="space-y-1.5 text-sm font-medium">
+            <span className="block">até</span>
+            <input
+              type="date"
+              value={ate}
+              onChange={(e) => setAte(e.target.value)}
+              className="h-10 min-w-[10.5rem] rounded-xl border border-[var(--admin-border)] bg-white px-3 text-sm"
+            />
+          </label>
+
+          {temRecorte && (
+            <Button
+              variant="outline"
+              className="h-10"
+              onClick={() => {
+                setFiltroOcasiao("");
+                setDe("");
+                setAte("");
+              }}
+            >
+              Limpar
+            </Button>
+          )}
+        </div>
+      )}
 
       {faixa === "ocasiao" ? (
         <RelacionamentoOcasiao modelos={modelos} />

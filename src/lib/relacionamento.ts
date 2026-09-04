@@ -46,6 +46,20 @@ export type ClienteParado = {
   contatadoEm: string | null;
   /** Chamada hoje: o "desfazer" ainda vale. */
   chamadaHoje: boolean;
+  /** Dias das compras concluídas, para o filtro por período. */
+  datas: string[];
+  /** Ocasiões em que ela já comprou, para o filtro por ocasião. */
+  ocasioes: string[];
+  /* A última compra COM ocasião. É o que a mensagem "repetir o presente"
+     precisa — sem ela, a terceira opção do botão Chamar seria inventada, e por
+     isso ela só aparece para quem tem esta compra. */
+  ultimaOcasiao: {
+    slug: string;
+    produto: string | null;
+    destinatario: string | null;
+    ano: number;
+    dia: string;
+  } | null;
 };
 
 type PedidoLinha = {
@@ -56,6 +70,8 @@ type PedidoLinha = {
   created_at: string | null;
   total: number | null;
   itens: ItemPedido[] | null;
+  ocasiao: string | null;
+  destinatario_nome: string | null;
 };
 
 /**
@@ -105,7 +121,7 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
       .limit(TETO),
     supabase
       .from("pedidos")
-      .select("cliente_id, status, data_entrega, entregue_em, created_at, total, itens")
+      .select("cliente_id, status, data_entrega, entregue_em, created_at, total, itens, ocasiao, destinatario_nome")
       .eq("company_id", companyId)
       .not("cliente_id", "is", null)
       .limit(TETO),
@@ -122,7 +138,15 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
      decide o que esconder e a tela, que sabe qual faixa esta aberta. */
   const porCliente = new Map<
     string,
-    { ultima: string; compras: number; total: number; produtos: Map<string, number> }
+    {
+      ultima: string;
+      compras: number;
+      total: number;
+      produtos: Map<string, number>;
+      datas: string[];
+      ocasioes: Set<string>;
+      ultimaOcasiao: ClienteParado["ultimaOcasiao"];
+    }
   >();
 
   for (const p of (pedidosRes.data ?? []) as PedidoLinha[]) {
@@ -148,11 +172,39 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
       compras: 0,
       total: 0,
       produtos: new Map<string, number>(),
+      datas: [] as string[],
+      ocasioes: new Set<string>(),
+      ultimaOcasiao: null as ClienteParado["ultimaOcasiao"],
     };
 
     if (dia > atual.ultima) atual.ultima = dia;
     atual.compras += 1;
     atual.total += Number(p.total ?? 0);
+    atual.datas.push(dia);
+
+    const ocasiao = (p.ocasiao as string | null) ?? null;
+    if (ocasiao) {
+      atual.ocasioes.add(ocasiao);
+      // A mais recente vence: é a que ela vai querer oferecer de novo.
+      if (!atual.ultimaOcasiao || dia > atual.ultimaOcasiao.dia) {
+        let produto: string | null = null;
+        let maior = 0;
+        for (const item of p.itens ?? []) {
+          const q = Number(item?.qtd ?? 1);
+          if (item?.nome && q > maior) {
+            maior = q;
+            produto = String(item.nome);
+          }
+        }
+        atual.ultimaOcasiao = {
+          slug: ocasiao,
+          produto,
+          destinatario: (p.destinatario_nome as string | null) ?? null,
+          ano: Number(dia.slice(0, 4)) || 0,
+          dia,
+        };
+      }
+    }
 
     // Soma por quantidade, não por vezes que apareceu: quem leva 6 tábuas num
     // pedido leva tábua, mesmo tendo pedido uma vez só.
@@ -193,6 +245,9 @@ export async function carregarRelacionamento(): Promise<{ clientes: ClienteParad
       compras: dados.compras,
       totalGasto: dados.total,
       produtoFrequente,
+      datas: dados.datas,
+      ocasioes: [...dados.ocasioes],
+      ultimaOcasiao: dados.ultimaOcasiao,
       temPedidoAberto: comAberto.has(id),
       contatadoEm: contatada,
       chamadaHoje: contatada === hoje,
