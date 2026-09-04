@@ -333,6 +333,26 @@ export function PedidoDialog({
     if (!nome.trim()) faltando.push("Cliente");
     if (itens.length === 0) faltando.push("pelo menos um item");
     if (itens.some((i) => !i.nome.trim())) faltando.push("o nome de todos os itens");
+
+    /* Item sem preço fecha o pedido em R$ 0 e ninguém vê: subtotalItens faz
+       `(i.preco ?? 0) * i.qtd`, então o item entra valendo zero, o caixa ganha
+       uma entrada de R$ 0 e a Margem mostra receita zero com o custo cheio.
+       Antes isso era quase impossível, porque todo produto nascia com preço
+       obrigatório no cadastro; desde que o preço passou a ser definido em
+       Custo e preços, produto sem preço virou estado comum.
+
+       Só `null` é barrado, nunca zero: zero é alguém escrevendo zero de
+       propósito — um brinde, uma cortesia — e isso é decisão dela. */
+    const semPreco = itens
+      .filter((i) => i.preco == null)
+      .map((i) => i.nome.trim())
+      .filter(Boolean);
+    if (semPreco.length) {
+      setErro(
+        `Sem preço: ${semPreco.join(", ")}. Digite o valor na linha do item, ou defina o preço do produto em Custo e preços.`,
+      );
+      return;
+    }
     // Sem data o pedido nao entra na agenda nem na rota do dia, e some das
     // listas de entrega. Por isso e obrigatoria, e nao assumimos "hoje": um
     // padrao silencioso e o que fazia pedido nascer com a data errada.
@@ -561,7 +581,7 @@ export function PedidoDialog({
                   itens: g.itens.map((p) => ({
                     valor: p.slug,
                     rotulo: p.nome,
-                    detalhe: p.preco != null ? formatBRL(p.preco) : undefined,
+                    detalhe: p.preco != null ? formatBRL(p.preco) : "sem preço",
                   })),
                 }))}
                 onEscolher={adicionarDoCatalogo}

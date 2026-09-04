@@ -93,7 +93,7 @@ const ETAPAS: Etapa[] = [
     titulo: "Cadastre seu produto",
     resumo: "Prepare o catálogo usado nos pedidos e nas vendas.",
     orientacoes: [
-      "Informe nome, categoria, preço de venda e uma boa imagem.",
+      "Informe nome, categoria e uma boa imagem. O preço você define na etapa seguinte, em Custo e preços, junto com o custo.",
       "Monte a composição com os insumos para conhecer o custo real.",
       "Salve o produto para encontrá-lo rapidamente nos próximos pedidos.",
     ],

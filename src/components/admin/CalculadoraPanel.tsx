@@ -459,7 +459,12 @@ export function CalculadoraPanel() {
 
       {editando && (
         <DialogoCalculo
-          key={`${aba}:${editando.id}`}
+          /* A key NÃO inclui a aba de propósito. Com `${aba}:${id}` o botão
+             "Lançar o custo" do aviso trocava a aba, a key mudava, o React
+             remontava a janela e o preço digitado — que só existe no estado
+             local até alguém salvar — sumia sem aviso nenhum. Trocar de modo
+             não é trocar de produto. */
+          key={editando.id}
           produto={editando}
           modo={aba}
           insumos={insumos}
@@ -520,15 +525,11 @@ function DialogoCalculo({
   const precoNumero = paraNumero(preco);
   const temPreco = Number.isFinite(precoNumero) && precoNumero > 0;
 
-  /* Na aba Custo o tempo é o que está sendo digitado. Na aba Preços ele é o que
-     já foi salvo — o campo lá é travado, e a cascata precisa do valor real para
-     não calcular a mão de obra como zero. */
-  const tempoMin =
-    modo === "custo"
-      ? Number.isFinite(paraNumero(tempo))
-        ? paraNumero(tempo)
-        : null
-      : produto.tempo_montagem_min;
+  /* Sempre o estado, nas duas abas. Lendo produto.tempo_montagem_min na aba
+     Preços, quem acabasse de salvar o tempo na aba Custo veria a margem
+     calculada com o valor VELHO — o prop só se atualiza quando a janela fecha
+     e a lista recarrega. */
+  const tempoMin = Number.isFinite(paraNumero(tempo)) ? paraNumero(tempo) : null;
 
   const cascata = calcular(temPreco ? precoNumero : null, custo, tempoMin, config);
 
@@ -738,9 +739,7 @@ function DialogoCalculo({
                 <div className="space-y-1.5 text-sm font-medium">
                   <span className="block">Tempo de montagem</span>
                   <p className="flex h-11 items-center rounded-xl bg-[var(--cream-soft)] px-3.5 t-item tabular-nums text-muted-foreground">
-                    {produto.tempo_montagem_min == null
-                      ? "—"
-                      : `${produto.tempo_montagem_min} min`}
+                    {tempoMin == null ? "—" : `${tempoMin} min`}
                   </p>
                 </div>
               </div>

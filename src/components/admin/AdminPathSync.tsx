@@ -180,8 +180,20 @@ export function AdminPathSync() {
       const dentroDoHeader = Boolean(clicavel.closest("header"));
 
       if (!destino) {
-        const deveNavegarPai = window.innerWidth < 1024 || !dentroDoHeader;
-        if (deveNavegarPai) {
+        /* O atalho de menu PAI só vale para clique na própria navegação.
+           A condição era `innerWidth < 1024 || !dentroDoHeader`, e o segundo
+           termo pega a página INTEIRA: qualquer botão com o texto "Custo",
+           "Vendas", "Financeiro" ou "Cadastros" trocava a barra de endereços.
+           A aba "Custo" da tela Custo e preços, que vive no <main>, empurrava
+           a URL para /margem — e dali um F5 levava a pessoa para outra tela,
+           com uma entrada fantasma no histórico de brinde.
+
+           O `!dentroDoHeader` existia para o celular, onde os chips ficam fora
+           do <header>, na .mobile-admin-nav. Agora isso está dito com
+           precisão, em vez de "qualquer lugar que não seja o cabeçalho". */
+        const naNavegacao =
+          dentroDoHeader || Boolean(clicavel.closest(".mobile-admin-nav"));
+        if (naNavegacao) {
           if (texto === "Custo") destino = "/margem";
           else if (texto === "Vendas") destino = "/vendas/pedidos";
           else if (texto === "Financeiro") destino = "/financeiro/entradas";
