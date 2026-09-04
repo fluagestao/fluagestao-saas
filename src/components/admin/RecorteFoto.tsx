@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,8 @@ type Props = {
 
 export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
-  const [zoom, setZoom] = useState(1);
+  // 0 = a foto inteira cabendo, 50 = preenchendo, 100 = 3x. Ver `escala`.
+  const [zoom, setZoom] = useState(50);
   const [pos, setPos] = useState({ x: 0, y: 0 });
   const [processando, setProcessando] = useState(false);
 
@@ -71,33 +72,54 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
     return () => observador.disconnect();
   }, []);
 
-  /* Fator que faz a imagem COBRIR a moldura. É a base do zoom: em 1x a foto
-     preenche o quadrado sem sobrar borda, e daí só cresce. */
-  const base = img && lado ? Math.max(lado / img.width, lado / img.height) : 1;
-  const escala = base * zoom;
+  /* DOIS SENTIDOS, com o "preenche" no meio do curso.
+
+     COBRIR e o ponto neutro: a foto ocupa o quadrado inteiro sem sobrar borda.
+     Para cima, aproxima ate 3x. Para baixo, afasta ate CABER — a foto inteira
+     visivel dentro do quadrado, com faixa nas laterais.
+
+     Antes so dava para aproximar, e um banner deitado ja entrava no maximo de
+     corte possivel: nao havia como enquadrar, so escolher que pedaco perder. */
+  const cobrir = img && lado ? Math.max(lado / img.width, lado / img.height) : 1;
+  const caber = img && lado ? Math.min(lado / img.width, lado / img.height) : 1;
+
+  /* O controle guarda 0..100 e o meio, 50, e sempre COBRIR. Mapear escala
+     direto no slider deixaria o ponto neutro em lugar diferente para cada foto
+     — numa retrato quase no comeco, numa panoramica quase no fim. */
+  const escala = useMemo(() => {
+    if (zoom <= 50) {
+      const t = zoom / 50;
+      return caber + (cobrir - caber) * t;
+    }
+    const t = (zoom - 50) / 50;
+    return cobrir * (1 + 2 * t);
+  }, [zoom, caber, cobrir]);
+
   const largura = img ? img.width * escala : 0;
   const altura = img ? img.height * escala : 0;
 
-  /* Prende a imagem à moldura: sem isto dá para arrastar até sobrar fundo
-     branco, e o arquivo final sairia com uma faixa vazia. */
+  /* Prende a foto à moldura quando ela é MAIOR, e centraliza quando é menor.
+     Sem o segundo caso, afastar deixaria a foto encostada num canto com a
+     faixa toda do outro lado. */
   const limitar = useCallback(
     (x: number, y: number) => ({
-      x: Math.min(0, Math.max(lado - largura, x)),
-      y: Math.min(0, Math.max(lado - altura, y)),
+      x: largura >= lado ? Math.min(0, Math.max(lado - largura, x)) : (lado - largura) / 2,
+      y: altura >= lado ? Math.min(0, Math.max(lado - altura, y)) : (lado - altura) / 2,
     }),
     [lado, largura, altura],
   );
 
-  // Recentraliza quando a imagem carrega ou o zoom muda.
+  // Reencaixa quando a imagem carrega, a moldura muda de tamanho ou o zoom anda.
   useEffect(() => {
     if (!img || !lado) return;
     setPos((atual) => limitar(atual.x, atual.y));
-  }, [img, lado, zoom, limitar]);
+  }, [img, lado, limitar]);
 
+  // Centraliza ao abrir: a moldura só existe depois que a imagem carrega.
   useEffect(() => {
     if (!img || !lado) return;
-    setPos({ x: (lado - img.width * base) / 2, y: (lado - img.height * base) / 2 });
-  }, [img, lado, base]);
+    setPos({ x: (lado - img.width * cobrir) / 2, y: (lado - img.height * cobrir) / 2 });
+  }, [img, lado, cobrir]);
 
   function aoPegar(e: React.PointerEvent) {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -123,6 +145,12 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
       canvas.height = SAIDA;
       const ctx = canvas.getContext("2d");
       if (!ctx) throw new Error("canvas indisponível");
+
+      /* Fundo branco antes de desenhar. Afastando além do "preenche" sobra
+         área vazia, e JPEG não tem transparência: sem pintar, a faixa sairia
+         PRETA no catálogo. */
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, SAIDA, SAIDA);
 
       /* Da tela para a origem: o pedaço visível começa em -pos/escala e mede
          lado/escala. É a mesma conta do que está na moldura, então o que a
@@ -195,16 +223,16 @@ export function RecorteFoto({ arquivo, onConfirmar, onCancelar }: Props) {
         </div>
 
         <label className="mt-1 block text-sm font-medium">
-          Aproximar
+          Aproximar ou afastar
           <input
             type="range"
-            min={1}
-            max={3}
-            step={0.01}
+            min={0}
+            max={100}
+            step={1}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             className="mt-2 w-full accent-[var(--terracotta)]"
-            aria-label="Aproximar a foto"
+            aria-label="Aproximar ou afastar a foto"
           />
         </label>
 
