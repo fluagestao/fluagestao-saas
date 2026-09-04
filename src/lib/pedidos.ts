@@ -28,6 +28,21 @@ import {
   type StatusPedido,
 } from "@/lib/vendas";
 
+/* Uma cliente que comprou no periodo, com o que ela fez ali dentro.
+   Nao e exportado: "use server" quer so funcoes async como export publico, e o
+   painel infere a forma pelo retorno de carregarDashboard. */
+type ClienteDoPeriodo = {
+  id: string;
+  nome: string;
+  whatsapp: string | null;
+  /** Pedidos dentro do periodo, nao no total. */
+  pedidos: number;
+  /** Faturamento dentro do periodo. */
+  total: number;
+  /** Dia da primeira compra de todos os tempos. */
+  primeiraCompra: string;
+};
+
 type Contexto = Awaited<ReturnType<typeof requireCompany>>;
 type Supabase = Contexto["supabase"];
 
@@ -791,7 +806,9 @@ export async function carregarDashboard(input: { data: unknown }) {
     await Promise.all([
       supabase
         .from("pedidos")
-        .select("cliente_id, itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status, ocasiao")
+        .select(
+          "cliente_id, cliente_nome, cliente_whatsapp, itens, total, data_entrega, created_at, recebido_em, forma_pagamento, status, ocasiao",
+        )
         .eq("company_id", companyId)
         .neq("status", "cancelado")
         .limit(3000),
@@ -891,23 +908,59 @@ export async function carregarDashboard(input: { data: unknown }) {
     if (!atual || dia < atual) primeiraCompra.set(id, dia);
   }
 
-  const compraramNoPeriodo = new Set<string>();
+  /* QUEM, nao so quantos.
+   *
+   * O cartao contava "3 clientes novas" e parava ali. Um numero desses nao
+   * vira trabalho: quem quer mandar mensagem para a cliente nova precisa saber
+   * o nome dela, e quem quer entender a recompra precisa ver a lista. Entao o
+   * cartao virou porta — clicar abre quem esta atras do numero.
+   *
+   * Sai da mesma consulta, sem round-trip novo: o historico inteiro ja esta
+   * carregado aqui para achar a primeira compra de cada uma. */
+  const porCliente = new Map<string, ClienteDoPeriodo>();
+
   for (const pedido of pedidosRes.data ?? []) {
-    const id = (pedido as { cliente_id?: string | null }).cliente_id;
-    if (!id) continue;
-    if (dentro(diaDaProducao(pedido as LinhaPedido))) compraramNoPeriodo.add(id);
+    const linha = pedido as LinhaPedido & {
+      cliente_id?: string | null;
+      cliente_nome?: string | null;
+      cliente_whatsapp?: string | null;
+      total?: number | string | null;
+    };
+    const id = linha.cliente_id;
+    if (!id || !dentro(diaDaProducao(linha))) continue;
+
+    const atual = porCliente.get(id) ?? {
+      id,
+      nome: String(linha.cliente_nome ?? "").trim() || "sem nome",
+      whatsapp: linha.cliente_whatsapp ?? null,
+      pedidos: 0,
+      total: 0,
+      primeiraCompra: primeiraCompra.get(id) ?? "",
+    };
+    atual.pedidos += 1;
+    atual.total += Number(linha.total ?? 0);
+    porCliente.set(id, atual);
   }
 
-  let clientesNovos = 0;
-  for (const id of compraramNoPeriodo) {
-    const primeira = primeiraCompra.get(id);
-    if (primeira && dentro(primeira)) clientesNovos += 1;
+  const listaNovos: ClienteDoPeriodo[] = [];
+  const listaRecorrentes: ClienteDoPeriodo[] = [];
+  for (const cliente of porCliente.values()) {
+    const primeira = primeiraCompra.get(cliente.id);
+    (primeira && dentro(primeira) ? listaNovos : listaRecorrentes).push(cliente);
   }
+
+  /* Maior primeiro: a lista existe para agir, e quem gastou mais e por onde se
+     comeca a agir. */
+  const porValor = (a: ClienteDoPeriodo, b: ClienteDoPeriodo) => b.total - a.total;
+  listaNovos.sort(porValor);
+  listaRecorrentes.sort(porValor);
 
   const clientes = {
-    novos: clientesNovos,
-    recorrentes: compraramNoPeriodo.size - clientesNovos,
-    total: compraramNoPeriodo.size,
+    novos: listaNovos.length,
+    recorrentes: listaRecorrentes.length,
+    total: porCliente.size,
+    listaNovos,
+    listaRecorrentes,
   };
 
   /* O filtro de ocasiao corta ANTES de tudo, porque a pergunta muda: "como foi

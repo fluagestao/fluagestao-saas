@@ -412,48 +412,6 @@ export function CalendarioEntregasPanel({
         </div>
       )}
 
-      /* As entregas vem primeiro: sao o que ela precisa ver ao abrir a tela.
-         A data comemorativa e util, mas e planejamento — nao a fila de hoje. */
-      {proximaData && (
-        <div className="overflow-hidden rounded-2xl shadow-[var(--shadow-soft)]">
-          <article className="flex flex-col gap-4 rounded-2xl border border-[var(--admin-border)] border-l-4 border-l-[var(--terracotta)] bg-gradient-to-r from-[#fff8f4] to-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="flex min-w-0 items-start gap-3">
-              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#fbebe6] text-[var(--terracotta)]">
-                <Gift className="h-5 w-5" />
-              </span>
-              <div className="min-w-0">
-                <p className="font-semibold text-[var(--admin-ink)]">
-                  {proximaData.nome} está chegando
-                </p>
-                <p className="mt-1 text-xs font-semibold text-[var(--terracotta)]">
-                  {dataEspecial(proximaData.data)} · {textoContagem(proximaData.diasRestantes)}
-                </p>
-                <p className="mt-1.5 text-sm leading-5 text-[var(--admin-ink-soft)]">
-                  {proximaData.mensagem}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setMostrarDatas((valor) => !valor)}
-              className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl border border-[var(--admin-border)] bg-white px-4 text-sm font-semibold text-[var(--terracotta)] shadow-sm transition hover:bg-[var(--cream)]"
-              aria-expanded={mostrarDatas}
-            >
-              {mostrarDatas ? "Ocultar datas" : "Ver próximas datas"}
-            </button>
-          </article>
-
-          {mostrarDatas && (
-            <div className="grid gap-2 border-x border-b border-[var(--admin-border)] bg-[#fffdfa] p-3 sm:grid-cols-2 xl:grid-cols-5">
-              {datasEspeciais.slice(1).map((evento) => (
-                <LembreteData key={evento.data + evento.nome} evento={evento} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Celular: um dia por vez, com seta. A grade de sete colunas so cabia
           rolando 1120px na horizontal, e as colunas ficavam espremidas. */}
       <div className="md:hidden">
@@ -504,6 +462,50 @@ export function CalendarioEntregasPanel({
         <div className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[var(--admin-border)] bg-white/60 px-4 py-4 text-sm text-[var(--admin-muted)]">
           <PackageCheck className="h-4 w-4" />
           Nenhuma entrega programada para esta semana.
+        </div>
+      )}
+
+      {/* Vem DEPOIS da grade: a fila do dia é o que ela precisa ver ao abrir
+          a tela. A data comemorativa é útil, mas é planejamento — quem abre o
+          calendário às sete da manhã quer saber o que sai hoje, não o que
+          vender no mês que vem. */}
+      {proximaData && (
+        <div className="overflow-hidden rounded-2xl shadow-[var(--shadow-soft)]">
+          <article className="flex flex-col gap-4 rounded-2xl border border-[var(--admin-border)] border-l-4 border-l-[var(--terracotta)] bg-gradient-to-r from-[#fff8f4] to-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#fbebe6] text-[var(--terracotta)]">
+                <Gift className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-[var(--admin-ink)]">
+                  {proximaData.nome} está chegando
+                </p>
+                <p className="mt-1 text-xs font-semibold text-[var(--terracotta)]">
+                  {dataEspecial(proximaData.data)} · {textoContagem(proximaData.diasRestantes)}
+                </p>
+                <p className="mt-1.5 text-sm leading-5 text-[var(--admin-ink-soft)]">
+                  {proximaData.mensagem}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setMostrarDatas((valor) => !valor)}
+              className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl border border-[var(--admin-border)] bg-white px-4 text-sm font-semibold text-[var(--terracotta)] shadow-sm transition hover:bg-[var(--cream)]"
+              aria-expanded={mostrarDatas}
+            >
+              {mostrarDatas ? "Ocultar datas" : "Ver próximas datas"}
+            </button>
+          </article>
+
+          {mostrarDatas && (
+            <div className="grid gap-2 border-x border-b border-[var(--admin-border)] bg-[#fffdfa] p-3 sm:grid-cols-2 xl:grid-cols-5">
+              {datasEspeciais.slice(1).map((evento) => (
+                <LembreteData key={evento.data + evento.nome} evento={evento} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
