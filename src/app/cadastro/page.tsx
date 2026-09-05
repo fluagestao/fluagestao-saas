@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ArrowRight,
   Eye,
@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cadastrar as cadastrarConta } from "@/lib/auth-acoes";
-import { createClient } from "@/lib/supabase/client";
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
@@ -58,20 +57,8 @@ function formatarWhatsapp(valor: string) {
     .replace(/(\d{5})(\d)/, "$1-$2");
 }
 
-function mensagemDuplicidade(emailExiste: boolean, documentoExiste: boolean) {
-  if (emailExiste && documentoExiste) {
-    return "Este CPF/CNPJ e este e-mail já possuem cadastro na Flua.";
-  }
-  if (documentoExiste) {
-    return "Este CPF/CNPJ já possui cadastro na Flua.";
-  }
-  return "Este e-mail já possui cadastro na Flua.";
-}
-
 export default function CadastroPage() {
   const router = useRouter();
-  const supabase = useMemo(() => createClient(), []);
-
   const [nomeLoja, setNomeLoja] = useState("");
   const [documento, setDocumento] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -142,30 +129,6 @@ export default function CadastroPage() {
     setCarregando(true);
 
     try {
-      const { data: disponibilidade, error: disponibilidadeError } = await supabase
-        .rpc("check_signup_availability", {
-          p_email: emailLimpo,
-          p_document: documentoNumeros,
-        })
-        .single();
-
-      if (disponibilidadeError) {
-        setErro("Não foi possível validar seus dados agora. Tente novamente.");
-        return;
-      }
-
-      const disponibilidadeValidada = disponibilidade as {
-        email_exists?: boolean;
-        document_exists?: boolean;
-      } | null;
-      const emailExiste = Boolean(disponibilidadeValidada?.email_exists);
-      const documentoExiste = Boolean(disponibilidadeValidada?.document_exists);
-
-      if (emailExiste || documentoExiste) {
-        setErro(mensagemDuplicidade(emailExiste, documentoExiste));
-        return;
-      }
-
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
         "https://www.fluagestao.com.br";
