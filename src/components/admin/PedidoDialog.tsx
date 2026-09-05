@@ -67,6 +67,57 @@ const JANELAS = ["Manhã", "Tarde", "Noite"] as const;
  * Pedido antigo guarda faixa ("18:00 às 20:00") e o input só aceita uma hora:
  * sem isto ele abriria vazio e a hora combinada se perderia sem aviso.
  */
+/**
+ * Máscara enquanto digita: "1230" vira "12:30".
+ *
+ * O <input type="time"> obriga a preencher hora e minuto como dois campos
+ * separados — digitar quatro números seguidos não funciona em todo navegador,
+ * e no Safari é preciso clicar de um para o outro. Aqui os dois pontos entram
+ * sozinhos e a pessoa só digita.
+ *
+ * Não valida nada: validar no meio da digitação apagaria o "2" de quem está
+ * indo escrever "23". Quem valida é normalizarHora, ao sair do campo.
+ */
+function mascaraHora(bruto: string): string {
+  const digitos = bruto.replace(/\D/g, "").slice(0, 4);
+  if (digitos.length <= 2) return digitos;
+  return `${digitos.slice(0, 2)}:${digitos.slice(2)}`;
+}
+
+/**
+ * Ao sair do campo: completa e valida. Hora impossível vira vazio.
+ *
+ * Três formas de escrever a mesma coisa, porque as três aparecem na prática:
+ *   "8"    → 08:00   (só a hora cheia)
+ *   "830"  → 08:30   (três dígitos: o primeiro é a hora)
+ *   "1230" → 12:30
+ *
+ * "830" é ambíguo no meio da digitação — a máscara mostra "83:0" por um
+ * instante — mas ao sair do campo só uma leitura faz sentido, e é esta.
+ */
+function normalizarHora(valor: string): string {
+  const d = valor.replace(/\D/g, "");
+  if (!d) return "";
+
+  let h: number;
+  let m: number;
+  if (d.length <= 2) {
+    h = Number(d);
+    m = 0;
+  } else if (d.length === 3) {
+    h = Number(d.slice(0, 1));
+    m = Number(d.slice(1));
+  } else {
+    h = Number(d.slice(0, 2));
+    m = Number(d.slice(2, 4));
+  }
+
+  // Vazio em vez de chutar: 25:00 não existe, e adivinhar o que ela quis
+  // dizer seria gravar um horário que ninguém combinou.
+  if (h > 23 || m > 59) return "";
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 function primeiraHora(texto: string): string {
   const achou = texto.match(/(\d{1,2})\s*[:h]\s*(\d{2})/);
   if (!achou) return "";
@@ -921,15 +972,23 @@ export function PedidoDialog({
               <option value="Outro">Horário marcado</option>
             </select>
             {janela === "Outro" && (
-              /* type="time" em vez de texto livre: uma hora só, com o seletor
-                 do próprio aparelho. No campo livre saía "8 as 9", "8h às 9h"
-                 e faixa — e faixa não diz a que horas a entrega é, além de
-                 desordenar a lista, que ordena pela hora de início. */
+              /* Texto com máscara, e não type="time": o campo nativo separa
+                 hora e minuto em dois segmentos, então digitar "1230" seguido
+                 não funciona — é preciso pular de um para o outro. Aqui os dois
+                 pontos entram sozinhos.
+
+                 inputMode numeric abre o teclado de números no celular, e o
+                 maxLength de 5 é o tamanho de "12:30". A validação acontece ao
+                 SAIR do campo: no meio da digitação, apagar o "2" de quem vai
+                 escrever "23" seria pior que aceitar um valor incompleto. */
               <Input
-                type="time"
                 className="mt-2"
+                inputMode="numeric"
+                maxLength={5}
+                placeholder="12:30"
                 value={janelaOutro}
-                onChange={(e) => setJanelaOutro(e.target.value)}
+                onChange={(e) => setJanelaOutro(mascaraHora(e.target.value))}
+                onBlur={(e) => setJanelaOutro(normalizarHora(e.target.value))}
                 autoFocus
               />
             )}
