@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowRight,
   Eye,
   EyeOff,
   Loader2,
@@ -103,9 +104,8 @@ export default function LoginPage() {
 
   return (
     <AuthShell
-      title="Acesse sua conta"
-      subtitle="Entre com seus dados para acessar a gestão da sua empresa."
-      hideIntro
+      title="Bem-vinda de volta!"
+      subtitle="Acesse sua conta e continue organizando seu negócio com o Flua."
     >
       <form onSubmit={entrar} className="space-y-5" noValidate>
         <div className="space-y-2">
@@ -158,6 +158,7 @@ export default function LoginPage() {
               value={senha}
               onChange={(event) => setSenha(event.target.value)}
               required
+              placeholder="Digite sua senha"
               className="h-12 rounded-xl border-[#D9C6B2] bg-white/85 px-10 text-[#3f2422] shadow-sm outline-none focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/20"
             />
             <button
@@ -229,10 +230,17 @@ export default function LoginPage() {
         >
           {carregando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Entrar
+          {!carregando && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-[#703D3A]/65">
+      <div className="mt-7 flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-[#D9C6B2]/70" />
+        <span className="text-[11px] text-[#703D3A]/50">ou</span>
+        <span className="h-px flex-1 bg-[#D9C6B2]/70" />
+      </div>
+
+      <p className="mt-5 text-center text-xs text-[#703D3A]/65">
         Ainda não tem uma conta?{" "}
         <Link
           href="/cadastro"
