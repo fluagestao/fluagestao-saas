@@ -8,6 +8,11 @@
   --contact-soft: #f6e7df;
   --contact-ink: #321c19;
   --contact-muted: #735d57;
+  /* Verde só em detalhe: o botão do WhatsApp e o ponto de status. Terracota
+     ali o confundiria com o de central de ajuda, que é a outra ação da mesma
+     fileira — duas ações iguais na cor, diferentes no peso. */
+  --contact-oliva: #2f5137;
+  --contact-oliva-forte: #24402b;
   display: grid;
   min-height: 100dvh;
   grid-template-rows: minmax(0, 1fr) auto;
@@ -111,6 +116,66 @@
   }
 }
 
+/*
+ * A CESTA COMO CENÁRIO.
+ *
+ * Camada absoluta, e não background da seção: assim ela tem recorte e
+ * esmaecimento próprios sem arrastar junto os gradientes do hero.
+ *
+ * `background-position: 34% 74%` porque na foto a cesta está à esquerda e
+ * embaixo — o topo é parede e sombra, e centralizar cortaria a base dela,
+ * que é justamente onde estão o trançado e o laço.
+ *
+ * O ::after é o que garante a leitura: um véu creme que fecha nas quatro
+ * bordas e é mais denso à esquerda, onde vivem o título e o texto. Sem ele a
+ * foto competiria com a serifa e nenhuma das duas ganharia.
+ */
+.contact-basket {
+  position: absolute;
+  z-index: -1;
+  /* FAIXA VERTICAL, não fundo amplo.
+     A foto ocupa a coluna entre o texto e os cartões e vai de borda a borda
+     na vertical, como uma tira de revista. Fundo espalhado por trás de tudo
+     brigava com a serifa do título; confinado a esta faixa, ele vira cenário
+     e o texto fica sobre creme limpo. */
+  top: 0;
+  bottom: 0;
+  left: clamp(150px, 28%, 500px);
+  width: clamp(210px, 24%, 450px);
+  background-image: url("/images/flua-support-basket.webp");
+  background-repeat: no-repeat;
+  /* 23% 62% centraliza a cesta na faixa: na foto ela fica à esquerda e
+     embaixo, e o topo é só parede e sombra. */
+  background-position: 21% 54%;
+  background-size: cover;
+}
+
+.contact-basket::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  /* Só as bordas esmaecem — a esquerda com mais folga, porque é de onde vem
+     o texto. Um véu por cima da faixa inteira apagaria a foto que ela existe
+     para mostrar. */
+  background:
+    linear-gradient(
+      90deg,
+      #fbf7f3 0%,
+      rgba(251, 247, 243, 0.8) 12%,
+      rgba(251, 247, 243, 0.3) 26%,
+      rgba(251, 247, 243, 0) 40%,
+      rgba(251, 247, 243, 0) 88%,
+      rgba(251, 247, 243, 0.42) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(251, 247, 243, 0.55) 0%,
+      rgba(251, 247, 243, 0) 16%,
+      rgba(251, 247, 243, 0) 84%,
+      rgba(251, 247, 243, 0.5) 100%
+    );
+}
+
 .contact-decoration {
   position: absolute;
   z-index: -1;
@@ -177,32 +242,85 @@
   text-wrap: balance;
 }
 
+.contact-heart {
+  color: var(--contact-terracotta);
+  font-size: 0.6em;
+  vertical-align: 0.34em;
+}
+
+/* Cormorant em itálico no lugar de uma manuscrita: o detalhe é decorativo e
+   não justifica uma quinta família de fonte na rede — com o pulo de layout
+   que ela causa enquanto carrega. */
+.contact-nota {
+  margin: clamp(26px, 3vw, 38px) 0 0;
+  color: var(--contact-terracotta);
+  font-family: var(--font-flua-serif), Georgia, serif;
+  font-size: 1.16rem;
+  font-style: italic;
+  line-height: 1.45;
+  opacity: 0.82;
+}
+
+.contact-nota-card {
+  margin: 14px 0 0;
+  font-size: 1rem;
+}
+
 .contact-intro > p {
-  max-width: 620px;
+  /* Estreito o bastante para as linhas não correrem por baixo da foto: com
+     620px a última palavra de cada linha caía sobre a cesta. O título pode
+     encostar, porque ali a faixa esmaece e a serifa aguenta. */
+  max-width: 460px;
   margin: 30px 0 0;
   color: var(--contact-muted);
   font-size: clamp(1rem, 1.35vw, 1.13rem);
   line-height: 1.78;
 }
 
-.contact-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 34px;
+/* Eram três pastilhas iguais, sem hierarquia: liam como etiquetas de filtro,
+   não como o que a Flua entrega. Ícone + título + uma linha dá peso ao que
+   importa e espaço para respirar. */
+.contact-highlights {
+  max-width: 460px;
+  display: grid;
+  gap: clamp(16px, 2.1vw, 23px);
+  margin: clamp(30px, 3.6vw, 42px) 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.contact-tags span {
-  display: inline-flex;
-  min-height: 39px;
-  align-items: center;
-  padding: 0 15px;
-  border: 1px solid #e5d3ca;
-  border-radius: 999px;
-  color: #664a44;
-  background: rgba(255, 253, 249, 0.78);
-  font-size: 0.75rem;
-  font-weight: 650;
+.contact-highlights li {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.contact-highlight-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 13px;
+  color: var(--contact-red);
+  background: rgba(199, 110, 92, 0.11);
+}
+
+.contact-highlights strong {
+  display: block;
+  max-width: 20ch;
+  color: var(--contact-ink);
+  font-size: 0.97rem;
+  font-weight: 700;
+  line-height: 1.32;
+}
+
+.contact-highlights div > span {
+  display: block;
+  margin-top: 3px;
+  color: var(--contact-muted);
+  font-size: 0.87rem;
+  line-height: 1.5;
 }
 
 .contact-service-card {
@@ -307,6 +425,36 @@
   background: #913b33;
 }
 
+/* Verde do WhatsApp, escuro o bastante para o branco ter contraste de
+   leitura — o verde vivo da marca do app brigaria com a paleta e falharia no
+   contraste com texto branco. */
+.contact-button-whats {
+  margin-top: auto;
+  color: #fff;
+  background: var(--contact-oliva);
+}
+
+.contact-button-whats:hover {
+  background: var(--contact-oliva-forte);
+}
+
+.contact-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 13px 0 0;
+  color: var(--contact-muted);
+  font-size: 0.8rem;
+}
+
+.contact-status span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--contact-oliva);
+  box-shadow: 0 0 0 4px rgba(47, 81, 55, 0.12);
+}
+
 .contact-details {
   display: grid;
   gap: 10px;
@@ -344,13 +492,18 @@
   border-top: 1px solid rgba(132, 65, 55, 0.18);
 }
 
-.contact-commercial > div:first-child > span {
-  display: block;
-  margin-bottom: 9px;
+/* Era a palavra COMERCIAL em caixa alta, que nomeava o departamento e não o
+   que a pessoa ganha. O ícone ocupa o mesmo lugar sem dizer jargão, e alinha
+   este card com os dois de cima, que já abrem com ícone. */
+.contact-comercial-icone {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 13px;
+  place-items: center;
+  border-radius: 14px;
   color: var(--contact-red);
-  font-size: 0.68rem;
-  font-weight: 850;
-  letter-spacing: 0.15em;
+  background: rgba(199, 110, 92, 0.12);
 }
 
 .contact-commercial h2 {
@@ -448,8 +601,42 @@
   }
 
   .contact-intro h1,
-  .contact-intro > p {
+  .contact-intro > p,
+  .contact-highlights {
     max-width: 720px;
+  }
+
+  /* A FAIXA VERTICAL NÃO SOBREVIVE AO CELULAR.
+     Ali as colunas empilham e a coluna de texto ocupa a tela inteira: uma
+     tira no meio cortava as frases pela metade — "para ajudar você" e "sobre
+     a plataforma" caíam em cima da foto.
+
+     Vira fundo de largura cheia, ancorado embaixo, onde está a cesta na
+     foto. E fica bem mais apagado: no celular ele é textura de fundo, não a
+     imagem principal, porque não há coluna livre para ela ocupar. */
+  .contact-basket {
+    top: 0;
+    bottom: auto;
+    left: 0;
+    width: 100%;
+    /* Ancorada no TOPO, não embaixo: no celular o herói vai até o fim dos
+       cartões, e presa na base ela ficava atrás deles — invisível. Em cima
+       ela pega a faixa do cabeçalho e do título, que é o respiro da tela. */
+    height: min(46%, 430px);
+    background-position: 26% 66%;
+  }
+
+  .contact-basket::after {
+    /* Véu que ADENSA para baixo: no alto, onde só há cabeçalho, a foto
+       aparece; onde o texto começa, ela some. O título de serifa grande
+       atravessa o meio sem esforço; o parágrafo, não. */
+    background: linear-gradient(
+      180deg,
+      rgba(251, 247, 243, 0.42) 0%,
+      rgba(251, 247, 243, 0.62) 38%,
+      rgba(251, 247, 243, 0.93) 72%,
+      #fbf7f3 100%
+    );
   }
 }
 

@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  CircleHelp,
+  BookOpen,
   Headphones,
   Mail,
   MessageCircle,
+  Sparkles,
+  Users,
+  Zap,
 } from "lucide-react";
 
 import { CookieSettingsButton } from "@/app/documentos/CookieSettingsButton";
@@ -28,50 +31,92 @@ export default function ContatoPage() {
       <section className="contact-hero" aria-labelledby="contact-title">
         <div className="contact-decoration contact-decoration-one" aria-hidden="true" />
         <div className="contact-decoration contact-decoration-two" aria-hidden="true" />
+        {/* A cesta entra como CAMADA de fundo, não como <img> dentro de um
+            card: ela é cenário, não conteúdo. Por isso aria-hidden e sem alt —
+            quem usa leitor de tela não ganha nada sendo informado de uma
+            textura. O recorte e o esmaecimento ficam no CSS, que sabe a
+            largura da tela; aqui só existe o lugar dela. */}
+        <div className="contact-basket" aria-hidden="true" />
 
         <div className="contact-shell contact-layout">
           <div className="contact-intro">
             <span className="contact-kicker">FALE COM A FLUA</span>
-            <h1 id="contact-title">Entre em contato com a Flua</h1>
+            <h1 id="contact-title">
+              Estamos
+              <br />
+              aqui por você <span className="contact-heart">♡</span>
+            </h1>
             <p>
               Nossa equipe está pronta para ajudar você, seja para tirar dúvidas
-              sobre a plataforma, receber suporte ou conhecer melhor como a Flua
-              pode organizar seu negócio.
+              sobre a plataforma, receber suporte ou descobrir como a Flua pode
+              organizar o seu negócio.
             </p>
 
-            <div className="contact-tags" aria-label="Diferenciais do atendimento">
-              <span>Suporte rápido</span>
-              <span>Atendimento humano</span>
-              <span>Especialistas em cestas e encomendas</span>
-            </div>
+            {/* Eram três pastilhas, todas do mesmo tamanho e sem hierarquia:
+                liam como etiquetas de filtro, não como o que a Flua entrega.
+                Ícone + título + uma linha dá peso ao que importa e espaço para
+                respirar. */}
+            <ul className="contact-highlights">
+              <li>
+                <span className="contact-highlight-icon" aria-hidden="true">
+                  <Zap size={17} />
+                </span>
+                <div>
+                  <strong>Suporte rápido</strong>
+                  <span>Atendimento ágil e eficiente</span>
+                </div>
+              </li>
+              <li>
+                <span className="contact-highlight-icon" aria-hidden="true">
+                  <Users size={17} />
+                </span>
+                <div>
+                  <strong>Atendimento humano</strong>
+                  <span>Fale com quem entende do seu dia a dia</span>
+                </div>
+              </li>
+              <li>
+                <span className="contact-highlight-icon" aria-hidden="true">
+                  <Sparkles size={17} />
+                </span>
+                <div>
+                  <strong>Especialistas em cestas e encomendas</strong>
+                  <span>Suporte de quem vive o seu negócio</span>
+                </div>
+              </li>
+            </ul>
+
+            <p className="contact-nota">negócios mais leves acontecem aqui —</p>
           </div>
 
           <div className="contact-service-card">
             <div className="contact-service-grid">
               <article className="contact-service-block">
                 <span className="contact-icon" aria-hidden="true">
-                  <CircleHelp size={22} />
+                  <BookOpen size={22} />
                 </span>
                 <h2>Central de Ajuda</h2>
                 <p>
-                  Precisa de orientação para utilizar a plataforma? Fale com
-                  nossa equipe e encontre o caminho certo para resolver sua
-                  dúvida.
+                  Precisa de orientação para utilizar a plataforma? Explore
+                  nossos artigos, tutoriais e guias e encontre o caminho certo
+                  para resolver sua dúvida.
                 </p>
                 <a className="contact-button contact-button-soft" href={emailAjuda}>
-                  Solicitar ajuda
+                  Acessar central de ajuda
                   <ArrowRight size={17} aria-hidden="true" />
                 </a>
+                <p className="contact-nota contact-nota-card">respostas sempre à mão</p>
               </article>
 
               <article className="contact-service-block contact-support-block">
                 <span className="contact-icon" aria-hidden="true">
                   <Headphones size={22} />
                 </span>
-                <h2>Suporte ao Cliente</h2>
+                <h2>Fale com o Suporte</h2>
                 <p>
-                  Já utiliza a Flua e precisa de ajuda rápida? Entre em contato
-                  pelo WhatsApp ou envie um e-mail para nossa equipe de suporte.
+                  Não encontrou o que precisava? Entre em contato com a nossa
+                  equipe pelo WhatsApp ou envie um e-mail. Vamos te ajudar o
+                  quanto antes!
                 </p>
 
                 <address className="contact-details">
@@ -90,20 +135,27 @@ export default function ContatoPage() {
                 </address>
 
                 <a
-                  className="contact-button contact-button-primary"
+                  className="contact-button contact-button-whats"
                   href={whatsappSuporte}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Falar com o suporte
-                  <MessageCircle size={17} aria-hidden="true" />
+                  Conversar no WhatsApp
+                  <ArrowRight size={17} aria-hidden="true" />
                 </a>
+
+                <p className="contact-status">
+                  <span aria-hidden="true" />
+                  Atendimento em horário comercial
+                </p>
               </article>
             </div>
 
             <div className="contact-commercial">
               <div>
-                <span>COMERCIAL</span>
+                <span className="contact-comercial-icone" aria-hidden="true">
+                  <Sparkles size={20} />
+                </span>
                 <h2>Ainda não é cliente?</h2>
                 <p>
                   Conheça a Flua e veja como podemos organizar seus pedidos,
