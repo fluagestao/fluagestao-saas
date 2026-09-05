@@ -1,6 +1,7 @@
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
+import { registrarEvento } from "@/lib/auth-limite";
 import { prepararEmpresa } from "@/lib/preparar-empresa";
 import { createClient } from "@/lib/supabase/server";
 
@@ -28,6 +29,27 @@ export async function GET(request: NextRequest) {
       }
       return NextResponse.redirect(redirectUrl);
     }
+
+    /* O motivo era descartado, e "esse link não funcionou" era tudo o que
+       sobrava para investigar. O token_hash é de USO ÚNICO: um antivírus ou
+       scanner corporativo que visite a URL antes da pessoa já o queima, e a
+       falha fica idêntica à de um link expirado ou de um segundo clique.
+       Sem saber qual é, não há o que consertar.
+
+       Sem e-mail e sem o token no detalhe: o que importa é a causa. */
+    await registrarEvento(
+      "cadastro",
+      "falha",
+      undefined,
+      `confirm type=${type}: ${error.message?.slice(0, 160)}`,
+    );
+  } else {
+    await registrarEvento(
+      "cadastro",
+      "falha",
+      undefined,
+      `confirm sem token_hash ou type (token_hash=${tokenHash ? "sim" : "nao"}, type=${type ?? "vazio"})`,
+    );
   }
 
   const errorUrl = request.nextUrl.clone();
