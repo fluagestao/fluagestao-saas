@@ -210,7 +210,11 @@ export function PedidoCard({
           onPointerDown={(e) => e.stopPropagation()}
           className="mt-3 flex flex-wrap gap-2 border-t border-[var(--cream-deep)] pt-3"
         >
-          {prox && (
+          {/* Só na lista. No quadro o card já muda de status arrastando para a
+              coluna, e o botão fazia a mesma coisa por um caminho pior: some a
+              noção de para ONDE o pedido vai. Na lista não há colunas para
+              arrastar, então lá ele é o único caminho. */}
+          {completo && prox && (
             <Button size="sm" onClick={() => acoes.avancar(p)}>
               Marcar como {statusLabel(prox)}
             </Button>
