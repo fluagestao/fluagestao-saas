@@ -61,6 +61,21 @@ const FORMAS_PAGAMENTO = ["Pix", "Cartão", "Dinheiro", "Cortesia"] as const;
 /** "Outro" cobre horário marcado ("08:00"), que é o caso mais comum de entrega. */
 const JANELAS = ["Manhã", "Tarde", "Noite"] as const;
 
+/**
+ * Primeira hora HH:MM de um texto, para o <input type="time">.
+ *
+ * Pedido antigo guarda faixa ("18:00 às 20:00") e o input só aceita uma hora:
+ * sem isto ele abriria vazio e a hora combinada se perderia sem aviso.
+ */
+function primeiraHora(texto: string): string {
+  const achou = texto.match(/(\d{1,2})\s*[:h]\s*(\d{2})/);
+  if (!achou) return "";
+  const h = Number(achou[1]);
+  const m = Number(achou[2]);
+  if (h < 0 || h > 23 || m < 0 || m > 59) return "";
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
 const campoCls =
   "h-10 w-full rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground focus:border-[var(--terracotta)] focus:outline-none";
 
@@ -129,8 +144,14 @@ export function PedidoDialog({
   const janelaSalva = pedido?.janela_entrega ?? "";
   const janelaListada = (JANELAS as readonly string[]).includes(janelaSalva);
   const [janela, setJanela] = useState(janelaListada ? janelaSalva : janelaSalva ? "Outro" : "");
-  const [janelaOutro, setJanelaOutro] = useState(janelaListada ? "" : janelaSalva);
-  // Valor fora da lista (vindo de pedido antigo) cai em "Outro" com o texto.
+  /* O campo virou <input type="time">, que só aceita HH:MM — e pedido antigo
+     traz faixa ("18:00 às 20:00"), que o input recusaria e apagaria em
+     silêncio ao abrir para editar. Aproveita a PRIMEIRA hora encontrada: é a
+     que a cesteira combinou com o cliente, e a faixa vira horário único ao
+     salvar, que é o formato novo. */
+  const [janelaOutro, setJanelaOutro] = useState(
+    janelaListada ? "" : primeiraHora(janelaSalva),
+  );
   const formaSalva = pedido?.forma_pagamento ?? "";
   const ehListada = (FORMAS_PAGAMENTO as readonly string[]).includes(formaSalva);
   const [pagamento, setPagamento] = useState(ehListada ? formaSalva : formaSalva ? "Outro" : "");
@@ -883,11 +904,15 @@ export function PedidoDialog({
               <option value="Outro">Horário marcado</option>
             </select>
             {janela === "Outro" && (
+              /* type="time" em vez de texto livre: uma hora só, com o seletor
+                 do próprio aparelho. No campo livre saía "8 as 9", "8h às 9h"
+                 e faixa — e faixa não diz a que horas a entrega é, além de
+                 desordenar a lista, que ordena pela hora de início. */
               <Input
+                type="time"
                 className="mt-2"
                 value={janelaOutro}
                 onChange={(e) => setJanelaOutro(e.target.value)}
-                placeholder="08:00"
                 autoFocus
               />
             )}
