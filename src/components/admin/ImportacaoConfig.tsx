@@ -10,7 +10,7 @@ import {
   Undo2,
   Upload,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -392,39 +392,60 @@ export function ImportacaoConfig() {
                 </tr>
               </thead>
               <tbody>
+                {/* O aviso saiu da coluna Situação e ganhou linha própria.
+                    Preso naquela coluna estreita, um texto como "Fornecedor
+                    X não está cadastrado — ficou em branco" quebrava em seis
+                    linhas e esticava a linha inteira: duas linhas de planilha
+                    ocupavam a tela toda, e conferir vinte viraria rolagem sem
+                    fim. Numa linha de largura inteira ele cabe em uma. */}
                 {previa.map((l) => (
-                  <tr key={l.numero} className="border-t border-[var(--admin-border)] align-top">
-                    <td className="px-3 py-2 tabular-nums text-[var(--admin-muted)]">{l.numero}</td>
-                    <td className="px-3 py-2">
-                      <span
-                        className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${ESTILO_STATUS[l.status].classe}`}
-                      >
-                        {ESTILO_STATUS[l.status].rotulo}
-                      </span>
-                      {l.mensagem && (
-                        <p className="mt-1 max-w-[260px] text-[11px] leading-snug text-[var(--admin-ink-soft)]">
-                          {l.mensagem}
-                        </p>
-                      )}
-                      {l.avisos.map((a) => (
-                        <p
-                          key={a}
-                          className="mt-1 flex max-w-[260px] items-start gap-1 text-[11px] leading-snug text-[#a3651f]"
+                  <Fragment key={l.numero}>
+                    <tr className="border-t border-[var(--admin-border)]">
+                      <td className="px-3 py-2 tabular-nums text-[var(--admin-muted)]">{l.numero}</td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`inline-block whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-semibold ${ESTILO_STATUS[l.status].classe}`}
                         >
-                          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
-                          {a}
-                        </p>
-                      ))}
-                    </td>
-                    {def.colunas.map((c) => (
-                      <td
-                        key={c.chave}
-                        className={`px-3 py-2 ${l.status === "erro" || l.status === "exemplo" ? "text-[var(--admin-muted)]" : "text-[var(--admin-ink)]"}`}
-                      >
-                        {l.dados[c.chave] || <span className="text-[var(--admin-muted)]">—</span>}
+                          {ESTILO_STATUS[l.status].rotulo}
+                        </span>
                       </td>
-                    ))}
-                  </tr>
+                      {def.colunas.map((c) => (
+                        <td
+                          key={c.chave}
+                          /* Sem quebra: o nome do produto virava duas linhas e
+                             dobrava a altura de tudo. A tabela já rola na
+                             horizontal quando não cabe. */
+                          className={`whitespace-nowrap px-3 py-2 ${l.status === "erro" || l.status === "exemplo" ? "text-[var(--admin-muted)]" : "text-[var(--admin-ink)]"}`}
+                        >
+                          {l.dados[c.chave] || <span className="text-[var(--admin-muted)]">—</span>}
+                        </td>
+                      ))}
+                    </tr>
+
+                    {(l.mensagem || l.avisos.length > 0) && (
+                      <tr>
+                        <td />
+                        <td colSpan={def.colunas.length + 1} className="px-3 pb-2">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            {l.mensagem && (
+                              <span className="text-[11px] leading-snug text-[var(--admin-ink-soft)]">
+                                {l.mensagem}
+                              </span>
+                            )}
+                            {l.avisos.map((a) => (
+                              <span
+                                key={a}
+                                className="flex items-center gap-1 text-[11px] leading-snug text-[#a3651f]"
+                              >
+                                <AlertTriangle className="h-3 w-3 shrink-0" />
+                                {a}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
