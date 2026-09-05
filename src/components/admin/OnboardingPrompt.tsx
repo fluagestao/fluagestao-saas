@@ -528,13 +528,30 @@ export function OnboardingPrompt() {
 
     setSalvando(true);
     setErro(null);
-    const resultado = await atualizarGuiaFlua({ data: alteracoes });
-    setSalvando(false);
-    if (!resultado.ok) {
-      setErro(resultado.mensagem);
+    try {
+      const resultado = await atualizarGuiaFlua({ data: alteracoes });
+      if (!resultado?.ok) {
+        setErro(resultado?.mensagem ?? "Não foi possível salvar o progresso. Tente novamente.");
+        return false;
+      }
+      return true;
+    } catch {
+      /* A ação pode REJEITAR, não só devolver ok: false — em produção o React
+         descarta a mensagem de um erro vindo de arquivo "use server" e a
+         promessa estoura. Sem este catch, a exceção subia até o `void` da
+         chamada e sumia: nenhum aviso na tela, e o erro nunca aparecia. */
+      setErro("Não foi possível salvar o progresso. Verifique a conexão e tente de novo.");
       return false;
+    } finally {
+      /* NO FINALLY, e isto é o defeito que prendia a pessoa.
+         Os dois botões do diálogo de boas-vindas usam `disabled={salvando}`.
+         Com o setSalvando(false) solto depois do await, qualquer falha deixava
+         `salvando` em true para sempre: "Começar meu guia" E "Explorar
+         sozinho" ficavam mortos, o diálogo não tem X, e a única saída era
+         recarregar a página — na primeira tela de quem acabou de criar a
+         conta. */
+      setSalvando(false);
     }
-    return true;
   }
 
   async function iniciarGuia(habilitado: boolean) {
