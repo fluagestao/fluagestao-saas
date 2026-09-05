@@ -76,10 +76,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(redirectUrl);
     }
 
-    /* O motivo era descartado. Sem ele, "esse link não funcionou" era tudo o
-       que existia para investigar — nem dava para saber se o link chegou sem
-       código, se o código já tinha sido usado ou se o cookie do PKCE faltava.
-       Sem e-mail e sem token no detalhe: o que importa é a causa. */
+    /* SEGUNDO CLIQUE NÃO É FRACASSO. O token é de uso único, e o primeiro
+       clique já abriu a sessão. Aqui isso pesa ainda mais: no link de
+       recuperar senha, quem clica duas vezes é justamente quem está sem
+       conseguir entrar — e receber "esse link não funcionou" fecha a única
+       porta que restava. Com sessão aberta, o destino certo é a tela de trocar
+       a senha, que era para onde o link levava. */
+    const { data: sessao } = await supabase.auth.getUser();
+    if (sessao?.user) {
+      const url = request.nextUrl.clone();
+      url.search = "";
+      if (destino) {
+        url.pathname = destino;
+        return NextResponse.redirect(url);
+      }
+      const jaPreparada = await prepararEmpresa(supabase);
+      url.pathname = jaPreparada ? "/inicio" : "/login";
+      if (!jaPreparada) url.searchParams.set("erro", "preparacao-conta");
+      return NextResponse.redirect(url);
+    }
+
+    /* Sem sessão, o motivo era descartado. Sem ele, "esse link não funcionou"
+       era tudo o que existia para investigar — nem dava para saber se o link
+       chegou sem código, se o código já tinha sido usado ou se o cookie do
+       PKCE faltava. Sem e-mail e sem token no detalhe: só a causa. */
     await registrarEvento(
       "cadastro",
       "falha",
