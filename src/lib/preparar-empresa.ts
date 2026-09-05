@@ -19,6 +19,30 @@ export async function prepararEmpresa(
 
   if (userError || !user) return false;
 
+  /* QUEM JÁ TEM EMPRESA NÃO PRECISA DE UMA NOVA.
+
+     A RPC complete_onboarding só reconhece vínculo com role = 'owner'. A
+     ajudante convidada entra como 'admin' (usuarios.ts), então a função não a
+     via como pertencente a lugar nenhum e criava uma empresa vazia para ela —
+     com assinatura de teste própria — toda vez que ela confirmava o e-mail.
+     Uma empresa-lixo por ajudante convidada.
+
+     Ela não perdia o acesso: requireCompany pega o vínculo mais ANTIGO, que é
+     o da empresa de verdade. O estrago era silencioso, que é o pior tipo.
+
+     Esta checagem cobre qualquer papel, não só owner. Para quem está criando a
+     conta de verdade não muda nada: no momento da confirmação ela ainda não
+     tem vínculo nenhum, e a RPC roda como antes. */
+  const { data: vinculo } = await supabase
+    .from("company_members")
+    .select("company_id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
+
+  if (vinculo?.company_id) return true;
+
   const metadata = user.user_metadata ?? {};
   const fullName =
     typeof metadata.full_name === "string" && metadata.full_name.trim()
