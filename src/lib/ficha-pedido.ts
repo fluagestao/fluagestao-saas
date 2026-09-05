@@ -172,6 +172,10 @@ export function htmlDaFicha(
     letter-spacing: .08em; text-transform: uppercase;
   }
   .montagem .bloco + .bloco { margin-top: 2mm; padding-top: 2mm; border-top: 1px solid #eaddd5; }
+  /* A lista de um produto nao se parte no meio entre duas paginas: metade dos
+     insumos numa folha e metade na outra e como se perde item na bancada.
+     Cabendo tudo, nada muda; passando de uma pagina, o bloco inteiro desce. */
+  .montagem .bloco { break-inside: avoid; page-break-inside: avoid; }
   .montagem .titulo { margin: 0 0 1mm; font-weight: 600; font-size: 10pt; }
   .montagem ul { margin: 0; padding: 0; list-style: none; }
   .montagem li { display: flex; align-items: center; gap: 2mm; font-size: 10pt; padding: .6mm 0; }
