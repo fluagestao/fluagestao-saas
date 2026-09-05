@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useDadosDaFicha } from "@/lib/ficha-dados";
 import { imprimirFicha } from "@/lib/ficha-pedido";
 import { formatarDataLonga } from "@/lib/prazo";
 
@@ -59,6 +60,11 @@ export function PedidoCard({
   empresaNome?: string;
 }) {
   const prox = proximoStatus(p.status);
+
+  /* Empresa e composições vêm prontas de antes do clique: a ficha é escrita
+     dentro do gesto e não pode esperar consulta. O hook busca uma vez por aba,
+     não uma vez por card. */
+  const dadosFicha = useDadosDaFicha();
   const wa = whatsappDoCliente(p.cliente_whatsapp);
   const temWhats = Boolean(wa);
 
@@ -241,7 +247,15 @@ export function PedidoCard({
               size="sm"
               variant="outline"
               onClick={() => {
-                if (!imprimirFicha(p, empresaNome)) {
+                if (
+                  !imprimirFicha(
+                    p,
+                    /* Com a empresa carregada sai a logo e o endereço; antes
+                       ia só o nome e o cabeçalho ficava sem marca. */
+                    dadosFicha.empresa ?? empresaNome,
+                    dadosFicha.composicoes,
+                  )
+                ) {
                   toast.error(
                     "O navegador bloqueou a janela da ficha. Libere o pop-up e tente de novo.",
                   );

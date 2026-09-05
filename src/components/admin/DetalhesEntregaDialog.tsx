@@ -23,6 +23,7 @@ import {
   whatsappDoCliente,
   type Pedido,
 } from "@/lib/vendas";
+import { useDadosDaFicha } from "@/lib/ficha-dados";
 import { cn } from "@/lib/utils";
 
 const DIAS = [
@@ -89,6 +90,11 @@ export function DetalhesEntregaDialog({
   empresa: EmpresaFichaPedido;
   onClose: () => void;
 }) {
+  /* ANTES do return null: hook depois de saída condicional quebra a ordem
+     entre renderizações. As composições alimentam a lista de montagem da
+     ficha, que precisa estar pronta antes do clique. */
+  const { composicoes } = useDadosDaFicha();
+
   if (!pedido) return null;
 
   const endereco = [pedido.endereco, pedido.bairro].filter(Boolean).join(", ") || "Não informado";
@@ -100,7 +106,7 @@ export function DetalhesEntregaDialog({
   );
 
   const abrirFicha = () => {
-    if (!imprimirFicha(pedido, empresa)) {
+    if (!imprimirFicha(pedido, empresa, composicoes)) {
       toast.error("O navegador bloqueou a ficha. Permita pop-ups e tente novamente.");
     }
   };

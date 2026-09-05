@@ -9,6 +9,16 @@
 
 import { formatBRL, type Pedido } from "./vendas";
 
+/** Insumo de um produto, como sai do cadastro. */
+export type InsumoDaFicha = {
+  nome: string;
+  quantidade: number;
+  unidade: string | null;
+};
+
+/** Composição de cada produto, indexada pelo slug que o item do pedido guarda. */
+export type ComposicoesDaFicha = Record<string, InsumoDaFicha[]>;
+
 export type EmpresaFichaPedido = {
   nome: string;
   logoUrl?: string | null;
@@ -40,6 +50,7 @@ function escAttr(v: string | null | undefined): string {
 export function htmlDaFicha(
   p: Pedido,
   empresaDados: string | EmpresaFichaPedido = "Sua empresa",
+  composicoes: ComposicoesDaFicha = {},
 ): string {
   const dadosEmpresa: EmpresaFichaPedido =
     typeof empresaDados === "string"
@@ -70,6 +81,51 @@ export function htmlDaFicha(
   const enderecoEmpresa = [dadosEmpresa.endereco, dadosEmpresa.cidadeUf]
     .filter(Boolean)
     .join(" • ");
+  /* LISTA DE MONTAGEM.
+     A ficha dizia o que vender e não o que POR DENTRO da cesta — quem monta
+     precisava abrir o cadastro do produto numa tela para conferir item a item.
+     Aqui ela vira roteiro de bancada: cada produto com os seus insumos e uma
+     caixinha para marcar a lápis enquanto monta.
+
+     A quantidade é multiplicada pelo `qtd` do item: dois Kits vinho e queijos
+     pedem dois vinhos, e listar "1 un" ao lado de "2x Kit" é o tipo de detalhe
+     que faz faltar item na hora da entrega.
+
+     Item personalizado (montado fora do catálogo) não tem slug, mas carrega os
+     próprios insumos no pedido — esse caminho também entra. */
+  const blocos = p.itens
+    .map((item) => {
+      const doCatalogo = item.slug ? composicoes[item.slug] : undefined;
+      const doItem = item.insumos?.map((i) => ({
+        nome: i.nome,
+        quantidade: i.quantidade,
+        unidade: null as string | null,
+      }));
+      const insumos = doCatalogo?.length ? doCatalogo : doItem;
+      if (!insumos?.length) return "";
+
+      const vezes = Math.max(1, Number(item.qtd) || 1);
+      const linhasInsumo = insumos
+        .map((i) => {
+          const total = i.quantidade * vezes;
+          // Sem casas decimais penduradas: 2 em vez de 2,00, mas 0,25 inteiro.
+          const numero = Number.isInteger(total)
+            ? String(total)
+            : String(Number(total.toFixed(3))).replace(".", ",");
+          const medida = [numero, i.unidade ?? ""].filter(Boolean).join(" ");
+          return `<li><span class="caixa"></span>${esc(i.nome)}<span class="qtd">${esc(medida)}</span></li>`;
+        })
+        .join("");
+
+      return `<div class="bloco"><p class="titulo">${vezes}x ${esc(item.nome)}</p><ul>${linhasInsumo}</ul></div>`;
+    })
+    .filter(Boolean)
+    .join("");
+
+  const montagem = blocos
+    ? `<div class="montagem"><p class="rot-secao">Montagem</p>${blocos}</div>`
+    : "";
+
   const marca = dadosEmpresa.logoUrl
     ? `<img src="${escAttr(dadosEmpresa.logoUrl)}" alt="${escAttr(`Logo de ${nomeEmpresa}`)}"><span>${empresa}</span>`
     : `<strong>${empresa}</strong><span>Gestão via Flua</span>`;
@@ -110,6 +166,21 @@ export function htmlDaFicha(
   .total .lado { flex: 1; padding: 2mm 3mm; }
   .total .destaque { background: #f2dcd6; font-weight: 700; text-align: right; }
   .msg { margin-top: 3mm; min-height: 18mm; white-space: pre-wrap; }
+  .montagem { margin-top: 3mm; border: 1px solid #c9b9ad; border-radius: 2mm; padding: 2mm 3mm; }
+  .rot-secao {
+    margin: 0 0 1.5mm; color: #8c3a2e; font-size: 9pt; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .montagem .bloco + .bloco { margin-top: 2mm; padding-top: 2mm; border-top: 1px solid #eaddd5; }
+  .montagem .titulo { margin: 0 0 1mm; font-weight: 600; font-size: 10pt; }
+  .montagem ul { margin: 0; padding: 0; list-style: none; }
+  .montagem li { display: flex; align-items: center; gap: 2mm; font-size: 10pt; padding: .6mm 0; }
+  /* Caixa vazia de verdade, para marcar a lápis na bancada. */
+  .montagem .caixa {
+    flex: 0 0 auto; width: 3.4mm; height: 3.4mm;
+    border: 1px solid #a9948a; border-radius: .8mm;
+  }
+  .montagem .qtd { margin-left: auto; color: #7d6a61; white-space: nowrap; }
   .rodape { margin-top: 4mm; color: #9a8578; font-size: 8.5pt; display: flex; justify-content: space-between; }
   @media print { .aviso { display: none; } }
   .aviso {
@@ -156,6 +227,8 @@ export function htmlDaFicha(
     ${frete}
   </table>
 
+  ${montagem}
+
   <div class="total">
     <div class="lado"><span class="rot">Pagamento</span>${esc(p.forma_pagamento) || "a combinar"}${p.recebido_em ? " • PAGO" : ""}</div>
     <div class="lado destaque">Total ${formatBRL(p.total)}</div>
@@ -187,6 +260,7 @@ export function htmlDaFicha(
 export function imprimirFicha(
   p: Pedido,
   empresaDados: string | EmpresaFichaPedido = "Sua empresa",
+  composicoes: ComposicoesDaFicha = {},
 ): boolean {
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
@@ -209,7 +283,7 @@ export function imprimirFicha(
     window.setTimeout(() => frame.remove(), 1_000);
   };
   documento.open();
-  documento.write(htmlDaFicha(p, empresaDados));
+  documento.write(htmlDaFicha(p, empresaDados, composicoes));
   documento.close();
   return true;
 }

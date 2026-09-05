@@ -408,6 +408,65 @@ export async function salvarComposicaoProduto(input: ActionInput<unknown>) {
   return { ok: true as const, erro: null };
 }
 
+/**
+ * A composição de TODOS os produtos da empresa, indexada pelo slug.
+ *
+ * Existe para a ficha do pedido: ela é montada no clique, dentro do gesto da
+ * pessoa, e não pode esperar consulta nenhuma — então os dados precisam já
+ * estar na mão. Uma consulta por produto, na hora de imprimir, chegaria tarde.
+ *
+ * O slug é a chave porque é o que o item do pedido guarda; produto_id não
+ * viaja junto do item.
+ */
+export async function listarComposicoesPorSlug(): Promise<
+  Record<string, { nome: string; quantidade: number; unidade: string | null }[]>
+> {
+  const { supabase, companyId } = await contextoEmpresa();
+
+  const [produtosRes, composicaoRes] = await Promise.all([
+    supabase.from("produtos").select("id, slug").eq("company_id", companyId),
+    supabase
+      .from("produto_insumos")
+      .select("produto_id, quantidade, ordem, insumos!inner(nome, unidade)")
+      .eq("company_id", companyId)
+      .order("ordem"),
+  ]);
+
+  /* Falha aqui não pode derrubar a impressão: a ficha sem a lista de montagem
+     continua sendo uma ficha útil, com cliente, endereço e produtos. */
+  if (produtosRes.error || composicaoRes.error) return {};
+
+  const slugPorId = new Map(
+    (produtosRes.data ?? []).map((p) => [p.id as string, String(p.slug ?? "")]),
+  );
+
+  const porSlug: Record<
+    string,
+    { nome: string; quantidade: number; unidade: string | null }[]
+  > = {};
+
+  for (const linha of composicaoRes.data ?? []) {
+    const slug = slugPorId.get(linha.produto_id as string);
+    if (!slug) continue;
+
+    // O join devolve objeto ou array de um, conforme a versão do PostgREST.
+    const bruto = (linha as { insumos?: unknown }).insumos;
+    const insumo = (Array.isArray(bruto) ? bruto[0] : bruto) as
+      | { nome?: string; unidade?: string | null }
+      | undefined;
+    const nome = String(insumo?.nome ?? "").trim();
+    if (!nome) continue;
+
+    (porSlug[slug] ??= []).push({
+      nome,
+      quantidade: Number(linha.quantidade ?? 0),
+      unidade: insumo?.unidade ?? null,
+    });
+  }
+
+  return porSlug;
+}
+
 export async function listarComposicaoProduto(input: ActionInput<unknown>) {
   const { id: produtoId } = idSchema.parse(input.data);
   const { supabase, companyId } = await contextoEmpresa();

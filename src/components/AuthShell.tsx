@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ShieldCheck } from "lucide-react";
+
 import type { ReactNode } from "react";
 
 type AuthShellProps = {
@@ -24,22 +25,19 @@ export default function AuthShell({
   children,
   hideIntro = false,
 }: AuthShellProps) {
+  /* DUAS ARTES, uma por formato — e o navegador baixa só a que serve.
+
+     A arte é 900x1600, feita para celular. Numa tela de 1440 de largura o
+     `cover` amplia 1,6x para preencher: a altura vai a 2560px e só aparece a
+     faixa do meio, que é a área lisa. As formas terracota ficam 700px fora da
+     tela e o fundo vira creme chapado — foi exatamente o que aconteceu.
+
+     Por isso a versão deitada (1672x941) entra a partir de `md`. E por isso é
+     background do CSS e não next/image: com duas <Image> e uma escondida por
+     classe, o navegador baixa AS DUAS. A media query decide antes do download.
+     As duas já são WebP, 15 e 17 KB — não há o que o otimizador melhore. */
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#F4EBE1] px-4 py-10 sm:px-6">
-      {/* next/image, e não background-image no CSS: ele serve AVIF e WebP para
-          quem aceita e escolhe o tamanho pela tela. Um background-image manda
-          o mesmo arquivo para todo mundo, e esta é a primeira tela que
-          qualquer pessoa carrega. `priority` porque é o fundo visível de
-          cara — sem ele o creme sólido apareceria antes e piscaria. */}
-      <Image
-        src="/flua-auth-bg.jpg"
-        alt=""
-        aria-hidden="true"
-        fill
-        priority
-        sizes="100vw"
-        className="pointer-events-none select-none object-cover object-center"
-      />
+    <main className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-[#F4EBE1] bg-[url('/flua-auth-bg.webp')] bg-cover bg-center bg-no-repeat px-4 py-10 sm:px-6 md:bg-[url('/flua-auth-bg-wide.webp')]">
 
       {/* O cartão é mais CLARO que o fundo, não igual. Creme sobre creme faz o
           contorno sumir no meio da tela; a sombra sozinha não segura. E a
