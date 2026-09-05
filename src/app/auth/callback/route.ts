@@ -1,5 +1,7 @@
+import { type EmailOtpType } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
+import { registrarEvento } from "@/lib/auth-limite";
 import { prepararEmpresa } from "@/lib/preparar-empresa";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,14 +18,38 @@ function destinoSeguro(bruto: string | null): string | null {
   return DESTINOS_PERMITIDOS.has(caminho) ? caminho : null;
 }
 
+/**
+ * Recebe o clique no link do e-mail: confirmar conta e recuperar senha.
+ *
+ * ACEITA OS DOIS FORMATOS DE LINK, e isso não é firula:
+ *
+ * - `code` é o fluxo PKCE. Ele exige um cookie (o code_verifier) gravado no
+ *   NAVEGADOR EXATO que iniciou o cadastro. Quem se cadastra no computador e
+ *   abre o e-mail no celular nunca confirma a conta. E o código é de uso
+ *   único: um antivírus ou scanner corporativo que visite a URL antes da
+ *   pessoa já o queima.
+ *
+ * - `token_hash` é verificado direto no servidor do Supabase. Funciona de
+ *   qualquer aparelho e navegador, sem cookie nenhum.
+ *
+ * O `token_hash` é o caminho certo, e depende do MODELO DE E-MAIL no painel do
+ * Supabase usar {{ .TokenHash }} em vez de {{ .ConfirmationURL }} — mudança
+ * que não é código. Enquanto isso não muda, o `code` continua atendido aqui,
+ * então trocar o modelo não quebra nada e passa a funcionar na hora.
+ */
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
+  const tokenHash = requestUrl.searchParams.get("token_hash");
+  const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
   const destino = destinoSeguro(requestUrl.searchParams.get("next"));
 
-  if (code) {
+  if (code || (tokenHash && type)) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    const { error } = tokenHash && type
+      ? await supabase.auth.verifyOtp({ type, token_hash: tokenHash })
+      : await supabase.auth.exchangeCodeForSession(code!);
 
     if (!error) {
       /* Recuperacao de senha: o link so serve para chegar na tela de troca.
@@ -49,6 +75,19 @@ export async function GET(request: NextRequest) {
       }
       return NextResponse.redirect(redirectUrl);
     }
+
+    /* O motivo era descartado. Sem ele, "esse link não funcionou" era tudo o
+       que existia para investigar — nem dava para saber se o link chegou sem
+       código, se o código já tinha sido usado ou se o cookie do PKCE faltava.
+       Sem e-mail e sem token no detalhe: o que importa é a causa. */
+    await registrarEvento(
+      "cadastro",
+      "falha",
+      undefined,
+      `callback ${tokenHash ? "token_hash" : "code"}: ${error.message?.slice(0, 160)}`,
+    );
+  } else {
+    await registrarEvento("cadastro", "falha", undefined, "callback sem code nem token_hash");
   }
 
   const errorUrl = request.nextUrl.clone();
