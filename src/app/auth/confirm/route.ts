@@ -5,10 +5,24 @@ import { registrarEvento } from "@/lib/auth-limite";
 import { prepararEmpresa } from "@/lib/preparar-empresa";
 import { createClient } from "@/lib/supabase/server";
 
+/* Destinos internos aceitos no `next`. Lista fechada de propósito: o valor vem
+   da URL do e-mail, e tratar como confiável abriria redirecionamento para fora
+   do domínio. Mesma regra do /auth/callback. */
+const DESTINOS_PERMITIDOS = new Set(["/redefinir-senha"]);
+
+function destinoSeguro(bruto: string | null): string | null {
+  if (!bruto) return null;
+  // "//evil.com" é URL absoluta para o navegador, apesar de começar com barra.
+  if (!bruto.startsWith("/") || bruto.startsWith("//")) return null;
+  const caminho = bruto.split("?")[0].split("#")[0];
+  return DESTINOS_PERMITIDOS.has(caminho) ? caminho : null;
+}
+
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const type = requestUrl.searchParams.get("type") as EmailOtpType | null;
+  const destino = destinoSeguro(requestUrl.searchParams.get("next"));
 
   if (tokenHash && type) {
     const supabase = await createClient();
@@ -19,6 +33,18 @@ export async function GET(request: NextRequest) {
     });
 
     if (!error) {
+      /* RECUPERAÇÃO DE SENHA passa por aqui e NÃO é cadastro.
+         Sem isto, quem clicava no link de trocar a senha caía em
+         /cadastro/sucesso — com uma empresa preparada de brinde — e nunca via
+         a tela de escolher a senha nova. O `next` é o que distingue os dois
+         usos do mesmo endereço. */
+      if (destino) {
+        const url = request.nextUrl.clone();
+        url.pathname = destino;
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+
       const empresaPreparada = await prepararEmpresa(supabase);
 
       const redirectUrl = request.nextUrl.clone();
@@ -41,6 +67,12 @@ export async function GET(request: NextRequest) {
        honesta; o erro era sobre o token, não sobre a conta. */
     const { data: sessao } = await supabase.auth.getUser();
     if (sessao?.user) {
+      if (destino) {
+        const url = request.nextUrl.clone();
+        url.pathname = destino;
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
       const jaPreparada = await prepararEmpresa(supabase);
       const url = request.nextUrl.clone();
       url.pathname = jaPreparada ? "/inicio" : "/login";
