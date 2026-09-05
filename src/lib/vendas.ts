@@ -54,6 +54,8 @@ export type Pedido = {
   // Usados na mensagem de confirmação enviada ao cliente.
   cep?: string | null;
   referencia?: string | null;
+  /** Cidade DESTE pedido: presente enviado para outra cidade é caso comum. */
+  cidade?: string | null;
   cartao_habilitado?: boolean;
   cartao_de?: string | null;
   cartao_para?: string | null;
@@ -314,7 +316,9 @@ export function mensagemConfirmacao(pedido: Pedido): string {
   if (!retirada && (pedido.cep || pedido.endereco || pedido.bairro || pedido.referencia)) {
     partes.push("", "📍 *Endereço*");
     if (pedido.cep) partes.push(`CEP ${pedido.cep}`);
-    const linha = [pedido.endereco, pedido.bairro].filter(Boolean).join(", ");
+    const linha = [pedido.endereco, pedido.bairro, pedido.cidade]
+      .filter(Boolean)
+      .join(", ");
     if (linha) partes.push(linha);
     if (pedido.referencia) partes.push(`(${pedido.referencia})`);
   }

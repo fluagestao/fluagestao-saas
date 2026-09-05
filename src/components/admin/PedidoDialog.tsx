@@ -171,6 +171,7 @@ export function PedidoDialog({
   const [produtosLocais, setProdutosLocais] = useState(produtos);
   const [cep, setCep] = useState(pedido?.cep ?? "");
   const [buscandoCep, setBuscandoCep] = useState(false);
+  const [cidade, setCidade] = useState(pedido?.cidade ?? "");
   const [cidadeCep, setCidadeCep] = useState<string | null>(null);
   /* O aviso do CEP. Antes o erro caía num `.catch(() => {})`: a pessoa digitava,
      nada acontecia e nenhuma palavra aparecia — a conclusão óbvia é que o
@@ -279,6 +280,12 @@ export function PedidoDialog({
             setTaxaManual(true);
           }
         }
+        /* Antes a cidade do CEP só aparecia como aviso ao lado do campo e
+           morria ali: não tinha onde ser guardada. Agora preenche o campo.
+           Só sobrescreve o que está vazio — quem já digitou a cidade à mão
+           (CEP de município inteiro, entrega em cidade vizinha) não perde o
+           que escreveu por causa de uma consulta. */
+        if (d.cidade) setCidade((atual) => atual.trim() || d.cidade!);
         setCidadeCep([d.cidade, d.uf].filter(Boolean).join("/") || null);
       })
       .catch((e: unknown) => {
@@ -411,6 +418,7 @@ export function PedidoDialog({
           // não precisa digitar de novo. A mensagem ao cliente já o omite.
           endereco: endereco.trim() || null,
           bairro: bairro.trim() || null,
+          cidade: cidade.trim() || null,
           data_entrega: dataEntrega || null,
           ocasiao: ocasiaoEfetiva,
           /* Confirmada porque ela VIU na tela: ou escolheu, ou salvou com a
@@ -813,6 +821,15 @@ export function PedidoDialog({
           {!ehRetirada && (
             <Campo label="Endereço">
               <Input value={endereco} onChange={(e) => setEndereco(e.target.value)} />
+            </Campo>
+          )}
+          {!ehRetirada && (
+            <Campo label="Cidade">
+              <Input
+                value={cidade}
+                onChange={(e) => setCidade(e.target.value)}
+                placeholder="Nome da cidade"
+              />
             </Campo>
           )}
           {!ehRetirada && (

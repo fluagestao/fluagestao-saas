@@ -73,6 +73,7 @@ export const pedidoManualSchema = z.object({
   tipo: z.enum(["entrega", "retirada"]).nullable(),
   endereco: z.string().max(200).nullable(),
   bairro: z.string().max(80).nullable(),
+  cidade: z.string().max(80).nullable().default(null),
   destinatario_nome: z.string().max(120).nullable().default(null),
   destinatario_whatsapp: z.string().max(24).nullable().default(null),
   data_entrega: z.string().regex(DATA_ISO).nullable(),

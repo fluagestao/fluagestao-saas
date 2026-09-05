@@ -5,6 +5,7 @@ import {
   ChevronDown,
   CreditCard,
   FileCheck2,
+  Loader2,
   LogOut,
   Settings,
   Users,
@@ -93,6 +94,7 @@ export function PerfilContaMenu({
   const [pendenciaDocumentos, setPendenciaDocumentos] = useState(true);
   const [assinatura, setAssinatura] = useState<AssinaturaConta | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [saindo, setSaindo] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
 
   const inicial = (companyName || displayName || email || "F")
@@ -216,17 +218,31 @@ export function PerfilContaMenu({
   }, [aberto, assinatura, companyId, supabase]);
 
   async function sair() {
-    /* O redirecionamento vai no finally, e é isso que conserta o botão.
-       signOut() REJEITA quando a sessão já não vale — token expirado, aba
-       aberta desde ontem, rede fora. Com a linha solta depois do await, a
-       exceção subia e a pessoa ficava presa: clicava em "Sair da conta" e
-       nada acontecia, justamente no caso em que ela mais precisa sair.
+    /* Sair é uma INTENÇÃO, não uma operação que pode falhar ou demorar.
 
-       Sair é uma intenção, não uma operação que pode falhar: se o servidor
-       não confirmou, a pessoa vai embora do mesmo jeito e o token morre
-       sozinho no prazo. */
+       Três coisas, e cada uma conserta um sintoma que apareceu de verdade:
+
+       1. A trava de clique repetido. Sem feedback, o botão parecia morto e a
+          pessoa clicava cinco vezes seguidas — cada clique abrindo um signOut
+          novo, o que deixava tudo ainda mais lento.
+
+       2. A corrida com 1,2s. O signOut padrão revoga a sessão no SERVIDOR, e
+          isso é uma ida e volta de rede: em conexão ruim são segundos olhando
+          para uma tela que não reage. Passado o prazo, sai assim mesmo. O
+          pedido de revogação continua em andamento, e o token expira sozinho
+          de qualquer forma.
+
+       3. O redirecionamento no finally. signOut() REJEITA quando a sessão já
+          não vale — token expirado, aba aberta desde ontem, rede fora — e com
+          a linha solta depois do await a exceção subia e a pessoa ficava
+          presa, justamente no caso em que ela mais precisa sair. */
+    if (saindo) return;
+    setSaindo(true);
     try {
-      await supabase.auth.signOut();
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise((resolve) => setTimeout(resolve, 1_200)),
+      ]);
     } catch {
       /* Sessão já inválida ou sem rede: sair mesmo assim. */
     } finally {
@@ -381,10 +397,15 @@ export function PerfilContaMenu({
             <button
               type="button"
               onClick={sair}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50"
+              disabled={saindo}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-70"
             >
-              <LogOut className="h-4 w-4" />
-              Sair da conta
+              {saindo ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
+              {saindo ? "Saindo…" : "Sair da conta"}
             </button>
           </div>
         </div>

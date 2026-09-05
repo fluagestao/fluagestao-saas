@@ -74,7 +74,7 @@ export function htmlDaFicha(
         ? `<tr><td>Frete</td><td class="v">${formatBRL(p.taxa_entrega)}</td></tr>`
         : "";
 
-  const endereco = [p.endereco, p.bairro].filter(Boolean).join(", ");
+  const endereco = [p.endereco, p.bairro, p.cidade].filter(Boolean).join(", ");
   const cartao =
     p.cartao_habilitado !== false &&
     (p.cartao_de || p.cartao_para || p.cartao_mensagem);

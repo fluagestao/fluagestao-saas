@@ -372,6 +372,7 @@ export async function salvarPedido(input: { data: unknown }) {
     cep: data.cep,
     endereco: data.endereco,
     bairro: data.bairro,
+    cidade: data.cidade,
     referencia: data.referencia,
     destinatario_nome: data.destinatario_nome,
     destinatario_whatsapp: data.destinatario_whatsapp,

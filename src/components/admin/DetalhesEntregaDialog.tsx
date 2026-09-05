@@ -97,7 +97,9 @@ export function DetalhesEntregaDialog({
 
   if (!pedido) return null;
 
-  const endereco = [pedido.endereco, pedido.bairro].filter(Boolean).join(", ") || "Não informado";
+  const endereco =
+    [pedido.endereco, pedido.bairro, pedido.cidade].filter(Boolean).join(", ") ||
+    "Não informado";
   const whatsappCliente = whatsappDoCliente(pedido.cliente_whatsapp);
   const whatsappRecebedor = whatsappDoCliente(pedido.destinatario_whatsapp);
   const temCartao = Boolean(
