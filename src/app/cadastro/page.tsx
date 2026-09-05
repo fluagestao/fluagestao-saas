@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { cadastrar as cadastrarConta } from "@/lib/auth-acoes";
 import { createClient } from "@/lib/supabase/client";
 
 function somenteNumeros(valor: string) {
@@ -67,18 +68,6 @@ function mensagemDuplicidade(emailExiste: boolean, documentoExiste: boolean) {
   return "Este e-mail já possui cadastro na Flua.";
 }
 
-function mensagemAuth(mensagem: string) {
-  const normalizada = mensagem.toLowerCase();
-  if (
-    normalizada.includes("already registered") ||
-    normalizada.includes("already exists") ||
-    normalizada.includes("user already")
-  ) {
-    return "Este e-mail já possui cadastro na Flua.";
-  }
-  return mensagem;
-}
-
 export default function CadastroPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -90,6 +79,7 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
+  const [aceiteTermos, setAceiteTermos] = useState(false);
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -144,6 +134,11 @@ export default function CadastroPage() {
       return;
     }
 
+    if (!aceiteTermos) {
+      setErro("Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.");
+      return;
+    }
+
     setCarregando(true);
 
     try {
@@ -171,64 +166,30 @@ export default function CadastroPage() {
         return;
       }
 
-      const tipoDocumento = documentoNumeros.length === 14 ? "cnpj" : "cpf";
       const siteUrl =
         process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
         "https://www.fluagestao.com.br";
 
-      const { data, error } = await supabase.auth.signUp({
-        email: emailLimpo,
-        password: senha,
-        options: {
-          emailRedirectTo: `${siteUrl}/auth/callback?next=/cadastro/sucesso`,
-          data: {
-            full_name: responsavelLimpo,
-            store_name: nomeLojaLimpo,
-            document: documentoNumeros,
-            document_type: tipoDocumento,
-            phone: whatsappNumeros,
-          },
+      const resultado = await cadastrarConta({
+        data: {
+          email: emailLimpo,
+          senha,
+          nome: responsavelLimpo,
+          loja: nomeLojaLimpo,
+          documento: documentoNumeros,
+          telefone: whatsappNumeros,
+          origem: siteUrl,
+          aceite_termos: aceiteTermos,
         },
       });
 
-      if (error) {
-        setErro(mensagemAuth(error.message));
+      if (!resultado.ok) {
+        setErro(resultado.mensagem ?? "Não foi possível concluir o cadastro. Tente novamente.");
         return;
       }
 
-      if (
-        data.user &&
-        Array.isArray(data.user.identities) &&
-        data.user.identities.length === 0
-      ) {
-        setErro("Este e-mail já possui cadastro na Flua.");
-        return;
-      }
-
-      if (data.session) {
-        const { error: onboardingError } = await supabase.rpc("complete_onboarding", {
-          p_full_name: responsavelLimpo,
-          p_cpf: tipoDocumento === "cpf" ? documentoNumeros : "",
-          p_store_name: nomeLojaLimpo,
-          p_document_type: tipoDocumento,
-          p_document: documentoNumeros,
-          p_email: emailLimpo,
-          p_phone: whatsappNumeros,
-          p_postal_code: null,
-          p_street: null,
-          p_address_number: null,
-          p_complement: null,
-          p_district: null,
-          p_city: null,
-          p_state: null,
-        });
-
-        if (onboardingError) {
-          setErro(mensagemAuth(onboardingError.message));
-          return;
-        }
-
-        router.replace("/inicio?onboarding=1");
+      if (resultado.destino) {
+        router.replace(resultado.destino);
         router.refresh();
         return;
       }
@@ -397,6 +358,38 @@ export default function CadastroPage() {
                     </div>
                   </div>
                 </div>
+
+                <label className="flex cursor-pointer items-start gap-2.5 rounded-lg py-0.5 text-[clamp(.66rem,1.35dvh,.76rem)] leading-[1.35] text-[#703D3A]/80">
+                  <input
+                    type="checkbox"
+                    checked={aceiteTermos}
+                    onChange={(e) => setAceiteTermos(e.target.checked)}
+                    required
+                    className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-[#A94F45] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A94F45]"
+                    aria-describedby="aceite-termos-texto"
+                  />
+                  <span id="aceite-termos-texto">
+                    Li e aceito os{" "}
+                    <Link
+                      href="/documentos/termos-de-uso"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[#A94F45] underline underline-offset-2 hover:text-[#703D3A]"
+                    >
+                      Termos de Uso
+                    </Link>{" "}
+                    e a{" "}
+                    <Link
+                      href="/documentos/termos-de-uso/privacidade"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-semibold text-[#A94F45] underline underline-offset-2 hover:text-[#703D3A]"
+                    >
+                      Política de Privacidade
+                    </Link>
+                    .
+                  </span>
+                </label>
 
                 {erro && (
                   <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-[clamp(.35rem,.8dvh,.65rem)] text-[clamp(.68rem,1.45dvh,.8rem)] font-medium leading-tight text-red-700">
