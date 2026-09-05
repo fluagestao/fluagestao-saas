@@ -493,10 +493,18 @@ export function RelacionamentoPanel() {
               </div>
 
               <div className="grid w-full grid-cols-3 gap-x-4 sm:contents">
+                {/* Era "parada há · 0 dias". Num cliente que comprou hoje
+                    isso lia como acusação sem conteúdo — e a data do último
+                    pedido responde a mesma pergunta dizendo algo verificável.
+                    O tempo parado continua ali, entre parênteses, para a
+                    varredura da lista. */}
                 <div className="w-full text-right sm:w-28">
-                  <p className="t-support text-muted-foreground">parada há</p>
+                  <p className="t-support text-muted-foreground">último pedido</p>
                   <p className="t-body tabular-nums text-[var(--wine)]">
-                    {tempoParado(c.diasParado)}
+                    {formatarDataCurta(c.ultimaCompraEm)}
+                  </p>
+                  <p className="t-support tabular-nums text-muted-foreground">
+                    {c.diasParado === 0 ? "hoje" : tempoParado(c.diasParado)}
                   </p>
                 </div>
 

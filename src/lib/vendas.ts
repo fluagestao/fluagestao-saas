@@ -197,12 +197,59 @@ export function aReceber(p: Pedido): boolean {
 }
 
 /** Mais urgente primeiro; sem data vai para o fim. */
+/**
+ * Minuto do dia em que a janela de entrega COMEÇA, para ordenar.
+ *
+ * O campo é texto livre: vem "14:00 às 16:00" do seletor de horário, ou
+ * "Manhã"/"Tarde"/"Noite" quando a pessoa não marcou hora exata, ou qualquer
+ * coisa que ela tenha digitado em "Outro".
+ *
+ * Sem hora reconhecível vai para o fim do dia, não para o começo: um pedido
+ * sem horário definido não deve furar a fila de quem tem hora marcada.
+ */
+function minutoDaJanela(janela: string | null | undefined): number {
+  const texto = String(janela ?? "").trim();
+  if (!texto) return 24 * 60 + 1;
+
+  const hora = texto.match(/(\d{1,2})\s*[:h]\s*(\d{2})?/);
+  if (hora) {
+    const h = Number(hora[1]);
+    const m = Number(hora[2] ?? 0);
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return h * 60 + m;
+  }
+
+  /* Períodos por extenso viram uma hora representativa: o que importa é a
+     ORDEM entre eles e em relação às horas marcadas — manhã antes de um
+     pedido das 14h, noite depois. Acento fora porque "manha" e "manhã"
+     chegam dos dois jeitos. */
+  const dobrado = texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (dobrado.includes("manha")) return 8 * 60;
+  if (dobrado.includes("tarde")) return 13 * 60;
+  if (dobrado.includes("noite")) return 18 * 60;
+
+  return 24 * 60 + 1;
+}
+
+/**
+ * Ordena pela fila de trabalho do dia: primeiro a data, depois a HORA.
+ *
+ * O desempate era o número do pedido, decrescente — e dentro de um mesmo dia
+ * isso jogava a entrega das 18h na frente da das 10h, só porque foi lançada
+ * depois. Quem abre a lista de manhã quer ver o que sai primeiro no topo.
+ *
+ * O número continua desempatando no fim, para dois pedidos no mesmo horário
+ * não trocarem de lugar a cada renderização.
+ */
 export function ordenarPorEntrega(pedidos: Pedido[]): Pedido[] {
   return [...pedidos].sort((a, b) => {
     if (!a.data_entrega && !b.data_entrega) return b.numero - a.numero;
     if (!a.data_entrega) return 1;
     if (!b.data_entrega) return -1;
-    return a.data_entrega.localeCompare(b.data_entrega) || b.numero - a.numero;
+    return (
+      a.data_entrega.localeCompare(b.data_entrega) ||
+      minutoDaJanela(a.janela_entrega) - minutoDaJanela(b.janela_entrega) ||
+      a.numero - b.numero
+    );
   });
 }
 

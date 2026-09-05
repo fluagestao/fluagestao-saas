@@ -699,11 +699,26 @@ export function OnboardingPrompt() {
         </div>
       )}
 
+      {/* pointer-events-auto e o stopPropagation existem por causa dos
+          diálogos modais do Radix, que é onde o guia mais aparece — ele
+          acompanha justamente a etapa "crie seu primeiro pedido", com o Novo
+          pedido aberto.
+
+          O Radix põe `pointer-events: none` no <body> enquanto um modal está
+          aberto e só o conteúdo do diálogo reativa. Sem `pointer-events-auto`
+          aqui, o clique no botão de recolher NÃO chegava no botão: caía no
+          vazio e a armadilha de foco do diálogo devolvia o cursor para o campo
+          de baixo — parecia que o clique tinha sido no formulário.
+
+          E o stopPropagation no pointerdown impede o outro estrago: sem ele o
+          Radix leria o clique como "fora do diálogo" e FECHARIA o Novo pedido,
+          levando junto o que já estava digitado. */}
       {!boasVindas && !expandido && progresso.habilitado && percentual < 100 && (
         <button
           type="button"
           onClick={abrir}
-          className="fixed bottom-20 right-3 z-[65] inline-flex h-12 items-center gap-2 rounded-full bg-[var(--terracotta)] px-4 text-sm font-bold text-white shadow-[0_14px_35px_rgba(126,55,49,0.32)] lg:bottom-6 lg:right-6"
+          onPointerDownCapture={(e) => e.stopPropagation()}
+          className="pointer-events-auto fixed bottom-20 right-3 z-[65] inline-flex h-12 items-center gap-2 rounded-full bg-[var(--terracotta)] px-4 text-sm font-bold text-white shadow-[0_14px_35px_rgba(126,55,49,0.32)] lg:bottom-6 lg:right-6"
         >
           <BookOpen className="h-4 w-4" /> Guia do Flua
           <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs">
@@ -715,7 +730,9 @@ export function OnboardingPrompt() {
       {!boasVindas &&
         expandido &&
         (percentual < 100 || abertoPelaCentral) && (
-        <aside className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 right-4 z-[65] flex max-h-[min(70dvh,34rem)] w-auto flex-col overflow-hidden rounded-[22px] border border-[var(--admin-border)] bg-white shadow-[0_24px_70px_rgba(58,34,31,0.22)] sm:bottom-20 sm:left-auto sm:right-3 sm:max-h-[min(680px,calc(100dvh-7rem))] sm:w-[calc(100%-1.5rem)] sm:max-w-[370px] lg:bottom-6 lg:right-6">
+        <aside
+          onPointerDownCapture={(e) => e.stopPropagation()}
+          className="pointer-events-auto fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] left-4 right-4 z-[65] flex max-h-[min(70dvh,34rem)] w-auto flex-col overflow-hidden rounded-[22px] border border-[var(--admin-border)] bg-white shadow-[0_24px_70px_rgba(58,34,31,0.22)] sm:bottom-20 sm:left-auto sm:right-3 sm:max-h-[min(680px,calc(100dvh-7rem))] sm:w-[calc(100%-1.5rem)] sm:max-w-[370px] lg:bottom-6 lg:right-6">
           <header className="bg-[var(--terracotta)] p-3.5 text-white sm:p-4">
             <div className="flex items-start justify-between gap-3">
               <div>

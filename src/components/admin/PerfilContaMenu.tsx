@@ -216,8 +216,22 @@ export function PerfilContaMenu({
   }, [aberto, assinatura, companyId, supabase]);
 
   async function sair() {
-    await supabase.auth.signOut();
-    window.location.assign("https://www.fluagestao.com.br");
+    /* O redirecionamento vai no finally, e é isso que conserta o botão.
+       signOut() REJEITA quando a sessão já não vale — token expirado, aba
+       aberta desde ontem, rede fora. Com a linha solta depois do await, a
+       exceção subia e a pessoa ficava presa: clicava em "Sair da conta" e
+       nada acontecia, justamente no caso em que ela mais precisa sair.
+
+       Sair é uma intenção, não uma operação que pode falhar: se o servidor
+       não confirmou, a pessoa vai embora do mesmo jeito e o token morre
+       sozinho no prazo. */
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      /* Sessão já inválida ou sem rede: sair mesmo assim. */
+    } finally {
+      window.location.assign("https://www.fluagestao.com.br");
+    }
   }
 
   const plano = rotuloPlano(assinatura?.plan);
