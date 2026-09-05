@@ -11,6 +11,15 @@ const SENHA = z
   .min(6, "A senha precisa ter pelo menos 6 caracteres.")
   .max(72);
 
+/**
+ * Pessoas com acesso por empresa.
+ *
+ * Um por enquanto: o plano vendido hoje é individual, e acesso de equipe é o
+ * tipo de coisa que se abre quando existe plano para ela — não por descuido.
+ * Está aqui, com nome, para o dia em que virar dois não ser uma caçada.
+ */
+const LIMITE_USUARIOS = 1;
+
 export async function carregarUsuarios() {
   const { supabase, companyId, email } = await requireCompany();
 
@@ -54,6 +63,34 @@ export async function criarUsuario(input: { data: unknown }) {
   const { supabase, companyId, role } = await requireCompany();
   if (role !== "owner") {
     return { ok: false as const, erro: "Somente o proprietário da empresa pode criar usuários." };
+  }
+
+  /* UMA PESSOA POR EMPRESA.
+
+     A checagem vive no SERVIDOR, não só na tela: esconder o formulário impede
+     o clique, não a chamada — quem souber o endereço da ação continua criando
+     usuário. Regra que vale dinheiro se valida onde ninguém alcança.
+
+     Conta só vínculo ATIVO: quem foi removido não ocupa a vaga, senão a
+     empresa ficaria travada por uma pessoa que não trabalha mais ali. */
+  const { count, error: contagemErro } = await supabase
+    .from("company_members")
+    .select("id", { count: "exact", head: true })
+    .eq("company_id", companyId)
+    .eq("status", "active");
+
+  if (contagemErro) {
+    return {
+      ok: false as const,
+      erro: "Não consegui conferir quantas pessoas já usam esta conta. Tente de novo.",
+    };
+  }
+
+  if ((count ?? 0) >= LIMITE_USUARIOS) {
+    return {
+      ok: false as const,
+      erro: "Este plano permite apenas um usuário. Para liberar acessos para a sua equipe, fale com a gente.",
+    };
   }
 
   const email = data.email.trim().toLowerCase();

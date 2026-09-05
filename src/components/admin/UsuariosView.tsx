@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,11 @@ function senhaSugerida(): string {
 
 export function UsuariosView() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
+  /* Espelha o LIMITE_USUARIOS do servidor. Duplicado de propósito e não
+     importado: usuarios.ts é "use server" e exportar constante de lá quebra o
+     módulo — só funções async podem sair. Se um dia virar dois, muda nos dois
+     lugares; o servidor é quem manda. */
+  const podeAdicionar = usuarios.length < 1;
   const [eu, setEu] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -159,47 +164,61 @@ export function UsuariosView() {
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-dashed border-[var(--cream-deep)] p-3">
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="block min-w-[9rem] flex-1">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome</span>
-            <Input
-              className="h-10"
-              value={novo.nome}
-              onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
-              placeholder="Como chamar a pessoa"
-            />
-          </label>
-          <label className="block min-w-[12rem] flex-1">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">E-mail</span>
-            <Input
-              className="h-10"
-              type="email"
-              value={novo.email}
-              onChange={(e) => setNovo({ ...novo, email: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && adicionar()}
-              placeholder="pessoa@email.com"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">Senha</span>
-            <Input
-              className="h-10 w-36"
-              value={novo.senha}
-              onChange={(e) => setNovo({ ...novo, senha: e.target.value })}
-              onKeyDown={(e) => e.key === "Enter" && adicionar()}
-            />
-          </label>
-          <Button className="h-10" onClick={adicionar} disabled={!novo.email.trim() || salvando}>
-            <Plus className="mr-1 h-4 w-4" />
-            Criar acesso
-          </Button>
+      {/* O formulário some quando a vaga está ocupada, mas quem impede de
+          verdade é o servidor: esconder um formulário evita o clique, não a
+          chamada. Aqui é para não oferecer o que vai ser recusado — e para
+          dizer POR QUE, em vez de deixar um botão que dá erro. */}
+      {podeAdicionar ? (
+        <div className="mt-4 rounded-xl border border-dashed border-[var(--cream-deep)] p-3">
+          <div className="flex flex-wrap items-end gap-2">
+            <label className="block min-w-[9rem] flex-1">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome</span>
+              <Input
+                className="h-10"
+                value={novo.nome}
+                onChange={(e) => setNovo({ ...novo, nome: e.target.value })}
+                placeholder="Como chamar a pessoa"
+              />
+            </label>
+            <label className="block min-w-[12rem] flex-1">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">E-mail</span>
+              <Input
+                className="h-10"
+                type="email"
+                value={novo.email}
+                onChange={(e) => setNovo({ ...novo, email: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && adicionar()}
+                placeholder="pessoa@email.com"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Senha</span>
+              <Input
+                className="h-10 w-36"
+                value={novo.senha}
+                onChange={(e) => setNovo({ ...novo, senha: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && adicionar()}
+              />
+            </label>
+            <Button className="h-10" onClick={adicionar} disabled={!novo.email.trim() || salvando}>
+              <Plus className="mr-1 h-4 w-4" />
+              Criar acesso
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            A senha vem sugerida e pode ser trocada. Quem entra vê e mexe em tudo — pedidos,
+            clientes e financeiro.
+          </p>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          A senha vem sugerida e pode ser trocada. Quem entra vê e mexe em tudo — pedidos, clientes
-          e financeiro.
-        </p>
-      </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-[var(--cream-deep)] bg-[var(--cream-soft)] px-4 py-3">
+          <Users className="h-4 w-4 shrink-0 text-[var(--bronze)]" />
+          <p className="t-support min-w-0 flex-1 text-[var(--admin-ink-soft)]">
+            Este plano dá acesso para <strong>uma pessoa</strong>. Para liberar acessos para a sua
+            equipe, fale com a gente.
+          </p>
+        </div>
+      )}
     </section>
   );
 }
