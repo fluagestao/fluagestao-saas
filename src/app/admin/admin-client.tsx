@@ -98,7 +98,7 @@ export type SubCadastros =
   | "clientes"
   | "fornecedores"
   | "bairros"
-  | "usuarios";
+;
 
 /* Entradas e Saidas, cada uma com os dois momentos do MESMO fato. Antes,
    "A pagar" e "Pagamentos" eram abas separadas — voce pagava numa e ia
@@ -347,12 +347,6 @@ export default function AdminClient({
     if (item.id === "vendas") setSubVendas(subId as SubVendas);
     else if (item.id === "financeiro") setSubFin(subId as SubFinanceiro);
     else if (item.id === "cadastros") setSubCad(subId as SubCadastros);
-    setExpandida(null);
-  }
-
-  function abrirUsuarios() {
-    setAba("cadastros");
-    setSubCad("usuarios");
     setExpandida(null);
   }
 
@@ -629,7 +623,7 @@ export default function AdminClient({
               </div>
             </TooltipProvider>
 
-            <PerfilContaMenu email={email} displayName={displayName} companyName={companyName} onUsuarios={abrirUsuarios} />
+            <PerfilContaMenu email={email} displayName={displayName} companyName={companyName} />
           </div>
 
           <nav className="mx-auto flex max-w-[1680px] gap-2 overflow-x-auto px-4 pb-3 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

@@ -11,7 +11,6 @@ import {
   Loader2,
   Settings,
   Upload,
-  Users,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Toaster, toast } from "sonner";
@@ -24,10 +23,9 @@ import {
 import { CATALOGO_AVISOS, type TipoAviso } from "@/lib/notificacoes-tipos";
 import { ConfirmProvider } from "@/components/admin/shell";
 import { ImportacaoConfig } from "@/components/admin/ImportacaoConfig";
-import { UsuariosView } from "@/components/admin/UsuariosView";
 import { createClient } from "@/lib/supabase/client";
 
-export type ContaSecao = "empresa" | "plano" | "usuarios" | "configuracoes";
+export type ContaSecao = "empresa" | "plano" | "configuracoes";
 
 type EmpresaConta = {
   id: string;
@@ -109,7 +107,6 @@ function rotuloStatus(status?: string | null) {
 const NAVEGACAO = [
   { id: "empresa" as const, label: "Dados da empresa", icon: Building2 },
   { id: "plano" as const, label: "Plano e assinatura", icon: CreditCard },
-  { id: "usuarios" as const, label: "Usuários", icon: Users },
   { id: "configuracoes" as const, label: "Configurações", icon: Settings },
 ];
 
@@ -121,10 +118,6 @@ const TITULOS: Record<ContaSecao, { titulo: string; descricao: string }> = {
   plano: {
     titulo: "Plano e assinatura",
     descricao: "Acompanhe seu plano atual, status e datas do ciclo da assinatura.",
-  },
-  usuarios: {
-    titulo: "Usuários",
-    descricao: "Gerencie as pessoas que podem acessar o ambiente da sua empresa.",
   },
   configuracoes: {
     titulo: "Configurações",
@@ -546,7 +539,7 @@ export function ContaPageClient({
             </aside>
 
             <section className="min-w-0">
-              {carregando && secao !== "usuarios" ? (
+              {carregando ? (
                 <div className="grid min-h-[420px] place-items-center rounded-2xl border border-[var(--admin-border)] bg-white">
                   <Loader2 className="h-6 w-6 animate-spin text-[var(--terracotta)]" />
                 </div>
@@ -707,10 +700,6 @@ export function ContaPageClient({
                     <h2 className="mt-3 text-base font-semibold">Assinatura Flua</h2>
                     <p className="mt-2 text-sm leading-6 text-[var(--admin-muted)]">Nesta página ficam o plano contratado, a situação da assinatura e as datas do ciclo.</p>
                   </aside>
-                </div>
-              ) : secao === "usuarios" ? (
-                <div className="rounded-2xl border border-[var(--admin-border)] bg-white p-4 sm:p-5">
-                  <UsuariosView />
                 </div>
               ) : (
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">

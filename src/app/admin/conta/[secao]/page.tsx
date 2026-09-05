@@ -7,7 +7,7 @@ import "./conta-viewport.css";
 
 export const dynamic = "force-dynamic";
 
-const SECOES: ContaSecao[] = ["empresa", "plano", "usuarios", "configuracoes"];
+const SECOES: ContaSecao[] = ["empresa", "plano", "configuracoes"];
 
 // Cada item do menu de conta possui uma rota própria dentro do painel.
 export default async function ContaPage({

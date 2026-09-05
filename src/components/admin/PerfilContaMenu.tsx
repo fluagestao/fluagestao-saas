@@ -8,7 +8,6 @@ import {
   Loader2,
   LogOut,
   Settings,
-  Users,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -80,12 +79,10 @@ export function PerfilContaMenu({
   email,
   displayName,
   companyName,
-  onUsuarios,
 }: {
   email: string;
   displayName: string;
   companyName: string;
-  onUsuarios?: () => void;
 }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -256,7 +253,6 @@ export function PerfilContaMenu({
   const itens = [
     { label: "Dados da empresa", icon: Building2, href: "/conta/empresa" },
     { label: "Plano e assinatura", icon: CreditCard, href: "/conta/plano" },
-    { label: "Usuários", icon: Users, href: "/conta/usuarios" },
     { label: "Configurações", icon: Settings, href: "/conta/configuracoes" },
   ];
 
@@ -379,10 +375,6 @@ export function PerfilContaMenu({
                 type="button"
                 onClick={() => {
                   setAberto(false);
-                  if (item.label === "Usuários" && onUsuarios) {
-                    onUsuarios();
-                    return;
-                  }
                   router.push(item.href);
                 }}
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-[var(--admin-ink-soft)] transition hover:bg-[var(--cream-soft)] hover:text-[var(--wine)]"

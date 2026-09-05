@@ -122,7 +122,6 @@ const nextConfig: NextConfig = {
 
       { source: "/admin/conta/empresa", destination: "/conta/empresa", permanent: false },
       { source: "/admin/conta/plano", destination: "/conta/plano", permanent: false },
-      { source: "/admin/conta/usuarios", destination: "/conta/usuarios", permanent: false },
       {
         source: "/admin/conta/configuracoes",
         destination: "/conta/configuracoes",
@@ -176,7 +175,6 @@ const nextConfig: NextConfig = {
 
       { source: "/conta/empresa", destination: "/admin/conta/empresa" },
       { source: "/conta/plano", destination: "/admin/conta/plano" },
-      { source: "/conta/usuarios", destination: "/admin/conta/usuarios" },
       {
         source: "/conta/configuracoes",
         destination: "/admin/conta/configuracoes",

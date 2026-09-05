@@ -5,7 +5,6 @@ import { carregarClientes } from "@/lib/pedidos";
 import type { ClienteComHistorico } from "@/lib/pedidos-ops.server";
 import { ClientesView } from "./ClientesView";
 import { FornecedoresView } from "./FornecedoresView";
-import { UsuariosView } from "./UsuariosView";
 import { Carregando, PageHeader } from "./shell";
 
 /**
@@ -17,7 +16,7 @@ import { Carregando, PageHeader } from "./shell";
 export function CadastrosPanel({
   vista,
 }: {
-  vista?: "clientes" | "fornecedores" | "bairros" | "usuarios";
+  vista?: "clientes" | "fornecedores" | "bairros";
 }) {
   const sub = vista ?? "clientes";
 
@@ -43,7 +42,6 @@ export function CadastrosPanel({
   }, [sub, recarregarClientes]);
 
   if (sub === "fornecedores") return <FornecedoresView />;
-  if (sub === "usuarios") return <UsuariosView />;
 
   if (erro) {
     return (
