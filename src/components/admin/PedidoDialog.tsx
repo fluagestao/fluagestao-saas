@@ -130,34 +130,10 @@ function primeiraHora(texto: string): string {
 const campoCls =
   "h-10 w-full rounded-lg border border-[var(--cream-deep)] bg-background px-3 text-sm text-foreground focus:border-[var(--terracotta)] focus:outline-none";
 
-/**
- * Campo do formulário.
- *
- * `rotuloOculto` esconde o texto DA TELA, não do documento: o <span> continua
- * ali com sr-only. Rótulo e placeholder dizendo a mesma coisa é ruído para
- * quem enxerga, mas apagar o rótulo de vez deixaria o campo mudo para leitor
- * de tela — placeholder não é rótulo, e some assim que a pessoa digita.
- */
-function Campo({
-  label,
-  rotuloOculto = false,
-  children,
-}: {
-  label: string;
-  rotuloOculto?: boolean;
-  children: React.ReactNode;
-}) {
+function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span
-        className={
-          rotuloOculto
-            ? "sr-only"
-            : "mb-1 block text-xs font-medium text-muted-foreground"
-        }
-      >
-        {label}
-      </span>
+      <span className="mb-1 block text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </label>
   );
@@ -637,22 +613,14 @@ export function PedidoDialog({
         </div>
 
         <div className={`grid gap-2 sm:grid-cols-2 ${guiado && !nome.trim() ? "rounded-lg outline outline-2 outline-offset-4 outline-[var(--terracotta)]" : ""}`}>
-          {/* Sem rótulo na tela: o placeholder já diz o que é. Ele ganhou
-              "do cliente" porque, sem o rótulo em cima, "Nome" sozinho não
-              distingue do nome do presenteado logo abaixo. */}
-          <Campo label="Cliente" rotuloOculto>
-            <Input
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              placeholder="Nome do cliente"
-            />
+          <Campo label="Cliente">
+            <Input value={nome} onChange={(e) => setNome(e.target.value)} />
           </Campo>
-          <Campo label="WhatsApp" rotuloOculto>
+          <Campo label="WhatsApp">
             <Input
               value={whatsapp}
               inputMode="numeric"
               onChange={(e) => setWhatsapp(formatCelular(e.target.value))}
-              placeholder="WhatsApp do cliente"
             />
           </Campo>
         </div>
@@ -907,16 +875,12 @@ export function PedidoDialog({
             </Campo>
           )}
           {!ehRetirada && (
-            <Campo label="Cidade" rotuloOculto>
-              <Input
-                value={cidade}
-                onChange={(e) => setCidade(e.target.value)}
-                placeholder="Nome da cidade"
-              />
+            <Campo label="Cidade">
+              <Input value={cidade} onChange={(e) => setCidade(e.target.value)} />
             </Campo>
           )}
           {!ehRetirada && (
-            <Campo label="Bairro" rotuloOculto>
+            <Campo label="Bairro">
               {bairros.length > 0 ? (
                 <select
                   className={campoCls}
@@ -952,27 +916,21 @@ export function PedidoDialog({
                     setBairro(e.target.value);
                     setTaxaManual(true);
                   }}
-                  placeholder="Nome do bairro"
                 />
               )}
             </Campo>
           )}
           {!ehRetirada && (
-            <Campo label="Presenteado" rotuloOculto>
-              <Input
-                value={destNome}
-                onChange={(e) => setDestNome(e.target.value)}
-                placeholder="Nome do presenteado"
-              />
+            <Campo label="Presenteado">
+              <Input value={destNome} onChange={(e) => setDestNome(e.target.value)} />
             </Campo>
           )}
           {!ehRetirada && (
-            <Campo label="WhatsApp do presenteado" rotuloOculto>
+            <Campo label="WhatsApp do presenteado">
               <Input
                 value={destZap}
                 inputMode="numeric"
                 onChange={(e) => setDestZap(formatCelular(e.target.value))}
-                placeholder="WhatsApp do presenteado"
               />
             </Campo>
           )}
