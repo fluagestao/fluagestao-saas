@@ -210,12 +210,26 @@ export function PedidoCard({
           onPointerDown={(e) => e.stopPropagation()}
           className="mt-3 flex flex-wrap gap-2 border-t border-[var(--cream-deep)] pt-3"
         >
-          {/* Só na lista. No quadro o card já muda de status arrastando para a
-              coluna, e o botão fazia a mesma coisa por um caminho pior: some a
-              noção de para ONDE o pedido vai. Na lista não há colunas para
-              arrastar, então lá ele é o único caminho. */}
-          {completo && prox && (
-            <Button size="sm" onClick={() => acoes.avancar(p)}>
+          {/* Na LISTA sempre: lá não há coluna para arrastar, então o botão é o
+              único caminho.
+
+              No QUADRO só em quem NÃO tem mouse. Com mouse, arrastar é trivial
+              e mostra para ONDE o pedido vai — o botão faz o mesmo às cegas. No
+              dedo é outra história: as colunas somam 1040px e rolam na
+              horizontal, então arrastar de "Novo" para "Em produção" vira uma
+              briga com a rolagem.
+
+              O teste é `pointer: fine`, que pergunta se existe mouse ou
+              trackpad — não a largura da tela. Largura erra nos dois sentidos:
+              um iPad tem 1024px e é dedo; uma janela estreita no computador
+              tem mouse. E sendo CSS, não pisca na hidratação como o userAgent
+              piscaria. */}
+          {prox && (
+            <Button
+              size="sm"
+              onClick={() => acoes.avancar(p)}
+              className={completo ? undefined : "[@media(pointer:fine)]:hidden"}
+            >
               Marcar como {statusLabel(prox)}
             </Button>
           )}
