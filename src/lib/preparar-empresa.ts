@@ -11,13 +11,15 @@ import type { createClient } from "@/lib/supabase/server";
  * Chamar duas vezes é seguro: `complete_onboarding` é a mesma RPC do cadastro
  * e já trata a empresa que existe.
  */
+export type PreparoDaEmpresa = "ok" | "documento-duplicado" | "falha";
+
 export async function prepararEmpresa(
   supabase: Awaited<ReturnType<typeof createClient>>,
-): Promise<boolean> {
+): Promise<PreparoDaEmpresa> {
   const { data: userData, error: userError } = await supabase.auth.getUser();
   const user = userData.user;
 
-  if (userError || !user) return false;
+  if (userError || !user) return "falha";
 
   /* QUEM JÁ TEM EMPRESA NÃO PRECISA DE UMA NOVA.
 
@@ -41,7 +43,7 @@ export async function prepararEmpresa(
     .limit(1)
     .maybeSingle();
 
-  if (vinculo?.company_id) return true;
+  if (vinculo?.company_id) return "ok";
 
   const metadata = user.user_metadata ?? {};
   const fullName =
@@ -73,5 +75,16 @@ export async function prepararEmpresa(
     p_state: null,
   });
 
-  return !error;
+  if (!error) return "ok";
+
+  /* DOCUMENTO REPETIDO NÃO É FALHA MOMENTÂNEA, E TRATAR COMO SE FOSSE PRENDE A
+     PESSOA. O cadastro não confere o CPF/CNPJ; quem repete um documento que já
+     existe cria a conta, confirma o e-mail e só então esbarra no 23505 que a
+     complete_onboarding levanta. Como o documento vai continuar repetido para
+     sempre, "tentar de novo" nunca funciona — e era a única saída oferecida.
+     Separar o motivo aqui é o que permite a tela dizer a verdade. */
+  const duplicado =
+    error.code === "23505" || /já possui cadastro/i.test(error.message ?? "");
+
+  return duplicado ? "documento-duplicado" : "falha";
 }
