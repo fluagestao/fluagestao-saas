@@ -340,8 +340,6 @@ function HomeBenefitsShowcase() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const ActivePreview = showcasePreviews[active];
-
   return (
     <section id="como-funciona" className="flua-showcase-section">
       <div className="flua2-shell">
@@ -390,18 +388,41 @@ function HomeBenefitsShowcase() {
             })}
           </div>
 
-          <div className="flua-showcase-stage">
-            <div className="flua-showcase-copy" key={`copy-${active}`}>
-              <span>
-                {showcaseSlides[active].number} · {showcaseSlides[active].short}
-              </span>
-              <h3>{showcaseSlides[active].title}</h3>
-              <p>{showcaseSlides[active].text}</p>
-            </div>
+          {/* OS QUATRO SLIDES FICAM SEMPRE NO DOCUMENTO, EMPILHADOS.
 
-            <div className="flua-showcase-preview" key={`preview-${active}`}>
-              <ActivePreview />
-            </div>
+              Antes só o slide ativo era renderizado, e cada um tem uma altura
+              diferente: a seção pulava de 1005 para 1351 pixels a cada 5,2
+              segundos e empurrava tudo que vem abaixo — o que se via como a
+              página dando saltos sozinha, principalmente no Safari, que não
+              compensa a mudança como o Chrome. Empilhados na mesma célula do
+              grid, a altura passa a ser a do slide mais alto e não muda mais.
+              É o mesmo arranjo do carrossel de depoimentos. */}
+          <div className="flua-showcase-stage">
+            {showcaseSlides.map((slide, index) => {
+              const Preview = showcasePreviews[index];
+              const ativo = index === active;
+
+              return (
+                <div
+                  className={`flua-showcase-slide${ativo ? " is-active" : ""}`}
+                  key={slide.number}
+                  aria-hidden={!ativo}
+                  inert={!ativo}
+                >
+                  <div className="flua-showcase-copy">
+                    <span>
+                      {slide.number} · {slide.short}
+                    </span>
+                    <h3>{slide.title}</h3>
+                    <p>{slide.text}</p>
+                  </div>
+
+                  <div className="flua-showcase-preview">
+                    <Preview />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

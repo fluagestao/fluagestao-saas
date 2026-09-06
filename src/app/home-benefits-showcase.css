@@ -124,6 +124,7 @@
 
 .flua-showcase-stage{
   position:relative;
+  display:grid;
   min-height:565px;
   padding:34px 34px 30px;
   overflow:hidden;
@@ -145,11 +146,27 @@
   pointer-events:none;
 }
 
-.flua-showcase-copy{
+.flua-showcase-slide{
+  grid-area:1/1;
+  min-width:0;
   position:relative;
   z-index:2;
+  visibility:hidden;
+  opacity:0;
+  transform:translateY(10px);
+  transition:opacity .32s ease,transform .42s cubic-bezier(.2,.7,.2,1),visibility .32s;
+  pointer-events:none;
+}
+
+.flua-showcase-slide.is-active{
+  visibility:visible;
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+
+.flua-showcase-copy{
   max-width:780px;
-  animation:fluaShowcaseCopy .42s ease both;
 }
 
 .flua-showcase-copy>span{
@@ -179,21 +196,8 @@
   line-height:1.58;
 }
 
-@keyframes fluaShowcaseCopy{
-  from{opacity:0;transform:translateY(9px)}
-  to{opacity:1;transform:translateY(0)}
-}
-
 .flua-showcase-preview{
-  position:relative;
-  z-index:2;
   margin-top:24px;
-  animation:fluaShowcasePreview .48s cubic-bezier(.2,.7,.2,1) both;
-}
-
-@keyframes fluaShowcasePreview{
-  from{opacity:0;transform:translateY(16px) scale(.985)}
-  to{opacity:1;transform:translateY(0) scale(1)}
 }
 
 .flua-showcase-screen{
@@ -417,5 +421,6 @@
 }
 
 @media(prefers-reduced-motion:reduce){
-  .flua-showcase-progress,.flua-showcase-copy,.flua-showcase-preview{animation:none!important}
+  .flua-showcase-progress{animation:none!important}
+  .flua-showcase-slide{transition:none!important;transform:none!important}
 }
