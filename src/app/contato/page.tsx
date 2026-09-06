@@ -168,10 +168,6 @@ export default function ContatoPage() {
               </div>
 
               <div className="contact-commercial-actions">
-                <Link className="contact-button contact-button-outline" href="/como-funciona">
-                  Conhecer a Flua
-                  <ArrowRight size={17} aria-hidden="true" />
-                </Link>
                 <Link className="contact-trial-link" href="/cadastro">
                   Começar teste grátis
                 </Link>

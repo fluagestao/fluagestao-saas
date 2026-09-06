@@ -518,17 +518,6 @@
   gap: 11px;
 }
 
-.contact-button-outline {
-  color: #672f29;
-  border-color: rgba(127, 55, 47, 0.3);
-  background: rgba(255, 253, 249, 0.72);
-  white-space: nowrap;
-}
-
-.contact-button-outline:hover {
-  background: #fffaf5;
-}
-
 .contact-trial-link {
   color: #77382f;
   font-size: 0.75rem;
@@ -795,4 +784,22 @@ body:has(.contact-page) .marketing-global-nav {
    cartão de baixo leva às mesmas. */
 body:has(.contact-page) .marketing-global-actions {
   display: none;
+}
+
+/* O Entrar volta abaixo de 980px — e só ele.
+   Nessa largura o marketing-header já esconde o menu inteiro, então o
+   cabeçalho aqui ficava só com a logo: quem chegasse pelo celular e quisesse
+   entrar na conta não tinha por onde. No computador o menu continua ali e o
+   caminho existe, por isso a exceção é só do celular para baixo.
+
+   O Teste grátis segue fora em qualquer largura: o cartão de baixo já tem
+   "Começar teste grátis", e é ele que a página quer que seja clicado. */
+@media (max-width: 980px) {
+  body:has(.contact-page) .marketing-global-actions {
+    display: flex;
+  }
+
+  body:has(.contact-page) .marketing-global-actions .marketing-global-trial {
+    display: none;
+  }
 }
