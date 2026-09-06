@@ -723,3 +723,58 @@
     transition: none;
   }
 }
+
+/* ===========================================================================
+ * O CABEÇALHO NESTA PÁGINA.
+ *
+ * O cabeçalho de marketing é branco: links em rgba(255,255,255,.92) e botões
+ * de borda branca. Ele foi desenhado para os heróis escuros das outras
+ * páginas. Aqui o herói é creme, e ele sumia — na tela dava para ver o
+ * contorno dos links e mais nada.
+ *
+ * `body:has()` em vez de mexer no marketing-header.css: as outras páginas
+ * continuam com o cabeçalho claro que já funciona nelas, e a exceção mora
+ * junto da página que a causa. Mesmo padrão do body:has(.mobile-admin-nav)
+ * que o painel já usa.
+ * ======================================================================== */
+
+body:has(.contact-page) .marketing-global-nav a {
+  color: #6f4740;
+  font-weight: 600;
+}
+
+body:has(.contact-page) .marketing-global-nav a::after {
+  background: #ad4c41;
+}
+
+body:has(.contact-page) .marketing-global-nav a[aria-current="page"] {
+  color: #531e1c;
+}
+
+/* Os dois botões eram creme sobre creme, separados só por uma borda branca
+   que sumia. Viram par com hierarquia: Entrar é a saída discreta, Teste
+   grátis é a ação que a página quer. */
+body:has(.contact-page) .marketing-global-actions .marketing-global-login {
+  color: #531e1c !important;
+  border: 1px solid rgba(173, 76, 65, 0.32) !important;
+  background: rgba(255, 253, 249, 0.92) !important;
+}
+
+body:has(.contact-page) .marketing-global-actions .marketing-global-trial {
+  color: #fff !important;
+  border: 1px solid transparent !important;
+  background: #ad4c41 !important;
+}
+
+body:has(.contact-page) .marketing-global-actions .marketing-global-trial:hover {
+  background: #913b33 !important;
+}
+
+/* A logo do cabeçalho leva `filter: brightness(0) invert(1)` no
+   marketing-header.css — ela é pintada de branco puro por filtro, seja qual
+   for o arquivo. Por isso trocar o arquivo sozinho não resolveu nada: o
+   filtro branqueava a versão terracota igual.
+   Aqui o filtro sai, e a logo aparece na cor que ela tem. */
+body:has(.contact-page) .marketing-global-brand img {
+  filter: none;
+}
