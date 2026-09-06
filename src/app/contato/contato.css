@@ -242,12 +242,6 @@
   text-wrap: balance;
 }
 
-.contact-heart {
-  color: var(--contact-terracotta);
-  font-size: 0.6em;
-  vertical-align: 0.34em;
-}
-
 /* Cormorant em itálico no lugar de uma manuscrita: o detalhe é decorativo e
    não justifica uma quinta família de fonte na rede — com o pulo de layout
    que ela causa enquanto carrega. */
@@ -499,7 +493,7 @@
   display: grid;
   width: 40px;
   height: 40px;
-  margin-bottom: 13px;
+  margin-top: 16px;
   place-items: center;
   border-radius: 14px;
   color: var(--contact-red);
@@ -777,4 +771,28 @@ body:has(.contact-page) .marketing-global-actions .marketing-global-trial:hover 
    Aqui o filtro sai, e a logo aparece na cor que ela tem. */
 body:has(.contact-page) .marketing-global-brand img {
   filter: none;
+}
+
+/* O menu era centralizado por posicionamento absoluto no meio do cabeçalho —
+   e o meio desta página é exatamente onde o cartão começa. Os dois itens
+   caíam em cima dele.
+   Aqui o menu sai do absoluto e senta ao lado da logo, na faixa livre à
+   esquerda. `margin-right: auto` empurra o resto para longe. */
+body:has(.contact-page) .marketing-global-nav {
+  position: static;
+  transform: none;
+  margin-right: auto;
+  margin-left: clamp(16px, 3vw, 44px);
+  justify-content: flex-start;
+}
+
+/* Entrar e Teste grátis saem DESTA tela: a página inteira já é um convite
+   para falar com a Flua, e ela tem os próprios botões — "Conhecer a Flua" e
+   "Começar teste grátis" no cartão de baixo. Dois pares de ações competindo
+   pela mesma decisão dividem o clique em vez de somar.
+   display:none e não visibilidade zero: um botão que o leitor de tela anuncia
+   e o olho não acha é pior que botão nenhum. As duas rotas seguem de pé — o
+   cartão de baixo leva às mesmas. */
+body:has(.contact-page) .marketing-global-actions {
+  display: none;
 }

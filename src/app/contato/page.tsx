@@ -44,7 +44,7 @@ export default function ContatoPage() {
             <h1 id="contact-title">
               Estamos
               <br />
-              aqui por você <span className="contact-heart">♡</span>
+              aqui por você
             </h1>
             <p>
               Nossa equipe está pronta para ajudar você, seja para tirar dúvidas
@@ -152,15 +152,19 @@ export default function ContatoPage() {
             </div>
 
             <div className="contact-commercial">
+              {/* O título vem primeiro: era o ícone que ocupava o topo, e a
+                  pergunta — que é o que faz alguém parar e ler — aparecia
+                  abaixo dele. O ícone fecha o bloco como enfeite, que é o
+                  papel que ele tem aqui. */}
               <div>
-                <span className="contact-comercial-icone" aria-hidden="true">
-                  <Sparkles size={20} />
-                </span>
                 <h2>Ainda não é cliente?</h2>
                 <p>
                   Conheça a Flua e veja como podemos organizar seus pedidos,
                   clientes, produção, pagamentos e entregas em um só lugar.
                 </p>
+                <span className="contact-comercial-icone" aria-hidden="true">
+                  <Sparkles size={20} />
+                </span>
               </div>
 
               <div className="contact-commercial-actions">
