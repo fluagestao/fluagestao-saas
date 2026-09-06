@@ -32,6 +32,14 @@ export default function LoginPage() {
   const [precisaConfirmar, setPrecisaConfirmar] = useState(false);
   const [reenviando, setReenviando] = useState(false);
 
+  /* O botao de reenviar so aparecia com precisaConfirmar, que exige o servidor
+     responder email_not_confirmed — ou seja, exige ACERTAR a senha. Quem nao
+     recebeu o e-mail normalmente tambem nao lembra a senha que acabou de criar,
+     e ficava sem saida. Agora basta ter um e-mail escrito no campo. A acao ja
+     responde a mesma frase generica para e-mail existente ou nao, entao expor o
+     botao nao revela quem tem conta. */
+  const podeReenviar = precisaConfirmar || /.+@.+\..+/.test(email.trim());
+
   useEffect(() => {
     const emailSalvo = window.localStorage.getItem(EMAIL_STORAGE_KEY);
     if (emailSalvo) {
@@ -195,25 +203,6 @@ export default function LoginPage() {
           </div>
         )}
 
-              {precisaConfirmar && (
-                <button
-                  type="button"
-                  disabled={reenviando}
-                  onClick={async () => {
-                    setReenviando(true);
-                    const r = await reenviarConfirmacao({
-                      data: { email: email.trim().toLowerCase(), origem: window.location.origin },
-                    });
-                    setErro(null);
-                    setSucesso(r.mensagem ?? null);
-                    setReenviando(false);
-                  }}
-                  className="mt-2 text-sm font-medium text-[var(--terracotta)] underline underline-offset-2 disabled:opacity-60"
-                >
-                  {reenviando ? "Enviando..." : "Reenviar e-mail de confirmação"}
-                </button>
-              )}
-
         {sucesso && (
           <div
             role="status"
@@ -232,6 +221,28 @@ export default function LoginPage() {
           Entrar
           {!carregando && <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />}
         </Button>
+
+        {podeReenviar && (
+          <button
+            type="button"
+            disabled={reenviando}
+            onClick={async () => {
+              setReenviando(true);
+              try {
+                const r = await reenviarConfirmacao({
+                  data: { email: email.trim().toLowerCase(), origem: window.location.origin },
+                });
+                setErro(null);
+                setSucesso(r.mensagem ?? null);
+              } finally {
+                setReenviando(false);
+              }
+            }}
+            className="mx-auto block text-xs font-medium text-[#703D3A]/70 underline underline-offset-2 transition-colors hover:text-[#A94F45] disabled:opacity-60"
+          >
+            {reenviando ? "Enviando..." : "Não recebi o e-mail de confirmação"}
+          </button>
+        )}
       </form>
 
       <div className="mt-7 flex items-center gap-3" aria-hidden="true">

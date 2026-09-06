@@ -20,7 +20,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { cadastrar as cadastrarConta } from "@/lib/auth-acoes";
+import { avaliarSenha, mensagemSenha } from "@/lib/senha";
+import { cadastrar as cadastrarConta, reenviarConfirmacao } from "@/lib/auth-acoes";
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
@@ -67,11 +68,17 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState("");
   const [confirmar, setConfirmar] = useState("");
   const [aceiteTermos, setAceiteTermos] = useState(false);
+
+  /* Derivado, não estado: a força da senha é sempre função do que está
+     digitado. Guardar em useState abriria espaço para os dois discordarem. */
+  const faltaNaSenha = mensagemSenha(avaliarSenha(senha, email.trim().toLowerCase()));
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [cadastroConcluido, setCadastroConcluido] = useState(false);
   const [emailConfirmacao, setEmailConfirmacao] = useState("");
+  const [reenviando, setReenviando] = useState(false);
+  const [avisoReenvio, setAvisoReenvio] = useState("");
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
@@ -111,8 +118,13 @@ export default function CadastroPage() {
       return;
     }
 
-    if (senha.length < 6) {
-      setErro("A senha precisa ter pelo menos 6 caracteres.");
+    /* A MESMA função do servidor, não uma regra parecida.
+       A tela pedia 6 caracteres e o servidor exigia 8 com maiúscula, número e
+       símbolo: a pessoa passava na validação daqui e era recusada lá, sem
+       nunca ter lido a regra de verdade. */
+    const forca = avaliarSenha(senha, emailLimpo);
+    if (!forca.valida) {
+      setErro(mensagemSenha(forca) ?? "Escolha uma senha mais forte.");
       return;
     }
 
@@ -240,11 +252,47 @@ export default function CadastroPage() {
                   {emailConfirmacao}
                 </p>
               )}
+              <p className="mt-[clamp(.35rem,1dvh,.7rem)] max-w-[460px] text-[clamp(.7rem,1.5dvh,.8rem)] leading-5 text-[#703D3A]/60">
+                Não achou? Olhe também no spam e nas promoções — o primeiro
+                e-mail costuma cair lá.
+              </p>
               <Button asChild className="mt-[clamp(.7rem,2dvh,1.75rem)] h-[clamp(2.4rem,6dvh,3rem)] w-full max-w-[460px] rounded-xl bg-[#A94F45] text-sm font-semibold text-white hover:bg-[#703D3A]">
                 <Link href="/login">
                   Ir para o login <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+              {/* Sem este botao, quem nao recebe o e-mail nao tem saida nenhuma:
+                  a conta ja existe, entao cadastrar de novo falha, e o botao de
+                  reenviar do login so aparecia depois de acertar a senha. */}
+              <button
+                type="button"
+                disabled={reenviando}
+                onClick={async () => {
+                  setReenviando(true);
+                  try {
+                    const r = await reenviarConfirmacao({
+                      data: {
+                        email: emailConfirmacao.trim().toLowerCase(),
+                        origem: window.location.origin,
+                      },
+                    });
+                    setAvisoReenvio(r.mensagem ?? "");
+                  } finally {
+                    setReenviando(false);
+                  }
+                }}
+                className="mt-[clamp(.5rem,1.4dvh,1rem)] text-[clamp(.72rem,1.6dvh,.85rem)] font-medium text-[#A94F45] underline underline-offset-2 disabled:opacity-60"
+              >
+                {reenviando ? "Enviando..." : "Não recebi o e-mail — reenviar"}
+              </button>
+              {avisoReenvio && (
+                <p
+                  role="status"
+                  className="mt-2 max-w-[460px] text-[clamp(.7rem,1.5dvh,.8rem)] leading-5 text-[#55553f]"
+                >
+                  {avisoReenvio}
+                </p>
+              )}
             </div>
           ) : (
             <>
@@ -307,7 +355,7 @@ export default function CadastroPage() {
                     <Label htmlFor="senha" className={label}>Senha <span className="text-[#A94F45]">*</span></Label>
                     <div className="relative">
                       <LockKeyhole className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#74745B]" />
-                      <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder="Mínimo 6 caracteres" required className={`${campos} px-9`} />
+                      <Input id="senha" type={mostrarSenha ? "text" : "password"} value={senha} onChange={(e) => setSenha(e.target.value)} autoComplete="new-password" placeholder="Mínimo 8 caracteres" required className={`${campos} px-9`} />
                       <button type="button" onClick={() => setMostrarSenha((valor) => !valor)} className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-[#74745B] hover:bg-[#D9C6B2]/30" aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}>
                         {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -321,6 +369,20 @@ export default function CadastroPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* O que falta, ENQUANTO ela digita — e não depois de o botão
+                    recusar. A regra é dura (8 caracteres, maiúscula, minúscula,
+                    número e símbolo) e descobri-la por tentativa e erro custava
+                    caro: cada envio recusado gastava uma das três tentativas
+                    por hora, e três erros trancavam a conta antes de existir.
+
+                    Só aparece depois de a pessoa começar a digitar: em branco
+                    seria uma lista de exigências recebendo quem chegou. */}
+                {senha.length > 0 && faltaNaSenha && (
+                  <p className="text-[clamp(.64rem,1.3dvh,.74rem)] leading-[1.4] text-[#8a5a45]">
+                    {faltaNaSenha}
+                  </p>
+                )}
 
                 <label className="flex cursor-pointer items-start gap-2.5 rounded-lg py-0.5 text-[clamp(.66rem,1.35dvh,.76rem)] leading-[1.35] text-[#703D3A]/80">
                   <input

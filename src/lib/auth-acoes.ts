@@ -162,17 +162,24 @@ export async function cadastrar(input: { data: unknown }): Promise<Resultado> {
     };
   }
 
+  /* A SENHA É CONFERIDA ANTES DE CONTAR A TENTATIVA.
+     O contador vinha primeiro, e o balde é de 3 por hora POR E-MAIL: quem
+     digitava "cesta123", corrigia para "Cesta123" e depois "Cesta1234" se
+     trancava antes de conseguir criar a conta — três recusas de política,
+     nenhuma delas um ataque. O limite existe para quem tenta enumerar contas,
+     não para quem está aprendendo a regra.
+
+     Continua sendo revalidada aqui e não só na tela: a do cliente é
+     conveniência e pode ser pulada. */
+  const forca = avaliarSenha(senha, email);
+  if (!forca.valida) {
+    return { ok: false, mensagem: mensagemSenha(forca) ?? ERRO_GENERICO };
+  }
+
   const limite = await contarTentativa("cadastro", email);
   if (limite.bloqueado) {
     await registrarEvento("cadastro", "bloqueado", email);
     return { ok: false, mensagem: mensagemBloqueio(limite.esperaSegundos), exigirCaptcha: true };
-  }
-
-  // A mesma política que a tela mostra, revalidada aqui: a do cliente é
-  // conveniência e pode ser pulada.
-  const forca = avaliarSenha(senha, email);
-  if (!forca.valida) {
-    return { ok: false, mensagem: mensagemSenha(forca) ?? ERRO_GENERICO };
   }
 
   const supabase = await createClient();
