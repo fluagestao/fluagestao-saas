@@ -1,0 +1,161 @@
+.flua2-compare {
+  background: #fbf7f1;
+}
+
+.flua2-compare .flua2-centered-heading {
+  margin-bottom: 40px;
+}
+
+.flua2-compare-quadro {
+  max-width: 1260px;
+  margin: 0 auto;
+  padding: 8px 10px 14px;
+  border: 1px solid #e7d8cc;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 18px 55px rgba(83, 44, 40, 0.07);
+}
+
+.flua2-compare table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* Reservar a largura das tres colunas de simbolo deixa a coluna do recurso com
+   todo o resto — e o texto e o unico conteudo que precisa de espaco aqui. */
+.flua2-compare thead th {
+  width: 17%;
+  padding: 18px 8px 14px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  text-align: center;
+  vertical-align: bottom;
+}
+
+.flua2-compare thead th:first-child {
+  width: 49%;
+}
+
+.flua2-compare thead th.flua2-compare-destaque {
+  color: var(--terr);
+}
+
+.flua2-compare tbody th {
+  padding: 15px 20px 15px 14px;
+  color: #574541;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.flua2-compare tbody th strong {
+  color: var(--wine);
+  font-weight: 700;
+}
+
+.flua2-compare tbody tr + tr th,
+.flua2-compare tbody tr + tr td {
+  border-top: 1px solid #f0e6dc;
+}
+
+.flua2-compare tbody td {
+  padding: 15px 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.flua2-compare-sim svg {
+  display: inline-block;
+  color: var(--terr);
+  vertical-align: middle;
+}
+
+.flua2-compare-nao span[aria-hidden] {
+  color: #d5c4b6;
+  font-size: 15px;
+}
+
+/* A coluna do meio e a mesma que o card destacado nos precos: a listra ligando
+   o topo ao rodape do quadro faz as duas telas falarem da mesma opcao. */
+.flua2-compare thead th.flua2-compare-destaque,
+.flua2-compare tbody td:nth-child(3) {
+  background: #fbf1e9;
+}
+
+.flua2-compare thead th.flua2-compare-destaque {
+  border-radius: 14px 14px 0 0;
+}
+
+.flua2-compare tbody tr:last-child td:nth-child(3) {
+  border-radius: 0 0 14px 14px;
+}
+
+.flua2-compare-nota {
+  max-width: 1260px;
+  margin: 22px auto 0;
+  padding: 17px 22px;
+  border: 1px solid #e5d6ca;
+  border-radius: 16px;
+  background: #f5ebe1;
+  color: #76635d;
+  font-size: 13px;
+  line-height: 1.65;
+  text-align: center;
+}
+
+.flua2-compare-nota strong {
+  color: var(--wine);
+}
+
+.flua2-compare-leitura {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 860px) {
+  .flua2-compare-quadro {
+    padding: 4px 6px 10px;
+    border-radius: 20px;
+  }
+
+  .flua2-compare thead th {
+    width: 16%;
+    padding: 14px 4px 12px;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+  }
+
+  .flua2-compare thead th:first-child {
+    width: 52%;
+  }
+
+  .flua2-compare tbody th {
+    padding: 13px 10px 13px 8px;
+    font-size: 13px;
+  }
+
+  .flua2-compare tbody td {
+    padding: 13px 4px;
+  }
+
+  .flua2-compare-sim svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .flua2-compare-nota {
+    text-align: left;
+  }
+}

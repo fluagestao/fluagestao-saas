@@ -1123,6 +1123,44 @@
   font-weight:900;
 }
 
+.flua2-investment-monthly s{
+  margin-right:7px;
+  color:#b3a099;
+  font-size:15px;
+  font-weight:700;
+  text-decoration-thickness:1.5px;
+}
+
+.flua2-investment-alternativa{
+  margin:13px 0 0;
+  padding:8px 12px;
+  border:1px solid #e9dcd1;
+  border-radius:10px;
+  background:#faf3ec;
+  color:#7f6c65;
+  font-size:12px;
+  line-height:1.4;
+}
+
+.flua2-investment-alternativa b{
+  color:var(--wine);
+  font-size:13px;
+}
+
+.flua2-investment-highlight{
+  margin:16px 0 0;
+  padding:12px 14px;
+  border-radius:12px;
+  background:#a65349;
+  color:#fff;
+  font-size:12.5px;
+  line-height:1.5;
+}
+
+.flua2-investment-highlight b{
+  font-weight:900;
+}
+
 .flua2-investment-button{
   width:100%;
   margin-top:auto;

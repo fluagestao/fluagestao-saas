@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import FormatComparison from "@/components/FormatComparison";
 import PricingSection from "@/components/PricingSection";
 import HomeTestimonials from "@/components/HomeTestimonials";
 import {
@@ -783,6 +784,8 @@ export default function HomePage() {
       </section>
 
       <HomeTestimonials />
+
+      <FormatComparison />
 
       <PricingSection />
 

@@ -85,9 +85,20 @@ export default function PricingSection() {
             </div>
 
             <div className="flua2-investment-monthly">
-              <div><b>+ R$ 170,00</b><span>/ mês</span></div>
+              <div>
+                <s>+ R$ 170,00</s>
+                <b>+ R$ 95,00</b>
+                <span>/ mês</span>
+              </div>
               <small>domínio, hospedagem e sistema</small>
             </div>
+
+            {/* O preço riscado só faz sentido com o motivo colado nele: sem a
+                frase, R$ 95,00 vira um desconto sem explicação e a pessoa fica
+                esperando a pegadinha. */}
+            <p className="flua2-investment-highlight">
+              Preço exclusivo de quem faz o site com a gente — <b>R$ 900,00</b> a menos por ano.
+            </p>
 
             <div className="flua2-investment-features">
               {[
@@ -103,7 +114,7 @@ export default function PricingSection() {
 
               <p className="flua2-investment-ai">
                 <Sparkles size={15} />
-                IA Consultora grátis (100 primeiros)
+                Plano de indicação: 1 mês grátis por cliente indicado
               </p>
             </div>
 
@@ -128,13 +139,21 @@ export default function PricingSection() {
               Para quem já tem site ou vende só pelo WhatsApp e Instagram.
             </p>
 
-            <div className="flua2-investment-price flua2-investment-no-setup">
-              <strong>Sem implantação</strong>
+            <div className="flua2-investment-price">
+              <strong>R$ 1.150,00</strong>
+              <span>no ano</span>
             </div>
 
             <div className="flua2-investment-monthly">
-              <div><b>R$ 170,00</b><span>/ mês</span></div>
-              <small>sistema completo e suporte</small>
+              <div><b>12x de R$ 95,83</b></div>
+              <small>ou R$ 1.000,00 à vista · sistema completo e suporte</small>
+
+              {/* A mensalidade continua existindo, mas em segundo plano: quem
+                  chega com R$ 170,00 na cabeça precisa achar esse número, e
+                  quem não pensou em anual precisa ver o anual primeiro. */}
+              <p className="flua2-investment-alternativa">
+                Prefere mensal? <b>R$ 170,00 / mês</b>
+              </p>
             </div>
 
             <div className="flua2-investment-features">
@@ -151,7 +170,7 @@ export default function PricingSection() {
 
               <p className="flua2-investment-ai">
                 <Sparkles size={15} />
-                IA Consultora grátis (100 primeiros)
+                Plano de indicação: 1 mês grátis por cliente indicado
               </p>
             </div>
 
