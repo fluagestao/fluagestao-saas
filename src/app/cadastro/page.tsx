@@ -22,11 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { avaliarSenha, mensagemSenha } from "@/lib/senha";
 import { cadastrar as cadastrarConta, reenviarConfirmacao } from "@/lib/auth-acoes";
-
-/* Espelha o "Minimum interval per user" do painel do Supabase
-   (Authentication > Emails > SMTP provider settings). Se aquele valor mudar,
-   este precisa mudar junto. */
-const INTERVALO_REENVIO = 60;
+import { INTERVALO_REENVIO, marcarEnvio, segundosRestantes } from "@/lib/reenvio";
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
@@ -84,18 +80,18 @@ export default function CadastroPage() {
   const [emailConfirmacao, setEmailConfirmacao] = useState("");
   const [reenviando, setReenviando] = useState(false);
   const [avisoReenvio, setAvisoReenvio] = useState("");
-  /* O Supabase recusa um segundo e-mail para o mesmo endereco dentro do
-     "Minimum interval per user" configurado no painel (60s), e a acao de
-     servidor devolve a mesma frase generica com ou sem erro. Sem esta contagem
-     a pessoa clicaria em reenviar logo depois de se cadastrar, leria "enviamos"
-     e nao receberia nada. */
   const [esperaReenvio, setEsperaReenvio] = useState(0);
 
+  /* Relê do armazenamento a cada segundo em vez de decrementar um número na
+     memória: o prazo é do e-mail, não desta aba, e assim a contagem continua
+     certa se a pessoa voltar para cá. */
   useEffect(() => {
-    if (esperaReenvio <= 0) return;
-    const t = setTimeout(() => setEsperaReenvio((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [esperaReenvio]);
+    if (!cadastroConcluido) return;
+    const atualizar = () => setEsperaReenvio(segundosRestantes(emailConfirmacao));
+    atualizar();
+    const t = setInterval(atualizar, 1000);
+    return () => clearInterval(t);
+  }, [cadastroConcluido, emailConfirmacao]);
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
@@ -186,6 +182,7 @@ export default function CadastroPage() {
         return;
       }
 
+      marcarEnvio(emailLimpo);
       setEmailConfirmacao(emailLimpo);
       setCadastroConcluido(true);
       setEsperaReenvio(INTERVALO_REENVIO);
@@ -288,6 +285,7 @@ export default function CadastroPage() {
                 onClick={async () => {
                   setReenviando(true);
                   try {
+                    marcarEnvio(emailConfirmacao);
                     setEsperaReenvio(INTERVALO_REENVIO);
                     const r = await reenviarConfirmacao({
                       data: {

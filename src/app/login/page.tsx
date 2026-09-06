@@ -17,13 +17,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { entrar as autenticar, reenviarConfirmacao } from "@/lib/auth-acoes";
+import { INTERVALO_REENVIO, marcarEnvio, segundosRestantes } from "@/lib/reenvio";
 
 const EMAIL_STORAGE_KEY = "flua.login.email";
-
-/* Espelha o "Minimum interval per user" do painel do Supabase. Dentro dessa
-   janela o Supabase recusa o e-mail e a acao devolve sucesso do mesmo jeito,
-   entao o botao precisa segurar sozinho. */
-const INTERVALO_REENVIO = 60;
 
 export default function LoginPage() {
   const router = useRouter();
@@ -46,11 +42,16 @@ export default function LoginPage() {
      botao nao revela quem tem conta. */
   const podeReenviar = precisaConfirmar || /.+@.+\..+/.test(email.trim());
 
+  /* A espera pertence ao e-mail e foi gravada pela tela de cadastro: quem
+     acabou de criar a conta e clicou em "Ir para o login" chega aqui ainda
+     dentro dos 60s, e sem isto encontraria o botão liberado só para o envio ser
+     recusado em silêncio. */
   useEffect(() => {
-    if (esperaReenvio <= 0) return;
-    const t = setTimeout(() => setEsperaReenvio((s) => s - 1), 1000);
-    return () => clearTimeout(t);
-  }, [esperaReenvio]);
+    const atualizar = () => setEsperaReenvio(segundosRestantes(email));
+    atualizar();
+    const t = setInterval(atualizar, 1000);
+    return () => clearInterval(t);
+  }, [email]);
 
   useEffect(() => {
     const emailSalvo = window.localStorage.getItem(EMAIL_STORAGE_KEY);
@@ -241,6 +242,7 @@ export default function LoginPage() {
             onClick={async () => {
               setReenviando(true);
               try {
+                marcarEnvio(email);
                 setEsperaReenvio(INTERVALO_REENVIO);
                 const r = await reenviarConfirmacao({
                   data: { email: email.trim().toLowerCase(), origem: window.location.origin },

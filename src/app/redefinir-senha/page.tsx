@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { avaliarSenha, mensagemSenha } from "@/lib/senha";
+import { MIN_SENHA, avaliarSenha, mensagemSenha } from "@/lib/senha";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -47,10 +47,9 @@ export default function RedefinirSenhaPage() {
     event.preventDefault();
     setErro(null);
 
-    if (!avaliarSenha(senha).valida) {
-      setErro(
-        "Use pelo menos 10 caracteres, com letra maiúscula, minúscula, número e símbolo."
-      );
+    const forca = avaliarSenha(senha);
+    if (!forca.valida) {
+      setErro(mensagemSenha(forca) ?? "Escolha uma senha mais forte.");
       return;
     }
 
@@ -119,7 +118,7 @@ export default function RedefinirSenhaPage() {
                 value={senha}
                 onChange={(event) => setSenha(event.target.value)}
                 required
-                minLength={10}
+                minLength={MIN_SENHA}
                 className="h-12 rounded-xl border-[#D9C6B2] bg-white/85 px-10 text-[#3f2422] shadow-sm focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/20"
               />
               <button
@@ -153,7 +152,7 @@ export default function RedefinirSenhaPage() {
                 value={confirmacao}
                 onChange={(event) => setConfirmacao(event.target.value)}
                 required
-                minLength={10}
+                minLength={MIN_SENHA}
                 className="h-12 rounded-xl border-[#D9C6B2] bg-white/85 px-10 text-[#3f2422] shadow-sm focus-visible:border-[#A94F45] focus-visible:ring-[#A94F45]/20"
               />
               <button
@@ -174,7 +173,7 @@ export default function RedefinirSenhaPage() {
           <div className="rounded-xl border border-[#D9C6B2]/80 bg-white/45 px-3.5 py-3 text-xs leading-5 text-[#703D3A]/70">
             <div className="flex items-start gap-2">
               <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#74745B]" aria-hidden="true" />
-              <span>10+ caracteres, incluindo maiúscula, minúscula, número e símbolo.</span>
+              <span>{MIN_SENHA}+ caracteres, incluindo maiúscula, minúscula, número e símbolo.</span>
             </div>
           </div>
 
