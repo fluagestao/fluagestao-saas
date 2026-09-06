@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Eye,
@@ -22,6 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { avaliarSenha, mensagemSenha } from "@/lib/senha";
 import { cadastrar as cadastrarConta, reenviarConfirmacao } from "@/lib/auth-acoes";
+
+/* Espelha o "Minimum interval per user" do painel do Supabase
+   (Authentication > Emails > SMTP provider settings). Se aquele valor mudar,
+   este precisa mudar junto. */
+const INTERVALO_REENVIO = 60;
 
 function somenteNumeros(valor: string) {
   return valor.replace(/\D/g, "");
@@ -79,6 +84,18 @@ export default function CadastroPage() {
   const [emailConfirmacao, setEmailConfirmacao] = useState("");
   const [reenviando, setReenviando] = useState(false);
   const [avisoReenvio, setAvisoReenvio] = useState("");
+  /* O Supabase recusa um segundo e-mail para o mesmo endereco dentro do
+     "Minimum interval per user" configurado no painel (60s), e a acao de
+     servidor devolve a mesma frase generica com ou sem erro. Sem esta contagem
+     a pessoa clicaria em reenviar logo depois de se cadastrar, leria "enviamos"
+     e nao receberia nada. */
+  const [esperaReenvio, setEsperaReenvio] = useState(0);
+
+  useEffect(() => {
+    if (esperaReenvio <= 0) return;
+    const t = setTimeout(() => setEsperaReenvio((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [esperaReenvio]);
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
@@ -171,6 +188,7 @@ export default function CadastroPage() {
 
       setEmailConfirmacao(emailLimpo);
       setCadastroConcluido(true);
+      setEsperaReenvio(INTERVALO_REENVIO);
     } finally {
       setCarregando(false);
     }
@@ -266,10 +284,11 @@ export default function CadastroPage() {
                   reenviar do login so aparecia depois de acertar a senha. */}
               <button
                 type="button"
-                disabled={reenviando}
+                disabled={reenviando || esperaReenvio > 0}
                 onClick={async () => {
                   setReenviando(true);
                   try {
+                    setEsperaReenvio(INTERVALO_REENVIO);
                     const r = await reenviarConfirmacao({
                       data: {
                         email: emailConfirmacao.trim().toLowerCase(),
@@ -283,7 +302,11 @@ export default function CadastroPage() {
                 }}
                 className="mt-[clamp(.5rem,1.4dvh,1rem)] text-[clamp(.72rem,1.6dvh,.85rem)] font-medium text-[#A94F45] underline underline-offset-2 disabled:opacity-60"
               >
-                {reenviando ? "Enviando..." : "Não recebi o e-mail — reenviar"}
+                {reenviando
+                  ? "Enviando..."
+                  : esperaReenvio > 0
+                    ? `Reenviar em ${esperaReenvio}s`
+                    : "Não recebi o e-mail — reenviar"}
               </button>
               {avisoReenvio && (
                 <p

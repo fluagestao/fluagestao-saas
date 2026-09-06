@@ -20,6 +20,11 @@ import { entrar as autenticar, reenviarConfirmacao } from "@/lib/auth-acoes";
 
 const EMAIL_STORAGE_KEY = "flua.login.email";
 
+/* Espelha o "Minimum interval per user" do painel do Supabase. Dentro dessa
+   janela o Supabase recusa o e-mail e a acao devolve sucesso do mesmo jeito,
+   entao o botao precisa segurar sozinho. */
+const INTERVALO_REENVIO = 60;
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -31,6 +36,7 @@ export default function LoginPage() {
   const [carregando, setCarregando] = useState(false);
   const [precisaConfirmar, setPrecisaConfirmar] = useState(false);
   const [reenviando, setReenviando] = useState(false);
+  const [esperaReenvio, setEsperaReenvio] = useState(0);
 
   /* O botao de reenviar so aparecia com precisaConfirmar, que exige o servidor
      responder email_not_confirmed — ou seja, exige ACERTAR a senha. Quem nao
@@ -39,6 +45,12 @@ export default function LoginPage() {
      responde a mesma frase generica para e-mail existente ou nao, entao expor o
      botao nao revela quem tem conta. */
   const podeReenviar = precisaConfirmar || /.+@.+\..+/.test(email.trim());
+
+  useEffect(() => {
+    if (esperaReenvio <= 0) return;
+    const t = setTimeout(() => setEsperaReenvio((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [esperaReenvio]);
 
   useEffect(() => {
     const emailSalvo = window.localStorage.getItem(EMAIL_STORAGE_KEY);
@@ -225,10 +237,11 @@ export default function LoginPage() {
         {podeReenviar && (
           <button
             type="button"
-            disabled={reenviando}
+            disabled={reenviando || esperaReenvio > 0}
             onClick={async () => {
               setReenviando(true);
               try {
+                setEsperaReenvio(INTERVALO_REENVIO);
                 const r = await reenviarConfirmacao({
                   data: { email: email.trim().toLowerCase(), origem: window.location.origin },
                 });
@@ -240,7 +253,11 @@ export default function LoginPage() {
             }}
             className="mx-auto block text-xs font-medium text-[#703D3A]/70 underline underline-offset-2 transition-colors hover:text-[#A94F45] disabled:opacity-60"
           >
-            {reenviando ? "Enviando..." : "Não recebi o e-mail de confirmação"}
+            {reenviando
+              ? "Enviando..."
+              : esperaReenvio > 0
+                ? `Reenviar em ${esperaReenvio}s`
+                : "Não recebi o e-mail de confirmação"}
           </button>
         )}
       </form>
