@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import DiagnosticoLayout from "@/components/DiagnosticoLayout";
 import FormatComparison from "@/components/FormatComparison";
 import PricingSection from "@/components/PricingSection";
 import HomeTestimonials from "@/components/HomeTestimonials";
@@ -921,10 +920,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-
-      {/* Só aparece com ?diag=1 na URL. Ferramenta temporária para achar a
-          causa dos saltos verticais no Safari — sai daqui quando fechar. */}
-      <DiagnosticoLayout />
     </main>
   );
 }
