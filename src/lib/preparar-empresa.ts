@@ -11,7 +11,14 @@ import type { createClient } from "@/lib/supabase/server";
  * Chamar duas vezes é seguro: `complete_onboarding` é a mesma RPC do cadastro
  * e já trata a empresa que existe.
  */
-export type PreparoDaEmpresa = "ok" | "documento-duplicado" | "falha";
+export type EstadoDoPreparo = "ok" | "documento-duplicado" | "falha";
+
+/* O detalhe existe porque "não conseguimos criar sua loja, costuma ser um
+   problema momentâneo" é o que a tela dizia para QUALQUER falha — inclusive
+   para as que não têm nada de momentâneo e nunca vão passar sozinhas. A causa
+   real vinha do Postgres e era descartada aqui. Sem ela, a única saída era
+   pedir para a pessoa mandar print e ir caçar log. */
+export type PreparoDaEmpresa = { estado: EstadoDoPreparo; detalhe?: string };
 
 export async function prepararEmpresa(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -19,7 +26,12 @@ export async function prepararEmpresa(
   const { data: userData, error: userError } = await supabase.auth.getUser();
   const user = userData.user;
 
-  if (userError || !user) return "falha";
+  if (userError || !user) {
+    return {
+      estado: "falha",
+      detalhe: userError?.message ?? "Sessão não encontrada no servidor.",
+    };
+  }
 
   /* QUEM JÁ TEM EMPRESA NÃO PRECISA DE UMA NOVA.
 
@@ -35,7 +47,7 @@ export async function prepararEmpresa(
      Esta checagem cobre qualquer papel, não só owner. Para quem está criando a
      conta de verdade não muda nada: no momento da confirmação ela ainda não
      tem vínculo nenhum, e a RPC roda como antes. */
-  const { data: vinculo } = await supabase
+  const { data: vinculo, error: erroVinculo } = await supabase
     .from("company_members")
     .select("company_id")
     .eq("user_id", user.id)
@@ -43,7 +55,14 @@ export async function prepararEmpresa(
     .limit(1)
     .maybeSingle();
 
-  if (vinculo?.company_id) return "ok";
+  if (vinculo?.company_id) return { estado: "ok" };
+
+  /* A consulta que falha devolve vinculo nulo, igualzinho a quem realmente não
+     tem empresa. Sem separar os dois, uma falha de leitura manda para o
+     onboarding alguém que já tem loja — e a RPC ainda tenta criar outra. */
+  if (erroVinculo) {
+    return { estado: "falha", detalhe: erroVinculo.message };
+  }
 
   const metadata = user.user_metadata ?? {};
   const fullName =
@@ -75,7 +94,7 @@ export async function prepararEmpresa(
     p_state: null,
   });
 
-  if (!error) return "ok";
+  if (!error) return { estado: "ok" };
 
   /* DOCUMENTO REPETIDO NÃO É FALHA MOMENTÂNEA, E TRATAR COMO SE FOSSE PRENDE A
      PESSOA. O cadastro não confere o CPF/CNPJ; quem repete um documento que já
@@ -86,5 +105,7 @@ export async function prepararEmpresa(
   const duplicado =
     error.code === "23505" || /já possui cadastro/i.test(error.message ?? "");
 
-  return duplicado ? "documento-duplicado" : "falha";
+  return duplicado
+    ? { estado: "documento-duplicado", detalhe: error.message }
+    : { estado: "falha", detalhe: `${error.code ?? "sem código"}: ${error.message}` };
 }

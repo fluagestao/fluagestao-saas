@@ -65,20 +65,20 @@ export async function GET(request: NextRequest) {
       }
 
       const preparo = await prepararEmpresa(supabase);
-      const empresaPreparada = preparo === "ok";
+      const empresaPreparada = preparo.estado === "ok";
       const redirectUrl = request.nextUrl.clone();
       /* Documento repetido não se resolve entrando de novo, então essa pessoa
          vai direto para a tela que explica o que houve em vez de dar a volta
          pelo login. */
       redirectUrl.pathname = empresaPreparada
         ? "/inicio"
-        : preparo === "documento-duplicado"
+        : preparo.estado === "documento-duplicado"
           ? "/onboarding"
           : "/login";
       redirectUrl.search = "";
       if (empresaPreparada) {
         redirectUrl.searchParams.set("onboarding", "1");
-      } else if (preparo !== "documento-duplicado") {
+      } else if (preparo.estado !== "documento-duplicado") {
         redirectUrl.searchParams.set("erro", "preparacao-conta");
       }
       return NextResponse.redirect(redirectUrl);
@@ -99,13 +99,13 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(url);
       }
       const preparoDoSegundoClique = await prepararEmpresa(supabase);
-      const jaPreparada = preparoDoSegundoClique === "ok";
+      const jaPreparada = preparoDoSegundoClique.estado === "ok";
       url.pathname = jaPreparada
         ? "/inicio"
-        : preparoDoSegundoClique === "documento-duplicado"
+        : preparoDoSegundoClique.estado === "documento-duplicado"
           ? "/onboarding"
           : "/login";
-      if (!jaPreparada && preparoDoSegundoClique !== "documento-duplicado") {
+      if (!jaPreparada && preparoDoSegundoClique.estado !== "documento-duplicado") {
         url.searchParams.set("erro", "preparacao-conta");
       }
       return NextResponse.redirect(url);

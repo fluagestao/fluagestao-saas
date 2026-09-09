@@ -36,9 +36,9 @@ export default async function OnboardingPage() {
   if (membro) redirect("/inicio");
 
   const preparo = await prepararEmpresa(supabase);
-  if (preparo === "ok") redirect("/inicio?onboarding=1");
+  if (preparo.estado === "ok") redirect("/inicio?onboarding=1");
 
-  const documentoDuplicado = preparo === "documento-duplicado";
+  const documentoDuplicado = preparo.estado === "documento-duplicado";
 
   const email =
     typeof claimsData?.claims?.email === "string" ? claimsData.claims.email : null;
@@ -74,6 +74,15 @@ export default async function OnboardingPage() {
         >
           {documentoDuplicado ? "Ir para o login" : "Tentar de novo"}
         </Link>
+
+        {/* A causa técnica fica visível, em letra pequena. Quem está na tela não
+            precisa entender a frase — precisa poder mandar um print que já seja
+            o diagnóstico, em vez de "não conseguimos, tente de novo". */}
+        {preparo.detalhe && (
+          <p className="mt-4 rounded-lg bg-[var(--cream-soft)] px-3 py-2 font-mono text-[11px] leading-4 text-[var(--admin-ink-soft)]">
+            {preparo.detalhe}
+          </p>
+        )}
 
         {/* Sai daqui em vez de mandar de volta para o login, que era o laço. */}
         <p className="mt-4 t-support text-center text-muted-foreground">

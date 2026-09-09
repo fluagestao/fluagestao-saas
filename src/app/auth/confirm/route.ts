@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       }
 
       const preparo = await prepararEmpresa(supabase);
-      const empresaPreparada = preparo === "ok";
+      const empresaPreparada = preparo.estado === "ok";
 
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = empresaPreparada ? "/cadastro/sucesso" : "/login";
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(url);
       }
       const preparoDoSegundoClique = await prepararEmpresa(supabase);
-      const jaPreparada = preparoDoSegundoClique === "ok";
+      const jaPreparada = preparoDoSegundoClique.estado === "ok";
       const url = request.nextUrl.clone();
       url.pathname = jaPreparada ? "/inicio" : "/login";
       url.search = "";
