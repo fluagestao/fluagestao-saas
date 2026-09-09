@@ -192,10 +192,24 @@ async function buscarPedidos(
   };
 }
 
-export async function carregarPedidos(input: { data: unknown }) {
-  const filtro = filtroPedidosSchema.parse(input.data);
-  const { supabase, companyId } = await requireCompany();
-  return buscarPedidos(supabase, companyId, filtro);
+/* DEVOLVE O ERRO, NÃO O LANÇA.
+   Em produção o React descarta a mensagem de um Error lançado dentro de um
+   arquivo "use server" e manda só um digest. A tela recebia isso e caía no
+   texto genérico "confira os dados e veja se esse registro já não existe" —
+   que além de não dizer nada, culpa o cadastro da pessoa por uma LEITURA que
+   falhou. Devolvendo a mensagem, quem está na tela lê a causa de verdade, e um
+   print vira diagnóstico em vez de um número de protocolo. */
+export async function carregarPedidos(
+  input: { data: unknown },
+): Promise<{ pedidos: Pedido[]; total: number; erro?: string }> {
+  try {
+    const filtro = filtroPedidosSchema.parse(input.data);
+    const { supabase, companyId } = await requireCompany();
+    return await buscarPedidos(supabase, companyId, filtro);
+  } catch (e) {
+    console.error("[carregarPedidos]", e);
+    return { pedidos: [], total: 0, erro: mensagemDeErro(e, "carregar os pedidos") };
+  }
 }
 
 export async function carregarResumoPedidos() {

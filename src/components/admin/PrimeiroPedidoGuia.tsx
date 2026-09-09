@@ -35,7 +35,9 @@ export function PrimeiroPedidoProvider({ children, escopo, onIniciar, abrirAutom
     // Consulta a empresa autenticada, sem depender dos filtros da tela de Vendas.
     carregarPedidos({ data: { status: "todos", limite: 1, offset: 0 } }).then((res) => {
       if (cancelado || interagiu.current) return;
-      if (res.total === 0) setJanela("boas-vindas");
+      // Consulta que falhou volta com total 0. Sem esta guarda, uma queda de
+      // rede abriria o guia de boas-vindas para quem já tem pedidos.
+      if (!res.erro && res.total === 0) setJanela("boas-vindas");
     }).catch(() => { /* Falha de consulta não bloqueia o painel nem dispara um guia indevido. */ });
     return () => { cancelado = true; };
   }, [chave, abrirAutomaticamente]);

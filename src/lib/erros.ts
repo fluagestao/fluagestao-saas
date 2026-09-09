@@ -210,12 +210,22 @@ export function mensagemDeErro(e: unknown, contexto = "salvar"): string {
   if (/minified react error/i.test(texto)) {
     const ref = bruto.digest ? ` (código ${String(bruto.digest).slice(0, 8)})` : "";
 
-    // #441 é especificamente a exceção vinda de uma server action: quase sempre
-    // uma regra de negócio (duplicado, já pago, sem permissão). Os demais são
-    // falhas de renderização, onde mandar conferir os dados só confundiria.
-    return /#441\b/.test(texto)
-      ? `Não consegui ${contexto}. Confira os dados e veja se esse registro já não existe.${ref}`
-      : `Algo deu errado ao montar esta tela. Atualize a página e tente de novo.${ref}`;
+    if (!/#441\b/.test(texto)) {
+      return `Algo deu errado ao montar esta tela. Atualize a página e tente de novo.${ref}`;
+    }
+
+    /* #441 é a exceção vinda de uma server action. Num SALVAR, o palpite de
+       "confira os dados, veja se já não existe" costuma acertar: quase sempre é
+       regra de negócio. Numa LEITURA ele é sempre errado — não há dado que a
+       pessoa possa conferir para uma lista que não carregou, e a frase acusa o
+       cadastro dela por uma falha que é do servidor. */
+    const leitura = /^(carregar|buscar|listar|abrir|imprimir|gerar|atualizar a lista)/i.test(
+      contexto.trim(),
+    );
+
+    return leitura
+      ? `Não consegui ${contexto}. Atualize a página e tente de novo.${ref}`
+      : `Não consegui ${contexto}. Confira os dados e veja se esse registro já não existe.${ref}`;
   }
 
   // 6) Sobrou o texto original, que já é melhor que "erro".

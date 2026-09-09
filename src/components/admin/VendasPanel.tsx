@@ -456,13 +456,22 @@ export function VendasPanel({
         const res = await carregarPedidos({
           data: { status, busca: buscaAtiva || undefined, limite: PAGINA, offset: novoOffset },
         });
+        /* A ação devolve a causa em vez de lançá-la, para a mensagem sobreviver
+           ao React em produção. Uma lista vazia com erro não pode substituir a
+           lista que estava na tela: seria apagar o que a pessoa via por causa
+           de uma falha de rede. */
+        if (res.erro) {
+          setErro(res.erro);
+          return;
+        }
         setPedidos((prev) => (acumular ? [...prev, ...res.pedidos] : res.pedidos));
         setTotal(res.total);
         setOffset(novoOffset);
       } catch (e) {
         setErro(mensagemDeErro(e, "carregar os pedidos"));
+      } finally {
+        setCarregando(false);
       }
-      setCarregando(false);
     },
     [status, buscaAtiva],
   );
