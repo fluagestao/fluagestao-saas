@@ -572,6 +572,27 @@ export function OnboardingPrompt() {
     setExpandido(habilitado);
   }
 
+  /* Esc faz o mesmo que "Explorar sozinho".
+
+     Este diálogo não tem X, não fecha clicando fora e não tinha tecla nenhuma:
+     se o clique falhasse por qualquer motivo, a pessoa ficava presa na
+     PRIMEIRA tela depois de criar a conta, e a única saída era recarregar.
+     Teclado não passa por `pointer-events`, então esta saída continua de pé
+     mesmo no caso que acabou de ser corrigido acima. */
+  useEffect(() => {
+    if (!boasVindas) return;
+
+    const aoTeclar = (evento: KeyboardEvent) => {
+      if (evento.key !== "Escape" || salvando) return;
+      void iniciarGuia(false);
+    };
+
+    document.addEventListener("keydown", aoTeclar);
+    return () => document.removeEventListener("keydown", aoTeclar);
+    // iniciarGuia é recriada a cada render; o que importa aqui é o que ela lê.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boasVindas, salvando, progresso]);
+
   async function alternarGuia(habilitado: boolean) {
     if (
       !progresso ||
@@ -632,10 +653,22 @@ export function OnboardingPrompt() {
 
   return (
     <>
+      {/* pointer-events-auto pelo mesmo motivo explicado lá embaixo, no botão
+          flutuante: enquanto QUALQUER modal do Radix estiver montado, o <body>
+          fica com `pointer-events: none` e só o conteúdo daquele diálogo
+          reativa. Este aqui não é do Radix — é um overlay próprio — então sem
+          isto os cliques atravessam e os dois botões ficam mortos.
+
+          E o body pode continuar assim depois que o Radix desmonta rápido
+          demais, o que faz o defeito aparecer sem nenhum diálogo visível na
+          tela. Como este diálogo não tem X, não fecha no Esc e não fecha
+          clicando fora, ficar sem clique aqui é ficar preso: a única saída era
+          recarregar a página — na primeira tela de quem acabou de entrar. */}
       {boasVindas && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b2421]/55 p-4 backdrop-blur-sm">
+        <div className="pointer-events-auto fixed inset-0 z-[90] flex items-center justify-center bg-[#2b2421]/55 p-4 backdrop-blur-sm">
           <section
-            className="max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_30px_90px_rgba(43,36,33,0.3)] sm:p-8"
+            onPointerDownCapture={(e) => e.stopPropagation()}
+            className="pointer-events-auto max-h-[calc(100dvh-2rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-[28px] border border-white/70 bg-white p-6 shadow-[0_30px_90px_rgba(43,36,33,0.3)] sm:p-8"
             role="dialog"
             aria-modal="true"
             aria-labelledby="guia-boas-vindas"
