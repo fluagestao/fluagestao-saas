@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { requireCompany } from "@/lib/company-context.server";
+import { mensagemDeErro } from "@/lib/erros";
 import type { Tarefa } from "@/lib/tarefas-ops.server";
 
 const tarefaSchema = z.object({
@@ -119,25 +120,37 @@ export async function removerTarefa(input: { data: unknown }) {
   return { ok: true as const };
 }
 
+/* DEVOLVE O MOTIVO, NÃO O LANÇA.
+   Com a assinatura vencida, `requireCompany` entrega um cliente que LANÇA em
+   qualquer escrita — a trava é uma exceção, não um retorno. A tela pegava essa
+   exceção num catch vazio e só recarregava, então o nome voltava sozinho, sem
+   uma palavra de explicação, e parecia um travamento aleatório. O motivo já
+   existe escrito (MOTIVO_EXPIRADA); faltava alguém deixar ele chegar. */
 export async function salvarMeuNome(input: { data: unknown }) {
   const { nome } = z
     .object({ nome: z.string().trim().min(1).max(80) })
     .parse(input.data);
-  const { supabase, companyId, memberId, userId } = await requireCompany();
 
-  const { error: membroError } = await supabase
-    .from("company_members")
-    .update({ display_name: nome })
-    .eq("id", memberId)
-    .eq("company_id", companyId);
+  try {
+    const { supabase, companyId, memberId, userId } = await requireCompany();
 
-  if (membroError) {
-    const { error: perfilError } = await supabase
-      .from("profiles")
-      .update({ full_name: nome })
-      .eq("id", userId);
-    if (perfilError) throw membroError;
+    const { error: membroError } = await supabase
+      .from("company_members")
+      .update({ display_name: nome })
+      .eq("id", memberId)
+      .eq("company_id", companyId);
+
+    if (membroError) {
+      const { error: perfilError } = await supabase
+        .from("profiles")
+        .update({ full_name: nome })
+        .eq("id", userId);
+      if (perfilError) throw membroError;
+    }
+
+    return { ok: true as const };
+  } catch (e) {
+    console.error("[salvarMeuNome]", e);
+    return { ok: false as const, mensagem: mensagemDeErro(e, "salvar seu nome") };
   }
-
-  return { ok: true as const };
 }

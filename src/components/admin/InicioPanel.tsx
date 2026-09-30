@@ -503,13 +503,26 @@ export function InicioPanel({ onIrPara }: { onIrPara: (aba: DestinoInicio) => vo
   async function salvarNome() {
     const n = nomeRascunho.trim();
     if (!n) return;
+
+    /* O nome aparece na hora e volta atrás se o servidor recusar. O que faltava
+       era a recusa DIZER alguma coisa: o catch anterior só recarregava, então o
+       nome voltava sozinho e em silêncio — e o motivo mais comum é justamente
+       um que a pessoa precisa ler, o teste gratuito ter acabado. */
+    const anterior = nome;
     setNome(n);
     setEditandoNome(false);
+
     try {
-      await salvarMeuNome({ data: { nome: n } });
+      const resultado = await salvarMeuNome({ data: { nome: n } });
+      if (!resultado?.ok) {
+        setNome(anterior);
+        toast.error(resultado?.mensagem ?? "Não foi possível salvar seu nome.");
+        return;
+      }
       toast.success(`Prazer, ${n.split(/\s+/)[0]}!`);
     } catch {
-      carregar();
+      setNome(anterior);
+      toast.error("Não foi possível salvar seu nome. Verifique a conexão e tente de novo.");
     }
   }
 
