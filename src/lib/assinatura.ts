@@ -50,8 +50,14 @@ export async function lerAssinatura(
     const plano = String(data.plan ?? "");
     const emTeste = status === "trialing" || plano === "trial";
 
+    /* `trial_ends_at` só diz alguma coisa enquanto o teste está valendo. Fora
+       dele a coluna guarda a data do teste que já passou, e a tela de conta
+       exibia isso como "próxima renovação" — um plano vitalício mostrando uma
+       data de agosto. A coluna é NOT NULL, então não dá para limpar no banco;
+       quem tem que parar de usá-la é a leitura. */
     const terminaEm =
-      (data.current_period_end as string | null) ?? (data.trial_ends_at as string | null) ?? null;
+      (data.current_period_end as string | null) ??
+      (emTeste ? (data.trial_ends_at as string | null) : null);
     const diasRestantes = diasAte(terminaEm);
 
     // Assinatura paga em dia nunca expira por prazo: quem paga tem a renovação
