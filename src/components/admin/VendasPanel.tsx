@@ -1,3 +1,4 @@
+import { resumoPedidos } from "@/lib/resumo-pedidos";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LayoutGrid, List, Plus } from "lucide-react";
 import {
@@ -48,7 +49,6 @@ import {
   formatBRL,
   ordenarPorEntrega,
   proximoStatus,
-  resumoVendas,
   statusCor,
   statusLabel,
   urgenciaDoPedido,
@@ -408,7 +408,7 @@ export function VendasPanel({
 
   // O resumo roda no cliente porque o navegador está no fuso de Tubarão —
   // calcular no servidor (UTC) traria de volta o bug de data que corrigimos.
-  const resumo = useMemo(() => resumoVendas(base), [base]);
+  const resumo = useMemo(() => resumoPedidos(base), [base]);
 
   /**
    * O quadro tem fonte própria, e não a página da lista.
