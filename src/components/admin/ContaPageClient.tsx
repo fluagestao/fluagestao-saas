@@ -91,9 +91,18 @@ function formatarData(valor?: string | null) {
   return new Intl.DateTimeFormat("pt-BR").format(data);
 }
 
+/* O valor guardado no banco é sem acento de propósito — comparação de texto com
+   acento é fonte de bug silencioso. O rótulo bonito mora aqui. */
+const ROTULOS_DE_PLANO: Record<string, string> = {
+  trial: "Teste grátis",
+  vitalicio: "Vitalício",
+};
+
 function rotuloPlano(plano?: string | null) {
-  if (!plano || plano === "trial") return "Teste grátis";
-  return plano.charAt(0).toUpperCase() + plano.slice(1);
+  if (!plano) return "Teste grátis";
+  return (
+    ROTULOS_DE_PLANO[plano] ?? plano.charAt(0).toUpperCase() + plano.slice(1)
+  );
 }
 
 function rotuloStatus(status?: string | null) {
