@@ -56,6 +56,39 @@ export function CategoriasPanel({
       });
   }, [busca, categorias, catalogos]);
 
+  /* A lista era uma fileira só, ordenada por `ordem`, com as coleções
+     intercaladas. Como o nome da categoria se repete entre coleções — "Café da
+     Manhã" existe no Catálogo Geral E no Dia dos Pais — duas linhas iguais
+     apareciam longe uma da outra e pareciam duplicata. Agrupar por coleção põe
+     cada uma no seu bloco: o nome repetido deixa de ser confusão e vira o que
+     de fato é, a mesma categoria em duas coleções.
+
+     Sem coleção fica por último de propósito: é pendência, não categoria. */
+  const grupos = useMemo(() => {
+    const porColecao = new Map<string, CategoriaRow[]>();
+    for (const categoria of categoriasFiltradas) {
+      const chave = categoria.catalogo_id ?? SEM_COLECAO;
+      const lista = porColecao.get(chave);
+      if (lista) lista.push(categoria);
+      else porColecao.set(chave, [categoria]);
+    }
+
+    const ordenadas = catalogosOrdenados
+      .filter((catalogo) => porColecao.has(catalogo.id))
+      .map((catalogo) => ({
+        chave: catalogo.id,
+        titulo: catalogo.nome,
+        itens: porColecao.get(catalogo.id) ?? [],
+      }));
+
+    const soltas = porColecao.get(SEM_COLECAO);
+    if (soltas?.length) {
+      ordenadas.push({ chave: SEM_COLECAO, titulo: "Sem coleção", itens: soltas });
+    }
+
+    return ordenadas;
+  }, [categoriasFiltradas, catalogosOrdenados]);
+
   function baseCategoria(categoria: CategoriaRow) {
     return {
       id: categoria.id,
@@ -188,8 +221,17 @@ export function CategoriasPanel({
           Nenhuma categoria encontrada.
         </div>
       ) : (
-        <div className="mt-4 min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
-          {categoriasFiltradas.map((categoria) => (
+        <div className="mt-4 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+          {grupos.map((grupo) => (
+            <section key={grupo.chave} className="space-y-2">
+              <h3 className="flex items-baseline gap-2 px-1 text-xs font-bold uppercase tracking-[0.12em] text-[var(--terracotta)]">
+                {grupo.titulo}
+                <span className="font-semibold tracking-normal text-muted-foreground">
+                  {grupo.itens.length}
+                </span>
+              </h3>
+
+              {grupo.itens.map((categoria) => (
             <article
               key={categoria.id}
               className="grid gap-3 rounded-2xl border border-[var(--cream-deep)] bg-card p-3 lg:grid-cols-[minmax(200px,1.1fr)_minmax(200px,1fr)_minmax(220px,1.1fr)_auto_auto] lg:items-center"
@@ -252,6 +294,8 @@ export function CategoriasPanel({
                 </Button>
               </div>
             </article>
+              ))}
+            </section>
           ))}
         </div>
       )}
